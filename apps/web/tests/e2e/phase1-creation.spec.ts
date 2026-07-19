@@ -35,6 +35,38 @@ test("an unauthenticated creator is sent to the signed wallet gate", async ({ pa
   await expect(page.getByRole("heading", { name: "One signature. No account form." })).toBeVisible();
 });
 
+test("the hydrated connect control reaches the injected wallet provider", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "nimiq", {
+      configurable: true,
+      value: {
+        listAccounts: async () => ["NQ38 PLXF NXKJ LFGA TRDP VRA8 F810 2BKN N4X6"],
+        sign: async () => ({ publicKey: "test-public-key", signature: "test-signature" })
+      }
+    });
+  });
+  await page.route("**/api/auth/challenge", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ id: "test-challenge", message: "Sign the Pods test challenge" })
+    });
+  });
+  await page.route("**/api/auth/verify", async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Hydrated wallet verification reached" })
+    });
+  });
+
+  await page.goto("/connect?returnTo=%2Ftoday");
+  await page.getByRole("button", { name: "Connect Nimiq wallet" }).click();
+
+  await expect(page.locator(".inline-error")).toContainText(
+    "Hydrated wallet verification reached"
+  );
+});
+
 test("a creator publishes one immutable Build and Ship contract", async ({ context, page }) => {
   await authenticate(context);
   await page.goto("/pods/create/template");

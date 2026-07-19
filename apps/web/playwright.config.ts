@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   projects: [
@@ -13,13 +15,15 @@ export default defineConfig({
     }
   ],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3410",
+    baseURL: externalBaseUrl ?? "http://127.0.0.1:3410",
     trace: "retain-on-failure"
   },
-  webServer: {
-    command: "corepack pnpm dev --hostname 127.0.0.1 --port 3410",
-    url: "http://127.0.0.1:3410",
-    reuseExistingServer: false,
-    timeout: 120_000
-  }
+  webServer: externalBaseUrl
+    ? undefined
+    : {
+        command: "corepack pnpm dev --hostname 127.0.0.1 --port 3410",
+        url: "http://127.0.0.1:3410",
+        reuseExistingServer: false,
+        timeout: 120_000
+      }
 });

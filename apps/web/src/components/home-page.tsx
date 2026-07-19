@@ -28,7 +28,7 @@ export function HomePage() {
           <Link className="primary-action" href="/connect?returnTo=%2Ftoday">
             Connect wallet
           </Link>
-          <Link className="text-action" href="/pods/create/template">
+          <Link className="secondary-action" href="/pods/create/template">
             Create a Pod
           </Link>
         </div>

@@ -13,7 +13,7 @@ export function InvitationAcceptance({ token, connected }: { token: string; conn
   const [error, setError] = useState("");
 
   if (!connected) {
-    return <Link className="primary-action full-action" href={`/connect?returnTo=${encodeURIComponent(`/invite/${token}`)}`}>Connect wallet to continue</Link>;
+    return <Link className="primary-action full-action" href={`/connect?returnTo=${encodeURIComponent(`/invite#${token}`)}`}>Connect wallet to continue</Link>;
   }
 
   async function accept() {

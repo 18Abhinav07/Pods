@@ -15,6 +15,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   const rejected = applications.filter(({ application }) => application.state === "application_rejected").length;
   const contract = pod.contractData;
   if (!contract) return null;
+  const renderedAt = new Date().getTime();
 
   return (
     <main className="app-shell admin-shell">
@@ -41,7 +42,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
           initial={invitations.map((invitation) => ({
             id: invitation.id,
             expiresAt: invitation.expiresAt.toISOString(),
-            status: invitation.usedAt ? "used" : invitation.revokedAt ? "revoked" : invitation.expiresAt.getTime() <= Date.now() ? "expired" : "active"
+            status: invitation.usedAt ? "used" : invitation.revokedAt ? "revoked" : invitation.expiresAt.getTime() <= renderedAt ? "expired" : "active"
           }))}
           podId={pod.id}
         />

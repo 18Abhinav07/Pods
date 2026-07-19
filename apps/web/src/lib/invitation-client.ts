@@ -25,12 +25,23 @@ export async function revokePrivateInvitation(
 }
 
 export async function acceptPrivateInvitation(token: string, fetcher: Fetcher = fetch) {
-  const response = await fetcher(`/api/invitations/${token}/accept`, {
+  const response = await fetcher("/api/invitations/accept", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ acceptedFrozenContract: true })
+    body: JSON.stringify({ token, acceptedFrozenContract: true })
   });
   if (!response.ok) throw new Error(await responseError(response, "This invitation is unavailable"));
   const data = (await response.json()) as { membership: { podId: string; state: string } };
   return data.membership;
+}
+
+export async function previewPrivateInvitation(token: string, fetcher: Fetcher = fetch) {
+  const response = await fetcher("/api/invitations/preview", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token })
+  });
+  if (!response.ok) throw new Error(await responseError(response, "This invitation is unavailable"));
+  const data = (await response.json()) as { preview: Record<string, unknown> };
+  return data.preview;
 }

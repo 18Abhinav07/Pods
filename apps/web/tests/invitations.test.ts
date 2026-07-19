@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   acceptPrivateInvitation,
   createPrivateInvitation,
+  previewPrivateInvitation,
   revokePrivateInvitation
 } from "../src/lib/invitation-client";
 import { createInvitationToken, hashInvitationToken } from "../src/lib/invitations";
@@ -33,10 +34,21 @@ describe("private invitation commands", () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({ membership: { state: "accepted_unfunded", podId: "pod-1" } }), { status: 200 }));
 
     await acceptPrivateInvitation("x".repeat(43), fetcher);
-    expect(fetcher).toHaveBeenCalledWith(`/api/invitations/${"x".repeat(43)}/accept`, {
+    expect(fetcher).toHaveBeenCalledWith("/api/invitations/accept", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ acceptedFrozenContract: true })
+      body: JSON.stringify({ token: "x".repeat(43), acceptedFrozenContract: true })
+    });
+  });
+
+  it("loads the private preview without putting the bearer in the request URL", async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ preview: { podId: "pod-1" } }), { status: 200 }));
+
+    await previewPrivateInvitation("x".repeat(43), fetcher);
+    expect(fetcher).toHaveBeenCalledWith("/api/invitations/preview", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token: "x".repeat(43) })
     });
   });
 });

@@ -41,9 +41,9 @@ export function validateApplicationAnswers(
 
 export function canDecideApplication(
   current: ApplicationStatus,
-  _decision: ApplicationDecision
+  decision: ApplicationDecision
 ): boolean {
-  return current === "applied";
+  return current === "applied" && (decision === "accept" || decision === "reject");
 }
 
 export function normalizeInvitationToken(value: unknown): string | null {

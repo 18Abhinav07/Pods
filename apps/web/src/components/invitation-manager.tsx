@@ -27,7 +27,7 @@ export function InvitationManager({ podId, initial }: { podId: string; initial: 
     setMessage("");
     try {
       const result = await createPrivateInvitation(podId);
-      const link = `${window.location.origin}/invite/${result.token}`;
+      const link = `${window.location.origin}/invite#${result.token}`;
       setNewLink(link);
       setInvitations((current) => [{ id: result.invitation.id, expiresAt: result.invitation.expiresAt, status: "active" }, ...current]);
       setMessage("New single-use link ready. It will not be shown again after you leave this screen.");

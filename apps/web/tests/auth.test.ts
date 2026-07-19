@@ -59,6 +59,8 @@ describe("wallet signature contract", () => {
     const address = keyPair.toAddress().toUserFriendlyAddress();
     expect(normalizeWalletAddress(address.replaceAll(" ", ""))).toBe(address);
     expect(safeReturnTarget("/pods/create/template")).toBe("/pods/create/template");
+    expect(safeReturnTarget(`/invite#${"x".repeat(43)}`)).toBe(`/invite#${"x".repeat(43)}`);
+    expect(safeReturnTarget("/invite#not-a-token")).toBe("/today");
     expect(safeReturnTarget("https://attacker.example/steal")).toBe("/today");
     expect(safeReturnTarget("//attacker.example/steal")).toBe("/today");
   });

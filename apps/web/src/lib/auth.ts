@@ -23,6 +23,7 @@ export function safeReturnTarget(value: string | null | undefined): string {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
     return "/today";
   }
+  if (/^\/invite#[A-Za-z0-9_-]{43}$/.test(value)) return value;
   return allowedReturnPrefixes.some(
     (prefix) => value === prefix || (prefix.endsWith("/") && value.startsWith(prefix))
   )

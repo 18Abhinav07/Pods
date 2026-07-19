@@ -1545,6 +1545,33 @@ button.secondary-action {
 .application-status-card h2 { margin: 0.65rem 0 0.35rem; font-size: 1.2rem; }
 .application-status-card p { margin: 0 0 1rem; color: #6d685f; line-height: 1.5; }
 
+.admin-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.55rem; margin-bottom: 1rem; }
+.admin-metrics div { display: grid; gap: 0.35rem; padding: 0.85rem 0.65rem; border: 1px solid var(--line, #dedbd1); border-radius: 1rem; background: #fffdf8; text-align: center; }
+.admin-metrics span { color: #777168; font-size: 0.61rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.admin-metrics strong { font-size: 1.45rem; }
+.share-recruit { margin-top: 1rem; padding: 1rem; border-radius: 1rem; background: #e8eddb; }
+.share-recruit p { margin: 0.4rem 0 0.65rem; color: #626657; line-height: 1.45; }
+.share-recruit a { color: #31430f; font-weight: 800; }
+.decision-list { display: grid; gap: 0.9rem; padding-bottom: 2rem; }
+.decision-card { overflow: hidden; padding: 1rem; border: 1px solid var(--line, #dedbd1); border-radius: 1.2rem; background: #fffdf8; }
+.decision-card-head { display: flex; justify-content: space-between; color: #777168; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; }
+.decision-card-head strong { color: #25231e; }
+.decision-card dl { display: grid; gap: 0.8rem; margin: 1rem 0; }
+.decision-card dl div { padding: 0.8rem; border-radius: 0.85rem; background: #f3f1e9; }
+.decision-card dt { color: #686258; font-size: 0.72rem; font-weight: 800; }
+.decision-card dd { margin: 0.35rem 0 0; line-height: 1.45; }
+.decision-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+.decision-actions button { min-height: 2.9rem; border: 1px solid #d8d4c8; border-radius: 0.9rem; background: transparent; font: inherit; font-weight: 800; }
+.danger-zone { margin: 2rem 0; padding-top: 1.2rem; border-top: 1px solid #d8d4c8; }
+.danger-zone > span { color: #9a493f; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.danger-zone h2 { margin: 0.4rem 0; font-size: 1.2rem; }
+.danger-zone p { color: #6d685f; line-height: 1.5; }
+.danger-action { min-height: 2.8rem; padding: 0.7rem 1rem; border: 1px solid #bd6b61; border-radius: 0.85rem; color: #8e3329; background: #faece9; font: inherit; font-weight: 800; }
+.danger-confirmation { display: grid; gap: 0.8rem; padding: 0.85rem; border-radius: 0.9rem; background: #faece9; }
+.danger-confirmation > div { display: flex; justify-content: flex-end; gap: 0.55rem; }
+.danger-confirmation button:not(.danger-action) { border: 0; background: transparent; font: inherit; font-weight: 800; }
+.history-note { color: #777168; font-size: 0.8rem; text-align: center; }
+
 .template-row h3,
 .template-row p {
   margin: 0;

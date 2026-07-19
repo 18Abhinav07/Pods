@@ -15,3 +15,4 @@ Related: [[HANDOFF]] | [[validation/phase-2-results]]
 | 2026-07-19 | Codex | Removed the 135 approved historical automated-test Pods while preserving the real Pod. | Zero matching fixtures remain; exactly one published public Pod remains; Discover HTTP 200. |
 | 2026-07-19 | Codex | Fixed the invisible Accept action in application review by correcting scoped CSS specificity. | Regression failed with transparent background, then passed with blue background and white text on Android Chromium and Mobile Safari; `pnpm check` PASS. |
 | 2026-07-19 | Codex | Recorded Abhinav's explicit Phase 2 phone approval and opened the Phase 3 planning gate. | `validation/phase-2-results.md` now records PASS for both automated and physical gates. |
+| 2026-07-19 | Codex | Activated the Phase 3 funding and reconciliation plan with separate 3A and 3B phone gates. | Existing Testnet deposit spike PASS; plan self-review and no-U+2014 gate PASS. |

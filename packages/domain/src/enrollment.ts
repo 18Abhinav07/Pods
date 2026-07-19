@@ -4,7 +4,16 @@ export type ApplicationStatus =
   | "application_rejected"
   | "application_expired";
 
-export type MembershipState = ApplicationStatus | "invite_expired";
+export type MembershipState =
+  | ApplicationStatus
+  | "invite_expired"
+  | "deposit_pending"
+  | "funding_failed"
+  | "funded_provisional"
+  | "roster_locked"
+  | "excluded_at_cutoff"
+  | "refund_pending"
+  | "refunded";
 export type ApplicationDecision = "accept" | "reject";
 export type AdmissionSource = "public_application" | "private_invitation";
 

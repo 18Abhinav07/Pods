@@ -3,9 +3,16 @@ import { Temporal } from "@js-temporal/polyfill";
 export type TemplateId = "fitness" | "reading" | "study" | "build" | "create";
 export type EvidenceMode = "repeating_criterion" | "per_occurrence_commitment";
 export type PodVisibility = "public" | "private";
-export type PodState = "draft" | "enrollment_open" | "cancelled";
+export type PodState =
+  | "draft"
+  | "enrollment_open"
+  | "cutoff_evaluating"
+  | "locked_scheduled"
+  | "cancelled_refunding"
+  | "cancelled";
 
 export * from "./enrollment";
+export * from "./funding";
 
 export const templateContracts = [
   {

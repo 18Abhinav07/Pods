@@ -18,7 +18,7 @@ collect evidence, settle a Pod, or broadcast payouts.
 
 ## Automated result
 
-PASS. Physical Nimiq Pay approval remains pending.
+PASS.
 
 - Public discovery returns only frozen, public, enrollment-open Pods.
 - Private and unknown Pods share the same public unavailable surface.
@@ -69,8 +69,11 @@ all with a 64-character `token_hash`. The table has no raw-token column.
 
 ## Physical gate
 
-PENDING. Abhinav must test the LAN Mini App in Nimiq Pay at
-`http://192.168.29.244:3411` and explicitly approve:
+PASS. Abhinav explicitly accepted the complete Phase 2 phone checkpoint on
+2026-07-19 after the creator self-application path, historical test fixtures,
+and application-review action contrast were corrected and reverified.
+
+The approved checkpoint covered:
 
 1. Public discovery and template filtering.
 2. Application submission from a second wallet.
@@ -80,4 +83,5 @@ PENDING. Abhinav must test the LAN Mini App in Nimiq Pay at
 6. Used-link replay showing the generic unavailable screen.
 7. Mobile spacing, motion, back navigation, and touch behavior.
 
-Phase 3 remains blocked until this physical checkpoint is approved.
+The Phase 2 approval gate is closed. Phase 3 funding and reconciliation may now
+proceed through its own plan, validation, implementation, and phone checkpoint.

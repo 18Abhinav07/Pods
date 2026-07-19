@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-19 22:50
+last-updated: 2026-07-19 22:52
 last-agent: codex
 mode: HACKATHON
 ---
@@ -11,44 +11,38 @@ Related: [[README]] | [[AGENTS]] | [[docs/implementation-plan]] | [[validation/p
 
 ## State
 
-Phase 0 and Phase 1 are physically approved. Phase 2 public and private enrollment
-is implemented and passes the complete automated gate. Creator-aware Discover,
-automatic test-fixture teardown, and visible application-review actions are implemented
-and verified. The 135 historical test Pods were removed with Abhinav's explicit
-approval. Physical Nimiq Pay approval is pending. Phase 3 funding remains blocked.
+Phase 0, Phase 1, and Phase 2 are physically approved. Phase 2 public and private
+enrollment passes the complete automated and phone gate. Creator-aware Discover,
+automatic test-fixture teardown, and visible application-review actions are
+implemented and verified. Phase 3 funding and reconciliation is now unblocked but
+does not yet have its own approved implementation plan.
 
 ## In Progress (resume here)
 
-- Task: Continue the corrected Phase 2 phone checkpoint with Abhinav.
-- URL: `http://192.168.29.244:3411`, served by the active `pnpm dev:lan` process.
-- Discover contains one published public Pod, `Pods MVP C1`.
-- A creator sees `Manage enrollment` on their own public Pod card and public preview.
-  Another wallet sees `Apply to join`.
-- Application review shows a neutral `Not this cycle` action and a visible blue
-  `Accept` action.
-- Gate: public two-wallet application and creator decision, private invitation
-  acceptance and replay, Today priority, My Pods, Rules, funding boundary, and motion.
+- Task: Define and validate the Phase 3 funding and reconciliation implementation slice.
+- Runtime URL: `http://192.168.29.244:3411`.
+- Phase 2 accepted surface: public application, creator decision, private invitation,
+  Today, My Pods, Rules, funding boundary, mobile motion, and corrected action styling.
+- Do not enable a real funding control until the Phase 3 chain-crediting assumptions
+  are validated and the participant-facing transaction states are implemented.
 
 ## Open Errors / Blockers
 
-- No implementation or local-data error is open.
-- Phase 3 is blocked on Abhinav's explicit Phase 2 phone approval.
+- No Phase 2 implementation, phone, or local-data error is open.
+- Phase 3 planning and its validation gate remain to be completed before implementation.
 - The planned 0.01 NIM treasury return still requires Abhinav's exact recipient NQ address.
 
 ## Git State
 
-- Branch: `phase/02-enrollment`
+- Branch: `phase/02-enrollment`.
 - Phase 2 domain, persistence, discovery, applications, creator controls, invitations,
-  and connected personal surfaces are committed.
-- Application-review button contrast has a browser-level regression assertion for its
-  computed foreground and background colors.
-- Phase 1 and Phase 2 integration and browser tests delete exact generated users after
-  every run, which cascades only their own Pods and enrollment records.
+  connected personal surfaces, fixture isolation, and review-action contrast are committed.
 - Verification: `pnpm check` PASS, application review PASS on Android Chromium and
   Mobile Safari, zero browser-test fixtures remain, and `Pods MVP C1` is preserved.
+- User gate: explicit Phase 2 approval received on 2026-07-19.
 
 ## Next 3 Tasks
 
-1. Abhinav refreshes application review and continues the Phase 2 phone test.
-2. Record explicit PASS or concrete phone defects in `validation/phase-2-results.md`.
-3. Only after PASS, begin the Phase 3 funding and reconciliation slice.
+1. Produce the Phase 3 funding and reconciliation plan from the locked product spec.
+2. Run and record the Phase 3 chain-indexing and idempotency validation gate.
+3. Implement Phase 3 on its own branch only after the plan and validation pass.

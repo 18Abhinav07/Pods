@@ -155,7 +155,10 @@ test("public enrollment works from discovery through accepted funding handoff", 
 
     await page.goto(`${baseUrl}/pods/${pod.id}/admin/applications`);
     await expect(page.getByText("A tested mobile enrollment flow")).toBeVisible();
-    await page.getByRole("button", { name: "Accept" }).click();
+    const acceptButton = page.getByRole("button", { name: "Accept" });
+    await expect(acceptButton).toHaveCSS("background-color", "rgb(59, 92, 204)");
+    await expect(acceptButton).toHaveCSS("color", "rgb(255, 255, 255)");
+    await acceptButton.click();
     await expect(page.getByText("Queue clear")).toBeVisible();
 
     await applicantPage.reload();

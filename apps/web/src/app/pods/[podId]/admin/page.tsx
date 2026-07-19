@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { CancelPodControl } from "../../../../components/cancel-pod-control";
+import { InvitationManager } from "../../../../components/invitation-manager";
 import { requireEnrollmentOwner } from "../../../../lib/enrollment-guards";
 import { podsRepository } from "../../../../lib/server-db";
 
@@ -8,6 +9,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   const { podId } = await params;
   const { session, pod } = await requireEnrollmentOwner(podId, `/pods/${podId}/admin`);
   const applications = await podsRepository.listApplicationsForCreator({ creatorUserId: session.userId, podId });
+  const invitations = await podsRepository.listInvitationsForCreator({ creatorUserId: session.userId, podId });
   const pending = applications.filter(({ application }) => application.state === "applied").length;
   const accepted = applications.filter(({ application }) => application.state === "accepted_unfunded").length;
   const rejected = applications.filter(({ application }) => application.state === "application_rejected").length;
@@ -35,7 +37,14 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
           <aside className="share-recruit"><strong>Share and recruit</strong><p>Your public preview is ready. Applicants can review the exact contract before answering.</p><Link href={`/pods/${pod.id}`}>Open public preview</Link></aside>
         </>
       ) : (
-        <section className="neutral-empty"><span>Private enrollment</span><p>Create and manage opaque invitations from this command center.</p></section>
+        <InvitationManager
+          initial={invitations.map((invitation) => ({
+            id: invitation.id,
+            expiresAt: invitation.expiresAt.toISOString(),
+            status: invitation.usedAt ? "used" : invitation.revokedAt ? "revoked" : invitation.expiresAt.getTime() <= Date.now() ? "expired" : "active"
+          }))}
+          podId={pod.id}
+        />
       )}
       {pod.state === "enrollment_open" ? <CancelPodControl podId={pod.id} podName={contract.activity.name} /> : null}
     </main>

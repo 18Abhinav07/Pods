@@ -34,6 +34,9 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
   restored Node's native package loading.
 - Invisible custom inputs had unstable automation hit targets; full-tile semantic input
   overlays made the controls reliably tappable.
+- Next blocked development client resources requested from the phone's LAN origin,
+  leaving server-rendered controls unhydrated. Permitting the configured Wi-Fi host
+  restored the Connect interaction and is covered through the exact LAN URL.
 
 ## Open
 

@@ -32,11 +32,22 @@ PASS for automated validation. Physical phone approval remains open.
 ## Evidence
 
 - `pnpm check`: PASS
-- `pnpm test:e2e`: 8 of 8 PASS across mobile Safari and Android Chromium
-- Repository-wide unit tests: 42 PASS
+- `pnpm test:e2e`: 10 of 10 PASS across mobile Safari and Android Chromium
+- Exact Wi-Fi-origin hydration test: 2 of 2 PASS at `192.168.29.244`
+- Repository-wide unit tests: 44 PASS
 - Live service integration tests: 5 PASS
 - Production build: PASS
 - No U+2014 characters: PASS
+
+## LAN hydration correction
+
+The first phone checkpoint exposed a server-rendered Connect screen whose client
+button could not hydrate because Next blocked development resources requested
+through the Wi-Fi host. The live server warning identified the exact boundary.
+`allowedDevOrigins` now permits the configured LAN host, and a browser regression
+proves the Connect control reaches account access, message signing, and session
+verification through that exact origin. The landing-page Create a Pod action now
+uses the premium secondary-button treatment rather than text-link styling.
 
 ## Manual gate
 

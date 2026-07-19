@@ -11,8 +11,9 @@ Related: [[README]] | [[AGENTS]] | [[docs/implementation-plan]] | [[validation/p
 
 ## State
 
-Phase 0 premium motion and Phase 1 signed immutable Pod creation are committed,
-automated gates pass, and the LAN app awaits Abhinav's physical phone approval.
+Phase 0 premium motion and Phase 1 signed immutable Pod creation are committed.
+The first phone test found blocked LAN hydration; commit `c692095` fixes it and
+the restarted LAN app awaits Abhinav's retest.
 
 ## In Progress (resume here)
 
@@ -27,8 +28,9 @@ automated gates pass, and the LAN app awaits Abhinav's physical phone approval.
 
 ## Git State
 
-- Clean. Feature checkpoint: `3c7a062 feat: build signed immutable pod creation`.
-- The latest commit contains only the handoff and session archive.
+- Feature checkpoint: `3c7a062 feat: build signed immutable pod creation`.
+- LAN hydration and CTA fix: `c692095 fix: hydrate wallet controls on lan`.
+- No implementation changes remain uncommitted.
 
 ## Next 3 Tasks
 

@@ -61,7 +61,7 @@ describe("NimiqDepositRpc", () => {
       .resolves.toEqual([transaction]);
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toMatchObject({
       method: "getTransactionsByAddress",
-      params: [intent.treasuryAddress, 50]
+      params: [intent.treasuryAddress, 50, null]
     });
   });
 

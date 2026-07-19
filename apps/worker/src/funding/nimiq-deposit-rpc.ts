@@ -97,7 +97,7 @@ export class NimiqDepositRpc implements DepositRpc {
     }
     const transactions = await this.call<RawTransaction[]>(
       "getTransactionsByAddress",
-      [address, limit]
+      [address, limit, null]
     );
     return transactions.map(transactionFromRpc);
   }

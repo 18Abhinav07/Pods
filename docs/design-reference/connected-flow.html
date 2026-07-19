@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pods - Connected UX Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas:#efede7; --paper:#f8f7f2; --surface:#fff; --soft:#f0efe9;
+      --ink:#1f2348; --muted:#696c7e; --line:#dcdde4;
+      --blue:#3b5ccc; --blue-soft:#e9ecfa; --green:#18795c; --green-soft:#e5f2ed;
+      --amber:#956400; --amber-soft:#f7efd9; --red:#b42318; --red-soft:#fae9e7;
+      --shadow:0 24px 70px rgba(31,35,72,.14),0 2px 10px rgba(31,35,72,.08);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Mulish",system-ui,sans-serif;color:var(--ink);background:
+      radial-gradient(circle at 5% 5%,rgba(255,255,255,.95),transparent 26%),
+      linear-gradient(135deg,#f2f0e9,#e8e6df);min-height:100vh}
+    button,input,textarea{font:inherit}
+    .lab{width:min(1280px,calc(100% - 40px));margin:auto;padding:34px 0 56px}
+    .lab-head{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;margin-bottom:22px}
+    .eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--blue)}
+    h1{font-size:38px;line-height:1;margin:8px 0 8px;letter-spacing:-.045em}
+    .intro{color:var(--muted);font-size:14px;line-height:1.5;margin:0;max-width:680px}
+    .test-pill{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:11px;font-weight:800;white-space:nowrap}
+    .test-pill i{width:7px;height:7px;border-radius:50%;background:var(--green)}
+    .journey{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:24px}
+    .journey-step{padding:10px 8px;border-radius:11px;background:rgba(255,255,255,.55);border:1px solid rgba(31,35,72,.07);font-size:9px;text-align:center;font-weight:800;color:#8a8c98}
+    .journey-step.active{color:white;background:var(--ink);border-color:var(--ink)}
+    .journey-step.done{color:var(--green);background:var(--green-soft)}
+    .workspace{display:grid;grid-template-columns:430px minmax(0,1fr);gap:34px;align-items:start}
+    .phone-wrap{position:sticky;top:18px}
+    .phone-label{display:flex;justify-content:space-between;align-items:center;margin:0 10px 10px}
+    .phone-label strong{font-size:12px}.phone-label span{font-family:"Fira Mono",monospace;font-size:9px;color:var(--blue)}
+    .phone{width:390px;height:844px;margin:auto;border:8px solid #181b38;border-radius:42px;background:var(--paper);box-shadow:var(--shadow);overflow:hidden;position:relative}
+    .phone:before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:96px;height:24px;border-radius:0 0 15px 15px;background:#181b38;z-index:20}
+    .statusbar{height:38px;padding:12px 23px 0;display:flex;justify-content:space-between;font-size:11px;font-weight:800}
+    .screen-page{display:none;height:calc(100% - 38px);flex-direction:column;animation:enter .28s cubic-bezier(.2,.8,.2,1)}
+    .screen-page.active{display:flex}
+    @keyframes enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+    .topbar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:4px 20px 8px}
+    .wordmark{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800}
+    .mark{width:24px;height:24px;position:relative}.mark i{position:absolute;width:13px;height:13px;border:2px solid var(--blue);border-radius:50%}.mark i:nth-child(1){left:0;top:6px}.mark i:nth-child(2){right:0;top:6px}.mark i:nth-child(3){left:5px;top:1px;background:var(--paper)}
+    .avatar{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff;font-size:10px;font-weight:800}
+    .back{width:34px;height:34px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--ink);font-size:18px}
+    .main{flex:1;padding:0 20px 92px;overflow-y:auto;scrollbar-width:none}.main::-webkit-scrollbar{display:none}
+    .main.focus{padding-bottom:110px}
+    .title{font-size:28px;line-height:1.08;letter-spacing:-.04em;margin:12px 0 4px}.subtitle{font-size:12px;line-height:1.45;color:var(--muted);margin:0}
+    .filters{display:flex;gap:7px;overflow:hidden;margin:17px -20px 17px;padding:0 20px}
+    .chip{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:transparent;font-size:9px;font-weight:800}.chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .feature,.dark-card{border:0;text-align:left;width:100%;padding:20px;border-radius:22px;background:var(--ink);color:white;position:relative;overflow:hidden}
+    .feature:after,.dark-card:after{content:"";position:absolute;width:130px;height:130px;border:32px solid rgba(90,114,221,.16);border-radius:50%;right:-70px;bottom:-65px}
+    .kicker{font-size:8px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;color:#aeb9f3}.feature h3,.dark-card h3{font-size:22px;line-height:1.15;letter-spacing:-.03em;margin:10px 0 7px;max-width:250px}.feature p,.dark-card p{font-size:10px;color:#c6c9df;line-height:1.5;margin:0 0 17px;max-width:270px}
+    .meta3{display:grid;grid-template-columns:repeat(3,1fr);padding-top:13px;border-top:1px solid rgba(255,255,255,.16);position:relative;z-index:2}.meta3 small,.metric small{display:block;font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:#989dbb;font-weight:800}.meta3 strong,.metric strong{font-size:10px}
+    .list-title{display:flex;justify-content:space-between;align-items:center;margin:22px 0 8px}.list-title h4{margin:0;font-size:14px}.link{font-size:9px;color:var(--blue);font-weight:800}
+    .pod-row{display:grid;grid-template-columns:38px 1fr auto;gap:11px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.pod-icon{width:38px;height:38px;border-radius:12px;background:#f1ead7;color:#866522;display:grid;place-items:center;font-weight:800}.pod-copy strong{display:block;font-size:12px}.pod-copy span,.pod-side span{display:block;font-size:8px;color:var(--muted);margin-top:3px}.pod-side{text-align:right}.pod-side strong{font-size:10px}
+    .summary{margin-top:17px;padding:15px;border-radius:16px;background:var(--blue-soft)}.summary small{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.09em;font-weight:800;color:var(--blue)}.summary strong{display:block;font-size:16px;line-height:1.35;margin-top:6px}
+    .facts{margin:15px 0;border-top:1px solid var(--line)}.fact{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid var(--line);font-size:10px}.fact span{color:var(--muted)}.fact strong{text-align:right}
+    .notice{border-radius:14px;padding:12px 13px;font-size:9px;line-height:1.5;background:var(--soft);color:var(--muted);margin:13px 0}.notice.blue{background:var(--blue-soft);color:#424b81}.notice.green{background:var(--green-soft);color:#2b6855}.notice.amber{background:var(--amber-soft);color:#765717}.notice.red{background:var(--red-soft);color:#8e2a24}
+    .field{margin:15px 0}.field label{display:block;font-size:10px;font-weight:800;margin-bottom:7px}.fake-input{min-height:48px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 13px;font-size:10px;color:var(--ink)}.fake-input.multi{min-height:82px;line-height:1.45}
+    .checkline{display:flex;gap:9px;align-items:flex-start;margin:16px 0;font-size:9px;line-height:1.45;color:var(--muted)}.checkbox{width:18px;height:18px;border:1px solid var(--blue);border-radius:5px;background:var(--blue);color:#fff;display:grid;place-items:center;flex:none;font-size:10px}
+    .button{width:100%;min-height:48px;border:0;border-radius:13px;background:var(--blue);color:#fff;font-size:13px;font-weight:800;padding:0 16px}.button.secondary{background:transparent;color:var(--ink);border:1px solid var(--line)}.button.danger{background:var(--red)}.button:disabled{opacity:.42}
+    .sticky{position:absolute;left:0;right:0;bottom:0;padding:14px 20px 20px;background:linear-gradient(0deg,var(--paper) 75%,rgba(248,247,242,0));z-index:5}
+    .status-hero{text-align:center;padding:21px 8px 15px}.status-orb{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;margin:auto;background:var(--blue-soft);color:var(--blue);font-size:22px;font-weight:800}.status-orb.green{background:var(--green-soft);color:var(--green)}.status-orb.amber{background:var(--amber-soft);color:var(--amber)}.status-orb.red{background:var(--red-soft);color:var(--red)}.status-hero h2{font-size:24px;margin:13px 0 5px;letter-spacing:-.035em}.status-hero p{font-size:10px;line-height:1.45;color:var(--muted);margin:0 auto;max-width:290px}
+    .rail{margin-top:14px}.rail-row{display:grid;grid-template-columns:24px 1fr;gap:10px;min-height:48px;position:relative}.rail-row:not(:last-child):after{content:"";position:absolute;left:11px;top:23px;height:27px;width:1px;background:var(--line)}.rail-dot{width:23px;height:23px;border-radius:50%;border:1.5px solid var(--line);background:var(--paper);display:grid;place-items:center;font-size:9px}.rail-row.done .rail-dot{background:var(--green);border-color:var(--green);color:#fff}.rail-row.current .rail-dot{border-color:var(--blue);box-shadow:0 0 0 4px var(--blue-soft);color:var(--blue)}.rail-copy strong{display:block;font-size:10px}.rail-copy span{display:block;font-size:8px;color:var(--muted);margin-top:2px}
+    .waiting-count{font-size:34px;font-weight:800;letter-spacing:-.04em;margin:16px 0 2px}.faces{display:flex;margin:16px 0}.face{width:38px;height:38px;border-radius:50%;margin-right:-8px;border:3px solid var(--paper);display:grid;place-items:center;color:#fff;font-size:10px;font-weight:800}.face:nth-child(1){background:#6573bd}.face:nth-child(2){background:#b27768}.face:nth-child(3){background:#558877}.face:nth-child(4){background:#a58243}.face.more{background:var(--soft);color:var(--muted)}
+    .action-panel{margin-top:19px;padding:20px;border-radius:23px;background:var(--ink);color:#fff}.action-panel h3{font-size:22px;line-height:1.15;letter-spacing:-.035em;margin:22px 0 7px}.action-panel p{color:#c5c8dd;font-size:10px;line-height:1.5;margin:0 0 17px}.metric-row{display:flex;gap:24px;margin-bottom:17px}.metric{flex:1}
+    .trail{display:flex;justify-content:space-between;margin:18px 0;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.trail-item{text-align:center;font-size:7px;color:var(--muted);font-weight:800}.trail-dot{width:23px;height:23px;border-radius:50%;border:1.5px dashed #b9bbc7;margin-bottom:5px;display:grid;place-items:center}.trail-dot.ok{border-style:solid;border-color:var(--green);background:var(--green);color:#fff}.trail-dot.current{border:2px solid var(--blue);box-shadow:0 0 0 4px var(--blue-soft);color:var(--blue)}
+    .upload{display:flex;align-items:center;gap:11px;padding:11px;border:1px solid var(--line);background:#fff;border-radius:13px}.thumb{width:46px;height:46px;border-radius:10px;background:linear-gradient(140deg,#31386c,#7182d7);color:#fff;display:grid;place-items:center}.upload strong{display:block;font-size:10px}.upload span{display:block;color:var(--green);font-size:8px;margin-top:3px}
+    .decision-box{margin:17px 0;padding:18px;border-radius:18px;background:var(--green-soft)}.decision-box.review{background:var(--blue-soft)}.decision-box.reject{background:var(--red-soft)}.decision-box.grace{background:var(--amber-soft)}.decision-box small{font-size:8px;text-transform:uppercase;letter-spacing:.09em;font-weight:800}.decision-box h3{font-size:19px;margin:7px 0 5px}.decision-box p{font-size:9px;line-height:1.5;margin:0;color:var(--muted)}
+    .money-hero{margin-top:15px;padding:20px;border-radius:22px;background:var(--ink);color:#fff}.money-hero small{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:#aeb9f3;font-weight:800}.money-hero h2{font-size:30px;margin:12px 0 2px}.money-hero p{font-size:9px;color:#bec1d7;margin:0}.money-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:17px}.money-grid div{padding-top:9px;border-top:1px solid rgba(255,255,255,.15)}.money-grid strong{font-size:10px;display:block}.money-grid span{font-size:7px;color:#969bb8;text-transform:uppercase;font-weight:800}
+    .bottom-nav{height:80px;position:absolute;left:0;right:0;bottom:0;padding:11px 12px 17px;background:rgba(255,255,255,.95);border-top:1px solid var(--line);display:flex;justify-content:space-around}.nav{font-size:8px;font-weight:800;color:#8b8d9a;text-align:center}.nav i{display:block;font-style:normal;font-size:16px;margin-bottom:5px}.nav.active{color:var(--blue)}
+    .panel{min-width:0}.panel-card{background:rgba(255,255,255,.76);border:1px solid rgba(31,35,72,.08);border-radius:20px;padding:18px;margin-bottom:14px;backdrop-filter:blur(14px)}
+    .panel-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.panel-title h3{margin:0;font-size:14px}.panel-title span{font-size:9px;color:var(--muted)}
+    .state-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.state{padding:10px 11px;border-radius:11px;background:var(--paper);border:1px solid var(--line)}.state small{display:block;font-size:7px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:800}.state strong{display:block;margin-top:4px;font-family:"Fira Mono",monospace;font-size:9px;overflow:hidden;text-overflow:ellipsis}
+    .actor-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actor-btn{text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:11px;min-height:58px;color:var(--ink)}.actor-btn:hover{border-color:var(--blue)}.actor-btn[hidden]{display:none}.actor-btn small{display:block;font-size:7px;text-transform:uppercase;letter-spacing:.09em;color:var(--blue);font-weight:800;margin-bottom:4px}.actor-btn strong{font-size:10px}.actor-btn.system small{color:var(--green)}.actor-btn.reviewer small{color:var(--amber)}.actor-btn.danger small{color:var(--red)}
+    .scenario-row{display:flex;gap:7px;flex-wrap:wrap}.scenario{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 11px;font-size:9px;font-weight:800;color:var(--muted)}.scenario.active{background:var(--ink);border-color:var(--ink);color:#fff}
+    .invariants{display:grid;gap:8px}.invariant{display:flex;gap:9px;align-items:flex-start;font-size:9px;line-height:1.35;color:var(--muted)}.invariant i{width:17px;height:17px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-style:normal;font-size:8px;flex:none}
+    .event-log{max-height:168px;overflow:auto;font-family:"Fira Mono",monospace;font-size:8px;line-height:1.6;color:var(--muted)}.event{padding:5px 0;border-bottom:1px solid var(--line)}.event b{color:var(--ink)}
+    @media(max-width:920px){.workspace{grid-template-columns:1fr}.phone-wrap{position:static}.panel{max-width:620px;margin:auto}.lab-head{display:block}.test-pill{display:inline-flex;margin-top:14px}.journey{overflow-x:auto;grid-template-columns:repeat(7,110px)}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <header class="lab-head">
+      <div>
+        <div class="eyebrow">Connected UX prototype · participant lifecycle</div>
+        <h1>Every screen owns a state.</h1>
+        <p class="intro">Click through the phone as a participant. Creator, chain, system and reviewer events are deliberately separated into the control rail so authority never leaks into the participant experience.</p>
+      </div>
+      <div class="test-pill"><i></i><span id="test-count">Architecture checks</span></div>
+    </header>
+
+    <div class="journey" id="journey">
+      <div class="journey-step" data-step="discover">Discover</div>
+      <div class="journey-step" data-step="apply">Apply</div>
+      <div class="journey-step" data-step="fund">Fund</div>
+      <div class="journey-step" data-step="waiting">Roster</div>
+      <div class="journey-step" data-step="activity">Activity</div>
+      <div class="journey-step" data-step="review">Review</div>
+      <div class="journey-step" data-step="settlement">Settlement</div>
+    </div>
+
+    <div class="workspace">
+      <section class="phone-wrap">
+        <div class="phone-label"><strong>Participant surface</strong><span id="route-label">/discover</span></div>
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>●●● ▱</span></div>
+
+          <section class="screen-page active" data-screen="discover">
+            <div class="topbar"><div class="wordmark"><span class="mark"><i></i><i></i><i></i></span>PODS</div><span class="avatar">AP</span></div>
+            <div class="main">
+              <h2 class="title">Discover</h2><p class="subtitle">Find a group worth committing to.</p>
+              <div class="filters"><button class="chip active">All</button><button class="chip">Fitness</button><button class="chip">Reading</button><button class="chip">Build</button></div>
+              <button class="feature" data-action="openPod"><span class="kicker">Featured · Build & Ship</span><h3>Build Pods in Public</h3><p>Four focused weeks to build, ship and document something real with other builders.</p><span class="meta3"><span><small>Commit</small><strong>24 NIM</strong></span><span><small>Starts</small><strong>4 Aug</strong></span><span><small>Places</small><strong>3 left</strong></span></span></button>
+              <div class="list-title"><h4>Starting soon</h4><span class="link">Filter</span></div>
+              <div class="pod-row"><span class="pod-icon">R</span><span class="pod-copy"><strong>Quiet Pages Club</strong><span>25 pages · Mon / Wed / Fri</span></span><span class="pod-side"><strong>18 NIM</strong><span>4 places</span></span></div>
+              <div class="pod-row"><span class="pod-icon" style="background:#e5f2ed;color:#18795c">M</span><span class="pod-copy"><strong>Morning Movement</strong><span>30 min · weekdays</span></span><span class="pod-side"><strong>20 NIM</strong><span>2 places</span></span></div>
+            </div>
+            <nav class="bottom-nav"><span class="nav"><i>⌂</i>Today</span><span class="nav active"><i>◇</i>Discover</span><span class="nav"><i>▱</i>My Pods</span><span class="nav"><i>□</i>Inbox</span><span class="nav"><i>○</i>Profile</span></nav>
+          </section>
+
+          <section class="screen-page" data-screen="preview">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--blue)">PUBLIC POD</span></div>
+            <div class="main focus">
+              <span class="kicker" style="color:var(--blue)">Build & Ship</span><h2 class="title">Build Pods in Public</h2><p class="subtitle">Build and ship something real with a focused group over four weeks.</p>
+              <div class="summary"><small>Complete commitment</small><strong>24 NIM upfront</strong></div>
+              <div class="facts"><div class="fact"><span>Schedule</span><strong>Mon / Wed / Fri</strong></div><div class="fact"><span>Occurrences</span><strong>12</strong></div><div class="fact"><span>Per occurrence</span><strong>2 NIM</strong></div><div class="fact"><span>Available places</span><strong>3 of 8</strong></div><div class="fact"><span>Verification</span><strong>Pods team</strong></div></div>
+              <div class="notice blue">Apply first. Acceptance lets you fund, but your place is secured only after payment finality and roster lock.</div>
+            </div>
+            <div class="sticky"><button class="button" data-action="startApply">Apply to join</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="apply">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--blue)">APPLICATION</span></div>
+            <div class="main focus">
+              <h2 class="title">Tell them why you’re joining</h2><p class="subtitle">Build Pods in Public · starts 4 August</p>
+              <div class="field"><label>What are you building?</label><div class="fake-input multi">A group accountability Mini App for the Nimiq ecosystem.</div></div>
+              <div class="field"><label>What do you want to ship?</label><div class="fake-input multi">A complete public test Pod and polished competition demo.</div></div>
+              <div class="checkline"><span class="checkbox">✓</span><span>I understand acceptance does not reserve a place. Funding and roster lock are still required.</span></div>
+            </div>
+            <div class="sticky"><button class="button" data-action="submitApplication">Submit application</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="applications">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--blue)">APPLICATION STATUS</span></div>
+            <div class="main focus">
+              <div class="status-hero"><span class="status-orb" id="app-orb">⋯</span><h2 id="app-title">Application sent</h2><p id="app-copy">The creator will review it before enrollment closes. No place has been reserved.</p></div>
+              <div class="facts"><div class="fact"><span>Pod</span><strong>Build Pods in Public</strong></div><div class="fact"><span>Commitment</span><strong>24 NIM</strong></div><div class="fact"><span>Enrollment closes</span><strong>2 Aug · 6 PM</strong></div></div>
+              <div class="notice" id="app-note">Waiting for creator decision. This screen is a status view, not a second application form.</div>
+            </div>
+            <div class="sticky"><button class="button" id="fund-cta" data-action="openFunding" hidden>Secure your place</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="fund">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--blue)">FUNDING</span></div>
+            <div class="main focus">
+              <h2 class="title">Commit 24 NIM</h2><p class="subtitle">12 occurrences × 2 NIM each</p>
+              <div class="summary"><small>Maximum amount at risk</small><strong>24 NIM</strong></div>
+              <div class="facts"><div class="fact"><span>Approved</span><strong>Principal + bonus eligible</strong></div><div class="fact"><span>Timeout protected</span><strong>Principal returned</strong></div><div class="fact"><span>Grace</span><strong>Principal returned</strong></div><div class="fact"><span>Rejected / missed</span><strong>Provisionally forfeited</strong></div></div>
+              <div class="notice blue">Verification is performed by the Pods team. Pod creators and participants do not vote on evidence or financial outcomes.</div>
+              <div class="notice">If Pods does not review within 24 hours, your occurrence deposit is protected but is not eligible for a bonus.</div>
+              <div class="checkline"><span class="checkbox">✓</span><span>I understand the frozen rules, custodial treasury, roster conditions and settlement outcomes.</span></div>
+            </div>
+            <div class="sticky"><button class="button" data-action="commitFunds">Commit 24 NIM</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="fundStatus">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--blue)">FUNDING STATUS</span></div>
+            <div class="main focus">
+              <div class="status-hero"><span class="status-orb" id="fund-orb">◇</span><h2 id="fund-title">Waiting on wallet confirmation</h2><p id="fund-copy">Confirm the 24 NIM transaction in Nimiq Pay. No NIM has been submitted yet.</p></div>
+              <div class="rail" id="fund-rail"></div>
+              <div class="notice" id="fund-note">Your place is not reserved until this payment is finalized, credited and included at roster lock.</div>
+            </div>
+            <div class="sticky"><button class="button" id="waiting-cta" data-action="enterWaiting" hidden>Enter waiting room</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="waiting">
+            <div class="topbar"><div class="wordmark"><span class="mark"><i></i><i></i><i></i></span>PODS</div><span class="avatar">AP</span></div>
+            <div class="main">
+              <span class="kicker" style="color:var(--green)">PLACE SECURED</span><h2 class="title">You’re in.</h2><p class="subtitle">Build Pods in Public begins Monday.</p>
+              <div class="waiting-count">6 members</div><p class="subtitle">Minimum 4 · Maximum 8</p>
+              <div class="faces"><span class="face">A</span><span class="face">M</span><span class="face">K</span><span class="face">S</span><span class="face more">+2</span></div>
+              <div class="summary"><small>First occurrence</small><strong>Monday · lock your task before 10:00 AM</strong></div>
+              <div class="facts"><div class="fact"><span>Your payment</span><strong>24 NIM · finalized</strong></div><div class="fact"><span>Schedule</span><strong>Mon / Wed / Fri</strong></div><div class="fact"><span>Evidence</span><strong>Commit, PR or live artifact</strong></div></div>
+              <div class="notice green">Rules are locked. The creator can announce updates, but cannot change the activity or decide evidence.</div>
+            </div>
+            <nav class="bottom-nav"><span class="nav active"><i>⌂</i>Today</span><span class="nav"><i>◇</i>Discover</span><span class="nav"><i>▱</i>My Pods</span><span class="nav"><i>□</i>Inbox</span><span class="nav"><i>○</i>Profile</span></nav>
+          </section>
+
+          <section class="screen-page" data-screen="today">
+            <div class="topbar"><div class="wordmark"><span class="mark"><i></i><i></i><i></i></span>PODS</div><span class="avatar">AP</span></div>
+            <div class="main">
+              <h2 class="title">Today</h2><p class="subtitle">Monday, 4 August · one thing needs you</p>
+              <div class="action-panel"><span class="kicker">BUILD & SHIP · OCCURRENCE 1</span><h3>Show what you completed</h3><p>Ship the responsive discovery screen and connect it to real data.</p><div class="metric-row"><span class="metric"><small>Due</small><strong>8:00 PM</strong></span><span class="metric"><small>Slice</small><strong>2 NIM</strong></span><span class="metric"><small>Streak</small><strong>0</strong></span></div><button class="button" data-action="openEvidence">Add evidence</button></div>
+              <div class="trail"><span class="trail-item"><span class="trail-dot current">1</span>Today</span><span class="trail-item"><span class="trail-dot"></span>W</span><span class="trail-item"><span class="trail-dot"></span>F</span><span class="trail-item"><span class="trail-dot"></span>M</span><span class="trail-item"><span class="trail-dot"></span>W</span><span class="trail-item"><span class="trail-dot"></span>F</span></div>
+              <div class="notice">0 of 6 have submitted for this occurrence. Raw evidence stays inside the configured evidence contract.</div>
+            </div>
+            <nav class="bottom-nav"><span class="nav active"><i>⌂</i>Today</span><span class="nav"><i>◇</i>Discover</span><span class="nav"><i>▱</i>My Pods</span><span class="nav"><i>□</i>Inbox</span><span class="nav"><i>○</i>Profile</span></nav>
+          </section>
+
+          <section class="screen-page" data-screen="evidence">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--green)">DRAFT SAVED</span></div>
+            <div class="main focus">
+              <h2 class="title">Add evidence</h2><p class="subtitle">Build Pods in Public · due 8:00 PM</p>
+              <div class="summary"><small>Locked commitment</small><strong>Ship the responsive discovery screen and connect it to real data.</strong></div>
+              <div class="facts"><div class="fact"><span>Occurrence slice</span><strong>2 NIM</strong></div><div class="fact"><span>Current streak</span><strong>0</strong></div></div>
+              <div class="field"><label>Result summary</label><div class="fake-input multi">Built the responsive view, connected filters and completed the empty state.</div></div>
+              <div class="field"><label>Commit, PR or live artifact</label><div class="fake-input" style="font-family:'Fira Mono';color:var(--blue)">github.com/pods-app/pull/42</div></div>
+              <div class="upload"><span class="thumb">▱</span><span><strong>discovery-mobile.png</strong><span>Uploaded · private</span></span></div>
+            </div>
+            <div class="sticky"><button class="button" data-action="reviewEvidence">Review evidence</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="evidenceReview">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--blue)">REVIEW DRAFT</span></div>
+            <div class="main focus">
+              <h2 class="title">Ready to submit?</h2><p class="subtitle">Submission counts only after Pods confirms it.</p>
+              <div class="summary"><small>Reviewed against</small><strong>Ship the responsive discovery screen and connect it to real data.</strong></div>
+              <div class="facts"><div class="fact"><span>Result summary</span><strong>Complete</strong></div><div class="fact"><span>Artifact link</span><strong>Pull request #42</strong></div><div class="fact"><span>Supporting image</span><strong>Uploaded</strong></div><div class="fact"><span>Deadline</span><strong>Today · 8 PM</strong></div></div>
+              <div class="notice blue">Pods will review this evidence against the frozen activity rules. The creator cannot approve or reject it.</div>
+              <button class="button secondary" data-action="back">Edit evidence</button>
+            </div>
+            <div class="sticky"><button class="button" data-action="submitEvidence">Submit for review</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="submission">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--blue)">SUBMISSION</span></div>
+            <div class="main focus">
+              <div class="decision-box review" id="decision-box"><small id="decision-kicker">PODS REVIEW</small><h3 id="decision-title">Awaiting review</h3><p id="decision-copy">Pods targets a decision within 12 hours. Your principal becomes timeout-protected at the 24-hour deadline.</p></div>
+              <div class="facts"><div class="fact"><span>Submitted</span><strong>Today · 4:18 PM</strong></div><div class="fact"><span>Hard deadline</span><strong>Tomorrow · 4:18 PM</strong></div><div class="fact"><span>Occurrence slice</span><strong id="slice-outcome">Pending · 2 NIM</strong></div><div class="fact"><span>Streak outcome</span><strong id="streak-outcome">Pending</strong></div></div>
+              <div class="summary"><small>Evidence submitted</small><strong>Pull request #42 · responsive discovery screen</strong></div>
+              <div class="notice" id="decision-note">Only the Pods reviewer or timeout worker can create the next financial result.</div>
+            </div>
+            <div class="sticky"><button class="button" id="dispute-cta" data-action="openDispute" hidden>Request reconsideration</button><button class="button" id="settlement-cta" data-action="viewSettlement" hidden>View settlement</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="dispute">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" style="color:var(--red)">RECONSIDERATION</span></div>
+            <div class="main focus">
+              <h2 class="title">Add fresh context</h2><p class="subtitle">This is the one dispute available for this occurrence.</p>
+              <div class="notice red"><strong>Original reason:</strong><br>The submitted link did not show the locked deliverable at review time.</div>
+              <div class="field"><label>What should Pods reconsider?</label><div class="fake-input multi">The preview deployment finished after the initial review. The same PR now links to the complete working screen.</div></div>
+              <div class="notice">Pods will review your submission again. A different reviewer may handle it when available.</div>
+            </div>
+            <div class="sticky"><button class="button" data-action="submitDispute">Submit dispute</button></div>
+          </section>
+
+          <section class="screen-page" data-screen="settlement">
+            <div class="topbar"><button class="back" data-action="back">‹</button><span class="kicker" id="settlement-status" style="color:var(--blue)">SETTLEMENT READY</span></div>
+            <div class="main">
+              <div class="money-hero"><small>Build Pods in Public</small><h2 id="entitlement">27.4 NIM</h2><p id="entitlement-copy">Your finalized entitlement</p><div class="money-grid"><div><span>Committed</span><strong>24 NIM</strong></div><div><span>Protected</span><strong>22 NIM</strong></div><div><span>Bonus</span><strong>+5.4 NIM</strong></div><div><span>Forfeiture</span><strong>−2 NIM</strong></div></div></div>
+              <div class="list-title"><h4>Transfer</h4><span class="link">Technical details</span></div>
+              <div class="rail" id="payout-rail"></div>
+              <div class="notice green">All participant deposits are assigned to participant payouts or refunds. Network fees are paid separately by Pods.</div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <section class="panel-card">
+          <div class="panel-title"><h3>Current domain state</h3><span>read-only projection</span></div>
+          <div class="state-grid">
+            <div class="state"><small>Route</small><strong id="state-route">/discover</strong></div>
+            <div class="state"><small>Pod</small><strong id="state-pod">enrollment_open</strong></div>
+            <div class="state"><small>Application</small><strong id="state-application">none</strong></div>
+            <div class="state"><small>Membership</small><strong id="state-membership">none</strong></div>
+            <div class="state"><small>Deposit</small><strong id="state-deposit">none</strong></div>
+            <div class="state"><small>Occurrence</small><strong id="state-occurrence">scheduled</strong></div>
+            <div class="state"><small>Submission</small><strong id="state-submission">none</strong></div>
+            <div class="state"><small>Settlement</small><strong id="state-settlement">none</strong></div>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-title"><h3>External actor events</h3><span>never participant buttons</span></div>
+          <div class="actor-actions">
+            <button class="actor-btn" data-external="acceptApplicant" hidden><small>Creator</small><strong>Accept applicant</strong></button>
+            <button class="actor-btn" data-external="confirmWallet" hidden><small>Nimiq Pay</small><strong>Confirm wallet payment</strong></button>
+            <button class="actor-btn system" data-external="observeDeposit" hidden><small>Chain watcher</small><strong>Observe transaction</strong></button>
+            <button class="actor-btn system" data-external="finalizeDeposit" hidden><small>Chain</small><strong>Reach finality</strong></button>
+            <button class="actor-btn system" data-external="creditDeposit" hidden><small>Watcher</small><strong>Credit deposit intent</strong></button>
+            <button class="actor-btn system" data-external="lockRoster" hidden><small>Cutoff worker</small><strong>Lock participant roster</strong></button>
+            <button class="actor-btn system" data-external="startPod" hidden><small>Occurrence worker</small><strong>Open first occurrence</strong></button>
+            <button class="actor-btn reviewer" data-external="approveEvidence" hidden><small>Pods reviewer</small><strong>Approve evidence</strong></button>
+            <button class="actor-btn danger" data-external="rejectEvidence" hidden><small>Pods reviewer</small><strong>Reject evidence</strong></button>
+            <button class="actor-btn system" data-external="timeoutProtect" hidden><small>Timeout worker</small><strong>Apply timeout protection</strong></button>
+            <button class="actor-btn reviewer" data-external="resolveDisputeApproved" hidden><small>Pods reviewer</small><strong>Resolve dispute: approved</strong></button>
+            <button class="actor-btn reviewer" data-external="resolveDisputeGrace" hidden><small>Pods reviewer</small><strong>Resolve dispute: grace</strong></button>
+            <button class="actor-btn system" data-external="closeFinalReview" hidden><small>Occurrence worker</small><strong>Close final review window</strong></button>
+            <button class="actor-btn system" data-external="prepareSettlement" hidden><small>Settlement worker</small><strong>Calculate entitlement</strong></button>
+            <button class="actor-btn system" data-external="broadcastPayout" hidden><small>Payout worker</small><strong>Broadcast payout</strong></button>
+            <button class="actor-btn system" data-external="confirmPayout" hidden><small>Chain watcher</small><strong>Confirm payout</strong></button>
+          </div>
+          <div class="notice" id="external-empty">Complete the participant action shown in the phone to unlock the next external event.</div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-title"><h3>Branch presets</h3><span>consistent state snapshots</span></div>
+          <div class="scenario-row">
+            <button class="scenario active" data-scenario="happy">Happy path</button>
+            <button class="scenario" data-scenario="refund">Capacity refund</button>
+            <button class="scenario" data-scenario="timeout">Review timeout</button>
+            <button class="scenario" data-scenario="rejected">Rejected + dispute</button>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-title"><h3>Invariants enforced</h3><span>UX architecture</span></div>
+          <div class="invariants">
+            <div class="invariant"><i>✓</i><span>Application acceptance never claims the roster place is secured.</span></div>
+            <div class="invariant"><i>✓</i><span>Wallet, chain finality, credit and roster lock remain separate states.</span></div>
+            <div class="invariant"><i>✓</i><span>Participant cannot trigger creator, reviewer or worker transitions.</span></div>
+            <div class="invariant"><i>✓</i><span>Provisional outcomes never use final payout language.</span></div>
+            <div class="invariant"><i>✓</i><span>Disputes remain on the submission route rather than inventing a public route.</span></div>
+            <div class="invariant"><i>✓</i><span>Every external event updates one authoritative domain transition before UI copy.</span></div>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-title"><h3>Transition log</h3><span>latest first</span></div>
+          <div class="event-log" id="event-log"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    (function(){
+      var screens = {
+        discover:'/discover', preview:'/pods/build-public', apply:'/pods/build-public/apply',
+        applications:'/applications', fund:'/pods/build-public/fund',
+        fundStatus:'/pods/build-public/fund/status', waiting:'/pods/build-public/today',
+        today:'/today', evidence:'/pods/build-public/activity/occ-1',
+        evidenceReview:'/pods/build-public/activity/occ-1',
+        submission:'/pods/build-public/submissions/sub-1',
+        dispute:'/pods/build-public/submissions/sub-1',
+        settlement:'/pods/build-public/settlement'
+      };
+      var initial = {
+        screen:'discover', pod:'enrollment_open', application:'none', membership:'none',
+        deposit:'none', occurrence:'scheduled', submission:'none', settlement:'none',
+        payout:'none', history:[], log:[]
+      };
+      var state = clone(initial);
+
+      function clone(value){ return JSON.parse(JSON.stringify(value)); }
+      function log(actor, message){
+        state.log.unshift({actor:actor,message:message});
+        if(state.log.length>10) state.log.pop();
+      }
+      function go(screen, keepHistory){
+        if(keepHistory !== false && state.screen !== screen) state.history.push(state.screen);
+        state.screen = screen;
+        render();
+      }
+      function back(){
+        if(!state.history.length) return;
+        state.screen = state.history.pop();
+        render();
+      }
+      function step(){
+        if(['discover','preview'].indexOf(state.screen)>=0) return 'discover';
+        if(['apply','applications'].indexOf(state.screen)>=0) return 'apply';
+        if(['fund','fundStatus'].indexOf(state.screen)>=0) return 'fund';
+        if(state.screen==='waiting') return 'waiting';
+        if(['today','evidence','evidenceReview'].indexOf(state.screen)>=0) return 'activity';
+        if(['submission','dispute'].indexOf(state.screen)>=0) return 'review';
+        return 'settlement';
+      }
+      var stepOrder=['discover','apply','fund','waiting','activity','review','settlement'];
+
+      function userAction(action){
+        if(action==='back') return back();
+        if(action==='openPod'){ log('Participant','Opened public Pod preview'); return go('preview'); }
+        if(action==='startApply'){ log('Participant','Started public application'); return go('apply'); }
+        if(action==='submitApplication'){
+          state.application='applied'; state.membership='applied';
+          log('Participant','Submitted application'); return go('applications');
+        }
+        if(action==='openFunding' && state.application==='accepted'){ log('Participant','Opened funding contract'); return go('fund'); }
+        if(action==='commitFunds' && state.membership==='accepted_unfunded'){
+          state.deposit='wallet_approval_pending'; state.membership='deposit_pending';
+          log('Participant','Created deposit intent and opened Nimiq Pay'); return go('fundStatus');
+        }
+        if(action==='enterWaiting' && state.membership==='roster_locked'){ log('Participant','Entered locked waiting room'); return go('waiting'); }
+        if(action==='openEvidence' && state.pod==='active'){ log('Participant','Opened evidence draft'); return go('evidence'); }
+        if(action==='reviewEvidence'){ log('Participant','Reviewed durable draft'); return go('evidenceReview'); }
+        if(action==='submitEvidence'){
+          state.submission='reviewing'; state.occurrence='review_open';
+          log('Participant','Submitted evidence to Pods review'); return go('submission');
+        }
+        if(action==='openDispute' && state.submission==='rejected'){ log('Participant','Opened single dispute form'); return go('dispute'); }
+        if(action==='submitDispute' && state.submission==='rejected'){
+          state.submission='disputed'; log('Participant','Submitted fresh dispute context'); return go('submission');
+        }
+        if(action==='viewSettlement' && state.settlement!=='none') return go('settlement');
+      }
+
+      function external(action){
+        if(action==='acceptApplicant' && state.application==='applied'){
+          state.application='accepted'; state.membership='accepted_unfunded'; log('Creator','Accepted applicant for funding');
+        } else if(action==='confirmWallet' && state.deposit==='wallet_approval_pending'){
+          state.deposit='transaction_submitted'; log('Nimiq Pay','Returned transaction hash hint');
+        } else if(action==='observeDeposit' && state.deposit==='transaction_submitted'){
+          state.deposit='observed'; log('Chain watcher','Observed matching transaction');
+        } else if(action==='finalizeDeposit' && state.deposit==='observed'){
+          state.deposit='finalized'; log('Chain','Deposit reached required finality');
+        } else if(action==='creditDeposit' && state.deposit==='finalized'){
+          state.deposit='credited_provisional'; state.membership='funded_provisional'; log('Watcher','Credited deposit to membership intent');
+        } else if(action==='lockRoster' && state.deposit==='credited_provisional'){
+          state.deposit='applied_to_roster'; state.membership='roster_locked'; state.pod='locked_scheduled'; log('Cutoff worker','Included membership in deterministic roster');
+        } else if(action==='startPod' && state.pod==='locked_scheduled'){
+          state.pod='active'; state.membership='active'; state.occurrence='evidence_open'; log('Occurrence worker','Opened first scheduled occurrence'); go('today',false); return;
+        } else if(action==='approveEvidence' && ['reviewing','disputed'].indexOf(state.submission)>=0){
+          state.submission='approved'; state.occurrence='finalized_with_bonus_pool'; log('Pods reviewer','Approved evidence against frozen rules');
+        } else if(action==='rejectEvidence' && state.submission==='reviewing'){
+          state.submission='rejected'; state.occurrence='dispute_window'; log('Pods reviewer','Rejected evidence with reason');
+        } else if(action==='timeoutProtect' && state.submission==='reviewing'){
+          state.submission='timeout_protected'; state.occurrence='finalized_with_bonus_pool'; log('Timeout worker','Protected principal at hard SLA');
+        } else if(action==='resolveDisputeApproved' && state.submission==='disputed'){
+          state.submission='approved'; state.occurrence='finalized_with_bonus_pool'; log('Pods reviewer','Resolved dispute as approved');
+        } else if(action==='resolveDisputeGrace' && state.submission==='disputed'){
+          state.submission='grace'; state.occurrence='closed_no_bonus_recipient'; log('Pods reviewer','Resolved ambiguous dispute with grace');
+        } else if(action==='closeFinalReview' && state.pod==='active' && ['approved','timeout_protected','grace','rejected'].indexOf(state.submission)>=0){
+          state.pod='final_review'; log('Occurrence worker','Closed the final evidence and dispute window');
+        } else if(action==='prepareSettlement' && state.pod==='final_review'){
+          state.pod='settlement_ready'; state.settlement='preview'; log('Settlement worker','Calculated immutable entitlement'); go('settlement',false); return;
+        } else if(action==='broadcastPayout' && state.settlement==='preview'){
+          state.pod='payout_processing'; state.settlement='executing'; state.payout='broadcast'; log('Payout worker','Broadcast immutable transfer leg');
+        } else if(action==='confirmPayout' && state.payout==='broadcast'){
+          state.pod='settled'; state.membership='completed'; state.settlement='settled'; state.payout='confirmed'; log('Chain watcher','Confirmed payout transfer and completed membership');
+        }
+        render();
+      }
+
+      function preset(name){
+        state=clone(initial);
+        document.querySelectorAll('.scenario').forEach(function(b){ b.classList.toggle('active',b.dataset.scenario===name); });
+        if(name==='happy'){ log('Prototype','Reset to happy-path entry'); }
+        if(name==='refund'){
+          state.screen='fundStatus'; state.application='accepted'; state.membership='excluded_at_cutoff';
+          state.deposit='refund_pending'; state.pod='locked_scheduled'; log('Cutoff worker','Capacity tie-break excluded membership; full refund queued');
+        }
+        if(name==='timeout'){
+          state.screen='submission'; state.application='accepted'; state.membership='active'; state.deposit='applied_to_roster';
+          state.pod='active'; state.occurrence='finalized_with_bonus_pool'; state.submission='timeout_protected';
+          log('Timeout worker','Applied timeout protection while submission screen was open');
+        }
+        if(name==='rejected'){
+          state.screen='submission'; state.application='accepted'; state.membership='active'; state.deposit='applied_to_roster';
+          state.pod='active'; state.occurrence='dispute_window'; state.submission='rejected';
+          log('Pods reviewer','Rejected evidence; one dispute available');
+        }
+        render();
+      }
+
+      function fundingStage(){
+        var order=['wallet_approval_pending','transaction_submitted','observed','finalized','credited_provisional','applied_to_roster'];
+        return Math.max(0,order.indexOf(state.deposit));
+      }
+      function renderFund(){
+        var labels=[
+          ['Waiting on wallet confirmation','Confirm the 24 NIM transaction in Nimiq Pay. No NIM has been submitted yet.'],
+          ['Transaction submitted','Pods is looking for the transaction independently.'],
+          ['Transaction observed','The matching payment was found and is waiting for finality.'],
+          ['Payment finalized','The transaction is irreversible and is being credited.'],
+          ['Commitment confirmed','Payment is matched to your membership. Roster lock is still pending.'],
+          ['Your place is secured','Funding finalized and the cutoff snapshot included your membership.']
+        ];
+        var stages=['Wallet confirmation','Transaction submitted','Chain observed','Chain finalized','Payment credited','Roster locked'];
+        var rail=document.getElementById('fund-rail');
+        var title=document.getElementById('fund-title'), copy=document.getElementById('fund-copy'), orb=document.getElementById('fund-orb');
+        var cta=document.getElementById('waiting-cta'), note=document.getElementById('fund-note');
+        if(state.deposit==='refund_pending'){
+          title.textContent='Pod filled before roster lock'; copy.textContent='Your 24 NIM payment is excluded from the roster and a complete refund is queued.';
+          orb.textContent='↩'; orb.className='status-orb amber'; cta.hidden=true;
+          note.className='notice amber'; note.textContent='This is not participant failure. Capacity ordering used finalized-chain position and the disclosed tie-break.';
+          rail.innerHTML='<div class="rail-row done"><span class="rail-dot">✓</span><span class="rail-copy"><strong>Payment finalized</strong><span>24 NIM confirmed</span></span></div><div class="rail-row current"><span class="rail-dot">2</span><span class="rail-copy"><strong>Refund queued</strong><span>Waiting for broadcast</span></span></div><div class="rail-row"><span class="rail-dot">3</span><span class="rail-copy"><strong>Refund confirmed</strong><span>Future state</span></span></div>';
+          return;
+        }
+        var idx=fundingStage(); title.textContent=labels[idx][0]; copy.textContent=labels[idx][1];
+        orb.className='status-orb'+(idx===5?' green':''); orb.textContent=idx===5?'✓':'◇';
+        rail.innerHTML=stages.map(function(label,i){
+          var cls=i<idx?'done':(i===idx?'current':'');
+          return '<div class="rail-row '+cls+'"><span class="rail-dot">'+(i<idx?'✓':(i+1))+'</span><span class="rail-copy"><strong>'+label+'</strong><span>'+(i<idx?'Complete':i===idx?'Current state':'Not started')+'</span></span></div>';
+        }).join('');
+        cta.hidden=state.membership!=='roster_locked'; note.className='notice';
+        note.textContent=idx===5?'Your rules and roster are now immutable.':'Your place is not reserved until this payment is finalized, credited and included at roster lock.';
+      }
+      function renderApplication(){
+        var accepted=state.application==='accepted';
+        document.getElementById('app-orb').textContent=accepted?'✓':'⋯';
+        document.getElementById('app-orb').className='status-orb'+(accepted?' green':'');
+        document.getElementById('app-title').textContent=accepted?'Accepted - funding required':'Application sent';
+        document.getElementById('app-copy').textContent=accepted?'You may now fund. Acceptance alone has not reserved a place.':'The creator will review it before enrollment closes. No place has been reserved.';
+        document.getElementById('app-note').textContent=accepted?'Commit 24 NIM before the cutoff, then wait for payment finality and roster lock.':'Waiting for creator decision. This screen is a status view, not a second application form.';
+        document.getElementById('fund-cta').hidden=!accepted;
+      }
+      function renderDecision(){
+        var box=document.getElementById('decision-box'), kicker=document.getElementById('decision-kicker'), title=document.getElementById('decision-title'), copy=document.getElementById('decision-copy');
+        var slice=document.getElementById('slice-outcome'), streak=document.getElementById('streak-outcome'), note=document.getElementById('decision-note');
+        var dispute=document.getElementById('dispute-cta'), settle=document.getElementById('settlement-cta');
+        dispute.hidden=true; settle.hidden=true; box.className='decision-box review';
+        var s=state.submission;
+        if(s==='reviewing'){kicker.textContent='PODS REVIEW';title.textContent='Awaiting review';copy.textContent='Pods targets a decision within 12 hours. Principal becomes timeout-protected at the 24-hour deadline.';slice.textContent='Pending · 2 NIM';streak.textContent='Pending';note.textContent='Only the Pods reviewer or timeout worker can create the next financial result.'}
+        if(s==='approved'){box.className='decision-box';kicker.textContent='APPROVED';title.textContent='Activity approved';copy.textContent='Your principal is protected and you are eligible for this occurrence’s bonus pool.';slice.textContent='Protected · bonus eligible';streak.textContent='Extends';note.textContent='The bonus amount remains provisional until settlement.'}
+        if(s==='timeout_protected'){kicker.textContent='TIMEOUT PROTECTED';title.textContent='Principal protected';copy.textContent='Pods did not decide by the hard deadline. No bonus is earned, and your streak extends.';slice.textContent='Protected · no bonus';streak.textContent='Extends';note.textContent='This financial result is final and cannot be reversed by a late review.'}
+        if(s==='rejected'){box.className='decision-box reject';kicker.textContent='REJECTED';title.textContent='Evidence did not meet the rule';copy.textContent='The reviewed artifact did not show the locked deliverable at decision time.';slice.textContent='Provisionally forfeited';streak.textContent='Breaks';note.textContent='If nobody qualifies for the occurrence bonus, the provisional forfeiture returns at settlement.';dispute.hidden=false}
+        if(s==='disputed'){box.className='decision-box grace';kicker.textContent='RECONSIDERATION';title.textContent='Fresh context under review';copy.textContent='A different reviewer may handle it when available. Grace applies if the hard deadline passes.';slice.textContent='Provisional result pending';streak.textContent='Pending';note.textContent='No second dispute or clarification is available.'}
+        if(s==='grace'){box.className='decision-box grace';kicker.textContent='GRACE';title.textContent='Resolved with grace';copy.textContent='The evidence remained genuinely ambiguous after reconsideration.';slice.textContent='Protected · no bonus';streak.textContent='Preserved';note.textContent='Grace protects principal but does not extend the streak.'}
+        if(['approved','timeout_protected','grace'].indexOf(s)>=0 && state.settlement!=='none') settle.hidden=false;
+      }
+      function renderPayout(){
+        var order=['none','preview','executing','settled'], idx=order.indexOf(state.settlement);
+        var labels=['Entitlement calculated','Transfer queued / broadcast','Transfer confirmed'];
+        document.getElementById('payout-rail').innerHTML=labels.map(function(label,i){
+          var cls=i<idx?'done':(i===idx?'current':'');
+          return '<div class="rail-row '+cls+'"><span class="rail-dot">'+(i<idx?'✓':i+1)+'</span><span class="rail-copy"><strong>'+label+'</strong><span>'+(i<idx?'Complete':i===idx?'Current state':'Not started')+'</span></span></div>';
+        }).join('');
+        document.getElementById('settlement-status').textContent=state.settlement==='settled'?'POD SETTLED':'SETTLEMENT IN PROGRESS';
+        document.getElementById('entitlement-copy').textContent=state.settlement==='settled'?'Received in your Nimiq wallet':'Your finalized entitlement';
+      }
+      function externalVisibility(){
+        var rules={
+          acceptApplicant:state.application==='applied',
+          confirmWallet:state.deposit==='wallet_approval_pending',
+          observeDeposit:state.deposit==='transaction_submitted',
+          finalizeDeposit:state.deposit==='observed',
+          creditDeposit:state.deposit==='finalized',
+          lockRoster:state.deposit==='credited_provisional',
+          startPod:state.pod==='locked_scheduled' && state.membership==='roster_locked',
+          approveEvidence:['reviewing','disputed'].indexOf(state.submission)>=0,
+          rejectEvidence:state.submission==='reviewing',
+          timeoutProtect:state.submission==='reviewing',
+          resolveDisputeApproved:state.submission==='disputed',
+          resolveDisputeGrace:state.submission==='disputed',
+          closeFinalReview:state.pod==='active' && ['approved','timeout_protected','grace','rejected'].indexOf(state.submission)>=0,
+          prepareSettlement:state.pod==='final_review' && state.settlement==='none',
+          broadcastPayout:state.settlement==='preview',
+          confirmPayout:state.payout==='broadcast'
+        };
+        var count=0;
+        document.querySelectorAll('[data-external]').forEach(function(btn){var show=!!rules[btn.dataset.external];btn.hidden=!show;if(show)count++;});
+        document.getElementById('external-empty').hidden=count>0;
+      }
+      function render(){
+        document.querySelectorAll('.screen-page').forEach(function(s){s.classList.toggle('active',s.dataset.screen===state.screen)});
+        var route=screens[state.screen]; document.getElementById('route-label').textContent=route; document.getElementById('state-route').textContent=route;
+        ['pod','application','membership','deposit','occurrence','submission','settlement'].forEach(function(key){document.getElementById('state-'+key).textContent=state[key]});
+        var current=step(), currentIdx=stepOrder.indexOf(current);
+        document.querySelectorAll('.journey-step').forEach(function(el){var idx=stepOrder.indexOf(el.dataset.step);el.classList.toggle('active',idx===currentIdx);el.classList.toggle('done',idx<currentIdx)});
+        renderApplication(); renderFund(); renderDecision(); renderPayout(); externalVisibility();
+        document.getElementById('event-log').innerHTML=state.log.length?state.log.map(function(e){return '<div class="event"><b>'+e.actor+'</b> · '+e.message+'</div>'}).join(''):'<div class="event">No transitions yet.</div>';
+      }
+      function architectureChecks(){
+        var checks=[];
+        checks.push(Object.keys(screens).every(function(id){return document.querySelector('[data-screen="'+id+'"]')}));
+        checks.push(screens.evidence===screens.evidenceReview);
+        checks.push(screens.submission===screens.dispute);
+        checks.push(document.querySelectorAll('[data-external]').length===16);
+        checks.push(document.querySelectorAll('.journey-step').length===7);
+        checks.push(['unknown','retryable_failed','mismatched','late','manual_review'].length===5);
+        window.__podsFlowChecks=checks;
+        document.getElementById('test-count').textContent=checks.filter(Boolean).length+'/'+checks.length+' architecture checks passing';
+        return checks.every(Boolean);
+      }
+      document.addEventListener('click',function(event){
+        var action=event.target.closest('[data-action]'); if(action){userAction(action.dataset.action);return}
+        var ext=event.target.closest('[data-external]'); if(ext){external(ext.dataset.external);return}
+        var sc=event.target.closest('[data-scenario]'); if(sc){preset(sc.dataset.scenario)}
+      });
+      architectureChecks(); render();
+    })();
+  </script>
+</body>
+</html>

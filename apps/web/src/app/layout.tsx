@@ -1,0 +1,27 @@
+import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
+
+import "@fontsource-variable/mulish";
+import "@fontsource/fira-mono/400.css";
+import "@fontsource/fira-mono/700.css";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Pods | Earned Momentum",
+  description: "NIM-backed group activity accountability inside Nimiq Pay."
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f8f7f2"
+};
+
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}

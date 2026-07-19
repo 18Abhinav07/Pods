@@ -1,0 +1,35 @@
+{
+  "name": "pods",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.13.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev:lan": "pnpm --filter @pods/web dev --hostname 0.0.0.0 --port 3411",
+    "dev:worker": "pnpm --filter @pods/worker dev",
+    "lint": "eslint . && pnpm lint:copy",
+    "lint:copy": "node --import tsx scripts/check-copy.ts",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm test:root && pnpm test:packages",
+    "test:root": "vitest run scripts/check-copy.test.ts",
+    "test:packages": "pnpm -r --if-present test",
+    "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests",
+    "test:e2e": "pnpm --filter @pods/web test:e2e",
+    "services:up": "docker compose up -d --wait",
+    "services:down": "docker compose down",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm build"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "24.10.13",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.10",
+    "tsx": "4.23.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

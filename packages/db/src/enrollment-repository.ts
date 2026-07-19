@@ -6,7 +6,7 @@ import {
   type ApplicationAnswer,
   type ApplicationDecision
 } from "@pods/domain";
-import { and, asc, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import * as schema from "./schema";
@@ -462,7 +462,11 @@ export function createEnrollmentMethods(database: PodsDatabase) {
           and(
             eq(memberships.userId, userId),
             eq(memberships.podId, podId),
-            eq(memberships.state, "accepted_unfunded")
+            inArray(memberships.state, [
+              "accepted_unfunded",
+              "funding_failed",
+              "deposit_pending"
+            ])
           )
         );
       return pod?.pod ?? null;

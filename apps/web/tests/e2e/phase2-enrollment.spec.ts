@@ -164,11 +164,8 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await applicantPage.reload();
     await expect(applicantPage.getByText("Accepted, funding required")).toBeVisible();
     await applicantPage.getByRole("link", { name: "Continue to funding" }).click();
-    await expect(applicantPage.getByRole("heading", { name: "Your place is not secured yet." })).toBeVisible();
-    await expect(applicantPage.getByText("No NIM is being requested in Phase 2.")).toBeVisible();
-    await expect(
-      applicantPage.getByRole("button", { name: /fund|send NIM|confirm payment/i })
-    ).toHaveCount(0);
+    await expect(applicantPage.getByRole("heading", { name: "Back your place." })).toBeVisible();
+    await expect(applicantPage.getByRole("button", { name: "Commit 0.5 NIM" })).toBeDisabled();
 
     await applicantPage.goto(`${baseUrl}/today`);
     await expect(applicantPage.getByRole("heading", { name: "Your acceptance is waiting for funding." })).toBeVisible();
@@ -203,7 +200,8 @@ test("private enrollment stays hidden and consumes one opaque invitation once", 
     await inviteePage.getByLabel(/I accept this frozen contract/).check();
     await inviteePage.getByRole("button", { name: "Accept private invitation" }).click();
     await expect(inviteePage).toHaveURL(new RegExp(`/pods/${pod.id}/fund$`));
-    await expect(inviteePage.getByText("No NIM is being requested in Phase 2.")).toBeVisible();
+    await expect(inviteePage.getByRole("heading", { name: "Back your place." })).toBeVisible();
+    await expect(inviteePage.getByRole("button", { name: "Commit 0.5 NIM" })).toBeDisabled();
   } finally {
     await inviteeContext.close();
   }

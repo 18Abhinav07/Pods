@@ -14,7 +14,10 @@ Pods-team review.
 
 ## Current status
 
-Phase 0 foundation is in progress. Product features are not yet available.
+Phase 0, Phase 1, and Phase 2 are physically approved. Phase 3A funding is
+implemented through independent Testnet observation and provisional ledger
+credit. Automated gates pass and the real Nimiq Pay phone transaction is the
+remaining checkpoint before cutoff, roster lock, and refunds are built.
 
 ## Local development
 
@@ -30,10 +33,15 @@ corepack pnpm install
 corepack pnpm services:up
 corepack pnpm check
 corepack pnpm dev:lan
+corepack pnpm dev:worker
 ```
 
 Open the printed LAN URL through Nimiq Pay Custom URL on a device connected to
 the same Wi-Fi network.
+
+The web process reads only the Testnet treasury address. The worker reads the
+ignored local treasury configuration, watches Nimiq RPC, and is the only
+process allowed to finalize and credit a deposit.
 
 ## Phase 0 outbound preflight
 

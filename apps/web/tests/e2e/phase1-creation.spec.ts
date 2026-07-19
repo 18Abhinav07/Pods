@@ -1,9 +1,10 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 import { KeyPair, PrivateKey } from "@nimiq/core";
 import { expect, test, type BrowserContext } from "@playwright/test";
 
-const baseUrl = "http://127.0.0.1:3410";
+const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3410";
+const signedMessagePrefix = "\x16Nimiq Signed Message:\n";
 
 function dateInput(daysFromToday: number) {
   const date = new Date();
@@ -18,11 +19,18 @@ async function authenticate(context: BrowserContext) {
   });
   expect(challengeResponse.ok()).toBe(true);
   const challenge = (await challengeResponse.json()) as { id: string; message: string };
+  const messageBytes = new TextEncoder().encode(challenge.message);
+  const signedPayload = Buffer.concat([
+    Buffer.from(signedMessagePrefix, "utf8"),
+    Buffer.from(String(messageBytes.byteLength), "utf8"),
+    Buffer.from(messageBytes)
+  ]);
+  const digest = createHash("sha256").update(signedPayload).digest();
   const verifyResponse = await context.request.post(`${baseUrl}/api/auth/verify`, {
     data: {
       challengeId: challenge.id,
       publicKey: keyPair.publicKey.toHex(),
-      signature: keyPair.sign(new TextEncoder().encode(challenge.message)).toHex()
+      signature: keyPair.sign(digest).toHex()
     }
   });
   expect(verifyResponse.ok()).toBe(true);

@@ -37,8 +37,11 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 - Next blocked development client resources requested from the phone's LAN origin,
   leaving server-rendered controls unhydrated. Permitting the configured Wi-Fi host
   restored the Connect interaction and is covered through the exact LAN URL.
+- Raw Ed25519 verification did not match Nimiq Keyguard's signed-message convention.
+  Reconstructing the prefixed, length-bound SHA-256 digest made physical Nimiq Pay
+  authentication pass without weakening address ownership checks.
 
 ## Open
 
-- Physical Nimiq Pay signing and creator-flow approval.
+- Physical creator-flow and motion approval. Nimiq Pay signing now passes.
 - Exact recipient address for the 0.01 NIM treasury return.

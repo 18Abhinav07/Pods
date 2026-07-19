@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { Address, PublicKey, Signature } from "@nimiq/core";
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const NIMIQ_SIGNED_MESSAGE_PREFIX = "\x16Nimiq Signed Message:\n";
 const allowedReturnPrefixes = [
   "/today",
   "/discover",
@@ -45,6 +46,16 @@ export function createChallengeMessage(input: {
   ].join("\n");
 }
 
+function nimiqSignedMessageDigest(message: string): Uint8Array {
+  const messageBytes = new TextEncoder().encode(message);
+  const payload = Buffer.concat([
+    Buffer.from(NIMIQ_SIGNED_MESSAGE_PREFIX, "utf8"),
+    Buffer.from(String(messageBytes.byteLength), "utf8"),
+    Buffer.from(messageBytes)
+  ]);
+  return createHash("sha256").update(payload).digest();
+}
+
 export function verifyWalletSignature(input: {
   walletAddress: string;
   message: string;
@@ -60,7 +71,7 @@ export function verifyWalletSignature(input: {
     const expectedAddress = Address.fromString(input.walletAddress);
     return (
       derivedAddress.equals(expectedAddress) &&
-      publicKey.verify(signature, new TextEncoder().encode(input.message))
+      publicKey.verify(signature, nimiqSignedMessageDigest(input.message))
     );
   } catch {
     return false;

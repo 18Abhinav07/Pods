@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { KeyPair, PrivateKey } from "@nimiq/core";
 import { describe, expect, it } from "vitest";
 
@@ -12,13 +14,25 @@ import {
 } from "../src/lib/auth";
 
 const encoder = new TextEncoder();
+const signedMessagePrefix = "\x16Nimiq Signed Message:\n";
+
+function signAsNimiqPay(keyPair: KeyPair, message: string) {
+  const messageBytes = encoder.encode(message);
+  const payload = Buffer.concat([
+    Buffer.from(signedMessagePrefix, "utf8"),
+    Buffer.from(String(messageBytes.byteLength), "utf8"),
+    Buffer.from(messageBytes)
+  ]);
+  const digest = createHash("sha256").update(payload).digest();
+  return keyPair.sign(digest).toHex();
+}
 
 describe("wallet signature contract", () => {
   it("verifies that the public key owns the challenged Nimiq address", () => {
     const keyPair = KeyPair.derive(PrivateKey.fromHex("44".repeat(32)));
     const walletAddress = keyPair.toAddress().toUserFriendlyAddress();
     const message = "Pods wallet sign-in test";
-    const signature = keyPair.sign(encoder.encode(message)).toHex();
+    const signature = signAsNimiqPay(keyPair, message);
 
     expect(verifyWalletSignature({
       walletAddress,
@@ -31,6 +45,12 @@ describe("wallet signature contract", () => {
       message: `${message} changed`,
       publicKey: keyPair.publicKey.toHex(),
       signature
+    })).toBe(false);
+    expect(verifyWalletSignature({
+      walletAddress,
+      message,
+      publicKey: keyPair.publicKey.toHex(),
+      signature: keyPair.sign(encoder.encode(message)).toHex()
     })).toBe(false);
   });
 
@@ -77,7 +97,7 @@ describe("wallet signature contract", () => {
       {
         challengeId: "challenge-id",
         publicKey: keyPair.publicKey.toHex(),
-        signature: keyPair.sign(encoder.encode(message)).toHex()
+        signature: signAsNimiqPay(keyPair, message)
       },
       now
     );

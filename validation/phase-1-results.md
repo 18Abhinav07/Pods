@@ -17,7 +17,8 @@ or settlement behavior from later phases.
 
 ## Result
 
-PASS for automated validation. Physical phone approval remains open.
+PASS for automated validation and physical Nimiq Pay wallet authentication.
+The remaining physical gate is creator-flow and motion approval.
 
 - Five fixed templates have distinct validated evidence contracts.
 - Activity, community, and NIM commitment steps persist independently.
@@ -39,6 +40,20 @@ PASS for automated validation. Physical phone approval remains open.
 - Production build: PASS
 - No U+2014 characters: PASS
 
+## Physical Nimiq Pay evidence
+
+On 2026-07-19, the phone loaded the LAN Mini App, approved account access, and
+signed the server challenge. The live server recorded `POST /api/auth/challenge`
+200, `POST /api/auth/verify` 200, and authenticated navigation to `/today`,
+`/discover`, `/my-pods`, and `/inbox`.
+
+The first physical signature attempt correctly failed because the server had
+verified raw challenge bytes. Official Nimiq Keyguard signs a domain-separated
+SHA-256 digest containing `\x16Nimiq Signed Message:\n`, the decimal UTF-8 byte
+length, and the message bytes. The verifier now reconstructs that digest before
+Ed25519 verification, while still checking that the public key derives the
+selected wallet address. Tests reject raw signatures and modified messages.
+
 ## LAN hydration correction
 
 The first phone checkpoint exposed a server-rendered Connect screen whose client
@@ -51,6 +66,5 @@ uses the premium secondary-button treatment rather than text-link styling.
 
 ## Manual gate
 
-Abhinav must complete the same path inside Nimiq Pay over the LAN and approve
-the wallet handoff, motion, form ergonomics, publication moment, and frozen
-Rules screen before Phase 2 begins.
+Abhinav must complete Pod creation inside Nimiq Pay and approve motion, form
+ergonomics, the publication moment, and the frozen Rules screen before Phase 2.

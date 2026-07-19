@@ -8,6 +8,13 @@
       "when": 1784466334256,
       "tag": "0000_tired_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784479310420,
+      "tag": "0001_brief_red_wolf",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,8 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
+import { createEnrollmentMethods } from "./enrollment-repository";
+import * as schema from "./schema";
 import { occurrences, pods, sessions, users, walletChallenges } from "./schema";
 import type { PodDraftData } from "./schema";
 
@@ -20,7 +22,7 @@ type DraftStep = keyof PodDraftData;
 
 export function createPodsRepository(connectionString: string) {
   const pool = new Pool({ connectionString });
-  const database = drizzle(pool);
+  const database = drizzle(pool, { schema });
 
   async function saveDraftStep(
     creatorUserId: string,
@@ -51,6 +53,8 @@ export function createPodsRepository(connectionString: string) {
   }
 
   return {
+    ...createEnrollmentMethods(database),
+
     async close() {
       await pool.end();
     },

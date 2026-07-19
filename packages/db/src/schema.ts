@@ -1,7 +1,11 @@
 import type {
+  AdmissionSource,
+  ApplicationAnswer,
+  ApplicationStatus,
   ActivityStepInput,
   CommitmentStepInput,
   CommunityStepInput,
+  MembershipState,
   PublishedPodContract,
   TemplateId
 } from "@pods/domain";
@@ -99,5 +103,84 @@ export const occurrences = pgTable(
   (table) => [
     uniqueIndex("occurrences_pod_ordinal_unique").on(table.podId, table.ordinal),
     index("occurrences_pod_window_idx").on(table.podId, table.opensAt)
+  ]
+);
+
+export const applications = pgTable(
+  "applications",
+  {
+    id: uuid("id").primaryKey(),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    applicantUserId: uuid("applicant_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    answers: jsonb("answers").$type<ApplicationAnswer[]>().notNull(),
+    state: text("state").$type<ApplicationStatus>().notNull(),
+    decidedAt: timestamp("decided_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("applications_pod_applicant_unique").on(table.podId, table.applicantUserId),
+    index("applications_pod_state_idx").on(table.podId, table.state),
+    index("applications_applicant_state_idx").on(table.applicantUserId, table.state)
+  ]
+);
+
+export const invitations = pgTable(
+  "invitations",
+  {
+    id: uuid("id").primaryKey(),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+    usedAt: timestamp("used_at", { withTimezone: true, mode: "date" }),
+    acceptedByUserId: uuid("accepted_by_user_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("invitations_token_hash_unique").on(table.tokenHash),
+    index("invitations_pod_expiry_idx").on(table.podId, table.expiresAt)
+  ]
+);
+
+export const memberships = pgTable(
+  "memberships",
+  {
+    id: uuid("id").primaryKey(),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    admissionSource: text("admission_source").$type<AdmissionSource>().notNull(),
+    state: text("state").$type<MembershipState>().notNull(),
+    applicationId: uuid("application_id").references(() => applications.id, {
+      onDelete: "set null"
+    }),
+    invitationId: uuid("invitation_id").references(() => invitations.id, {
+      onDelete: "set null"
+    }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("memberships_pod_user_unique").on(table.podId, table.userId),
+    uniqueIndex("memberships_application_unique").on(table.applicationId),
+    uniqueIndex("memberships_invitation_unique").on(table.invitationId),
+    index("memberships_user_state_idx").on(table.userId, table.state),
+    index("memberships_pod_state_idx").on(table.podId, table.state)
   ]
 );

@@ -52,3 +52,15 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 - Phase 1 creator-flow and motion approval passed on a physical Nimiq Pay device.
 - Phase 2 public and private enrollment implementation is next.
 - Exact recipient address for the 0.01 NIM treasury return.
+
+## Phase 2 enrollment checkpoint
+
+- Added the tested enrollment domain states and transactional PostgreSQL tables for applications, memberships, and invitations.
+- Added public discovery, template filters, public-safe Pod previews, application submission, and applicant status.
+- Added creator response review, accept or reject decisions, public recruiting, and explicit pre-funding cancellation.
+- Added hidden private Pods with opaque, revocable, expiring, single-use invitations.
+- Added participant and creator My Pods groups, Today priority, accepted-member Rules, and a transaction-free Phase 3 funding boundary.
+- Replaced bearer-bearing `/invite/:token` paths with `/invite#token` after live access logs proved that path tokens were exposed.
+- Verified only 64-character invitation hashes are stored in PostgreSQL and no raw-token column exists.
+- Passed 60 unit tests, 12 live integration tests, the production build, and 16 mobile browser journeys.
+- Phase 2 now waits for Abhinav's physical Nimiq Pay approval. Phase 3 remains blocked.

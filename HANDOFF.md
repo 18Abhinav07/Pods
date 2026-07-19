@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-19 21:51
+last-updated: 2026-07-19 22:01
 last-agent: codex
 mode: HACKATHON
 ---
@@ -11,22 +11,18 @@ Related: [[README]] | [[AGENTS]] | [[docs/implementation-plan]] | [[validation/p
 
 ## State
 
-Phase 0 premium motion and Phase 1 signed immutable Pod creation are committed.
-Physical Nimiq Pay authentication now passes after correcting LAN hydration and
-Keyguard-compatible signed-message verification. Device-test corrections for root
-hydration, draft deletion, template symbols, and published status are verified.
-Creator-flow approval remains.
+Phase 0 premium motion and Phase 1 signed immutable Pod creation are committed
+and physically approved. Phase 2 public and private enrollment is authorized.
 
 ## In Progress (resume here)
 
-- Task: Complete the creator-flow portion of the Nimiq Pay phone checkpoint.
+- Task: Build Phase 2 public applications and private invitations.
 - URL: `http://192.168.29.244:3411`, served by the active `pnpm dev:lan` process.
-- Flow: delete an unwanted draft, inspect Enrollment open and Rules frozen status,
-  complete Build and Ship creation, review frozen Rules, and approve motion.
+- Gate: public discovery and application on a second wallet, creator acceptance,
+  private invitation acceptance, and private Pod isolation on a physical device.
 
 ## Open Errors / Blockers
 
-- Physical creator-flow and motion approval requires Abhinav.
 - The planned 0.01 NIM treasury return requires Abhinav's exact recipient NQ address.
 
 ## Git State
@@ -38,6 +34,6 @@ Creator-flow approval remains.
 
 ## Next 3 Tasks
 
-1. Abhinav completes and approves the creator portion of the Phase 1 phone flow.
-2. Record physical wallet, touch, and motion evidence in [[validation/phase-1-results]].
-3. Begin Phase 2 only after explicit approval.
+1. Validate the single-use invitation concurrency boundary in local Postgres.
+2. Write and execute the test-first Phase 2 enrollment plan.
+3. Stop at the Phase 2 physical-device checkpoint before participant funding.

@@ -17,8 +17,10 @@ or settlement behavior from later phases.
 
 ## Result
 
-PASS for automated validation and physical Nimiq Pay wallet authentication.
-The remaining physical gate is creator-flow and motion approval.
+PASS for automated validation, physical Nimiq Pay wallet authentication, and
+the complete creator-flow and motion checkpoint. Abhinav approved Phase 1 on
+2026-07-19 after testing creation, saved drafts, deletion, publication, status
+semantics, frozen Rules, and the mobile interaction quality.
 
 - Five fixed templates have distinct validated evidence contracts.
 - Activity, community, and NIM commitment steps persist independently.
@@ -75,5 +77,5 @@ the device approval gate.
 
 ## Manual gate
 
-Abhinav must complete Pod creation inside Nimiq Pay and approve motion, form
-ergonomics, the publication moment, and the frozen Rules screen before Phase 2.
+PASS. Phase 2 public and private enrollment may begin. Participant deposits,
+treasury crediting, and roster lock remain outside this approval.

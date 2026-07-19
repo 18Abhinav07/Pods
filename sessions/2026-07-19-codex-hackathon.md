@@ -49,5 +49,6 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 
 ## Open
 
-- Physical creator-flow and motion approval. Nimiq Pay signing now passes.
+- Phase 1 creator-flow and motion approval passed on a physical Nimiq Pay device.
+- Phase 2 public and private enrollment implementation is next.
 - Exact recipient address for the 0.01 NIM treasury return.

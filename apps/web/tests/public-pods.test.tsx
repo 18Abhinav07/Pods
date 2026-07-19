@@ -31,4 +31,30 @@ describe("PublicPodCard", () => {
     );
     expect(screen.queryByText(/NQ[A-Z0-9 ]{20,}/)).not.toBeInTheDocument();
   });
+
+  it("routes the creator to enrollment management instead of self-application", () => {
+    render(
+      <PublicPodCard
+        pod={{
+          id: "pod-owned",
+          templateId: "build",
+          name: "My public Pod",
+          purpose: "A creator-owned public activity with a clear enrollment path.",
+          startDate: "2027-03-01",
+          endDate: "2027-03-05",
+          occurrenceCount: 3,
+          totalLuna: 150_000,
+          minParticipants: 2,
+          maxParticipants: 4
+        }}
+        viewerRole="creator"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "Manage enrollment" })).toHaveAttribute(
+      "href",
+      "/pods/pod-owned/admin"
+    );
+    expect(screen.queryByRole("link", { name: "Apply to join" })).not.toBeInTheDocument();
+  });
 });

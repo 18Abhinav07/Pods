@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { buildPublishedContract } from "../../domain/src/index";
+import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createPodsRepository } from "../src/index";
@@ -11,6 +12,18 @@ const databaseUrl =
   "postgresql://pods:pods-local-only@127.0.0.1:54329/pods";
 
 const repository = createPodsRepository(databaseUrl);
+const testUserIds = new Set<string>();
+
+async function createTestUser(walletAddress = `NQTEST${randomUUID()}`) {
+  const session = await repository.createSession({
+    walletAddress,
+    publicKey: randomUUID().replaceAll("-", ""),
+    tokenHash: randomUUID().replaceAll("-", ""),
+    expiresAt: new Date(Date.now() + 60_000)
+  });
+  testUserIds.add(session.userId);
+  return session;
+}
 
 beforeAll(async () => {
   await runPodsMigrations(databaseUrl);
@@ -18,6 +31,13 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await repository.close();
+  if (testUserIds.size === 0) return;
+  const pool = new Pool({ connectionString: databaseUrl });
+  try {
+    await pool.query("DELETE FROM users WHERE id = ANY($1::uuid[])", [[...testUserIds]]);
+  } finally {
+    await pool.end();
+  }
 });
 
 describe("wallet challenge and session persistence", () => {
@@ -43,12 +63,7 @@ describe("wallet challenge and session persistence", () => {
 
   it("resolves only a live hashed session", async () => {
     const walletAddress = `NQTEST${randomUUID()}`;
-    const session = await repository.createSession({
-      walletAddress,
-      publicKey: randomUUID().replaceAll("-", ""),
-      tokenHash: randomUUID().replaceAll("-", ""),
-      expiresAt: new Date(Date.now() + 60_000)
-    });
+    const session = await createTestUser(walletAddress);
 
     expect(await repository.getSession(session.tokenHash, new Date())).toMatchObject({
       walletAddress,
@@ -62,18 +77,8 @@ describe("wallet challenge and session persistence", () => {
 
 describe("owner-scoped immutable Pod creation", () => {
   it("persists a draft, publishes atomically, and rejects every later material edit", async () => {
-    const owner = await repository.createSession({
-      walletAddress: `NQTEST${randomUUID()}`,
-      publicKey: randomUUID().replaceAll("-", ""),
-      tokenHash: randomUUID().replaceAll("-", ""),
-      expiresAt: new Date(Date.now() + 60_000)
-    });
-    const stranger = await repository.createSession({
-      walletAddress: `NQTEST${randomUUID()}`,
-      publicKey: randomUUID().replaceAll("-", ""),
-      tokenHash: randomUUID().replaceAll("-", ""),
-      expiresAt: new Date(Date.now() + 60_000)
-    });
+    const owner = await createTestUser();
+    const stranger = await createTestUser();
     const draft = await repository.createDraft(owner.userId, "build");
 
     const activity = {
@@ -142,18 +147,8 @@ describe("owner-scoped immutable Pod creation", () => {
   });
 
   it("permanently deletes only an owner-owned unpublished draft", async () => {
-    const owner = await repository.createSession({
-      walletAddress: `NQTEST${randomUUID()}`,
-      publicKey: randomUUID().replaceAll("-", ""),
-      tokenHash: randomUUID().replaceAll("-", ""),
-      expiresAt: new Date(Date.now() + 60_000)
-    });
-    const stranger = await repository.createSession({
-      walletAddress: `NQTEST${randomUUID()}`,
-      publicKey: randomUUID().replaceAll("-", ""),
-      tokenHash: randomUUID().replaceAll("-", ""),
-      expiresAt: new Date(Date.now() + 60_000)
-    });
+    const owner = await createTestUser();
+    const stranger = await createTestUser();
     const draft = await repository.createDraft(owner.userId, "build");
 
     expect(await repository.deleteDraft(stranger.userId, draft.id)).toBe(false);

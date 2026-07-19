@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { TemplateSymbol } from "../../../components/template-symbol";
 import { podsRepository } from "../../../lib/server-db";
+import { getCurrentSession } from "../../../lib/session";
 
 function nim(luna: number) {
   return new Intl.NumberFormat("en", { maximumFractionDigits: 5 }).format(luna / 100_000);
@@ -17,6 +18,8 @@ export default async function PublicPodPage({
   const { podId } = await params;
   const pod = await podsRepository.getPublicPod(podId, new Date());
   if (!pod?.contractData || pod.contractData.community.visibility !== "public") notFound();
+  const session = await getCurrentSession();
+  const isCreator = session?.userId === pod.creatorUserId;
   const contract = pod.contractData;
   const template = templateContracts.find((item) => item.id === contract.templateId);
 
@@ -42,7 +45,12 @@ export default async function PublicPodPage({
         <strong>Application before commitment</strong>
         <p>Applying does not reserve a place. A place is secured only after acceptance, funding finality, and roster lock.</p>
       </aside>
-      <Link className="primary-action full-action" href={`/pods/${pod.id}/apply`}>Apply to join</Link>
+      <Link
+        className="primary-action full-action"
+        href={isCreator ? `/pods/${pod.id}/admin` : `/pods/${pod.id}/apply`}
+      >
+        {isCreator ? "Manage enrollment" : "Apply to join"}
+      </Link>
     </main>
   );
 }

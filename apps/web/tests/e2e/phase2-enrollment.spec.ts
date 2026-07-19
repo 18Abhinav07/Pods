@@ -1,10 +1,46 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
+import path from "node:path";
 
 import { KeyPair, PrivateKey } from "@nimiq/core";
 import { expect, test, type BrowserContext } from "@playwright/test";
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3410";
 const signedMessagePrefix = "\x16Nimiq Signed Message:\n";
+const testWalletAddresses = new Set<string>();
+
+type DatabasePool = {
+  query(text: string, values?: unknown[]): Promise<unknown>;
+  end(): Promise<void>;
+};
+
+type DatabasePoolConstructor = new (options: { connectionString: string }) => DatabasePool;
+
+async function deleteTestUsersByWalletAddress(walletAddresses: string[]) {
+  if (walletAddresses.length === 0) return;
+  const requireFromDatabaseWorkspace = createRequire(
+    path.resolve(process.cwd(), "../../packages/db/package.json")
+  );
+  const { Pool } = requireFromDatabaseWorkspace("pg") as { Pool: DatabasePoolConstructor };
+  const pool = new Pool({
+    connectionString:
+      process.env.DATABASE_URL ??
+      "postgresql://pods:pods-local-only@127.0.0.1:54329/pods"
+  });
+  try {
+    await pool.query("DELETE FROM users WHERE wallet_address = ANY($1::text[])", [
+      walletAddresses
+    ]);
+  } finally {
+    await pool.end();
+  }
+}
+
+test.afterEach(async () => {
+  const walletAddresses = [...testWalletAddresses];
+  testWalletAddresses.clear();
+  await deleteTestUsersByWalletAddress(walletAddresses);
+});
 
 function dateInput(daysFromToday: number) {
   const date = new Date();
@@ -14,8 +50,10 @@ function dateInput(daysFromToday: number) {
 
 async function authenticate(context: BrowserContext) {
   const keyPair = KeyPair.derive(PrivateKey.fromHex(randomBytes(32).toString("hex")));
+  const walletAddress = keyPair.toAddress().toUserFriendlyAddress();
+  testWalletAddresses.add(walletAddress);
   const challengeResponse = await context.request.post(`${baseUrl}/api/auth/challenge`, {
-    data: { walletAddress: keyPair.toAddress().toUserFriendlyAddress() }
+    data: { walletAddress }
   });
   expect(challengeResponse.ok()).toBe(true);
   const challenge = (await challengeResponse.json()) as { id: string; message: string };
@@ -85,6 +123,17 @@ async function publishPod(context: BrowserContext, visibility: "public" | "priva
 test("public enrollment works from discovery through accepted funding handoff", async ({ browser, context, page }) => {
   await authenticate(context);
   const pod = await publishPod(context, "public");
+
+  await page.goto(`${baseUrl}/discover?template=build`);
+  const creatorCard = page.locator(".public-pod-card").filter({ hasText: pod.name });
+  await expect(creatorCard.getByRole("link", { name: "Manage enrollment" })).toBeVisible();
+  await expect(creatorCard.getByRole("link", { name: "Apply to join" })).toHaveCount(0);
+  await page.goto(`${baseUrl}/pods/${pod.id}`);
+  await expect(page.getByRole("link", { name: "Manage enrollment" })).toHaveAttribute(
+    "href",
+    `/pods/${pod.id}/admin`
+  );
+  await expect(page.getByRole("link", { name: "Apply to join" })).toHaveCount(0);
 
   const applicantContext = await browser.newContext();
   const applicantPage = await applicantContext.newPage();

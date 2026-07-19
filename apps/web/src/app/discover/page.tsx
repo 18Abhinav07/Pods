@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PrimaryNav } from "../../components/primary-nav";
 import { PublicPodCard } from "../../components/public-pod-card";
 import { podsRepository } from "../../lib/server-db";
+import { getCurrentSession } from "../../lib/session";
 
 function templateFilter(value: string | undefined): TemplateId | null {
   return templateContracts.some((template) => template.id === value)
@@ -17,6 +18,7 @@ export default async function DiscoverPage({
   searchParams: Promise<{ template?: string }>;
 }) {
   const query = await searchParams;
+  const session = await getCurrentSession();
   const activeTemplate = templateFilter(query.template);
   const publicPods = await podsRepository.listPublicPods({ now: new Date() });
   const visiblePods = activeTemplate
@@ -26,16 +28,19 @@ export default async function DiscoverPage({
     const contract = pod.contractData;
     if (!contract || contract.community.visibility !== "public") return [];
     return [{
-      id: pod.id,
-      templateId: pod.templateId,
-      name: contract.activity.name,
-      purpose: contract.activity.purpose,
-      startDate: contract.activity.startDate,
-      endDate: contract.activity.endDate,
-      occurrenceCount: contract.commitment.occurrenceCount,
-      totalLuna: contract.commitment.totalLuna,
-      minParticipants: contract.community.minParticipants,
-      maxParticipants: contract.community.maxParticipants
+      pod: {
+        id: pod.id,
+        templateId: pod.templateId,
+        name: contract.activity.name,
+        purpose: contract.activity.purpose,
+        startDate: contract.activity.startDate,
+        endDate: contract.activity.endDate,
+        occurrenceCount: contract.commitment.occurrenceCount,
+        totalLuna: contract.commitment.totalLuna,
+        minParticipants: contract.community.minParticipants,
+        maxParticipants: contract.community.maxParticipants
+      },
+      viewerRole: session?.userId === pod.creatorUserId ? "creator" as const : "visitor" as const
     }];
   });
 
@@ -64,7 +69,13 @@ export default async function DiscoverPage({
       </nav>
       {cards.length > 0 ? (
         <section className="public-pod-grid" aria-label="Public Pods">
-          {cards.map((pod) => <PublicPodCard key={pod.id} pod={pod} />)}
+          {cards.map((card) => (
+            <PublicPodCard
+              key={card.pod.id}
+              pod={card.pod}
+              viewerRole={card.viewerRole}
+            />
+          ))}
         </section>
       ) : (
         <section className="empty-state entrance entrance-status">

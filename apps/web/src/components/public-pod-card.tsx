@@ -20,7 +20,14 @@ function nim(luna: number) {
   return new Intl.NumberFormat("en", { maximumFractionDigits: 5 }).format(luna / 100_000);
 }
 
-export function PublicPodCard({ pod }: { pod: PublicPodCardData }) {
+export function PublicPodCard({
+  pod,
+  viewerRole = "visitor"
+}: {
+  pod: PublicPodCardData;
+  viewerRole?: "creator" | "visitor";
+}) {
+  const isCreator = viewerRole === "creator";
   return (
     <article className="public-pod-card entrance entrance-status">
       <div className="public-pod-card-head">
@@ -37,8 +44,11 @@ export function PublicPodCard({ pod }: { pod: PublicPodCardData }) {
         <div><dt>Dates</dt><dd>{pod.startDate} to {pod.endDate}</dd></div>
         <div><dt>Group</dt><dd>{pod.minParticipants} to {pod.maxParticipants} people</dd></div>
       </dl>
-      <Link className="primary-action full-action" href={`/pods/${pod.id}`}>
-        Apply to join
+      <Link
+        className="primary-action full-action"
+        href={isCreator ? `/pods/${pod.id}/admin` : `/pods/${pod.id}`}
+      >
+        {isCreator ? "Manage enrollment" : "Apply to join"}
       </Link>
     </article>
   );

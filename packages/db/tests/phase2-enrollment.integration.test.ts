@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import { buildPublishedContract } from "../../domain/src/index";
+import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createPodsRepository } from "../src/index";
@@ -11,6 +12,7 @@ const databaseUrl =
   "postgresql://pods:pods-local-only@127.0.0.1:54329/pods";
 
 const repository = createPodsRepository(databaseUrl);
+const testUserIds = new Set<string>();
 
 beforeAll(async () => {
   await runPodsMigrations(databaseUrl);
@@ -18,15 +20,24 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await repository.close();
+  if (testUserIds.size === 0) return;
+  const pool = new Pool({ connectionString: databaseUrl });
+  try {
+    await pool.query("DELETE FROM users WHERE id = ANY($1::uuid[])", [[...testUserIds]]);
+  } finally {
+    await pool.end();
+  }
 });
 
 async function createUser() {
-  return repository.createSession({
+  const session = await repository.createSession({
     walletAddress: `NQTEST${randomUUID()}`,
     publicKey: randomUUID().replaceAll("-", ""),
     tokenHash: randomUUID().replaceAll("-", ""),
     expiresAt: new Date(Date.now() + 60_000)
   });
+  testUserIds.add(session.userId);
+  return session;
 }
 
 async function publishPod(

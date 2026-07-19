@@ -13,6 +13,10 @@
   "dependencies": {
     "@fontsource-variable/mulish": "^5.2.8",
     "@fontsource/fira-mono": "^5.2.7",
+    "@nimiq/core": "2.7.1",
+    "@nimiq/mini-app-sdk": "0.1.0",
+    "@pods/db": "workspace:*",
+    "@pods/domain": "workspace:*",
     "@pods/ui": "workspace:*",
     "motion": "12.42.2",
     "next": "16.2.10",

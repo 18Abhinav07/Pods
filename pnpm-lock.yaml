@@ -38,6 +38,18 @@ importers:
       '@fontsource/fira-mono':
         specifier: ^5.2.7
         version: 5.2.7
+      '@nimiq/core':
+        specifier: 2.7.1
+        version: 2.7.1(vite@8.1.5(@types/node@24.10.13)(esbuild@0.28.1)(tsx@4.23.1))
+      '@nimiq/mini-app-sdk':
+        specifier: 0.1.0
+        version: 0.1.0
+      '@pods/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@pods/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@pods/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -103,6 +115,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@pods/domain':
+        specifier: workspace:*
+        version: link:../domain
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@types/pg@8.20.0)(pg@8.22.0)
@@ -116,6 +131,9 @@ importers:
       drizzle-kit:
         specifier: 0.31.10
         version: 0.31.10
+      tsx:
+        specifier: 4.23.1
+        version: 4.23.1
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -124,6 +142,10 @@ importers:
         version: 4.1.10(@types/node@24.10.13)(jsdom@29.1.1)(vite@8.1.5(@types/node@24.10.13)(esbuild@0.28.1)(tsx@4.23.1))
 
   packages/domain:
+    dependencies:
+      '@js-temporal/polyfill':
+        specifier: 0.5.1
+        version: 0.5.1
     devDependencies:
       typescript:
         specifier: 5.9.3
@@ -990,6 +1012,10 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@js-temporal/polyfill@0.5.1':
+    resolution: {integrity: sha512-hloP58zRVCRSpgDxmqCWJNlizAlUgJFqG2ypq79DCvyv9tHjRYMDOcPFjzfl/A1/YxDvRCZz8wvZvmapQnKwFQ==}
+    engines: {node: '>=12'}
+
   '@napi-rs/wasm-runtime@1.1.6':
     resolution: {integrity: sha512-ZLv/JdUfkvOy9eCnnBaGfiO+XimbjebAeO+MRQqD/B+FR1tnRN0tpKSJHRbE8sFfS6aqsXZ67TQjfwfsxULVbg==}
     peerDependencies:
@@ -1061,6 +1087,9 @@ packages:
     peerDependenciesMeta:
       vite:
         optional: true
+
+  '@nimiq/mini-app-sdk@0.1.0':
+    resolution: {integrity: sha512-QR5GGrL25U5xRkWdDhDMqY6npRXMtIu07Fe0cTXon5dLLlAuPhIaJU2egwASYITwFH1RXpYCE0JnufO88SleKA==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2372,6 +2401,9 @@ packages:
   js-yaml@4.3.0:
     resolution: {integrity: sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q==}
     hasBin: true
+
+  jsbi@4.3.2:
+    resolution: {integrity: sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew==}
 
   jsdom@29.1.1:
     resolution: {integrity: sha512-ECi4Fi2f7BdJtUKTflYRTiaMxIB0O6zfR1fX0GXpUrf6flp8QIYn1UT20YQqdSOfk2dfkCwS8LAFoJDEppNK5Q==}
@@ -3909,6 +3941,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@js-temporal/polyfill@0.5.1':
+    dependencies:
+      jsbi: 4.3.2
+
   '@napi-rs/wasm-runtime@1.1.6(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
       '@emnapi/core': 1.10.0
@@ -3962,6 +3998,8 @@ snapshots:
       vite: 8.1.5(@types/node@24.10.13)(esbuild@0.28.1)(tsx@4.23.1)
     transitivePeerDependencies:
       - supports-color
+
+  '@nimiq/mini-app-sdk@0.1.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -5378,6 +5416,8 @@ snapshots:
   js-yaml@4.3.0:
     dependencies:
       argparse: 2.0.1
+
+  jsbi@4.3.2: {}
 
   jsdom@29.1.1:
     dependencies:

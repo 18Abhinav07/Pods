@@ -8,7 +8,11 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     expect(screen.getByRole("heading", { name: "Momentum starts with a clear commitment." })).toBeVisible();
-    expect(screen.getByText("Phase 0 foundation")).toBeVisible();
+    expect(screen.getByText("Phase 1 build")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Connect wallet" })).toHaveAttribute(
+      "href",
+      "/connect?returnTo=%2Ftoday"
+    );
     expect(screen.getAllByRole("button")).toHaveLength(5);
     expect(screen.queryByRole("button", { name: /fund|join|connect/i })).not.toBeInTheDocument();
   });

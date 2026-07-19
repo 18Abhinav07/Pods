@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { TemplateShowcase } from "./template-showcase";
 
 export function HomePage() {
@@ -12,7 +14,7 @@ export function HomePage() {
           </span>
           PODS
         </div>
-        <span className="phase-pill">Phase 0 foundation</span>
+        <span className="phase-pill">Phase 1 build</span>
       </header>
 
       <section className="hero entrance entrance-hero">
@@ -22,6 +24,14 @@ export function HomePage() {
           Join a focused group, put NIM behind the days you commit to showing up,
           prove the work, and finish together.
         </p>
+        <div className="hero-actions">
+          <Link className="primary-action" href="/connect?returnTo=%2Ftoday">
+            Connect wallet
+          </Link>
+          <Link className="text-action" href="/pods/create/template">
+            Create a Pod
+          </Link>
+        </div>
       </section>
 
       <section
@@ -30,11 +40,11 @@ export function HomePage() {
       >
         <div className="status-head">
           <span className="status-dot" aria-hidden="true" />
-          <span>Foundation in progress</span>
+          <span>Phase 1 in progress</span>
         </div>
         <p>
-          This build contains the locked visual system and runtime foundation only.
-          Wallet and Pod actions arrive after the Phase 0 approval gate.
+          Signed wallet sessions and immutable Pod creation are now active.
+          Participant funding remains locked until its own approval gate.
         </p>
         <dl>
           <div>

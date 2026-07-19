@@ -1,7 +1,81 @@
+import { templateContracts, type TemplateId } from "@pods/domain";
 import Link from "next/link";
 
 import { PrimaryNav } from "../../components/primary-nav";
+import { PublicPodCard } from "../../components/public-pod-card";
+import { podsRepository } from "../../lib/server-db";
 
-export default function DiscoverPage() {
-  return <main className="app-shell"><header className="app-topbar"><Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="phase-pill">Public space</span></header><section className="today-hero entrance entrance-hero"><p className="eyebrow">Discover</p><h1>Public activities arrive next.</h1><p className="screen-copy">Phase 1 locks trustworthy creation first. Phase 2 adds applications, acceptance, and public discovery without weakening private Pod boundaries.</p></section><section className="empty-state entrance entrance-status"><span className="empty-index">02</span><h2>Create the first contract.</h2><p>Your published Pod is ready for the enrollment system that follows this gate.</p><Link className="primary-action full-action" href="/pods/create/template">Create a Pod</Link></section><PrimaryNav active="discover" /></main>;
+function templateFilter(value: string | undefined): TemplateId | null {
+  return templateContracts.some((template) => template.id === value)
+    ? (value as TemplateId)
+    : null;
+}
+
+export default async function DiscoverPage({
+  searchParams
+}: {
+  searchParams: Promise<{ template?: string }>;
+}) {
+  const query = await searchParams;
+  const activeTemplate = templateFilter(query.template);
+  const publicPods = await podsRepository.listPublicPods({ now: new Date() });
+  const visiblePods = activeTemplate
+    ? publicPods.filter((pod) => pod.templateId === activeTemplate)
+    : publicPods;
+  const cards = visiblePods.flatMap((pod) => {
+    const contract = pod.contractData;
+    if (!contract || contract.community.visibility !== "public") return [];
+    return [{
+      id: pod.id,
+      templateId: pod.templateId,
+      name: contract.activity.name,
+      purpose: contract.activity.purpose,
+      startDate: contract.activity.startDate,
+      endDate: contract.activity.endDate,
+      occurrenceCount: contract.commitment.occurrenceCount,
+      totalLuna: contract.commitment.totalLuna,
+      minParticipants: contract.community.minParticipants,
+      maxParticipants: contract.community.maxParticipants
+    }];
+  });
+
+  return (
+    <main className="app-shell">
+      <header className="app-topbar entrance entrance-topbar">
+        <Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <span className="phase-pill">Public space</span>
+      </header>
+      <section className="today-hero entrance entrance-hero">
+        <p className="eyebrow">Discover</p>
+        <h1>Find people moving in your direction.</h1>
+        <p className="screen-copy">Explore public activities with frozen rules, a clear cadence, and an upfront NIM commitment.</p>
+      </section>
+      <nav className="template-filter" aria-label="Filter public Pods">
+        <Link aria-current={!activeTemplate ? "page" : undefined} href="/discover">All</Link>
+        {templateContracts.map((template) => (
+          <Link
+            aria-current={activeTemplate === template.id ? "page" : undefined}
+            href={`/discover?template=${template.id}`}
+            key={template.id}
+          >
+            {template.name.replace(" & Movement", "").replace(" & Focus", "").replace(" & Ship", "")}
+          </Link>
+        ))}
+      </nav>
+      {cards.length > 0 ? (
+        <section className="public-pod-grid" aria-label="Public Pods">
+          {cards.map((pod) => <PublicPodCard key={pod.id} pod={pod} />)}
+        </section>
+      ) : (
+        <section className="empty-state entrance entrance-status">
+          <span className="empty-index">00</span>
+          <h2>No matching public Pods yet.</h2>
+          <p>Clear the filter or publish a focused activity for the community.</p>
+          {activeTemplate ? <Link className="secondary-action full-action" href="/discover">Clear filters</Link> : null}
+          <Link className="primary-action full-action" href="/pods/create/template">Create a Pod</Link>
+        </section>
+      )}
+      <PrimaryNav active="discover" />
+    </main>
+  );
 }

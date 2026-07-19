@@ -1533,6 +1533,18 @@ button.secondary-action {
 .reservation-disclosure p { margin: 0.4rem 0 0; color: #5d584e; line-height: 1.5; }
 .centered-link { display: block; margin-top: 1rem; text-align: center; }
 
+.application-form { display: grid; gap: 1rem; padding-bottom: 2rem; }
+.application-questions { display: grid; gap: 1rem; }
+.compact-empty { min-height: auto; }
+.consent-row { display: grid; grid-template-columns: 1.25rem 1fr; gap: 0.75rem; align-items: start; padding: 1rem; border: 1px solid var(--line, #dedbd1); border-radius: 1rem; background: #fffdf8; font-size: 0.86rem; line-height: 1.45; }
+.consent-row input { width: 1.15rem; height: 1.15rem; margin: 0.1rem 0 0; accent-color: #2f45b5; }
+.application-status-list { display: grid; gap: 0.9rem; padding-bottom: 5.5rem; }
+.application-status-card { padding: 1.1rem; border: 1px solid var(--line, #dedbd1); border-radius: 1.25rem; background: rgba(255, 255, 252, 0.82); }
+.application-status-card > div { display: flex; justify-content: space-between; gap: 1rem; color: #5e58aa; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.application-status-card time { color: #777168; }
+.application-status-card h2 { margin: 0.65rem 0 0.35rem; font-size: 1.2rem; }
+.application-status-card p { margin: 0 0 1rem; color: #6d685f; line-height: 1.5; }
+
 .template-row h3,
 .template-row p {
   margin: 0;

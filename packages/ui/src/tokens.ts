@@ -27,5 +27,13 @@ export const motion = {
   tactile: 140,
   state: 220,
   navigation: 280,
-  milestone: 700
+  milestone: 700,
+  entrance: 900,
+  stagger: 55,
+  ambient: 6000,
+  selectionSpring: {
+    stiffness: 320,
+    damping: 30,
+    mass: 0.72
+  }
 } as const;

@@ -1,15 +1,9 @@
-const templates = [
-  { name: "Move", detail: "Fitness and movement" },
-  { name: "Read", detail: "Reading progress" },
-  { name: "Focus", detail: "Study and deep work" },
-  { name: "Build", detail: "Ship visible work" },
-  { name: "Create", detail: "Practice and create" }
-] as const;
+import { TemplateShowcase } from "./template-showcase";
 
 export function HomePage() {
   return (
     <main className="foundation-shell">
-      <header className="topbar">
+      <header className="topbar entrance entrance-topbar">
         <div className="wordmark" aria-label="Pods">
           <span className="pod-mark" aria-hidden="true">
             <i />
@@ -21,7 +15,7 @@ export function HomePage() {
         <span className="phase-pill">Phase 0 foundation</span>
       </header>
 
-      <section className="hero">
+      <section className="hero entrance entrance-hero">
         <p className="eyebrow">Earned momentum</p>
         <h1>Momentum starts with a clear commitment.</h1>
         <p className="hero-copy">
@@ -30,7 +24,10 @@ export function HomePage() {
         </p>
       </section>
 
-      <section className="status-panel" aria-label="Foundation status">
+      <section
+        className="status-panel entrance entrance-status"
+        aria-label="Foundation status"
+      >
         <div className="status-head">
           <span className="status-dot" aria-hidden="true" />
           <span>Foundation in progress</span>
@@ -55,7 +52,7 @@ export function HomePage() {
         </dl>
       </section>
 
-      <section className="template-section">
+      <section className="template-section entrance entrance-templates">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Five polished modes</p>
@@ -63,20 +60,7 @@ export function HomePage() {
           </div>
           <span>Cycle I</span>
         </div>
-        <div className="template-list">
-          {templates.map((template, index) => (
-            <article className="template-row" key={template.name}>
-              <span className={`template-icon template-${index + 1}`} aria-hidden="true">
-                {index + 1}
-              </span>
-              <div>
-                <h3>{template.name}</h3>
-                <p>{template.detail}</p>
-              </div>
-              <span className="template-state">Specified</span>
-            </article>
-          ))}
-        </div>
+        <TemplateShowcase />
       </section>
     </main>
   );

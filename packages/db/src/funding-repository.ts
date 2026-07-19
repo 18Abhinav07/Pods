@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import {
   nextDepositState,
+  type DepositExceptionCode,
   type DepositState,
   type FundingNetwork
 } from "@pods/domain";
@@ -218,6 +219,49 @@ export function createFundingMethods(database: PodsDatabase) {
         .orderBy(asc(depositIntents.createdAt));
     },
 
+    async isDepositTransactionHashClaimed(transactionHash: string, intentId: string) {
+      const [claimed] = await database
+        .select({ id: depositIntents.id })
+        .from(depositIntents)
+        .where(
+          and(
+            eq(depositIntents.transactionHash, transactionHash),
+            ne(depositIntents.id, intentId)
+          )
+        );
+      return Boolean(claimed);
+    },
+
+    async recordDepositException(input: {
+      intentId: string;
+      code: DepositExceptionCode;
+      now: Date;
+    }) {
+      return database.transaction(async (transaction) => {
+        const [intent] = await transaction
+          .select()
+          .from(depositIntents)
+          .where(eq(depositIntents.id, input.intentId))
+          .for("update");
+        if (!intent) return null;
+        if (intent.state === "exception_review") {
+          if (intent.exceptionCode !== input.code) {
+            throw new Error("Deposit already has a different exception classification");
+          }
+          return intent;
+        }
+        const nextState = nextDepositState(intent.state, "flag_exception", "worker");
+        if (!nextState) throw new Error("Deposit cannot enter review from the current state");
+        const [updated] = await transaction
+          .update(depositIntents)
+          .set({ state: nextState, exceptionCode: input.code, updatedAt: input.now })
+          .where(and(eq(depositIntents.id, intent.id), eq(depositIntents.state, intent.state)))
+          .returning();
+        if (!updated) throw new Error("Deposit intent state changed");
+        return updated;
+      });
+    },
+
     async recordObservedDeposit(input: {
       intentId: string;
       transactionHash: string;
@@ -242,9 +286,6 @@ export function createFundingMethods(database: PodsDatabase) {
             intent.transactionHash === input.transactionHash
           ) {
             return intent;
-          }
-          if (intent.transactionHash && intent.transactionHash !== input.transactionHash) {
-            throw new Error("Observed transaction hash does not match the client hint");
           }
           const [claimed] = await transaction
             .select({ id: depositIntents.id })

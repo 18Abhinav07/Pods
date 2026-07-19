@@ -44,7 +44,9 @@ describe("Phase 3 funding contract", () => {
     expect(nextDepositState("intent_created", "observe", "worker")).toBeNull();
   });
 
-  it("routes only the two documented pre-credit states into exception review", () => {
+  it("routes only uncredited payment states into exception review", () => {
+    expect(nextDepositState("wallet_approval_pending", "flag_exception", "worker"))
+      .toBe("exception_review");
     expect(nextDepositState("transaction_submitted", "flag_exception", "worker"))
       .toBe("exception_review");
     expect(nextDepositState("observed", "flag_exception", "worker"))

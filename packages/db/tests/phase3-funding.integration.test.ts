@@ -172,6 +172,18 @@ describe("Phase 3 deposit persistence", () => {
         now: new Date("2027-03-01T01:02:00.000Z")
       })
     ).toMatchObject({ state: "transaction_submitted", transactionHash: "a".repeat(64) });
+    expect(
+      await repository.recordObservedDeposit({
+        intentId: intent.id,
+        transactionHash: "e".repeat(64),
+        observedFrom: "NQHTLC",
+        observedFromType: 2,
+        blockNumber: 6_407_464,
+        transactionIndex: 3,
+        transactionBatch: 56_258,
+        now: new Date("2027-03-01T01:03:00.000Z")
+      })
+    ).toMatchObject({ state: "observed", transactionHash: "e".repeat(64) });
     expect(await repository.getMembershipForUser(fixture.member.userId, fixture.pod.id))
       .toMatchObject({ state: "deposit_pending" });
   });
@@ -272,5 +284,35 @@ describe("Phase 3 deposit persistence", () => {
         now: new Date("2027-03-01T01:03:00.000Z")
       })
     ).rejects.toThrow("Transaction hash is already assigned to another deposit intent");
+  });
+
+  it("records one worker exception idempotently without creating ledger credit", async () => {
+    const fixture = await createAcceptedFixture();
+    const intent = await repository.createDepositIntent(
+      intentInput(fixture, "pods-55667788990011223344aabb")
+    );
+    await repository.recordDepositWalletAttempt({
+      intentId: intent.id,
+      userId: fixture.member.userId,
+      event: "open",
+      now: new Date("2027-03-01T01:01:00.000Z")
+    });
+
+    const first = await repository.recordDepositException({
+      intentId: intent.id,
+      code: "amount_mismatch",
+      now: new Date("2027-03-01T01:02:00.000Z")
+    });
+    const replay = await repository.recordDepositException({
+      intentId: intent.id,
+      code: "amount_mismatch",
+      now: new Date("2027-03-01T01:03:00.000Z")
+    });
+
+    expect(first).toMatchObject({ state: "exception_review", exceptionCode: "amount_mismatch" });
+    expect(replay).toMatchObject({ state: "exception_review", exceptionCode: "amount_mismatch" });
+    expect(await repository.listLedgerEntriesForDeposit(intent.id)).toEqual([]);
+    await expect(repository.isDepositTransactionHashClaimed("d".repeat(64), intent.id))
+      .resolves.toBe(false);
   });
 });

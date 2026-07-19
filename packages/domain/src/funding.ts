@@ -87,6 +87,12 @@ const transitions: Transition[] = [
     to: "transaction_submitted"
   },
   {
+    from: "wallet_approval_pending",
+    event: "flag_exception",
+    actor: "worker",
+    to: "exception_review"
+  },
+  {
     from: "transaction_submitted",
     event: "observe",
     actor: "worker",

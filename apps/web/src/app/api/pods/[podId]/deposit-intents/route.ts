@@ -14,6 +14,10 @@ export async function POST(
   if (!session) return NextResponse.json({ error: "Wallet session required" }, { status: 401 });
   const { podId } = await params;
   try {
+    const existing = await podsRepository.getOpenDepositIntentForUser(session.userId, podId);
+    if (existing) {
+      return NextResponse.json({ intent: participantDepositIntent(existing) });
+    }
     const configuration = readFundingConfiguration();
     const intent = await podsRepository.createDepositIntent({
       podId,
@@ -27,7 +31,6 @@ export async function POST(
     return NextResponse.json({ intent: participantDepositIntent(intent) }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Deposit intent could not be created";
-    const status = message === "Membership already has an open deposit intent" ? 409 : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

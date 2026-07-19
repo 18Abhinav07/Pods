@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { establishWalletSession } from "../src/lib/nimiq-wallet-client";
+import { establishWalletSession, sendNimCommitment } from "../src/lib/nimiq-wallet-client";
 
 describe("Nimiq wallet client flow", () => {
   it("lists an account, signs the server challenge, and verifies the session", async () => {
@@ -52,5 +52,53 @@ describe("Nimiq wallet client flow", () => {
       })
     ).rejects.toThrow("Wallet closed");
     expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("sends the exact data-bearing commitment and returns its transaction hash", async () => {
+    const provider = {
+      sendBasicTransactionWithData: vi.fn(async () => "a".repeat(64))
+    };
+
+    const result = await sendNimCommitment(
+      {
+        recipient: "NQ41 ENPQ 41CH URE0 BQ41 N6XJ RUFN JPE7 4U0A",
+        valueLuna: 50_000,
+        reference: "pods-00112233445566778899aabb"
+      },
+      { getProvider: async () => provider }
+    );
+
+    expect(provider.sendBasicTransactionWithData).toHaveBeenCalledWith({
+      recipient: "NQ41 ENPQ 41CH URE0 BQ41 N6XJ RUFN JPE7 4U0A",
+      value: 50_000,
+      data: "pods-00112233445566778899aabb"
+    });
+    expect(result).toBe("a".repeat(64));
+  });
+
+  it("rejects provider errors and malformed transaction hashes", async () => {
+    await expect(
+      sendNimCommitment(
+        { recipient: "NQ00 TEST", valueLuna: 1, reference: "pods-reference" },
+        {
+          getProvider: async () => ({
+            sendBasicTransactionWithData: async () => ({
+              error: { type: "rejected", message: "Payment declined" }
+            })
+          })
+        }
+      )
+    ).rejects.toThrow("Payment declined");
+
+    await expect(
+      sendNimCommitment(
+        { recipient: "NQ00 TEST", valueLuna: 1, reference: "pods-reference" },
+        {
+          getProvider: async () => ({
+            sendBasicTransactionWithData: async () => "not-a-hash"
+          })
+        }
+      )
+    ).rejects.toThrow("Wallet returned an invalid transaction hash");
   });
 });

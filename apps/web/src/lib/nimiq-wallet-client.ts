@@ -8,6 +8,20 @@ interface WalletProviderLike {
   sign(input: { message: string }): Promise<SignatureResult | ProviderError>;
 }
 
+interface FundingProviderLike {
+  sendBasicTransactionWithData(input: {
+    recipient: string;
+    value: number;
+    data: string;
+  }): Promise<string | ProviderError>;
+}
+
+export interface FundingPayment {
+  recipient: string;
+  valueLuna: number;
+  reference: string;
+}
+
 function isProviderError(value: unknown): value is ProviderError {
   return (
     typeof value === "object" &&
@@ -65,4 +79,25 @@ export async function establishWalletSession(dependencies?: {
     throw new Error("Wallet session response is incomplete");
   }
   return { walletAddress: session.walletAddress };
+}
+
+export async function sendNimCommitment(
+  input: FundingPayment,
+  dependencies?: { getProvider?: () => Promise<FundingProviderLike> }
+) {
+  if (!Number.isSafeInteger(input.valueLuna) || input.valueLuna <= 0) {
+    throw new Error("Commitment must be a positive integer Luna amount");
+  }
+  const getProvider = dependencies?.getProvider ?? (() => init({ timeout: 8_000 }));
+  const provider = await getProvider();
+  const result = await provider.sendBasicTransactionWithData({
+    recipient: input.recipient,
+    value: input.valueLuna,
+    data: input.reference
+  });
+  if (isProviderError(result)) throw new Error(result.error.message);
+  if (!/^[a-f0-9]{64}$/.test(result)) {
+    throw new Error("Wallet returned an invalid transaction hash");
+  }
+  return result;
 }

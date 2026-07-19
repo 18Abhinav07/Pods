@@ -13,6 +13,9 @@ export interface ParticipantDepositIntent {
   transactionHash: string | null;
   exceptionCode: DepositExceptionCode | null;
   expiresAt: string;
+  observedAt: string | null;
+  finalizedAt: string | null;
+  creditedAt: string | null;
 }
 
 const depositStates = new Set<DepositState>([
@@ -48,11 +51,18 @@ async function readResponse(response: Response): Promise<ParticipantDepositInten
     ((intent as ParticipantDepositIntent).network !== "testnet" &&
       (intent as ParticipantDepositIntent).network !== "mainnet") ||
     typeof (intent as ParticipantDepositIntent).reference !== "string" ||
-    typeof (intent as ParticipantDepositIntent).expiresAt !== "string"
+    typeof (intent as ParticipantDepositIntent).expiresAt !== "string" ||
+    !nullableString((intent as ParticipantDepositIntent).observedAt) ||
+    !nullableString((intent as ParticipantDepositIntent).finalizedAt) ||
+    !nullableString((intent as ParticipantDepositIntent).creditedAt)
   ) {
     throw new Error("Deposit intent response is incomplete");
   }
   return intent as ParticipantDepositIntent;
+}
+
+function nullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
 }
 
 export async function createDepositIntent(podId: string, fetcher: Fetcher = fetch) {

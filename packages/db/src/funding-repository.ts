@@ -130,6 +130,15 @@ export function createFundingMethods(database: PodsDatabase) {
       return intent ?? null;
     },
 
+    async getOpenDepositIntentForUser(userId: string, podId: string) {
+      const [intent] = await database
+        .select({ deposit: depositIntents })
+        .from(memberships)
+        .innerJoin(depositIntents, eq(depositIntents.id, memberships.depositIntentId))
+        .where(and(eq(memberships.userId, userId), eq(memberships.podId, podId)));
+      return intent?.deposit ?? null;
+    },
+
     async recordDepositWalletAttempt(input: {
       intentId: string;
       userId: string;

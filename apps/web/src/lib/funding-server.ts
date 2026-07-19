@@ -11,6 +11,9 @@ type StoredDepositIntent = {
   transactionHash: string | null;
   exceptionCode: DepositExceptionCode | null;
   expiresAt: Date;
+  observedAt: Date | null;
+  finalizedAt: Date | null;
+  creditedAt: Date | null;
 };
 
 export function readFundingConfiguration() {
@@ -36,6 +39,9 @@ export function participantDepositIntent(intent: StoredDepositIntent) {
     reference: intent.reference,
     transactionHash: intent.transactionHash,
     exceptionCode: intent.exceptionCode,
-    expiresAt: intent.expiresAt.toISOString()
+    expiresAt: intent.expiresAt.toISOString(),
+    observedAt: intent.observedAt?.toISOString() ?? null,
+    finalizedAt: intent.finalizedAt?.toISOString() ?? null,
+    creditedAt: intent.creditedAt?.toISOString() ?? null
   };
 }

@@ -141,6 +141,9 @@ describe("Phase 3 deposit persistence", () => {
     await expect(
       repository.createDepositIntent({ ...input, reference: "pods-aabbccddeeff001122334455" })
     ).rejects.toThrow("Membership already has an open deposit intent");
+    expect(
+      await repository.getOpenDepositIntentForUser(fixture.member.userId, fixture.pod.id)
+    ).toMatchObject({ id: intent.id, reference: input.reference });
     expect(await repository.getMembershipForUser(fixture.member.userId, fixture.pod.id))
       .toMatchObject({ state: "deposit_pending" });
   });

@@ -1608,15 +1608,47 @@ button.secondary-action {
 .today-action-card .primary-action { grid-column: 1 / -1; }
 .today-action-index { display: grid; width: 2.6rem; height: 2.6rem; place-items: center; border-radius: 0.9rem; color: #5e58aa; background: #ecebfa; font: 700 0.82rem/1 "Fira Mono", monospace; }
 .today-secondary { margin-top: 0.75rem; }
-.funding-commitment-card { padding: 1.1rem; border: 1px solid var(--line, #dedbd1); border-radius: 1.3rem; background: #fffdf8; }
-.funding-commitment-card > span { color: #5e58aa; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
-.funding-commitment-card h2 { margin: 0.35rem 0 1rem; }
-.funding-commitment-card > div { display: grid; gap: 0.25rem; padding: 1rem; border-radius: 1rem; background: #f0eddf; }
-.funding-commitment-card small { color: #777168; }
-.funding-commitment-card strong { font-size: 1.8rem; letter-spacing: -0.04em; }
-.funding-commitment-card p { margin: 0.8rem 0 0; color: #6d685f; }
-.phase-boundary-note { margin: 1rem 0; padding: 1rem; border: 1px solid #cad4f2; border-radius: 1rem; background: #edf1fc; }
-.phase-boundary-note p { margin: 0.4rem 0 0; color: #58617a; line-height: 1.5; }
+.funding-shell { padding-bottom: max(2.5rem, env(safe-area-inset-bottom)); }
+.funding-hero { padding-bottom: 1.2rem; }
+.network-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.65rem; border: 1px solid rgba(31, 35, 72, 0.08); border-radius: 999px; color: #5f625f; background: rgba(255, 255, 255, 0.58); font: 700 0.62rem/1 "Fira Mono", monospace; }
+.network-pill i { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: #d4a72c; box-shadow: 0 0 0 0.2rem rgba(212, 167, 44, 0.14); }
+.funding-flow { display: grid; gap: 1rem; }
+.funding-contract-card { overflow: hidden; border: 1px solid rgba(31, 35, 72, 0.1); border-radius: 1.5rem; background: rgba(255, 255, 252, 0.88); box-shadow: 0 24px 60px rgba(31, 35, 72, 0.08); }
+.funding-contract-head { display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.1rem 0.9rem; }
+.funding-contract-head span { color: #5e58aa; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.funding-contract-head h2 { margin: 0.3rem 0 0; font-size: 1.2rem; letter-spacing: -0.03em; }
+.funding-contract-head i { display: grid; flex: 0 0 auto; width: 2.7rem; height: 2.7rem; place-items: center; border-radius: 0.9rem; color: #fffaf0; background: #25294e; font: 800 0.62rem/1 "Fira Mono", monospace; box-shadow: inset 0 1px rgba(255,255,255,0.2), 0 10px 24px rgba(31,35,72,0.14); }
+.funding-total { padding: 1.3rem 1.1rem; color: #f9f7ef; background: linear-gradient(145deg, #24284d, #343968); }
+.funding-total small { display: block; color: rgba(255,255,255,0.63); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.funding-total strong { display: block; margin: 0.35rem 0 0.65rem; font-size: clamp(2.3rem, 11vw, 3.2rem); letter-spacing: -0.065em; }
+.funding-total p { display: inline-flex; margin: 0.25rem 0.4rem 0 0; padding: 0.4rem 0.55rem; border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; color: rgba(255,255,255,0.76); font-size: 0.68rem; }
+.funding-risk { display: grid; grid-template-columns: 1fr auto; gap: 0.3rem 1rem; padding: 1rem 1.1rem; background: #f0eddf; }
+.funding-risk span { color: #777168; font-size: 0.68rem; font-weight: 750; text-transform: uppercase; letter-spacing: 0.06em; }
+.funding-risk strong { font-size: 0.9rem; }
+.funding-risk p { grid-column: 1 / -1; margin: 0; color: #6d685f; font-size: 0.75rem; line-height: 1.45; }
+.funding-outcomes { padding: 1rem; border: 1px solid rgba(31, 35, 72, 0.08); border-radius: 1.35rem; background: rgba(255, 255, 252, 0.76); }
+.section-title-row span { color: #777168; font-size: 0.63rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.section-title-row h2 { margin: 0.25rem 0 0.85rem; font-size: 1.15rem; letter-spacing: -0.025em; }
+.outcome-table-wrap { overflow-x: auto; border: 1px solid #e2dfd5; border-radius: 0.9rem; }
+.outcome-table-wrap table { width: 100%; min-width: 360px; border-collapse: collapse; font-size: 0.66rem; }
+.outcome-table-wrap th, .outcome-table-wrap td { padding: 0.7rem 0.55rem; border-bottom: 1px solid #e7e4db; text-align: left; }
+.outcome-table-wrap thead th { color: #777168; background: #f1efe7; font-size: 0.57rem; letter-spacing: 0.05em; text-transform: uppercase; }
+.outcome-table-wrap tbody th { color: #25294e; font-weight: 800; }
+.outcome-table-wrap tbody tr:last-child th, .outcome-table-wrap tbody tr:last-child td { border-bottom: 0; }
+.outcome-footnote { margin: 0.8rem 0 0; color: #6d685f; font-size: 0.71rem; line-height: 1.5; }
+.funding-disclosures { display: grid; gap: 0.7rem; }
+.trust-disclosure { display: grid; grid-template-columns: 2.5rem 1fr; gap: 0.8rem; align-items: start; padding: 0.95rem; border: 1px solid #d8d2ef; border-radius: 1rem; background: #f0eef9; }
+.trust-disclosure > span { display: grid; min-height: 2.1rem; place-items: center; border-radius: 0.7rem; color: #fff; background: #5e58aa; font: 800 0.6rem/1 "Fira Mono", monospace; }
+.trust-disclosure p, .custody-disclosure p { margin: 0; color: #55566d; font-size: 0.79rem; line-height: 1.52; }
+.trust-disclosure.is-protection { border-color: #d8d0ae; background: #f4f0dd; }
+.trust-disclosure.is-protection > span { color: #3d351c; background: #d4a72c; }
+.custody-disclosure { padding: 0.95rem; border: 1px solid #d8d4c8; border-radius: 1rem; background: #fffdf8; }
+.custody-disclosure strong { display: block; margin-bottom: 0.35rem; font-size: 0.78rem; }
+.funding-consent { margin-top: 0.15rem; }
+.commit-nim-action { position: relative; overflow: hidden; min-height: 3.5rem; background: linear-gradient(135deg, #304ec3, #526ddb); box-shadow: 0 16px 34px rgba(48, 78, 195, 0.22); transition: transform var(--motion-tactile) var(--ease-premium), box-shadow var(--motion-tactile) var(--ease-premium), opacity var(--motion-state) ease; }
+.commit-nim-action:not(:disabled):active { transform: translateY(1px) scale(0.985); box-shadow: 0 8px 18px rgba(48, 78, 195, 0.18); }
+.commit-nim-action:disabled { box-shadow: none; }
+.funding-error { margin: 0; }
 
 .template-row h3,
 .template-row p {

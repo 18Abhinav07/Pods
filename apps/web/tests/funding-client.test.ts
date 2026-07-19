@@ -17,7 +17,10 @@ const intent = {
   reference: "pods-00112233445566778899aabb",
   transactionHash: null,
   exceptionCode: null,
-  expiresAt: "2027-03-08T00:00:00.000Z"
+  expiresAt: "2027-03-08T00:00:00.000Z",
+  observedAt: null,
+  finalizedAt: null,
+  creditedAt: null
 };
 
 function response(body: unknown, status = 200) {

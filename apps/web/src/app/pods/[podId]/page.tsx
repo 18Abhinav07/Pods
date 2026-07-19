@@ -43,7 +43,6 @@ export default async function PublicPodPage({
         <p>Applying does not reserve a place. A place is secured only after acceptance, funding finality, and roster lock.</p>
       </aside>
       <Link className="primary-action full-action" href={`/pods/${pod.id}/apply`}>Apply to join</Link>
-      <Link className="quiet-link centered-link" href={`/pods/${pod.id}/rules`}>View frozen rules</Link>
     </main>
   );
 }

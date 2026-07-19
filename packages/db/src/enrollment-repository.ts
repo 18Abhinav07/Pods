@@ -453,6 +453,21 @@ export function createEnrollmentMethods(database: PodsDatabase) {
       return membership ?? null;
     },
 
+    async getPodForAcceptedMember(userId: string, podId: string) {
+      const [pod] = await database
+        .select({ pod: pods })
+        .from(memberships)
+        .innerJoin(pods, eq(memberships.podId, pods.id))
+        .where(
+          and(
+            eq(memberships.userId, userId),
+            eq(memberships.podId, podId),
+            eq(memberships.state, "accepted_unfunded")
+          )
+        );
+      return pod?.pod ?? null;
+    },
+
     async listMembershipsForUser(userId: string) {
       return database
         .select({ membership: memberships, pod: pods })

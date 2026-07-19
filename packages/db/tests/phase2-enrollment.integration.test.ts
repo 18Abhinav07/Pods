@@ -163,6 +163,11 @@ describe("public enrollment", () => {
     expect(await repository.getMembershipForUser(applicant.userId, pod.id)).toMatchObject({
       state: "accepted_unfunded"
     });
+    expect(await repository.getPodForAcceptedMember(applicant.userId, pod.id)).toMatchObject({
+      id: pod.id,
+      contractData: pod.contractData
+    });
+    expect(await repository.getPodForAcceptedMember(stranger.userId, pod.id)).toBeNull();
     expect(
       await repository.decideApplication({
         creatorUserId: owner.userId,
@@ -249,6 +254,9 @@ describe("private invitations", () => {
       repository.acceptInvitation({ tokenHash, userId: secondInvitee.userId, now })
     ]);
     expect(results.filter(Boolean)).toHaveLength(1);
+    const winner = results.find(Boolean);
+    expect(winner ? await repository.getPodForAcceptedMember(winner.userId, pod.id) : null)
+      .toMatchObject({ id: pod.id });
     expect(await repository.acceptInvitation({
       tokenHash,
       userId: (await createUser()).userId,

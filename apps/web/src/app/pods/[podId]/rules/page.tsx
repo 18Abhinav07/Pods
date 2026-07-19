@@ -12,10 +12,13 @@ function nim(luna: number) {
 export default async function RulesPage({ params }: { params: Promise<{ podId: string }> }) {
   const { podId } = await params;
   const session = await requireSession(`/pods/${podId}/rules`);
-  const pod = await podsRepository.getPodForOwner(session.userId, podId);
+  const owned = await podsRepository.getPodForOwner(session.userId, podId);
+  const pod = owned ?? await podsRepository.getPodForAcceptedMember(session.userId, podId);
   if (!pod?.contractData || !pod.contractHash) notFound();
   const contract = pod.contractData;
   const template = templateContracts.find((item) => item.id === contract.templateId);
+  const nextHref = owned && pod.state === "enrollment_open" ? `/pods/${pod.id}/admin` : owned ? "/my-pods" : `/pods/${pod.id}/fund`;
+  const nextLabel = owned && pod.state === "enrollment_open" ? "Open creator controls" : owned ? "View My Pods" : "Review funding handoff";
   return <main className="app-shell rules-shell">
     <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="frozen-pill">Contract frozen</span></header>
     <section className="rules-hero entrance entrance-hero"><p className="eyebrow">Immutable Pod rules</p><h1>{contract.activity.name}</h1><p>{contract.activity.purpose}</p></section>
@@ -28,6 +31,6 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
       <section><span>Evidence authority</span><strong>Pods team review</strong><p>Creators and participants cannot decide evidence or financial outcomes.</p></section>
       <section><span>Timeout protection</span><strong>24-hour hard protection</strong><p>Principal protected, no bonus, streak extended.</p></section>
     </div>
-    <Link className="primary-action full-action" href="/my-pods">View My Pods</Link>
+    <Link className="primary-action full-action" href={nextHref}>{nextLabel}</Link>
   </main>;
 }

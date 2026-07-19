@@ -16,6 +16,8 @@ export type MyPodListItem = {
   state: string;
   templateId: TemplateId;
   templateName: string;
+  statusLabel?: string;
+  statusDetail?: string;
 };
 
 export function MyPodsList({ items }: { items: MyPodListItem[] }) {
@@ -79,8 +81,8 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
                 </div>
               ) : (
                 <div className="published-pod-status">
-                  <strong>Enrollment open</strong>
-                  <small>Rules frozen</small>
+                  <strong>{item.statusLabel ?? "Enrollment open"}</strong>
+                  <small>{item.statusDetail ?? "Rules frozen"}</small>
                 </div>
               )}
               <AnimatePresence initial={false}>

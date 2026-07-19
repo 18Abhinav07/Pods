@@ -93,6 +93,12 @@ const transitions: Transition[] = [
     to: "observed"
   },
   {
+    from: "wallet_approval_pending",
+    event: "observe",
+    actor: "worker",
+    to: "observed"
+  },
+  {
     from: "observed",
     event: "finalize",
     actor: "worker",

@@ -38,6 +38,12 @@ describe("Phase 3 funding contract", () => {
     expect(nextDepositState("finalized", "credit", "client")).toBeNull();
   });
 
+  it("allows the worker to recover a payment when the client hash callback is missed", () => {
+    expect(nextDepositState("wallet_approval_pending", "observe", "worker"))
+      .toBe("observed");
+    expect(nextDepositState("intent_created", "observe", "worker")).toBeNull();
+  });
+
   it("routes only the two documented pre-credit states into exception review", () => {
     expect(nextDepositState("transaction_submitted", "flag_exception", "worker"))
       .toBe("exception_review");

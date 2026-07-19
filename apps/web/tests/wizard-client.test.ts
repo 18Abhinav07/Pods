@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createPodDraft,
+  deletePodDraft,
   publishPodDraft,
   savePodDraftStep
 } from "../src/lib/wizard-client";
@@ -24,6 +25,7 @@ describe("creator wizard API client", () => {
     expect(await createPodDraft("build", fetcher)).toEqual({ id: "pod-id" });
     await savePodDraftStep("pod-id", "commitment", { nimPerOccurrence: "0.5" }, fetcher);
     await publishPodDraft("pod-id", fetcher);
+    await deletePodDraft("pod-id", fetcher);
 
     expect(requests).toEqual([
       {
@@ -40,6 +42,11 @@ describe("creator wizard API client", () => {
         path: "/api/pods/drafts/pod-id/publish",
         method: "POST",
         body: { acceptedFrozenContract: true }
+      },
+      {
+        path: "/api/pods/drafts/pod-id",
+        method: "DELETE",
+        body: undefined
       }
     ]);
   });

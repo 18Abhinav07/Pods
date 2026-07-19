@@ -71,3 +71,12 @@ export async function publishPodDraft(podId: string, fetcher: Fetcher = fetch) {
     fetcher
   );
 }
+
+export async function deletePodDraft(podId: string, fetcher: Fetcher = fetch) {
+  const response = await fetcher(`/api/pods/drafts/${podId}`, { method: "DELETE" });
+  if (response.ok) return;
+  const data = (await response.json()) as Record<string, unknown>;
+  throw new Error(
+    typeof data.error === "string" ? data.error : "Pod draft could not be deleted"
+  );
+}

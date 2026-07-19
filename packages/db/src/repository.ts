@@ -179,6 +179,20 @@ export function createPodsRepository(connectionString: string) {
       return saveDraftStep(creatorUserId, podId, "commitment", value);
     },
 
+    async deleteDraft(creatorUserId: string, podId: string) {
+      const deleted = await database
+        .delete(pods)
+        .where(
+          and(
+            eq(pods.id, podId),
+            eq(pods.creatorUserId, creatorUserId),
+            eq(pods.state, "draft")
+          )
+        )
+        .returning({ id: pods.id });
+      return deleted.length === 1;
+    },
+
     async getPodForOwner(creatorUserId: string, podId: string) {
       const [pod] = await database
         .select()

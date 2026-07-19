@@ -140,5 +140,33 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
     }
   });
   expect(editResponse.status()).toBe(409);
-  await expect(page.getByRole("link", { name: "View My Pods" })).toBeVisible();
+  await page.getByRole("link", { name: "View My Pods" }).click();
+  const publishedRow = page.locator(
+    `.my-pod-row[href="/pods/${podId}/rules"], .my-pod-row:has(a[href="/pods/${podId}/rules"])`
+  );
+  await expect(publishedRow.getByText("Enrollment open", { exact: true })).toBeVisible();
+  await expect(publishedRow.getByText("Rules frozen", { exact: true })).toBeVisible();
+  await expect(publishedRow.locator(".template-symbol.template-build svg")).toBeVisible();
+});
+
+test("a creator explicitly confirms permanent deletion of an unpublished draft", async ({ context, page }) => {
+  await authenticate(context);
+  const createResponse = await page.request.post("/api/pods/drafts", {
+    data: { templateId: "build" }
+  });
+  expect(createResponse.ok()).toBe(true);
+  const { draft } = (await createResponse.json()) as { draft: { id: string } };
+
+  await page.goto("/my-pods");
+  const row = page.locator(
+    `.my-pod-row[href*="${draft.id}"], .my-pod-row:has(a[href*="${draft.id}"])`
+  );
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Delete draft" }).click();
+  await expect(row.getByText("Delete this draft?")).toBeVisible();
+  await expect(row.getByText("It has not been published and no funds are involved.")).toBeVisible();
+  await row.getByRole("button", { name: "Delete permanently" }).click();
+
+  await expect(row).toHaveCount(0);
+  expect((await page.request.get(`/api/pods/drafts/${draft.id}`)).status()).toBe(404);
 });

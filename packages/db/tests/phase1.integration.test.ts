@@ -129,6 +129,7 @@ describe("owner-scoped immutable Pod creation", () => {
       occurrenceCount: 3
     });
     expect(published.contractHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(await repository.deleteDraft(owner.userId, draft.id)).toBe(false);
     expect(await repository.listPodsForOwner(owner.userId)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: draft.id, state: "enrollment_open" })
@@ -138,5 +139,26 @@ describe("owner-scoped immutable Pod creation", () => {
     await expect(
       repository.saveCommitmentStep(owner.userId, draft.id, { nimPerOccurrence: "1" })
     ).rejects.toThrow("Pod contract is immutable after publication");
+  });
+
+  it("permanently deletes only an owner-owned unpublished draft", async () => {
+    const owner = await repository.createSession({
+      walletAddress: `NQTEST${randomUUID()}`,
+      publicKey: randomUUID().replaceAll("-", ""),
+      tokenHash: randomUUID().replaceAll("-", ""),
+      expiresAt: new Date(Date.now() + 60_000)
+    });
+    const stranger = await repository.createSession({
+      walletAddress: `NQTEST${randomUUID()}`,
+      publicKey: randomUUID().replaceAll("-", ""),
+      tokenHash: randomUUID().replaceAll("-", ""),
+      expiresAt: new Date(Date.now() + 60_000)
+    });
+    const draft = await repository.createDraft(owner.userId, "build");
+
+    expect(await repository.deleteDraft(stranger.userId, draft.id)).toBe(false);
+    expect(await repository.getPodForOwner(owner.userId, draft.id)).not.toBeNull();
+    expect(await repository.deleteDraft(owner.userId, draft.id)).toBe(true);
+    expect(await repository.getPodForOwner(owner.userId, draft.id)).toBeNull();
   });
 });

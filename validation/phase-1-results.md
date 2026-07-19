@@ -28,15 +28,18 @@ The remaining physical gate is creator-flow and motion approval.
 - Publication writes the contract and occurrences atomically.
 - Published contracts receive a deterministic SHA-256 fingerprint.
 - Post-publication edits return HTTP 409.
+- Owner-owned unpublished drafts require confirmation before permanent deletion.
+- Published Pod rows show their lifecycle as Enrollment open and their contract as Rules frozen.
+- Template markers use semantic activity symbols instead of ordinal numbers.
 - Unauthenticated creator routes redirect to the signed wallet gate.
 
 ## Evidence
 
-- `pnpm check`: PASS
-- `pnpm test:e2e`: 10 of 10 PASS across mobile Safari and Android Chromium
+- Lint, typecheck, unit, integration, and production build gates: PASS
+- `pnpm test:e2e`: 12 of 12 PASS across mobile Safari and Android Chromium
 - Exact Wi-Fi-origin hydration test: 2 of 2 PASS at `192.168.29.244`
-- Repository-wide unit tests: 44 PASS
-- Live service integration tests: 5 PASS
+- Repository-wide unit tests: 45 PASS
+- Live service integration tests: 6 PASS
 - Production build: PASS
 - No U+2014 characters: PASS
 
@@ -63,6 +66,12 @@ through the Wi-Fi host. The live server warning identified the exact boundary.
 proves the Connect control reaches account access, message signing, and session
 verification through that exact origin. The landing-page Create a Pod action now
 uses the premium secondary-button treatment rather than text-link styling.
+
+Nimiq Pay also injects safe-area variables onto the root document element before
+React hydrates. The root layout now tolerates only that known host-owned attribute
+difference. Descendant hydration mismatches remain observable. The root contract
+has an automated regression test; the final physical creator-flow review remains
+the device approval gate.
 
 ## Manual gate
 

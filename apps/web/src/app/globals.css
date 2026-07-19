@@ -1069,33 +1069,114 @@ button.secondary-action {
 
 .my-pod-row {
   display: grid;
-  grid-template-columns: 42px 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
+}
+
+.my-pod-main {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
   text-decoration: none;
 }
 
-.my-pod-row > span:nth-child(2) {
+.my-pod-copy {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
-.my-pod-row strong {
+.my-pod-copy strong {
+  overflow: hidden;
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.my-pod-row small {
+.my-pod-copy small,
+.published-pod-status small {
   color: var(--muted);
   font-size: 8px;
 }
 
-.my-pod-row > b {
+.draft-row-actions,
+.published-pod-status {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.resume-draft-action,
+.published-pod-status strong {
   color: var(--action);
   font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
   text-transform: uppercase;
+}
+
+.delete-draft-action,
+.keep-draft-action,
+.confirm-delete-action {
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 8px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.delete-draft-action,
+.confirm-delete-action {
+  color: #a14941;
+}
+
+.draft-delete-confirmation {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid rgba(161, 73, 65, 0.18);
+  border-radius: 16px;
+  background: #fbf2ef;
+}
+
+.draft-delete-confirmation strong,
+.draft-delete-confirmation p {
+  margin: 0;
+}
+
+.draft-delete-confirmation strong {
+  font-size: 11px;
+}
+
+.draft-delete-confirmation p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.draft-delete-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.draft-delete-error {
+  color: #a14941 !important;
 }
 
 .neutral-empty {
@@ -1351,7 +1432,7 @@ button.secondary-action {
   }
 }
 
-.template-icon {
+.template-symbol {
   display: grid;
   width: 42px;
   height: 42px;
@@ -1359,27 +1440,33 @@ button.secondary-action {
   border-radius: 14px;
   color: var(--action);
   background: var(--action-soft);
-  font-family: "Fira Mono", ui-monospace, monospace;
-  font-size: 10px;
-  font-weight: 800;
 }
 
-.template-1 {
+.template-symbol svg {
+  width: 21px;
+  height: 21px;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.template-fitness {
   color: var(--success);
   background: var(--success-soft);
 }
 
-.template-2 {
+.template-reading {
   color: #856423;
   background: #f2ebd9;
 }
 
-.template-3 {
+.template-study {
   color: #74558c;
   background: #eee7f4;
 }
 
-.template-5 {
+.template-create {
   color: #9a493f;
   background: #f8e9e6;
 }
@@ -1452,11 +1539,11 @@ button.secondary-action {
     transform: translateX(3px);
   }
 
-  .template-selector:hover .template-icon {
+  .template-selector:hover .template-symbol {
     transform: translateY(-1px) scale(1.03);
   }
 
-  .template-icon {
+  .template-symbol {
     transition: transform var(--motion-state) var(--ease-premium);
   }
 }

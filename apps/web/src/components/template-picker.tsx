@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createPodDraft } from "../lib/wizard-client";
+import { TemplateSymbol } from "./template-symbol";
 
 export function TemplatePicker() {
   const router = useRouter();
@@ -42,9 +43,7 @@ export function TemplatePicker() {
           onClick={() => choose(template.id)}
           type="button"
         >
-          <span className={`template-icon template-${index + 1}`} aria-hidden="true">
-            {String(index + 1).padStart(2, "0")}
-          </span>
+          <TemplateSymbol templateId={template.id} />
           <span>
             <strong>{template.name}</strong>
             <small>{template.summary}</small>

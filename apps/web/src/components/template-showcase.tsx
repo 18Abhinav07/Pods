@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { templates, type TemplateId } from "./template-data";
+import { TemplateSymbol } from "./template-symbol";
 
 const selectionSpring = {
   type: "spring",
@@ -23,7 +24,7 @@ export function TemplateShowcase() {
   return (
     <div className="template-showcase">
       <div className="template-list" aria-label="Activity templates">
-        {templates.map((template, index) => {
+        {templates.map((template) => {
           const isSelected = template.id === selectedId;
 
           return (
@@ -43,12 +44,7 @@ export function TemplateShowcase() {
                   transition={selectionTransition}
                 />
               ) : null}
-              <span
-                className={`template-icon template-${index + 1}`}
-                aria-hidden="true"
-              >
-                {index + 1}
-              </span>
+              <TemplateSymbol templateId={template.id} />
               <span className="template-copy">
                 <strong>{template.name}</strong>
                 <small>{template.detail}</small>

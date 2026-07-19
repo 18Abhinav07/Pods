@@ -25,6 +25,31 @@ export async function GET(
   return NextResponse.json({ pod });
 }
 
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ podId: string }> }
+) {
+  const session = await getCurrentSession();
+  if (!session) return NextResponse.json({ error: "Wallet session required" }, { status: 401 });
+  const { podId } = await params;
+  const pod = await podsRepository.getPodForOwner(session.userId, podId);
+  if (!pod) return NextResponse.json({ error: "Pod not found" }, { status: 404 });
+  if (pod.state !== "draft") {
+    return NextResponse.json(
+      { error: "Published Pods cannot be deleted" },
+      { status: 409 }
+    );
+  }
+  const deleted = await podsRepository.deleteDraft(session.userId, podId);
+  if (!deleted) {
+    return NextResponse.json(
+      { error: "Draft changed before it could be deleted" },
+      { status: 409 }
+    );
+  }
+  return new Response(null, { status: 204 });
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ podId: string }> }

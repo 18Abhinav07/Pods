@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-19 19:04
+last-updated: 2026-07-19 21:51
 last-agent: codex
 mode: HACKATHON
 ---
@@ -13,13 +13,16 @@ Related: [[README]] | [[AGENTS]] | [[docs/implementation-plan]] | [[validation/p
 
 Phase 0 premium motion and Phase 1 signed immutable Pod creation are committed.
 Physical Nimiq Pay authentication now passes after correcting LAN hydration and
-Keyguard-compatible signed-message verification. Creator-flow approval remains.
+Keyguard-compatible signed-message verification. Device-test corrections for root
+hydration, draft deletion, template symbols, and published status are verified.
+Creator-flow approval remains.
 
 ## In Progress (resume here)
 
 - Task: Complete the creator-flow portion of the Nimiq Pay phone checkpoint.
 - URL: `http://192.168.29.244:3411`, served by the active `pnpm dev:lan` process.
-- Flow: Build and Ship creation, frozen Rules review, motion approval.
+- Flow: delete an unwanted draft, inspect Enrollment open and Rules frozen status,
+  complete Build and Ship creation, review frozen Rules, and approve motion.
 
 ## Open Errors / Blockers
 
@@ -31,6 +34,7 @@ Keyguard-compatible signed-message verification. Creator-flow approval remains.
 - Feature checkpoint: `3c7a062 feat: build signed immutable pod creation`.
 - LAN hydration and CTA fix: `c692095 fix: hydrate wallet controls on lan`.
 - Keyguard-compatible signature verification is implemented and physically verified.
+- Phase 1 device-test corrections pass 45 unit, 6 integration, and 12 browser tests.
 
 ## Next 3 Tasks
 

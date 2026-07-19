@@ -1,18 +1,18 @@
 export const templates = [
   {
-    id: "move",
+    id: "fitness",
     name: "Move",
     detail: "Fitness and movement",
     evidence: "In-app photo, completion note, measurable activity minimum"
   },
   {
-    id: "read",
+    id: "reading",
     name: "Read",
     detail: "Reading progress",
     evidence: "Title, pages or minutes, reading artifact, optional note"
   },
   {
-    id: "focus",
+    id: "study",
     name: "Focus",
     detail: "Study and deep work",
     evidence: "Topic, duration, focus artifact, short takeaway"

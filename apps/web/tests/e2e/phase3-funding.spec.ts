@@ -195,6 +195,13 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     await expect(memberPage.getByRole("status")).toContainText("Transaction submitted");
     await expect(memberPage.getByText(transactionHash)).toBeVisible();
 
+    await memberPage.goto(`${baseUrl}/my-pods`);
+    const participantPod = memberPage.locator(".my-pod-row").filter({ hasText: "Fund Pods" });
+    await expect(participantPod.getByText("Funding in progress")).toBeVisible();
+    await participantPod.getByRole("link").click();
+    await expect(memberPage).toHaveURL(statusUrl);
+    await expect(memberPage.getByText(transactionHash)).toBeVisible();
+
     await strangerPage.goto(statusUrl);
     await expect(strangerPage.getByRole("heading", { name: "This path is unavailable." })).toBeVisible();
   } finally {

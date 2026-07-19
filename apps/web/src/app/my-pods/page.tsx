@@ -34,15 +34,34 @@ export default async function MyPodsPage() {
   const joinedItems: MyPodListItem[] = joinedRecords.map(({ membership, pod }) => {
     const template = templateContracts.find((item) => item.id === pod.templateId);
     const accepted = membership.state === "accepted_unfunded";
+    const retryFunding = membership.state === "funding_failed";
+    const trackingFunding = ["deposit_pending", "funded_provisional", "refund_pending", "refunded"]
+      .includes(membership.state);
+    const statusHref = membership.depositIntentId
+      ? `/pods/${pod.id}/fund/status?intent=${membership.depositIntentId}`
+      : `/pods/${pod.id}/fund`;
+    const status = membership.state === "deposit_pending"
+      ? { label: "Funding in progress", detail: "Open transaction tracker" }
+      : membership.state === "funded_provisional"
+        ? { label: "Commitment credited", detail: "Waiting for roster lock" }
+        : membership.state === "refund_pending"
+          ? { label: "Refund queued", detail: "Open refund tracker" }
+          : membership.state === "refunded"
+            ? { label: "Refund confirmed", detail: "View transaction receipt" }
+            : retryFunding
+              ? { label: "Funding retry required", detail: "No commitment was credited" }
+              : accepted
+                ? { label: "Accepted", detail: "Funding required" }
+                : { label: membership.state === "applied" ? "Application pending" : "Not active", detail: "View application" };
     return {
       id: `member-${membership.id}`,
-      href: accepted ? `/pods/${pod.id}/fund` : "/applications",
+      href: trackingFunding ? statusHref : accepted || retryFunding ? `/pods/${pod.id}/fund` : "/applications",
       name: pod.contractData?.activity.name ?? "Pod",
       state: membership.state,
       templateId: pod.templateId,
       templateName: template?.name ?? "Activity",
-      statusLabel: accepted ? "Accepted" : membership.state === "applied" ? "Application pending" : "Not active",
-      statusDetail: accepted ? "Funding required" : "View application"
+      statusLabel: status.label,
+      statusDetail: status.detail
     };
   });
   const empty = ownedItems.length === 0 && joinedItems.length === 0;

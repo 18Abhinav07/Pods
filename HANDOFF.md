@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-20 14:35
+last-updated: 2026-07-20 15:00
 last-agent: codex
 mode: HACKATHON
 ---
@@ -11,33 +11,35 @@ Related: [[README]] | [[AGENTS]] | [[PRODUCT]] | [[docs/implementation-plan]] | 
 
 ## State
 
-Phase 0, Phase 1, and Phase 2 are physically approved. Phase 3A Tasks 1 through
-7 are implemented on `phase/03-funding`. The automated Task 8 gate passes and
-the real Nimiq Pay Testnet commitment remains the only open Phase 3A checkpoint.
-Phase 3B cutoff, roster lock, and refunds have not started.
+Phase 0, Phase 1, Phase 2, and Phase 3A are physically approved. The real 8 NIM
+Nimiq Pay Testnet commitment finalized, produced exactly one ledger credit,
+survived status-route reopening, and is recorded in
+`validation/phase-3a-results.md`. Phase 3B cutoff, roster lock, and refunds are
+authorized and starting from Task 9.
 
 The participant relationship is now projected through one shared UI contract.
 Discover, public Pod detail, Applications, My Pods, and Today show the same
 status, next action, and canonical route for every membership state. The real
-participant currently has `funding_failed` after rejecting the wallet request,
-so the correct UI is `Funding needs attention` with `Retry funding`.
+participant currently has `funded_provisional` and the deposit has
+`credited_provisional`. The correct UI remains `Commitment credited` until the
+Phase 3B cutoff barrier produces either roster lock or a full refund.
 
 ## In Progress
 
 - Phone URL: `http://192.168.29.244:3411/`.
 - PostgreSQL, MinIO, the web dev server, and the funding worker are running.
 - `Pods MVP C1` remains the one real public Pod.
-- Reload Discover and Today on the accepted participant wallet. Both must show
-  the Pod's funding recovery state rather than `Apply to join` or the discovery
-  empty action.
-- Retry funding, approve the Nimiq Pay Testnet transaction, and wait for the
-  tracker to reach `Commitment credited`.
+- Phase 3B Task 9 is in progress: add the audited local Testnet Clock.
+- The real funded Pod must not be advanced to cutoff until refund transfer tests
+  pass and the cutoff/refund worker is ready.
 
 ## Open Errors and Blockers
 
 - No automated error is open.
-- The real participant has not yet approved a Testnet funding transaction.
-- Phase 3B remains blocked until the physical Phase 3A verdict is PASS.
+- No Phase 3A blocker remains.
+- The real Pod currently has one funded participant against a minimum of two,
+  so the expected cutoff result is a full 8 NIM refund unless another eligible
+  participant funds before the serialized snapshot.
 - The shared treasury remains a bounded custodial Testnet hot wallet. Its key
   stays only in ignored `.runtime` storage and must never be printed or committed.
 
@@ -60,6 +62,6 @@ so the correct UI is `Funding needs attention` with `Retry funding`.
 
 ## Next 3 Tasks
 
-1. Complete the phone UX check for Discover and Today, then approve the real funding transaction.
-2. Capture finality and ledger evidence and record Abhinav's Phase 3A PASS.
-3. Only after PASS, begin Task 9, the audited local Clock for Phase 3B.
+1. Implement and test Task 9, the audited local Testnet Clock.
+2. Implement the serialized cutoff barrier and financially safe cancellation.
+3. Implement DB-backed refund reconciliation before advancing the real Pod.

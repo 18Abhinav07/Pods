@@ -9,6 +9,13 @@ function response(data: unknown) {
   );
 }
 
+function errorResponse(error: { code: number; message: string; data?: unknown }) {
+  return new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, error }), {
+    status: 200,
+    headers: { "content-type": "application/json" }
+  });
+}
+
 describe("NimiqRpcClient", () => {
   it("uses the documented raw transaction and block-number RPC shapes", async () => {
     const fetchMock = vi
@@ -79,5 +86,18 @@ describe("NimiqRpcClient", () => {
       transactionBatch: 14,
       latestBatch: 14
     });
+  });
+
+  it("treats the Testnet RPC transaction-not-found error as absent", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      errorResponse({
+        code: -32603,
+        message: "Internal error",
+        data: "Transaction not found: refund-hash"
+      })
+    );
+    const rpc = new NimiqRpcClient("https://rpc.testnet.example", fetchMock);
+
+    await expect(rpc.getTransactionByHash("refund-hash")).resolves.toBeUndefined();
   });
 });

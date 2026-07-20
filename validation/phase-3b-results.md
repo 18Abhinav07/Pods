@@ -3,7 +3,7 @@ created: 2026-07-20
 project: pods
 ecosystem: nimiq
 tags: [validation, phase-3b, cutoff, refunds, mobile]
-status: automated-pass-physical-pending
+status: chain-pass-phone-confirmation-pending
 ---
 
 # Phase 3B Cutoff and Refund Gate
@@ -12,11 +12,12 @@ Related: [[HANDOFF]] | [[validation/phase-3a-results]] | [[docs/superpowers/plan
 
 ## Current verdict
 
-`AUTOMATED PASS, PHYSICAL PHONE GATE PENDING`
+`AUTOMATED PASS, ON-CHAIN REFUND PASS, PHONE CONFIRMATION PENDING`
 
-Tasks 9 through 13 and the automated portion of Task 14 pass. Phase 3B cannot
-receive its physical `PASS` until one real cutoff result and one real Nimiq
-Testnet refund are inspected in Nimiq Pay and by transaction hash.
+Tasks 9 through 13 and the automated portion of Task 14 pass. The real cutoff
+and Nimiq Testnet refund also completed successfully by transaction hash. Phase
+3B cannot receive its final physical `PASS` until Abhinav confirms the updated
+balance and terminal refund state in Nimiq Pay.
 
 ## Implemented boundary
 
@@ -48,7 +49,7 @@ Testnet refund are inspected in Nimiq Pay and by transaction hash.
 
 - `pnpm check`: PASS.
 - Copy gate: PASS, no U+2014 characters.
-- Unit and component tests: 150 PASS.
+- Unit and component tests: 151 PASS.
 - Live Postgres integration tests: 26 PASS.
 - Worker and production web builds: PASS.
 - Phase 3 funding and cutoff browser gate: 4 PASS across Mobile Safari and
@@ -61,26 +62,29 @@ Testnet refund are inspected in Nimiq Pay and by transaction hash.
 - Transfer negative-path tests prove prepared-before-broadcast, chain lookup
   before retry, no rebroadcast from `unknown`, execution failure isolation, and
   hash mismatch isolation.
+- The live refund exposed the configured RPC's exact unknown-hash response:
+  JSON-RPC `-32603` with `Transaction not found: <hash>` data. A regression test
+  now proves this exact pre-broadcast response maps to an absent transaction;
+  other RPC errors remain failures.
 
 The browser cutoff tests used a separately migrated disposable Postgres
 database and a temporary server on port 3412. The server was stopped and the
 database was deleted after the gate. The phone server on port 3411 and the real
 Pods database were not used for automated cutoff tests.
 
-## Live safety snapshot
+## Pre-cutoff safety snapshot
 
-Read-only inspection after implementation showed:
+Read-only inspection before the authorized Clock advance showed:
 
-- No `clock_events` exist in the real local database.
-- `Pods MVP C1` remains `enrollment_open`.
-- The real deposit remains credited from the Phase 3A physical gate.
-- No real `transfer_legs` exist.
+- No `clock_events` existed in the real local database.
+- `Pods MVP C1` remained `enrollment_open`.
+- The real deposit remained credited from the Phase 3A physical gate.
+- No real `transfer_legs` existed.
 - No real refund was prepared or broadcast during automated work.
 
-The real Pod cutoff is `2026-07-20T18:30:00.000Z`, which is midnight in its
-configured Asia/Kolkata schedule. It currently has one funded participant
-against a minimum of two. Unless another eligible participant finalizes funding
-before the snapshot, the expected result is `cancelled_refunding` followed by a
+The real Pod cutoff was `2026-07-20T18:30:00.000Z`, which is midnight in its
+configured Asia/Kolkata schedule. It had one funded participant against a
+minimum of two, so the expected result was `cancelled_refunding` followed by a
 full `8 NIM` Testnet refund.
 
 ## Physical gate procedure
@@ -108,4 +112,21 @@ full `8 NIM` Testnet refund.
 
 ## Physical evidence
 
-Pending Abhinav's phone run. No physical result is claimed yet.
+- Abhinav recorded the participant balance as `109992 NIM` before cutoff.
+- Audited Clock event: `61e2e05a-e8ee-440b-8d87-581ba17144d2`.
+- Actor: `abhinav:phone-gate`.
+- Effective cutoff: `2026-07-20T18:30:00.000Z`.
+- The underfilled Pod transitioned through `cancelled_refunding` to `cancelled`.
+- Refund transaction hash:
+  `c9626f69ad858fba6ac6359cb28751e3b8d14defcbf8e289006a2f10e4602695`.
+- Refund amount: `800000` Luna, exactly `8 NIM`.
+- Chain result: successful execution in block `6513490`, batch `58025`.
+- Finality result: observed at latest batch `58027`, beyond the containing batch.
+- Persisted terminal states: transfer `confirmed`, membership `refunded`,
+  deposit `refunded`, Pod `cancelled`.
+- Ledger conservation: one `800000` Luna deposit credit, one `800000` Luna
+  refund entitlement, and one `800000` Luna refund confirmation.
+- Full isolated verification after the RPC fix: copy, lint, typecheck, 151
+  unit/component tests, 26 integration tests, and web/worker builds all PASS.
+- Pending physical observation: Abhinav must confirm the participant wallet now
+  shows `110000 NIM` and the reopened Mini App shows the terminal refund state.

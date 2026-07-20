@@ -97,6 +97,15 @@ export class NimiqRpcClient implements TransferRpc {
 
     const body = (await response.json()) as JsonRpcSuccess<T> | JsonRpcFailure;
     if ("error" in body) {
+      const transactionHash = params[0];
+      if (
+        method === "getTransactionByHash" &&
+        body.error.code === -32603 &&
+        typeof transactionHash === "string" &&
+        body.error.data === `Transaction not found: ${transactionHash}`
+      ) {
+        return null as T;
+      }
       throw new Error(`${method} RPC error ${body.error.code}: ${body.error.message}`);
     }
 

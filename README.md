@@ -14,10 +14,11 @@ Pods-team review.
 
 ## Current status
 
-Phase 0, Phase 1, and Phase 2 are physically approved. Phase 3A funding is
-implemented through independent Testnet observation and provisional ledger
-credit. Automated gates pass and the real Nimiq Pay phone transaction is the
-remaining checkpoint before cutoff, roster lock, and refunds are built.
+Phase 0, Phase 1, Phase 2, and Phase 3A are physically approved. Phase 3B now
+implements the audited cutoff barrier, deterministic roster lock, full-principal
+refund execution, the participant waiting room, and creator-safe funding
+administration. All automated gates pass. The real phone cutoff and refund are
+the remaining Phase 3B checkpoint before Phase 4 can begin.
 
 ## Local development
 
@@ -41,7 +42,9 @@ the same Wi-Fi network.
 
 The web process reads only the Testnet treasury address. The worker reads the
 ignored local treasury configuration, watches Nimiq RPC, and is the only
-process allowed to finalize and credit a deposit.
+process allowed to finalize deposits, credit the ledger, apply cutoff, and sign
+refunds. Signed refund bytes are persisted before broadcast and ambiguous
+transfers are reconciled by hash before any retry.
 
 ## Phase 0 outbound preflight
 
@@ -73,6 +76,8 @@ or production-scale.
 
 - [[docs/implementation-plan|Phase 0 implementation plan]]
 - [[validation/inbound-spike-manifest|Validated inbound deposit boundary]]
+- [[validation/phase-3a-results|Phase 3A physical funding result]]
+- [[validation/phase-3b-results|Phase 3B cutoff and refund gate]]
 - [[docs/design-reference/README|Locked design references]]
 
 Licensed under the MIT License.

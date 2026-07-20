@@ -180,12 +180,13 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
   expect(editResponse.status()).toBe(409);
   await page.getByRole("link", { name: "Open creator controls" }).click();
   await expect(page).toHaveURL(new RegExp(`/pods/${podId}/admin$`));
+  await page.waitForLoadState("networkidle");
   await page.goto("/my-pods");
   const publishedRow = page.locator(
     `.my-pod-row[href="/pods/${podId}/admin"], .my-pod-row:has(a[href="/pods/${podId}/admin"])`
   );
-  await expect(publishedRow.getByText("Creator controls", { exact: true })).toBeVisible();
   await expect(publishedRow.getByText("Enrollment open", { exact: true })).toBeVisible();
+  await expect(publishedRow.getByText("Rules frozen", { exact: true })).toBeVisible();
   await expect(publishedRow.locator(".template-symbol.template-build svg")).toBeVisible();
 });
 

@@ -4,10 +4,15 @@ import path from "node:path";
 
 import { KeyPair, PrivateKey } from "@nimiq/core";
 import { expect, test, type BrowserContext } from "@playwright/test";
+import { createPodsRepository } from "@pods/db";
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3410";
 const signedMessagePrefix = "\x16Nimiq Signed Message:\n";
 const testWalletAddresses = new Set<string>();
+const databaseUrl =
+  process.env.DATABASE_URL ??
+  "postgresql://pods:pods-local-only@127.0.0.1:54329/pods";
+const phase3Repository = createPodsRepository(databaseUrl);
 
 type QueryResult = { rows: Array<Record<string, unknown>> };
 type DatabasePool = {
@@ -22,9 +27,7 @@ function databasePool() {
   );
   const { Pool } = requireFromDatabaseWorkspace("pg") as { Pool: DatabasePoolConstructor };
   return new Pool({
-    connectionString:
-      process.env.DATABASE_URL ??
-      "postgresql://pods:pods-local-only@127.0.0.1:54329/pods"
+    connectionString: databaseUrl
   });
 }
 
@@ -42,6 +45,10 @@ test.afterEach(async () => {
   const walletAddresses = [...testWalletAddresses];
   testWalletAddresses.clear();
   await deleteTestUsersByWalletAddress(walletAddresses);
+});
+
+test.afterAll(async () => {
+  await phase3Repository.close();
 });
 
 function dateInput(daysFromToday: number) {
@@ -129,6 +136,162 @@ async function publishAndAccept(creatorContext: BrowserContext, memberContext: B
   return draft.id;
 }
 
+function dateFrom(anchor: Date, days: number) {
+  const date = new Date(anchor);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+async function publishCutoffPod(input: {
+  creatorContext: BrowserContext;
+  name: string;
+  minParticipants: number;
+  maxParticipants: number;
+  startDate: string;
+  endDate: string;
+}) {
+  const create = await input.creatorContext.request.post(`${baseUrl}/api/pods/drafts`, {
+    data: { templateId: "build" }
+  });
+  expect(create.ok()).toBe(true);
+  const { draft } = (await create.json()) as { draft: { id: string } };
+  for (const [step, value] of [
+    ["activity", {
+      name: input.name,
+      purpose: "Prove deterministic roster lock and a full principal return.",
+      startDate: input.startDate,
+      endDate: input.endDate,
+      timeZone: "UTC",
+      weekdays: [1, 2, 3, 4, 5, 6, 7],
+      config: {
+        projectTheme: "Pods Phase 3B",
+        allowedDeliverables: ["pull_request"],
+        commitmentCutoff: "09:00"
+      }
+    }],
+    ["community", {
+      visibility: "public",
+      minParticipants: input.minParticipants,
+      maxParticipants: input.maxParticipants,
+      applicationQuestions: ["What will you ship?"]
+    }],
+    ["commitment", { nimPerOccurrence: "0.1" }]
+  ] as const) {
+    const saved = await input.creatorContext.request.patch(
+      `${baseUrl}/api/pods/drafts/${draft.id}`,
+      { data: { step, value } }
+    );
+    expect(saved.ok()).toBe(true);
+  }
+  const published = await input.creatorContext.request.post(
+    `${baseUrl}/api/pods/drafts/${draft.id}/publish`,
+    { data: { acceptedFrozenContract: true } }
+  );
+  expect(published.ok()).toBe(true);
+  return draft.id;
+}
+
+async function applyAndAcceptCutoffMember(input: {
+  creatorContext: BrowserContext;
+  memberContext: BrowserContext;
+  podId: string;
+}) {
+  const applied = await input.memberContext.request.post(
+    `${baseUrl}/api/pods/${input.podId}/applications`,
+    { data: { answers: ["A tested Phase 3B activity"] } }
+  );
+  expect(applied.ok()).toBe(true);
+  const { application } = (await applied.json()) as { application: { id: string } };
+  const accepted = await input.creatorContext.request.patch(
+    `${baseUrl}/api/pods/${input.podId}/applications/${application.id}`,
+    { data: { decision: "accept" } }
+  );
+  expect(accepted.ok()).toBe(true);
+}
+
+async function userIdForWallet(walletAddress: string) {
+  const pool = databasePool();
+  try {
+    const result = await pool.query(
+      "SELECT id FROM users WHERE wallet_address = $1",
+      [walletAddress]
+    );
+    const id = result.rows[0]?.id;
+    if (typeof id !== "string") throw new Error("Authenticated test user was not found");
+    return id;
+  } finally {
+    await pool.end();
+  }
+}
+
+async function creditCutoffMember(input: {
+  podId: string;
+  userId: string;
+  walletAddress: string;
+  blockNumber: number;
+  transactionIndex: number;
+  finalizedAt: Date;
+}) {
+  const now = new Date();
+  const transactionHash = randomBytes(32).toString("hex");
+  const intent = await phase3Repository.createDepositIntent({
+    podId: input.podId,
+    userId: input.userId,
+    walletAddress: input.walletAddress,
+    treasuryAddress: "NQ41 ENPQ 41CH URE0 BQ41 N6XJ RUFN JPE7 4U0A",
+    network: "testnet",
+    reference: `pods-${randomBytes(12).toString("hex")}`,
+    now
+  });
+  await phase3Repository.recordDepositWalletAttempt({
+    intentId: intent.id,
+    userId: input.userId,
+    event: "open",
+    now
+  });
+  await phase3Repository.recordDepositTransactionHint({
+    intentId: intent.id,
+    userId: input.userId,
+    transactionHash,
+    now
+  });
+  await phase3Repository.recordObservedDeposit({
+    intentId: intent.id,
+    transactionHash,
+    observedFrom: input.walletAddress,
+    observedFromType: 0,
+    observedRelatedAddresses: [
+      input.walletAddress,
+      "NQ41 ENPQ 41CH URE0 BQ41 N6XJ RUFN JPE7 4U0A"
+    ],
+    blockNumber: input.blockNumber,
+    transactionIndex: input.transactionIndex,
+    transactionBatch: 100,
+    now
+  });
+  await phase3Repository.finalizeObservedDeposit({
+    intentId: intent.id,
+    now: input.finalizedAt
+  });
+  await phase3Repository.creditFinalizedDeposit({
+    intentId: intent.id,
+    now: input.finalizedAt
+  });
+  return intent;
+}
+
+async function confirmTestRefund(legId: string, now: Date) {
+  await phase3Repository.markRefundTransferPrepared({
+    legId,
+    rawTransactionHex: randomBytes(32).toString("hex"),
+    transactionHash: randomBytes(32).toString("hex"),
+    validityStartHeight: 900,
+    now
+  });
+  await phase3Repository.markRefundTransferBroadcast({ legId, now });
+  await phase3Repository.confirmRefundTransfer({ legId, now });
+}
+
 test("funding commitment survives rejection, submission, refresh, and owner isolation", async ({ browser, context }) => {
   await authenticate(context);
   const memberContext = await browser.newContext();
@@ -166,6 +329,8 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     await memberPage.getByRole("checkbox", { name: /I accept the frozen terms/ }).check();
     await commitButton.click();
     await expect(memberPage.locator(".funding-error")).toContainText("Wallet closed for test");
+    await expect(commitButton).toHaveText("Commit 0.5 NIM");
+    await memberPage.waitForLoadState("networkidle");
 
     const pool = databasePool();
     try {
@@ -186,6 +351,7 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     const recoveryCard = memberPage.locator(".public-pod-card").filter({ hasText: "Fund Pods" });
     await expect(recoveryCard.getByText("Funding needs attention")).toBeVisible();
     await expect(recoveryCard.getByRole("link", { name: "Retry funding" })).toBeVisible();
+    await memberPage.waitForLoadState("networkidle");
     await memberPage.goto(`${baseUrl}/today`);
     await expect(memberPage.getByRole("heading", { name: "Your funding attempt did not complete." })).toBeVisible();
     await memberPage.getByRole("link", { name: "Retry funding" }).click();
@@ -216,5 +382,131 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
   } finally {
     await memberContext.close();
     await strangerContext.close();
+  }
+});
+
+test("audited cutoff connects roster lock, exclusion, cancellation, and refund rooms", async ({ browser, context }) => {
+  await authenticate(context);
+  const memberContexts = await Promise.all(
+    Array.from({ length: 4 }, async () => {
+      const memberContext = await browser.newContext();
+      const walletAddress = await authenticate(memberContext);
+      return { memberContext, walletAddress, page: await memberContext.newPage() };
+    })
+  );
+  try {
+    const currentEffective = await phase3Repository.getEffectiveTime(new Date());
+    const anchor = currentEffective.getTime() > Date.now()
+      ? currentEffective
+      : new Date();
+    const startDate = dateFrom(anchor, 14);
+    const endDate = dateFrom(anchor, 18);
+    const capacityPodId = await publishCutoffPod({
+      creatorContext: context,
+      name: `Capacity Pod ${randomUUID().slice(0, 6)}`,
+      minParticipants: 2,
+      maxParticipants: 2,
+      startDate,
+      endDate
+    });
+    const cancelledPodId = await publishCutoffPod({
+      creatorContext: context,
+      name: `Return Pod ${randomUUID().slice(0, 6)}`,
+      minParticipants: 2,
+      maxParticipants: 4,
+      startDate,
+      endDate
+    });
+    for (const member of memberContexts.slice(0, 3)) {
+      await applyAndAcceptCutoffMember({
+        creatorContext: context,
+        memberContext: member.memberContext,
+        podId: capacityPodId
+      });
+    }
+    await applyAndAcceptCutoffMember({
+      creatorContext: context,
+      memberContext: memberContexts[3]!.memberContext,
+      podId: cancelledPodId
+    });
+
+    const capacityPod = await phase3Repository.getPublicPod(capacityPodId, new Date());
+    const cancelledPod = await phase3Repository.getPublicPod(cancelledPodId, new Date());
+    if (!capacityPod || !cancelledPod) throw new Error("Published cutoff fixtures were not found");
+    const cutoffAt = capacityPod.firstOccurrenceOpensAt;
+    const finalizedAt = new Date(cutoffAt.getTime() - 60_000);
+    const funded: Array<Awaited<ReturnType<typeof creditCutoffMember>>> = [];
+    for (const [index, member] of memberContexts.slice(0, 3).entries()) {
+      funded.push(await creditCutoffMember({
+        podId: capacityPodId,
+        userId: await userIdForWallet(member.walletAddress),
+        walletAddress: member.walletAddress,
+        blockNumber: 200 + index,
+        transactionIndex: 0,
+        finalizedAt
+      }));
+    }
+    const cancelledIntent = await creditCutoffMember({
+      podId: cancelledPodId,
+      userId: await userIdForWallet(memberContexts[3]!.walletAddress),
+      walletAddress: memberContexts[3]!.walletAddress,
+      blockNumber: 300,
+      transactionIndex: 0,
+      finalizedAt
+    });
+
+    await phase3Repository.advanceClock({
+      effectiveTime: cutoffAt,
+      reason: "Phase 3B isolated browser cutoff gate",
+      actor: `playwright-${randomUUID()}`,
+      realNow: new Date()
+    });
+    const effectiveNow = await phase3Repository.getEffectiveTime(new Date());
+    const capacityResult = await phase3Repository.applyPodCutoff({
+      podId: capacityPodId,
+      now: effectiveNow
+    });
+    const cancelledResult = await phase3Repository.applyPodCutoff({
+      podId: cancelledPodId,
+      now: effectiveNow
+    });
+    expect(capacityResult.includedMembershipIds).toHaveLength(2);
+    expect(capacityResult.refundLegIds).toHaveLength(1);
+    expect(cancelledResult.podState).toBe("cancelled_refunding");
+    expect(cancelledResult.refundLegIds).toHaveLength(1);
+    await confirmTestRefund(capacityResult.refundLegIds[0]!, effectiveNow);
+    await confirmTestRefund(cancelledResult.refundLegIds[0]!, effectiveNow);
+
+    const includedPage = memberContexts[0]!.page;
+    await includedPage.goto(`${baseUrl}/today`);
+    await expect(includedPage.getByRole("heading", { name: "You are part of this Pod." })).toBeVisible();
+    await includedPage.getByRole("link", { name: "Open Pod" }).click();
+    await expect(includedPage).toHaveURL(`${baseUrl}/pods/${capacityPodId}/today`);
+    await expect(includedPage.getByText("Place secured")).toBeVisible();
+    await expect(includedPage.getByText("2 confirmed")).toBeVisible();
+
+    const excludedPage = memberContexts[2]!.page;
+    await excludedPage.goto(`${baseUrl}/pods/${capacityPodId}/today`);
+    await expect(excludedPage.getByRole("status")).toContainText("Refund confirmed");
+    await expect(excludedPage.locator(".refund-rail").getByText("0.5 NIM", { exact: true })).toBeVisible();
+
+    const cancelledPage = memberContexts[3]!.page;
+    await cancelledPage.goto(`${baseUrl}/pods/${cancelledPodId}/today`);
+    await expect(cancelledPage.getByRole("status")).toContainText("Refund confirmed");
+    await expect(
+      cancelledPage.locator(".refund-rail").getByText(
+        cancelledIntent.amountLuna / 100_000 + " NIM",
+        { exact: true }
+      )
+    ).toBeVisible();
+
+    const creatorPage = await context.newPage();
+    await creatorPage.goto(`${baseUrl}/pods/${capacityPodId}/admin/funding`);
+    await expect(creatorPage.getByText("2 of 2 confirmed")).toBeVisible();
+    await expect(creatorPage.locator(".creator-funding-list article")).toHaveCount(3);
+    await expect(creatorPage.locator("main")).not.toContainText(memberContexts[0]!.walletAddress);
+    await expect(creatorPage.locator("main")).not.toContainText(funded[0]!.reference);
+  } finally {
+    await Promise.all(memberContexts.map(({ memberContext }) => memberContext.close()));
   }
 });

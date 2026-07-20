@@ -128,6 +128,7 @@ test("public enrollment works from discovery through accepted funding handoff", 
   const creatorCard = page.locator(".public-pod-card").filter({ hasText: pod.name });
   await expect(creatorCard.getByRole("link", { name: "Manage enrollment" })).toBeVisible();
   await expect(creatorCard.getByRole("link", { name: "Apply to join" })).toHaveCount(0);
+  await page.waitForLoadState("networkidle");
   await page.goto(`${baseUrl}/pods/${pod.id}`);
   await expect(page.getByRole("link", { name: "Manage enrollment" })).toHaveAttribute(
     "href",

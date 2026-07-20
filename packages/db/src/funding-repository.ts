@@ -362,6 +362,23 @@ export function createFundingMethods(database: PodsDatabase) {
         if (["credited_provisional", "applied_to_roster"].includes(intent.state)) {
           return intent;
         }
+        if (
+          intent.state === "finalized" &&
+          intent.finalizedAt &&
+          intent.finalizedAt.getTime() > intent.expiresAt.getTime()
+        ) {
+          const [late] = await transaction
+            .update(depositIntents)
+            .set({
+              state: "exception_review",
+              exceptionCode: "finalized_after_cutoff",
+              updatedAt: input.now
+            })
+            .where(and(eq(depositIntents.id, intent.id), eq(depositIntents.state, "finalized")))
+            .returning();
+          if (!late) throw new Error("Deposit intent state changed");
+          return late;
+        }
         const nextState = nextDepositState(intent.state, "credit", "worker");
         if (!nextState) throw new Error("Deposit cannot be credited from the current state");
         const [membership] = await transaction

@@ -479,25 +479,6 @@ export function createEnrollmentMethods(database: PodsDatabase) {
         .innerJoin(pods, eq(memberships.podId, pods.id))
         .where(eq(memberships.userId, userId))
         .orderBy(desc(memberships.updatedAt));
-    },
-
-    async cancelEnrollmentPod(input: {
-      creatorUserId: string;
-      podId: string;
-      now: Date;
-    }) {
-      const [cancelled] = await database
-        .update(pods)
-        .set({ state: "cancelled", updatedAt: input.now })
-        .where(
-          and(
-            eq(pods.id, input.podId),
-            eq(pods.creatorUserId, input.creatorUserId),
-            eq(pods.state, "enrollment_open")
-          )
-        )
-        .returning();
-      return cancelled ?? null;
     }
   };
 }

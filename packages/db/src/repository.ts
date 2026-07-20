@@ -16,6 +16,8 @@ import { Pool } from "pg";
 import { createEnrollmentMethods } from "./enrollment-repository";
 import { createFundingMethods } from "./funding-repository";
 import { createClockMethods } from "./clock-repository";
+import { createCutoffMethods } from "./cutoff-repository";
+import { createTransferMethods } from "./transfer-repository";
 import * as schema from "./schema";
 import { occurrences, pods, sessions, users, walletChallenges } from "./schema";
 import type { PodDraftData } from "./schema";
@@ -58,6 +60,8 @@ export function createPodsRepository(connectionString: string) {
     ...createClockMethods(database),
     ...createEnrollmentMethods(database),
     ...createFundingMethods(database),
+    ...createCutoffMethods(database),
+    ...createTransferMethods(database),
 
     async close() {
       await pool.end();

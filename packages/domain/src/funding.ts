@@ -51,6 +51,8 @@ export type TransferLegState =
   | "broadcast"
   | "unknown"
   | "retryable_failed"
+  | "mismatched"
+  | "late"
   | "confirmed"
   | "manual_review";
 

@@ -11,7 +11,8 @@ import type {
   LedgerMovementType,
   MembershipState,
   PublishedPodContract,
-  TemplateId
+  TemplateId,
+  TransferLegState
 } from "@pods/domain";
 import {
   bigint,
@@ -274,5 +275,43 @@ export const clockEvents = pgTable(
   (table) => [
     uniqueIndex("clock_events_effective_time_unique").on(table.effectiveTime),
     index("clock_events_actor_time_idx").on(table.actor, table.effectiveTime)
+  ]
+);
+
+export const transferLegs = pgTable(
+  "transfer_legs",
+  {
+    id: uuid("id").primaryKey(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    membershipId: uuid("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "restrict" }),
+    depositIntentId: uuid("deposit_intent_id")
+      .notNull()
+      .references(() => depositIntents.id, { onDelete: "restrict" }),
+    type: text("type").$type<"refund">().notNull(),
+    recipientWallet: text("recipient_wallet").notNull(),
+    amountLuna: bigint("amount_luna", { mode: "number" }).notNull(),
+    network: text("network").$type<FundingNetwork>().notNull(),
+    state: text("state").$type<TransferLegState>().notNull(),
+    rawTransactionHex: text("raw_transaction_hex"),
+    transactionHash: text("transaction_hash"),
+    validityStartHeight: integer("validity_start_height"),
+    preparedAt: timestamp("prepared_at", { withTimezone: true, mode: "date" }),
+    broadcastAt: timestamp("broadcast_at", { withTimezone: true, mode: "date" }),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true, mode: "date" }),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true, mode: "date" }),
+    errorCode: text("error_code"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("transfer_legs_idempotency_unique").on(table.idempotencyKey),
+    uniqueIndex("transfer_legs_transaction_hash_unique").on(table.transactionHash),
+    index("transfer_legs_pod_state_idx").on(table.podId, table.state),
+    index("transfer_legs_membership_idx").on(table.membershipId, table.createdAt)
   ]
 );

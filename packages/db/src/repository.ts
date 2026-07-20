@@ -15,6 +15,7 @@ import { Pool } from "pg";
 
 import { createEnrollmentMethods } from "./enrollment-repository";
 import { createFundingMethods } from "./funding-repository";
+import { createClockMethods } from "./clock-repository";
 import * as schema from "./schema";
 import { occurrences, pods, sessions, users, walletChallenges } from "./schema";
 import type { PodDraftData } from "./schema";
@@ -54,6 +55,7 @@ export function createPodsRepository(connectionString: string) {
   }
 
   return {
+    ...createClockMethods(database),
     ...createEnrollmentMethods(database),
     ...createFundingMethods(database),
 

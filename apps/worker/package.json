@@ -8,6 +8,7 @@
     "dev": "node --watch --import tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "clock:advance": "node --import tsx src/clock/command.ts",
     "preflight:generate": "node --import tsx src/preflight/generate-treasury.ts",
     "preflight:rpc": "node --import tsx src/preflight/check-rpc.ts",
     "preflight:send": "node --import tsx src/preflight/send-transfer.ts",

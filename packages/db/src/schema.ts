@@ -260,3 +260,19 @@ export const ledgerEntries = pgTable(
     index("ledger_entries_membership_idx").on(table.membershipId, table.createdAt)
   ]
 );
+
+export const clockEvents = pgTable(
+  "clock_events",
+  {
+    id: uuid("id").primaryKey(),
+    previousTime: timestamp("previous_time", { withTimezone: true, mode: "date" }).notNull(),
+    effectiveTime: timestamp("effective_time", { withTimezone: true, mode: "date" }).notNull(),
+    reason: text("reason").notNull(),
+    actor: text("actor").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("clock_events_effective_time_unique").on(table.effectiveTime),
+    index("clock_events_actor_time_idx").on(table.actor, table.effectiveTime)
+  ]
+);

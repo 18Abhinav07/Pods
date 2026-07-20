@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PrimaryNav } from "../../components/primary-nav";
 import { PublicPodCard } from "../../components/public-pod-card";
+import { relationshipForViewer } from "../../lib/participant-pod-state";
 import { podsRepository } from "../../lib/server-db";
 import { getCurrentSession } from "../../lib/session";
 
@@ -20,7 +21,13 @@ export default async function DiscoverPage({
   const query = await searchParams;
   const session = await getCurrentSession();
   const activeTemplate = templateFilter(query.template);
-  const publicPods = await podsRepository.listPublicPods({ now: new Date() });
+  const [publicPods, memberships] = await Promise.all([
+    podsRepository.listPublicPods({ now: new Date() }),
+    session ? podsRepository.listMembershipsForUser(session.userId) : Promise.resolve([])
+  ]);
+  const membershipByPod = new Map(
+    memberships.map(({ membership }) => [membership.podId, membership])
+  );
   const visiblePods = activeTemplate
     ? publicPods.filter((pod) => pod.templateId === activeTemplate)
     : publicPods;
@@ -40,7 +47,11 @@ export default async function DiscoverPage({
         minParticipants: contract.community.minParticipants,
         maxParticipants: contract.community.maxParticipants
       },
-      viewerRole: session?.userId === pod.creatorUserId ? "creator" as const : "visitor" as const
+      relationship: relationshipForViewer({
+        creatorUserId: pod.creatorUserId,
+        viewerUserId: session?.userId ?? null,
+        membership: membershipByPod.get(pod.id) ?? null
+      })
     }];
   });
 
@@ -73,7 +84,7 @@ export default async function DiscoverPage({
             <PublicPodCard
               key={card.pod.id}
               pod={card.pod}
-              viewerRole={card.viewerRole}
+              relationship={card.relationship}
             />
           ))}
         </section>

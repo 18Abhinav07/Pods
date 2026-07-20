@@ -1,15 +1,9 @@
 import Link from "next/link";
 
 import { PrimaryNav } from "../../components/primary-nav";
+import { presentPodRelationship } from "../../lib/participant-pod-state";
 import { podsRepository } from "../../lib/server-db";
 import { requireSession } from "../../lib/session";
-
-const stateCopy = {
-  applied: { label: "Awaiting creator decision", detail: "No place is reserved while this application is pending." },
-  accepted_unfunded: { label: "Accepted, funding required", detail: "Acceptance does not reserve capacity. Continue to the funding handoff." },
-  application_rejected: { label: "Application not accepted", detail: "This decision is final for the current enrollment cycle." },
-  application_expired: { label: "Application expired", detail: "The enrollment cutoff passed before this application could proceed." }
-} as const;
 
 export default async function ApplicationsPage({
   searchParams
@@ -18,7 +12,15 @@ export default async function ApplicationsPage({
 }) {
   const session = await requireSession("/applications");
   const query = await searchParams;
-  const records = await podsRepository.listApplicationsForUser(session.userId);
+  const [records, memberships] = await Promise.all([
+    podsRepository.listApplicationsForUser(session.userId),
+    podsRepository.listMembershipsForUser(session.userId)
+  ]);
+  const membershipByApplication = new Map(
+    memberships.flatMap(({ membership }) =>
+      membership.applicationId ? [[membership.applicationId, membership] as const] : []
+    )
+  );
 
   return (
     <main className="app-shell">
@@ -34,18 +36,28 @@ export default async function ApplicationsPage({
       {records.length > 0 ? (
         <section className="application-status-list">
           {records.map(({ application, pod }) => {
-            const copy = stateCopy[application.state];
+            const membership = membershipByApplication.get(application.id);
+            const presentation = presentPodRelationship({
+              podId: pod.id,
+              relationship: {
+                kind: "member",
+                state: membership?.state ?? application.state,
+                depositIntentId: membership?.depositIntentId ?? null
+              }
+            });
             const name = pod.contractData?.activity.name ?? "Pod";
+            const cancelled = pod.state === "cancelled";
             return (
               <article className="application-status-card" key={application.id}>
-                <div><span>{copy.label}</span><time>{application.updatedAt.toLocaleDateString("en", { month: "short", day: "numeric" })}</time></div>
+                <div><span>{cancelled ? "Pod cancelled" : presentation.statusLabel}</span><time>{application.updatedAt.toLocaleDateString("en", { month: "short", day: "numeric" })}</time></div>
                 <h2>{name}</h2>
-                <p>{pod.state === "cancelled" ? "The creator cancelled this Pod before funding." : copy.detail}</p>
-                {application.state === "accepted_unfunded" && pod.state !== "cancelled" ? (
-                  <Link className="primary-action full-action" href={`/pods/${pod.id}/fund`}>Continue to funding</Link>
-                ) : (
-                  <Link className="secondary-action full-action" href={`/pods/${pod.id}`}>View public Pod</Link>
-                )}
+                <p>{cancelled ? "The creator cancelled this Pod before funding." : presentation.statusDetail}</p>
+                <Link
+                  className={cancelled ? "secondary-action full-action" : "primary-action full-action"}
+                  href={cancelled ? "/my-pods" : presentation.href}
+                >
+                  {cancelled ? "View My Pods" : presentation.actionLabel}
+                </Link>
               </article>
             );
           })}

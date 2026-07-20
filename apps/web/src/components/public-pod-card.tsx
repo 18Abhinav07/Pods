@@ -1,6 +1,10 @@
 import type { TemplateId } from "@pods/domain";
 import Link from "next/link";
 
+import {
+  presentPodRelationship,
+  type PodRelationship
+} from "../lib/participant-pod-state";
 import { TemplateSymbol } from "./template-symbol";
 
 export type PublicPodCardData = {
@@ -22,12 +26,12 @@ function nim(luna: number) {
 
 export function PublicPodCard({
   pod,
-  viewerRole = "visitor"
+  relationship = { kind: "visitor" }
 }: {
   pod: PublicPodCardData;
-  viewerRole?: "creator" | "visitor";
+  relationship?: PodRelationship;
 }) {
-  const isCreator = viewerRole === "creator";
+  const presentation = presentPodRelationship({ podId: pod.id, relationship });
   return (
     <article className="public-pod-card entrance entrance-status">
       <div className="public-pod-card-head">
@@ -44,11 +48,15 @@ export function PublicPodCard({
         <div><dt>Dates</dt><dd>{pod.startDate} to {pod.endDate}</dd></div>
         <div><dt>Group</dt><dd>{pod.minParticipants} to {pod.maxParticipants} people</dd></div>
       </dl>
+      <div className={`public-pod-relationship is-${presentation.tone}`}>
+        <strong>{presentation.statusLabel}</strong>
+        <span>{presentation.statusDetail}</span>
+      </div>
       <Link
         className="primary-action full-action"
-        href={isCreator ? `/pods/${pod.id}/admin` : `/pods/${pod.id}`}
+        href={presentation.href}
       >
-        {isCreator ? "Manage enrollment" : "Apply to join"}
+        {presentation.actionLabel}
       </Link>
     </article>
   );

@@ -182,9 +182,18 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
       await pool.end();
     }
 
+    await memberPage.goto(`${baseUrl}/discover?template=build`);
+    const recoveryCard = memberPage.locator(".public-pod-card").filter({ hasText: "Fund Pods" });
+    await expect(recoveryCard.getByText("Funding needs attention")).toBeVisible();
+    await expect(recoveryCard.getByRole("link", { name: "Retry funding" })).toBeVisible();
+    await memberPage.goto(`${baseUrl}/today`);
+    await expect(memberPage.getByRole("heading", { name: "Your funding attempt did not complete." })).toBeVisible();
+    await memberPage.getByRole("link", { name: "Retry funding" }).click();
+
     await memberPage.evaluate(() => {
       (window as typeof window & { __podsPaymentMode?: "reject" | "success" }).__podsPaymentMode = "success";
     });
+    await memberPage.getByRole("checkbox", { name: /I accept the frozen terms/ }).check();
     await memberPage.getByRole("button", { name: "Commit 0.5 NIM" }).click();
     await expect(memberPage).toHaveURL(new RegExp(`/pods/${podId}/fund/status\\?intent=`));
     await expect(memberPage.getByRole("status")).toContainText("Transaction submitted");

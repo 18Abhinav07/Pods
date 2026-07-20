@@ -143,7 +143,8 @@ test("public enrollment works from discovery through accepted funding handoff", 
     const card = applicantPage.locator(".public-pod-card").filter({ hasText: pod.name });
     await expect(card).toBeVisible();
     await expect(card.getByText("0.5 NIM upfront")).toBeVisible();
-    await card.getByRole("link", { name: "Apply to join" }).click();
+    await expect(card.getByText("Open to apply")).toBeVisible();
+    await card.getByRole("link", { name: "View Pod" }).click();
     await expect(applicantPage.getByText("Applying does not reserve a place.", { exact: false })).toBeVisible();
     await applicantPage.getByRole("link", { name: "Apply to join" }).click();
     await applicantPage.getByLabel("What will you ship?").fill("A tested mobile enrollment flow");
@@ -151,7 +152,12 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await applicantPage.getByLabel(/I understand that applying/).check();
     await applicantPage.getByRole("button", { name: "Send application" }).click();
     await expect(applicantPage).toHaveURL(/\/applications\?sent=1$/);
-    await expect(applicantPage.getByText("Awaiting creator decision")).toBeVisible();
+    await expect(applicantPage.getByText("Application pending")).toBeVisible();
+    await applicantPage.goto(`${baseUrl}/discover?template=build`);
+    const appliedCard = applicantPage.locator(".public-pod-card").filter({ hasText: pod.name });
+    await expect(appliedCard.getByText("Application pending")).toBeVisible();
+    await expect(appliedCard.getByRole("link", { name: "View application" })).toBeVisible();
+    await expect(appliedCard.getByRole("link", { name: "Apply to join" })).toHaveCount(0);
 
     await page.goto(`${baseUrl}/pods/${pod.id}/admin/applications`);
     await expect(page.getByText("A tested mobile enrollment flow")).toBeVisible();
@@ -161,14 +167,17 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await acceptButton.click();
     await expect(page.getByText("Queue clear")).toBeVisible();
 
-    await applicantPage.reload();
+    await applicantPage.goto(`${baseUrl}/applications`);
     await expect(applicantPage.getByText("Accepted, funding required")).toBeVisible();
-    await applicantPage.getByRole("link", { name: "Continue to funding" }).click();
+    await applicantPage.goto(`${baseUrl}/discover?template=build`);
+    const acceptedCard = applicantPage.locator(".public-pod-card").filter({ hasText: pod.name });
+    await expect(acceptedCard.getByText("Accepted, funding required")).toBeVisible();
+    await acceptedCard.getByRole("link", { name: "Continue to funding" }).click();
     await expect(applicantPage.getByRole("heading", { name: "Back your place." })).toBeVisible();
     await expect(applicantPage.getByRole("button", { name: "Commit 0.5 NIM" })).toBeDisabled();
 
     await applicantPage.goto(`${baseUrl}/today`);
-    await expect(applicantPage.getByRole("heading", { name: "Your acceptance is waiting for funding." })).toBeVisible();
+    await expect(applicantPage.getByRole("heading", { name: "Your accepted place is waiting for funding." })).toBeVisible();
     await applicantPage.goto(`${baseUrl}/pods/${pod.id}/admin`);
     await expect(applicantPage.getByText("This path is unavailable.")).toBeVisible();
   } finally {

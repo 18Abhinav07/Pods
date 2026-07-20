@@ -1518,6 +1518,13 @@ button.secondary-action {
 .public-pod-facts div { padding: 0.75rem; border-radius: 0.9rem; background: #f3f1e9; }
 .public-pod-facts dt { color: #777168; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .public-pod-facts dd { margin: 0.25rem 0 0; font-size: 0.82rem; font-weight: 750; }
+.public-pod-relationship { display: grid; gap: 0.18rem; margin: 0 0 0.75rem; padding: 0.72rem 0.8rem; border: 1px solid rgba(31, 35, 72, 0.08); border-radius: 0.9rem; background: var(--soft); }
+.public-pod-relationship strong { font-size: 0.78rem; }
+.public-pod-relationship span { color: var(--muted); font-size: 0.68rem; }
+.public-pod-relationship.is-open { background: var(--action-soft); }
+.public-pod-relationship.is-attention { background: #f4f0dd; }
+.public-pod-relationship.is-secured { background: var(--success-soft); }
+.public-pod-relationship.is-closed { background: var(--soft); }
 
 .public-preview-shell { padding-bottom: 3rem; }
 .public-preview-hero { padding: 1.6rem 0 1rem; }
@@ -1531,6 +1538,10 @@ button.secondary-action {
 .public-preview-ledger small { margin-top: 0.2rem; color: #777168; }
 .reservation-disclosure { margin: 1rem 0; padding: 1rem; border-radius: 1rem; background: #eee9d8; }
 .reservation-disclosure p { margin: 0.4rem 0 0; color: #5d584e; line-height: 1.5; }
+.pod-relationship-banner { margin: 1rem 0; padding: 1rem; border: 1px solid rgba(31, 35, 72, 0.08); border-radius: 1rem; background: var(--soft); }
+.pod-relationship-banner p { margin: 0.35rem 0 0; color: var(--muted); line-height: 1.5; }
+.pod-relationship-banner.is-attention { background: #f4f0dd; }
+.pod-relationship-banner.is-secured { background: var(--success-soft); }
 .centered-link { display: block; margin-top: 1rem; text-align: center; }
 
 .application-form { display: grid; gap: 1rem; padding-bottom: 2rem; }

@@ -3,6 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TemplateSymbol } from "../../../components/template-symbol";
+import {
+  presentPodRelationship,
+  relationshipForViewer
+} from "../../../lib/participant-pod-state";
 import { podsRepository } from "../../../lib/server-db";
 import { getCurrentSession } from "../../../lib/session";
 
@@ -16,10 +20,20 @@ export default async function PublicPodPage({
   params: Promise<{ podId: string }>;
 }) {
   const { podId } = await params;
-  const pod = await podsRepository.getPublicPod(podId, new Date());
+  const [pod, session] = await Promise.all([
+    podsRepository.getPublicPod(podId, new Date()),
+    getCurrentSession()
+  ]);
   if (!pod?.contractData || pod.contractData.community.visibility !== "public") notFound();
-  const session = await getCurrentSession();
-  const isCreator = session?.userId === pod.creatorUserId;
+  const membership = session
+    ? await podsRepository.getMembershipForUser(session.userId, pod.id)
+    : null;
+  const relationship = relationshipForViewer({
+    creatorUserId: pod.creatorUserId,
+    viewerUserId: session?.userId ?? null,
+    membership
+  });
+  const presentation = presentPodRelationship({ podId: pod.id, relationship });
   const contract = pod.contractData;
   const template = templateContracts.find((item) => item.id === contract.templateId);
 
@@ -41,15 +55,22 @@ export default async function PublicPodPage({
         <div><span>Community</span><strong>{contract.community.minParticipants} to {contract.community.maxParticipants} people</strong><small>Creator reviews applications</small></div>
         <div><span>Evidence authority</span><strong>Pods team review</strong><small>Not peer-voted or creator-controlled</small></div>
       </section>
-      <aside className="reservation-disclosure entrance entrance-templates">
-        <strong>Application before commitment</strong>
-        <p>Applying does not reserve a place. A place is secured only after acceptance, funding finality, and roster lock.</p>
-      </aside>
+      {relationship.kind === "visitor" ? (
+        <aside className="reservation-disclosure entrance entrance-templates">
+          <strong>Application before commitment</strong>
+          <p>Applying does not reserve a place. A place is secured only after acceptance, funding finality, and roster lock.</p>
+        </aside>
+      ) : (
+        <aside className={`pod-relationship-banner is-${presentation.tone} entrance entrance-templates`}>
+          <strong>{presentation.statusLabel}</strong>
+          <p>{presentation.statusDetail}</p>
+        </aside>
+      )}
       <Link
         className="primary-action full-action"
-        href={isCreator ? `/pods/${pod.id}/admin` : `/pods/${pod.id}/apply`}
+        href={relationship.kind === "visitor" ? `/pods/${pod.id}/apply` : presentation.href}
       >
-        {isCreator ? "Manage enrollment" : "Apply to join"}
+        {relationship.kind === "visitor" ? "Apply to join" : presentation.actionLabel}
       </Link>
     </main>
   );

@@ -11,4 +11,5 @@ Related: [[HANDOFF]] | [[README]]
 
 | Date | Agent | Mode | Result | Detail |
 |---|---|---|---|---|
+| 2026-07-20 | codex | HACKATHON | Built and validated Phase 3B cutoff refunds | [[sessions/2026-07-20-codex-hackathon]] |
 | 2026-07-19 | codex | HACKATHON | Built premium motion and immutable Pod creation | [[sessions/2026-07-19-codex-hackathon]] |

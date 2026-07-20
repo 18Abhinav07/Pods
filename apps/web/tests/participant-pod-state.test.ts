@@ -52,10 +52,11 @@ describe("participant Pod relationship presentation", () => {
     ["accepted_unfunded", "Accepted, funding required", "Continue to funding", "/pods/pod-1/fund"],
     ["funding_failed", "Funding needs attention", "Retry funding", "/pods/pod-1/fund"],
     ["deposit_pending", "Funding in progress", "Track funding", "/pods/pod-1/fund/status?intent=intent-1"],
-    ["funded_provisional", "Commitment credited", "Track commitment", "/pods/pod-1/fund/status?intent=intent-1"],
-    ["roster_locked", "Joined", "Open Pod", "/pods/pod-1/rules"],
-    ["refund_pending", "Refund in progress", "Track refund", "/pods/pod-1/fund/status?intent=intent-1"],
-    ["refunded", "Refund completed", "View receipt", "/pods/pod-1/fund/status?intent=intent-1"]
+    ["funded_provisional", "Commitment credited", "Track commitment", "/pods/pod-1/today"],
+    ["roster_locked", "Joined", "Open Pod", "/pods/pod-1/today"],
+    ["excluded_at_cutoff", "Not included at cutoff", "View refund status", "/pods/pod-1/today"],
+    ["refund_pending", "Refund in progress", "Track refund", "/pods/pod-1/today"],
+    ["refunded", "Refund completed", "View receipt", "/pods/pod-1/today"]
   ] as const)("maps %s to one canonical status and action", (state, statusLabel, actionLabel, href) => {
     expect(
       presentPodRelationship({

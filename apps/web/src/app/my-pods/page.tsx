@@ -12,7 +12,16 @@ function ownerItem(pod: Awaited<ReturnType<typeof podsRepository.listPodsForOwne
   const name = pod.contractData?.activity.name ?? pod.draftData.activity?.name ?? "Untitled Pod";
   const href = pod.state === "draft"
     ? `/pods/create/${pod.draftData.activity ? pod.draftData.community ? pod.draftData.commitment ? "review" : "commitment" : "community" : "activity"}?draft=${pod.id}`
-    : pod.state === "cancelled" ? `/pods/${pod.id}/rules` : `/pods/${pod.id}/admin`;
+    : pod.state === "enrollment_open" ? `/pods/${pod.id}/admin` : `/pods/${pod.id}/admin/funding`;
+  const ownerStatuses: Record<string, readonly [string, string]> = {
+    draft: ["Draft", "No financial exposure"],
+    enrollment_open: ["Enrollment open", "Rules frozen"],
+    cutoff_evaluating: ["Cutoff evaluating", "Roster snapshot in progress"],
+    locked_scheduled: ["Roster locked", "Activity scheduled"],
+    cancelled_refunding: ["Refunds in progress", "Full returns are being tracked"],
+    cancelled: ["Cancelled", "Refund obligations resolved"]
+  };
+  const ownerStatus = ownerStatuses[pod.state] ?? ["Creator controls", "Open Pod"];
   return {
     id: pod.id,
     href,
@@ -20,8 +29,8 @@ function ownerItem(pod: Awaited<ReturnType<typeof podsRepository.listPodsForOwne
     state: pod.state,
     templateId: pod.templateId,
     templateName: template?.name ?? "Activity",
-    statusLabel: pod.state === "cancelled" ? "Cancelled" : "Creator controls",
-    statusDetail: pod.state === "cancelled" ? "Frozen history" : "Enrollment open"
+    statusLabel: ownerStatus[0],
+    statusDetail: ownerStatus[1]
   };
 }
 

@@ -465,7 +465,12 @@ export function createEnrollmentMethods(database: PodsDatabase) {
             inArray(memberships.state, [
               "accepted_unfunded",
               "funding_failed",
-              "deposit_pending"
+              "deposit_pending",
+              "funded_provisional",
+              "roster_locked",
+              "excluded_at_cutoff",
+              "refund_pending",
+              "refunded"
             ])
           )
         );

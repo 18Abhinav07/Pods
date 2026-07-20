@@ -11,12 +11,14 @@ export type TodayParticipant = {
 export type TodayEnrollmentAction =
   | ({ kind: "participant" } & TodayParticipant)
   | { kind: "review"; podId: string }
+  | { kind: "creator_funding"; podId: string }
   | { kind: "recruit"; podId: string }
   | { kind: "empty" };
 
 export function chooseTodayEnrollmentAction(input: {
   participants: TodayParticipant[];
   reviewPodId: string | null;
+  creatorFundingPodId?: string | null;
   recruitPodId: string | null;
 }): TodayEnrollmentAction {
   const participant = input.participants
@@ -38,6 +40,9 @@ export function chooseTodayEnrollmentAction(input: {
     .sort((left, right) => left.priority - right.priority)[0]?.candidate;
   if (participant) return { kind: "participant", ...participant };
   if (input.reviewPodId) return { kind: "review", podId: input.reviewPodId };
+  if (input.creatorFundingPodId) {
+    return { kind: "creator_funding", podId: input.creatorFundingPodId };
+  }
   if (input.recruitPodId) return { kind: "recruit", podId: input.recruitPodId };
   return { kind: "empty" };
 }

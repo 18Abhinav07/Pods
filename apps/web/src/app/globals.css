@@ -1701,6 +1701,69 @@ button.secondary-action {
 @keyframes funding-orbit { to { transform: rotate(360deg); } }
 @keyframes roster-secured { from { opacity: 0.6; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
 
+.waiting-room-shell, .creator-funding-shell { padding-bottom: max(3rem, env(safe-area-inset-bottom)); }
+.waiting-hero { position: relative; padding: 1.45rem 0 1.2rem; }
+.waiting-hero h1 { max-width: 19rem; margin: 0.45rem 0 0.55rem; font-size: clamp(2.4rem, 12vw, 3.55rem); line-height: 0.92; letter-spacing: -0.07em; }
+.waiting-hero > p:not(.eyebrow) { max-width: 24rem; margin: 0; color: #6d685f; line-height: 1.55; }
+.waiting-status { display: flex; align-items: flex-start; gap: 0.65rem; margin-top: 1rem; padding: 0.85rem; border: 1px solid rgba(31,35,72,0.08); border-radius: 1rem; background: rgba(255,255,252,0.72); }
+.waiting-status i { flex: 0 0 auto; width: 0.62rem; height: 0.62rem; margin-top: 0.18rem; border-radius: 50%; background: #2a8a6b; box-shadow: 0 0 0 0.25rem rgba(42,138,107,0.12); }
+.waiting-status span { color: #55566d; font-size: 0.76rem; line-height: 1.45; }
+.waiting-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1rem; }
+.waiting-metrics > div { display: grid; gap: 0.25rem; min-width: 0; padding: 1rem; border: 1px solid rgba(31,35,72,0.08); border-radius: 1.15rem; background: #fffdf8; box-shadow: 0 14px 35px rgba(31,35,72,0.05); }
+.waiting-metrics span, .waiting-contract dt, .refund-rail dt, .creator-funding-summary span { color: #777168; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+.waiting-metrics strong { font-size: 0.92rem; line-height: 1.2; }
+.waiting-metrics small { color: #858178; font-size: 0.65rem; }
+.waiting-contract { margin-top: 1rem; padding: 1rem; border: 1px solid rgba(31,35,72,0.08); border-radius: 1.35rem; background: rgba(255,255,252,0.8); }
+.waiting-contract dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin: 0; }
+.waiting-contract dl > div { min-width: 0; padding: 0.8rem; border-radius: 0.85rem; background: #f1efe7; }
+.waiting-contract dd { margin: 0.3rem 0 0; color: #30324d; font-size: 0.78rem; font-weight: 750; line-height: 1.35; }
+.waiting-verification { display: grid; gap: 0.35rem; margin: 1rem 0; padding: 1rem; border: 1px solid #d8d2ef; border-radius: 1.15rem; background: linear-gradient(145deg, #f2f0fb, #ebe9f7); }
+.waiting-verification > span { color: #5e58aa; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.waiting-verification strong { font-size: 0.9rem; }
+.waiting-verification p { margin: 0; color: #5f6074; font-size: 0.75rem; line-height: 1.5; }
+.waiting-announcement { margin: 0 0 1rem; padding: 0.95rem 1rem; border: 1px dashed #cfcbc0; border-radius: 1rem; background: rgba(255,255,252,0.42); }
+.waiting-announcement span { color: #777168; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.waiting-announcement p { margin: 0.35rem 0 0; color: #6d685f; font-size: 0.75rem; line-height: 1.45; }
+.waiting-actions { display: grid; gap: 0.65rem; }
+.refund-rail { margin: 1rem 0; overflow: hidden; border: 1px solid rgba(31,35,72,0.08); border-radius: 1.35rem; background: #fffdf8; box-shadow: 0 20px 50px rgba(31,35,72,0.08); }
+.refund-state { padding: 1.1rem; color: #f9f7ef; background: linear-gradient(145deg, #25294e, #393f72); }
+.refund-state > span { color: rgba(255,255,255,0.58); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.refund-state h2 { margin: 1.7rem 0 0.35rem; font-size: 1.65rem; letter-spacing: -0.045em; }
+.refund-state p { margin: 0; color: rgba(255,255,255,0.7); font-size: 0.76rem; line-height: 1.5; }
+.refund-rail.state-confirmed .refund-state { background: linear-gradient(145deg, #145947, #217a61); animation: roster-secured 700ms var(--ease-premium) both; }
+.refund-rail.state-retryable_failed .refund-state, .refund-rail.state-mismatched .refund-state, .refund-rail.state-late .refund-state, .refund-rail.state-manual_review .refund-state { color: #49211e; background: linear-gradient(145deg, #f5e3df, #eed0ca); }
+.refund-rail.state-retryable_failed .refund-state p, .refund-rail.state-mismatched .refund-state p, .refund-rail.state-late .refund-state p, .refund-rail.state-manual_review .refund-state p { color: #7a4b46; }
+.refund-rail > ol { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 0; padding: 1rem; list-style: none; }
+.refund-rail > ol li { position: relative; display: grid; justify-items: center; gap: 0.4rem; color: #a09c93; }
+.refund-rail > ol li:not(:last-child)::after { position: absolute; top: 0.95rem; left: calc(50% + 0.8rem); width: calc(100% - 1.6rem); height: 1px; content: ""; background: #d9d6cd; }
+.refund-rail > ol span { z-index: 1; display: grid; width: 1.9rem; height: 1.9rem; place-items: center; border: 1px solid #d9d6cd; border-radius: 0.65rem; background: #f6f4ed; font: 700 0.55rem/1 "Fira Mono", monospace; }
+.refund-rail > ol strong { font-size: 0.56rem; }
+.refund-rail > ol .is-complete { color: #18795c; }
+.refund-rail > ol .is-complete span { border-color: #b8d8cc; background: #e5f2ed; }
+.refund-rail > ol .is-complete::after { background: #9fcebc; }
+.refund-rail > ol .is-current { color: #30324d; }
+.refund-rail > ol .is-current span { border-color: #394fc2; color: #fff; background: #394fc2; box-shadow: 0 7px 16px rgba(57,79,194,0.18); }
+.refund-rail > dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin: 0; padding: 0 1rem 1rem; }
+.refund-rail > dl > div { min-width: 0; padding: 0.75rem; border-radius: 0.8rem; background: #f1efe7; }
+.refund-rail > dl .refund-hash { grid-column: 1 / -1; }
+.refund-rail dd { margin: 0.3rem 0 0; overflow-wrap: anywhere; color: #30324d; font: 700 0.65rem/1.4 "Fira Mono", monospace; }
+.admin-funding-link { margin-bottom: 1rem; }
+.creator-funding-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1.25rem; }
+.creator-funding-summary > div { display: grid; gap: 0.3rem; min-width: 0; padding: 0.85rem; border: 1px solid rgba(31,35,72,0.08); border-radius: 0.95rem; background: #fffdf8; }
+.creator-funding-summary strong { font-size: 0.78rem; line-height: 1.35; text-transform: capitalize; }
+.creator-funding-list { display: grid; gap: 0.65rem; margin-bottom: 1rem; }
+.creator-funding-list article { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.7rem; align-items: center; padding: 0.9rem; border: 1px solid rgba(31,35,72,0.08); border-radius: 1rem; background: #fffdf8; }
+.participant-index { display: grid; width: 2.4rem; height: 2.4rem; place-items: center; border-radius: 0.8rem; color: #5e58aa; background: #ecebfa; font: 800 0.62rem/1 "Fira Mono", monospace; }
+.creator-funding-list article > div { display: grid; gap: 0.16rem; min-width: 0; }
+.creator-funding-list article small { color: #777168; font-size: 0.64rem; }
+.participant-funding-state { grid-column: 1 / -1; padding: 0.72rem 0.8rem; border-radius: 0.75rem; background: #f1efe7; }
+.participant-funding-state strong { color: #30324d; font-size: 0.77rem; }
+
+@media (min-width: 560px) {
+  .participant-funding-state { grid-column: auto; justify-self: end; min-width: 11rem; text-align: right; }
+  .creator-funding-list article { grid-template-columns: auto minmax(0, 1fr) auto; }
+}
+
 .template-row h3,
 .template-row p {
   margin: 0;

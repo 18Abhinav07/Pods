@@ -27,6 +27,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
         <p className="eyebrow">Enrollment command center</p><h1>{contract.activity.name}</h1>
         <p className="screen-copy">Manage who enters. Frozen rules, evidence decisions, and future financial outcomes remain outside creator control.</p>
       </section>
+      <Link className="secondary-action full-action admin-funding-link" href={`/pods/${pod.id}/admin/funding`}>View participant funding stages</Link>
       {pod.state === "cancelled" ? (
         <section className="neutral-empty"><span>Cancelled</span><p>This Pod is no longer accepting applications or invitations. Its frozen history remains available.</p></section>
       ) : contract.community.visibility === "public" ? (

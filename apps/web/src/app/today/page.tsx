@@ -16,6 +16,9 @@ export default async function TodayPage() {
   ]);
   const pendingReview = creatorApplications.find(({ application, pod }) => application.state === "applied" && pod.state === "enrollment_open");
   const recruit = ownedPods.find((pod) => pod.state === "enrollment_open" && pod.contractData?.community.visibility === "public");
+  const creatorFunding = ownedPods.find((pod) =>
+    ["cutoff_evaluating", "locked_scheduled", "cancelled_refunding", "cancelled"].includes(pod.state)
+  );
   const action = chooseTodayEnrollmentAction({
     participants: memberships.map(({ membership, pod }) => ({
       podId: pod.id,
@@ -23,6 +26,7 @@ export default async function TodayPage() {
       depositIntentId: membership.depositIntentId
     })),
     reviewPodId: pendingReview?.pod.id ?? null,
+    creatorFundingPodId: creatorFunding?.id ?? null,
     recruitPodId: recruit?.id ?? null
   });
   const participantRecord = action.kind === "participant"
@@ -42,6 +46,8 @@ export default async function TodayPage() {
     ? participantRecord?.pod
     : action.kind === "review"
       ? pendingReview?.pod
+      : action.kind === "creator_funding"
+        ? creatorFunding
       : action.kind === "recruit"
         ? recruit
         : null;
@@ -56,6 +62,8 @@ export default async function TodayPage() {
       }
     : action.kind === "review"
       ? { eyebrow: "Creator decision", title: "A builder is waiting for your answer.", detail: "Review their frozen application responses and make one terminal enrollment decision.", cta: "Review applications", href: `/pods/${action.podId}/admin/applications` }
+      : action.kind === "creator_funding"
+        ? { eyebrow: "Creator funding", title: "Your Pod has reached its roster outcome.", detail: "Review participant-safe funding stages, roster lock, and any required returns.", cta: "Open funding overview", href: `/pods/${action.podId}/admin/funding` }
       : action.kind === "recruit"
         ? { eyebrow: "Enrollment open", title: "Your public Pod is ready to grow.", detail: "Share the public preview so the right participants can inspect the contract and apply.", cta: "Open creator controls", href: `/pods/${action.podId}/admin` }
         : { eyebrow: "Today", title: "Choose your next commitment.", detail: "Join a public activity with a cadence that fits, or create a focused group of your own.", cta: "Discover public Pods", href: "/discover" };

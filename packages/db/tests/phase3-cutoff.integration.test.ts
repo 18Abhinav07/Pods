@@ -157,6 +157,56 @@ async function fundMember(input: {
 }
 
 describe("Phase 3 serialized cutoff", () => {
+  it("guards the waiting room and keeps creator funding reads payment-private", async () => {
+    const fixture = await createPodFixture(2, 4);
+    const funded = await fundMember({
+      podId: fixture.pod.id,
+      creatorUserId: fixture.creator.userId,
+      blockNumber: 100,
+      transactionIndex: 0
+    });
+    const outsider = await createUser();
+
+    const participantRoom = await repository.getWaitingRoomForUser({
+      userId: funded.member.userId,
+      podId: fixture.pod.id
+    });
+    const creatorRoom = await repository.getWaitingRoomForUser({
+      userId: fixture.creator.userId,
+      podId: fixture.pod.id
+    });
+    const outsiderRoom = await repository.getWaitingRoomForUser({
+      userId: outsider.userId,
+      podId: fixture.pod.id
+    });
+    const overview = await repository.getFundingOverviewForCreator({
+      creatorUserId: fixture.creator.userId,
+      podId: fixture.pod.id
+    });
+
+    expect(participantRoom).toMatchObject({
+      viewerRole: "participant",
+      confirmedParticipants: 1,
+      membership: { id: funded.membership.id, state: "funded_provisional" }
+    });
+    expect(creatorRoom?.viewerRole).toBe("creator");
+    expect(outsiderRoom).toBeNull();
+    expect(overview?.participants).toEqual([
+      {
+        id: funded.membership.id,
+        label: "Participant 01",
+        admissionSource: "public_application",
+        state: "funded_provisional"
+      }
+    ]);
+    expect(JSON.stringify(overview?.participants)).not.toContain(funded.member.walletAddress);
+    expect(JSON.stringify(overview?.participants)).not.toContain(funded.intent.reference);
+    expect(await repository.getFundingOverviewForCreator({
+      creatorUserId: outsider.userId,
+      podId: fixture.pod.id
+    })).toBeNull();
+  });
+
   it("locks an exact-minimum roster in deterministic chain order", async () => {
     const fixture = await createPodFixture(2, 4);
     const later = await fundMember({

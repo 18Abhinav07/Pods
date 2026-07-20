@@ -45,6 +45,15 @@ describe("Phase 2 Today priority", () => {
     expect(chooseTodayEnrollmentAction({ participants: [], reviewPodId: "review", recruitPodId: "recruit" })).toEqual({ kind: "review", podId: "review" });
   });
 
+  it("keeps a creator roster or refund outcome visible before recruiting", () => {
+    expect(chooseTodayEnrollmentAction({
+      participants: [],
+      reviewPodId: null,
+      creatorFundingPodId: "funding-overview",
+      recruitPodId: "recruit"
+    })).toEqual({ kind: "creator_funding", podId: "funding-overview" });
+  });
+
   it("falls back from recruiting to discovery", () => {
     expect(chooseTodayEnrollmentAction({ participants: [], reviewPodId: null, recruitPodId: "recruit" })).toEqual({ kind: "recruit", podId: "recruit" });
     expect(chooseTodayEnrollmentAction({ participants: [], reviewPodId: null, recruitPodId: null })).toEqual({ kind: "empty" });

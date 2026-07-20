@@ -40,7 +40,7 @@ export function relationshipForViewer(input: {
 }
 
 type MemberPresentation = Omit<PodRelationshipPresentation, "href"> & {
-  destination: "applications" | "fund" | "funding_status" | "rules" | "my_pods";
+  destination: "applications" | "fund" | "funding_status" | "waiting_room" | "my_pods";
 };
 
 const memberPresentations = {
@@ -125,7 +125,7 @@ const memberPresentations = {
     statusLabel: "Commitment credited",
     statusDetail: "Waiting for roster lock",
     actionLabel: "Track commitment",
-    destination: "funding_status",
+    destination: "waiting_room",
     tone: "secured",
     todayPriority: 20,
     todayEyebrow: "Commitment credited",
@@ -136,7 +136,7 @@ const memberPresentations = {
     statusLabel: "Joined",
     statusDetail: "Your place is secured",
     actionLabel: "Open Pod",
-    destination: "rules",
+    destination: "waiting_room",
     tone: "secured",
     todayPriority: 30,
     todayEyebrow: "Place secured",
@@ -147,7 +147,7 @@ const memberPresentations = {
     statusLabel: "Not included at cutoff",
     statusDetail: "Your commitment will be returned",
     actionLabel: "View refund status",
-    destination: "funding_status",
+    destination: "waiting_room",
     tone: "attention",
     todayPriority: 8,
     todayEyebrow: "Refund required",
@@ -158,7 +158,7 @@ const memberPresentations = {
     statusLabel: "Refund in progress",
     statusDetail: "Your refund transfer is queued",
     actionLabel: "Track refund",
-    destination: "funding_status",
+    destination: "waiting_room",
     tone: "pending",
     todayPriority: 7,
     todayEyebrow: "Refund in progress",
@@ -169,7 +169,7 @@ const memberPresentations = {
     statusLabel: "Refund completed",
     statusDetail: "Your commitment was returned",
     actionLabel: "View receipt",
-    destination: "funding_status",
+    destination: "waiting_room",
     tone: "closed",
     todayPriority: null,
     todayEyebrow: "Refund completed",
@@ -185,7 +185,7 @@ function memberHref(input: {
 }) {
   if (input.destination === "applications") return "/applications";
   if (input.destination === "fund") return `/pods/${input.podId}/fund`;
-  if (input.destination === "rules") return `/pods/${input.podId}/rules`;
+  if (input.destination === "waiting_room") return `/pods/${input.podId}/today`;
   if (input.destination === "my_pods") return "/my-pods";
   return input.depositIntentId
     ? `/pods/${input.podId}/fund/status?intent=${input.depositIntentId}`

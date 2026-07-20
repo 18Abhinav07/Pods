@@ -18,6 +18,7 @@ import { createFundingMethods } from "./funding-repository";
 import { createClockMethods } from "./clock-repository";
 import { createCutoffMethods } from "./cutoff-repository";
 import { createTransferMethods } from "./transfer-repository";
+import { createWaitingRoomMethods } from "./waiting-room-repository";
 import * as schema from "./schema";
 import { occurrences, pods, sessions, users, walletChallenges } from "./schema";
 import type { PodDraftData } from "./schema";
@@ -62,6 +63,7 @@ export function createPodsRepository(connectionString: string) {
     ...createFundingMethods(database),
     ...createCutoffMethods(database),
     ...createTransferMethods(database),
+    ...createWaitingRoomMethods(database),
 
     async close() {
       await pool.end();

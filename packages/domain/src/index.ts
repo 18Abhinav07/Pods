@@ -15,6 +15,7 @@ export type PodState =
 export * from "./enrollment";
 export * from "./funding";
 export * from "./activity";
+export * from "./alpha-capabilities";
 
 export const templateContracts = [
   {

@@ -69,6 +69,10 @@ export function createPodsRepository(connectionString: string) {
     ...createTransferMethods(database),
     ...createWaitingRoomMethods(database),
 
+    async checkHealth() {
+      await pool.query("select 1");
+    },
+
     async close() {
       await pool.end();
     },

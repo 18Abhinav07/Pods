@@ -3,9 +3,9 @@ import Link from "next/link";
 
 import { PrimaryNav } from "../../components/primary-nav";
 import { PublicPodCard } from "../../components/public-pod-card";
+import { alphaAwarePageSession } from "../../lib/alpha-access-server";
 import { relationshipForViewer } from "../../lib/participant-pod-state";
 import { podsRepository } from "../../lib/server-db";
-import { getCurrentSession } from "../../lib/session";
 
 function templateFilter(value: string | undefined): TemplateId | null {
   return templateContracts.some((template) => template.id === value)
@@ -19,7 +19,7 @@ export default async function DiscoverPage({
   searchParams: Promise<{ template?: string }>;
 }) {
   const query = await searchParams;
-  const session = await getCurrentSession();
+  const session = await alphaAwarePageSession("/discover");
   const activeTemplate = templateFilter(query.template);
   const [publicPods, memberships] = await Promise.all([
     podsRepository.listPublicPods({ now: new Date() }),

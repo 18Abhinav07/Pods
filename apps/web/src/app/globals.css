@@ -198,6 +198,170 @@ body {
   text-transform: uppercase;
 }
 
+.realtime-spike-shell {
+  --signal: #17a877;
+  background:
+    radial-gradient(circle at 88% 6%, rgba(59, 92, 204, 0.14), transparent 28%),
+    radial-gradient(circle at 18% 48%, rgba(23, 168, 119, 0.1), transparent 34%);
+}
+
+.realtime-spike-status {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin: 24px 0 18px;
+  border: 1px solid rgba(31, 35, 72, 0.1);
+  border-radius: 22px;
+  background: rgba(31, 35, 72, 0.1);
+  box-shadow: 0 20px 45px rgba(31, 35, 72, 0.08);
+}
+
+.realtime-spike-status > div {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  padding: 15px 10px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+}
+
+.realtime-spike-status small,
+.realtime-spike-facts dt,
+.section-heading small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.realtime-spike-status strong {
+  overflow: hidden;
+  font-family: "Fira Mono", ui-monospace, monospace;
+  font-size: 13px;
+  text-overflow: ellipsis;
+}
+
+.realtime-signal {
+  position: absolute;
+  top: 11px;
+  right: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c48a32;
+  box-shadow: 0 0 0 4px rgba(196, 138, 50, 0.12);
+}
+
+.realtime-signal.is-live {
+  background: var(--signal);
+  box-shadow: 0 0 0 4px rgba(23, 168, 119, 0.12);
+  animation: signal-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes signal-breathe {
+  50% { box-shadow: 0 0 0 9px rgba(23, 168, 119, 0); }
+}
+
+.realtime-spike-control {
+  display: grid;
+  gap: 20px;
+  padding: 26px;
+  border: 1px solid rgba(31, 35, 72, 0.09);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 24px 70px rgba(31, 35, 72, 0.1);
+  backdrop-filter: blur(22px);
+}
+
+.realtime-spike-control h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.045em;
+}
+
+.realtime-spike-control p:not(.eyebrow, .field-error) {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.realtime-spike-control .primary-action {
+  width: 100%;
+  justify-content: center;
+  border: 0;
+}
+
+.realtime-spike-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+
+.realtime-spike-facts div {
+  display: grid;
+  gap: 5px;
+  padding: 18px 10px 0 0;
+}
+
+.realtime-spike-facts dd {
+  margin: 0;
+  font-family: "Fira Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.realtime-spike-log {
+  margin-top: 28px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.realtime-spike-event {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  min-height: 54px;
+  border-top: 1px solid rgba(31, 35, 72, 0.1);
+  font-size: 11px;
+  animation: surface-enter var(--motion-state) var(--ease-premium) both;
+}
+
+.realtime-spike-event span,
+.realtime-spike-event time {
+  color: var(--muted);
+  font-family: "Fira Mono", ui-monospace, monospace;
+  font-size: 9px;
+}
+
+.realtime-spike-event strong {
+  text-transform: capitalize;
+}
+
+.realtime-spike-idle {
+  padding: 24px 4px;
+  border-top: 1px solid rgba(31, 35, 72, 0.1);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 370px) {
+  .realtime-spike-status {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .hero {
   padding: 72px 0 34px;
 }

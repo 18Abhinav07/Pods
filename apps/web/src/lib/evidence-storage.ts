@@ -39,10 +39,27 @@ type StorageConfiguration = {
   bucket: string;
   accessKeyId: string;
   secretAccessKey: string;
+  forcePathStyle: boolean;
+  createBucketIfMissing: boolean;
 };
 
-function readStorageConfiguration(
-  environment: NodeJS.ProcessEnv = process.env
+type StorageEnvironment = Record<string, string | undefined>;
+
+function booleanSetting(
+  environment: StorageEnvironment,
+  name: string,
+  fallback: boolean
+) {
+  const value = environment[name];
+  if (value === undefined) return fallback;
+  if (value !== "true" && value !== "false") {
+    throw new Error(`${name} must be true or false`);
+  }
+  return value === "true";
+}
+
+export function readStorageConfiguration(
+  environment: StorageEnvironment = process.env
 ): StorageConfiguration {
   const endpoint = environment.PODS_S3_ENDPOINT;
   const region = environment.PODS_S3_REGION ?? "us-east-1";
@@ -52,7 +69,23 @@ function readStorageConfiguration(
   if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
     throw new Error("Private evidence storage is not configured");
   }
-  return { endpoint, region, bucket, accessKeyId, secretAccessKey };
+  return {
+    endpoint,
+    region,
+    bucket,
+    accessKeyId,
+    secretAccessKey,
+    forcePathStyle: booleanSetting(
+      environment,
+      "PODS_S3_FORCE_PATH_STYLE",
+      true
+    ),
+    createBucketIfMissing: booleanSetting(
+      environment,
+      "PODS_S3_CREATE_BUCKET_IF_MISSING",
+      true
+    )
+  };
 }
 
 function bucketIsMissing(error: unknown) {
@@ -68,14 +101,16 @@ function bucketIsMissing(error: unknown) {
 export class PrivateEvidenceStorage {
   readonly #client: S3Client;
   readonly #bucket: string;
+  readonly #createBucketIfMissing: boolean;
   #bucketReady: Promise<void> | null = null;
 
   constructor(configuration = readStorageConfiguration()) {
     this.#bucket = configuration.bucket;
+    this.#createBucketIfMissing = configuration.createBucketIfMissing;
     this.#client = new S3Client({
       endpoint: configuration.endpoint,
       region: configuration.region,
-      forcePathStyle: true,
+      forcePathStyle: configuration.forcePathStyle,
       credentials: {
         accessKeyId: configuration.accessKeyId,
         secretAccessKey: configuration.secretAccessKey
@@ -89,10 +124,15 @@ export class PrivateEvidenceStorage {
         await this.#client.send(new HeadBucketCommand({ Bucket: this.#bucket }));
       } catch (error) {
         if (!bucketIsMissing(error)) throw error;
+        if (!this.#createBucketIfMissing) throw error;
         await this.#client.send(new CreateBucketCommand({ Bucket: this.#bucket }));
       }
     })();
     return this.#bucketReady;
+  }
+
+  async assertReady() {
+    await this.#ensureBucket();
   }
 
   async storeImage(input: {

@@ -1,4 +1,5 @@
 import { completeWalletSession } from "../../../../lib/auth";
+import { walletHasAlphaAccess } from "../../../../lib/alpha-access";
 import { podsRepository } from "../../../../lib/server-db";
 import {
   SESSION_COOKIE_NAME,
@@ -25,6 +26,13 @@ export async function POST(request: Request) {
       },
       new Date()
     );
+    if (!walletHasAlphaAccess(process.env, session.walletAddress)) {
+      await podsRepository.deleteSession(session.tokenHash);
+      return NextResponse.json(
+        { error: "This wallet is not included in the current Pods alpha" },
+        { status: 403 }
+      );
+    }
     const response = NextResponse.json({ walletAddress: session.walletAddress });
     response.cookies.set(
       SESSION_COOKIE_NAME,

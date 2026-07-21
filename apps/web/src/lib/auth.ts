@@ -12,7 +12,8 @@ const allowedReturnPrefixes = [
   "/profile",
   "/inbox",
   "/pods/",
-  "/invite/"
+  "/invite/",
+  "/validation/"
 ] as const;
 
 export function normalizeWalletAddress(address: string): string {

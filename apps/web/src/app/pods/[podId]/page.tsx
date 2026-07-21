@@ -3,12 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TemplateSymbol } from "../../../components/template-symbol";
+import { alphaAwarePageSession } from "../../../lib/alpha-access-server";
 import {
   presentPodRelationship,
   relationshipForViewer
 } from "../../../lib/participant-pod-state";
 import { podsRepository } from "../../../lib/server-db";
-import { getCurrentSession } from "../../../lib/session";
 
 function nim(luna: number) {
   return new Intl.NumberFormat("en", { maximumFractionDigits: 5 }).format(luna / 100_000);
@@ -22,7 +22,7 @@ export default async function PublicPodPage({
   const { podId } = await params;
   const [pod, session] = await Promise.all([
     podsRepository.getPublicPod(podId, new Date()),
-    getCurrentSession()
+    alphaAwarePageSession(`/pods/${podId}`)
   ]);
   if (!pod?.contractData || pod.contractData.community.visibility !== "public") notFound();
   const membership = session

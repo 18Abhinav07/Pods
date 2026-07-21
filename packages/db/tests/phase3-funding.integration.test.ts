@@ -148,6 +148,37 @@ describe("Phase 3 deposit persistence", () => {
       .toMatchObject({ state: "deposit_pending" });
   });
 
+  it("detaches a rejected wallet intent so the member can retry funding", async () => {
+    const fixture = await createAcceptedFixture();
+    const firstIntent = await repository.createDepositIntent(
+      intentInput(fixture, "pods-rejected-wallet-first")
+    );
+
+    await repository.recordDepositWalletAttempt({
+      intentId: firstIntent.id,
+      userId: fixture.member.userId,
+      event: "open",
+      now: new Date("2027-03-01T01:01:00.000Z")
+    });
+    await repository.recordDepositWalletAttempt({
+      intentId: firstIntent.id,
+      userId: fixture.member.userId,
+      event: "rejected",
+      now: new Date("2027-03-01T01:02:00.000Z")
+    });
+
+    expect(await repository.getMembershipForUser(fixture.member.userId, fixture.pod.id))
+      .toMatchObject({ state: "funding_failed", depositIntentId: null });
+    expect(await repository.getOpenDepositIntentForUser(fixture.member.userId, fixture.pod.id))
+      .toBeNull();
+
+    const retryIntent = await repository.createDepositIntent({
+      ...intentInput(fixture, "pods-rejected-wallet-retry"),
+      now: new Date("2027-03-01T01:03:00.000Z")
+    });
+    expect(retryIntent).toMatchObject({ state: "intent_created" });
+  });
+
   it("records only owner wallet events and treats the hash as a non-crediting hint", async () => {
     const fixture = await createAcceptedFixture();
     const stranger = await createUser();

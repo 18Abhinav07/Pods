@@ -3,6 +3,7 @@ import type {
   ApplicationAnswer,
   ApplicationStatus,
   ActivityStepInput,
+  BuildDeliverableType,
   CommitmentStepInput,
   CommunityStepInput,
   DepositExceptionCode,
@@ -11,6 +12,7 @@ import type {
   LedgerMovementType,
   MembershipState,
   PublishedPodContract,
+  SubmissionState,
   TemplateId,
   TransferLegState
 } from "@pods/domain";
@@ -104,11 +106,99 @@ export const occurrences = pgTable(
     commitmentDeadlineAt: timestamp("commitment_deadline_at", {
       withTimezone: true,
       mode: "date"
-    })
+    }),
+    state: text("state")
+      .$type<"scheduled" | "commitment_open" | "evidence_open" | "review_open">()
+      .notNull()
+      .default("scheduled")
   },
   (table) => [
     uniqueIndex("occurrences_pod_ordinal_unique").on(table.podId, table.ordinal),
     index("occurrences_pod_window_idx").on(table.podId, table.opensAt)
+  ]
+);
+
+export const occurrenceCommitments = pgTable(
+  "occurrence_commitments",
+  {
+    id: uuid("id").primaryKey(),
+    occurrenceId: uuid("occurrence_id")
+      .notNull()
+      .references(() => occurrences.id, { onDelete: "cascade" }),
+    membershipId: uuid("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    task: text("task").notNull(),
+    deliverableType: text("deliverable_type").$type<BuildDeliverableType>().notNull(),
+    lockedAt: timestamp("locked_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("occurrence_commitments_occurrence_membership_unique").on(
+      table.occurrenceId,
+      table.membershipId
+    ),
+    index("occurrence_commitments_membership_idx").on(table.membershipId, table.lockedAt)
+  ]
+);
+
+export const submissions = pgTable(
+  "submissions",
+  {
+    id: uuid("id").primaryKey(),
+    occurrenceId: uuid("occurrence_id")
+      .notNull()
+      .references(() => occurrences.id, { onDelete: "cascade" }),
+    membershipId: uuid("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    commitmentId: uuid("commitment_id")
+      .notNull()
+      .references(() => occurrenceCommitments.id, { onDelete: "restrict" }),
+    state: text("state").$type<SubmissionState>().notNull(),
+    resultSummary: text("result_summary").notNull(),
+    artifactUrl: text("artifact_url").notNull(),
+    evidenceObjectKey: text("evidence_object_key"),
+    evidenceContentType: text("evidence_content_type"),
+    evidenceByteSize: integer("evidence_byte_size"),
+    submittedAt: timestamp("submitted_at", { withTimezone: true, mode: "date" }),
+    reviewTargetAt: timestamp("review_target_at", { withTimezone: true, mode: "date" }),
+    reviewHardDeadlineAt: timestamp("review_hard_deadline_at", {
+      withTimezone: true,
+      mode: "date"
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("submissions_occurrence_membership_unique").on(
+      table.occurrenceId,
+      table.membershipId
+    ),
+    index("submissions_state_review_idx").on(table.state, table.reviewTargetAt),
+    index("submissions_membership_updated_idx").on(table.membershipId, table.updatedAt)
+  ]
+);
+
+export const reviewDecisions = pgTable(
+  "review_decisions",
+  {
+    id: uuid("id").primaryKey(),
+    submissionId: uuid("submission_id")
+      .notNull()
+      .references(() => submissions.id, { onDelete: "cascade" }),
+    action: text("action").$type<"approved">().notNull(),
+    reviewerId: text("reviewer_id").notNull(),
+    reasonCode: text("reason_code").$type<"meets_frozen_commitment">().notNull(),
+    note: text("note").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("review_decisions_submission_action_unique").on(
+      table.submissionId,
+      table.action
+    ),
+    index("review_decisions_reviewer_created_idx").on(table.reviewerId, table.createdAt)
   ]
 );
 

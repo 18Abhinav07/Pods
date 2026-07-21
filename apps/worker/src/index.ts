@@ -10,6 +10,7 @@ import { NimiqRpcClient } from "./preflight/nimiq-rpc";
 import { NimiqTransferSigner } from "./preflight/nimiq-signer";
 import { treasuryConfigurationPath } from "./preflight/paths";
 import { readTreasuryConfiguration } from "./preflight/treasury-config";
+import { runOccurrenceCycle } from "./activity/run-occurrence-cycle";
 
 export const workerName = "pods-worker";
 
@@ -103,6 +104,13 @@ export async function startFundingWorker() {
     } catch (error) {
       console.error(
         `[cutoff-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+      );
+    }
+    try {
+      await runOccurrenceCycle({ repository });
+    } catch (error) {
+      console.error(
+        `[occurrence-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
       );
     }
     try {

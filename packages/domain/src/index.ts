@@ -8,11 +8,13 @@ export type PodState =
   | "enrollment_open"
   | "cutoff_evaluating"
   | "locked_scheduled"
+  | "active"
   | "cancelled_refunding"
   | "cancelled";
 
 export * from "./enrollment";
 export * from "./funding";
+export * from "./activity";
 
 export const templateContracts = [
   {

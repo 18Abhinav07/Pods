@@ -12,12 +12,13 @@ import {
 const waitingRoomStates = [
   "funded_provisional",
   "roster_locked",
+  "active",
   "excluded_at_cutoff",
   "refund_pending",
   "refunded"
 ] as const;
 
-const confirmedRosterStates = ["funded_provisional", "roster_locked"] as const;
+const confirmedRosterStates = ["funded_provisional", "roster_locked", "active"] as const;
 
 export function createWaitingRoomMethods(database: PodsDatabase) {
   return {

@@ -93,6 +93,9 @@ export function createEnrollmentMethods(database: PodsDatabase) {
           if (!pod || pod.contractData?.community.visibility !== "public") {
             throw new Error("Pod is not accepting public applications");
           }
+          if (pod.creatorUserId === input.applicantUserId) {
+            throw new Error("Creators cannot apply to their own Pod");
+          }
           const [firstOccurrence] = await transaction
             .select({ opensAt: occurrences.opensAt })
             .from(occurrences)

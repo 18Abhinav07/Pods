@@ -178,6 +178,15 @@ describe("public enrollment", () => {
       id: pod.id,
       contractData: pod.contractData
     });
+    expect(await repository.listInboxTimelineForUser(applicant.userId)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          membership: expect.objectContaining({ state: "accepted_unfunded" }),
+          application: expect.objectContaining({ id: application.id }),
+          pod: expect.objectContaining({ id: pod.id })
+        })
+      ])
+    );
     expect(await repository.getPodForAcceptedMember(stranger.userId, pod.id)).toBeNull();
     expect(
       await repository.decideApplication({
@@ -188,6 +197,23 @@ describe("public enrollment", () => {
         now
       })
     ).toBeNull();
+  });
+
+  it("rejects a creator applying to their own public Pod at the repository boundary", async () => {
+    const owner = await createUser();
+    const pod = await publishPod(owner.userId, "public");
+
+    await expect(
+      repository.applyToPublicPod({
+        podId: pod.id,
+        applicantUserId: owner.userId,
+        answers: [
+          { question: "What will you ship?", answer: "A coherent participant journey" },
+          { question: "Why this group?", answer: "To test the creator boundary" }
+        ],
+        now: new Date("2026-08-01T00:00:00.000Z")
+      })
+    ).rejects.toThrow("Creators cannot apply to their own Pod");
   });
 
   it("supports rejection and rejects applications to private or closed Pods", async () => {

@@ -11,6 +11,7 @@ export type MembershipState =
   | "funding_failed"
   | "funded_provisional"
   | "roster_locked"
+  | "active"
   | "excluded_at_cutoff"
   | "refund_pending"
   | "refunded";

@@ -11,6 +11,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.896.0",
     "@fontsource-variable/mulish": "^5.2.8",
     "@fontsource/fira-mono": "^5.2.7",
     "@nimiq/core": "2.7.1",
@@ -21,7 +22,8 @@
     "motion": "12.42.2",
     "next": "16.2.10",
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "sharp": "0.34.5"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",

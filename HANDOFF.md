@@ -30,8 +30,8 @@ Phase 4 Build & Ship activity is implemented and automated-pass from first-occur
 
 - Branch: `phase/04-activity`.
 - Phase 4 source is committed locally in `3bc8955` and `79794f5`.
-- Validation and handoff records are committed locally with this session close.
-- No push was performed.
+- Validation and handoff records are committed with this session close.
+- The complete July 19 through July 21 history is published to `origin/main`.
 
 ## Next 3 Tasks
 

@@ -49,7 +49,7 @@ Related: [[HANDOFF]] | [[sessions/INDEX]] | [[validation/phase-4-spike-results]]
 - Preserved the existing 45 truthful phase-based commits from July 19 and July 20 instead of rewriting published project history.
 - Added July 21 commit `3bc8955` for activity persistence, lifecycle worker logic, and private evidence storage.
 - Added July 21 commit `79794f5` for participant, reviewer, route-state, responsive, and browser-test flows.
-- Validation and handoff records were grouped into the final July 21 documentation commit. No push was performed.
+- Validation and handoff records were grouped into July 21 documentation commits, then the complete history was published to `origin/main` after Abhinav's explicit authorization.
 
 ## Phone fixture
 

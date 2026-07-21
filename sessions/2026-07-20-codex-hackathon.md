@@ -45,3 +45,43 @@ Related: [[HANDOFF]] | [[sessions/INDEX]] | [[validation/phase-3b-results]]
 
 - Physical Nimiq Pay cutoff and full `8 NIM` refund verification.
 - Phase 4 remains blocked until that result is recorded as `PASS`.
+
+## Phase 3C addendum
+
+### Completed
+
+- Centralized participant and creator projections so Today, Discover, My Pods,
+  Applications, Pod detail, rules, funding, and waiting rooms link to one
+  canonical next state.
+- Replaced transient Inbox behavior with durable chronological application,
+  funding, roster, and refund history.
+- Made terminal funding and refund rails visually terminal and removed stale
+  funding actions after roster lock, cancellation, or refund confirmation.
+- Fixed the 360-pixel funding outcome layout, touch targets, and narrow-screen
+  overflow.
+- Blocked creator self-application at both page and repository boundaries.
+- Added hydration gates for wallet and template controls and allowed the LAN,
+  localhost, and loopback development origins.
+- Removed all users, sessions, Pods, memberships, applications, invitations,
+  deposit intents, ledger entries, transfer legs, wallet challenges, and Clock
+  events while preserving five applied migrations.
+
+### Validation
+
+- `pnpm check` passes with 104 web tests, 40 worker tests, 28 integration tests,
+  lint, copy checks, type checks, and production builds.
+- All 22 Mobile Safari and Android Chromium journeys pass, including the four
+  primary destination boundaries, wallet rejection retry, public and private
+  enrollment, funding recovery, cutoff, roster inclusion, cancellation, and
+  refunds.
+- LAN home and connect routes return HTTP 200 at
+  `http://192.168.29.244:3411/`.
+
+### Errors and resolutions
+
+- Server-rendered controls could receive a tap before hydration. Controls now
+  remain disabled until the client store reports hydration.
+- A long-running worker consumed an advanced browser-test Clock and could close
+  newly created Pods between actions. Browser teardown now removes its audited
+  test Clock events, financial test fixtures are deleted in dependency order,
+  and the real worker is paused during automated clock tests.

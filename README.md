@@ -14,11 +14,11 @@ Pods-team review.
 
 ## Current status
 
-Phase 0, Phase 1, Phase 2, and Phase 3A are physically approved. Phase 3B now
-implements the audited cutoff barrier, deterministic roster lock, full-principal
-refund execution, the participant waiting room, and creator-safe funding
-administration. All automated gates pass. The real phone cutoff and refund are
-the remaining Phase 3B checkpoint before Phase 4 can begin.
+Phases 0 through 3 are physically approved. Phase 4 now implements the first
+complete Build & Ship activity journey: occurrence activation, immutable task
+commitment, private evidence, centralized Pods-team review, manual approval,
+and connected participant projections. All automated Phase 4 gates pass. The
+real Nimiq Pay activity walkthrough is the remaining Phase 4 approval gate.
 
 ## Local development
 
@@ -78,6 +78,7 @@ or production-scale.
 - [[validation/inbound-spike-manifest|Validated inbound deposit boundary]]
 - [[validation/phase-3a-results|Phase 3A physical funding result]]
 - [[validation/phase-3b-results|Phase 3B cutoff and refund gate]]
+- [[validation/phase-4-results|Phase 4 activity gate]]
 - [[docs/design-reference/README|Locked design references]]
 
 Licensed under the MIT License.

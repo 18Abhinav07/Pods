@@ -3,7 +3,7 @@ created: 2026-07-20
 project: pods
 ecosystem: nimiq
 tags: [validation, phase-3b, cutoff, refunds, mobile]
-status: chain-pass-phone-confirmation-pending
+status: pass
 ---
 
 # Phase 3B Cutoff and Refund Gate
@@ -12,12 +12,12 @@ Related: [[HANDOFF]] | [[validation/phase-3a-results]] | [[docs/superpowers/plan
 
 ## Current verdict
 
-`AUTOMATED PASS, ON-CHAIN REFUND PASS, PHONE CONFIRMATION PENDING`
+`PASS`
 
 Tasks 9 through 13 and the automated portion of Task 14 pass. The real cutoff
-and Nimiq Testnet refund also completed successfully by transaction hash. Phase
-3B cannot receive its final physical `PASS` until Abhinav confirms the updated
-balance and terminal refund state in Nimiq Pay.
+and Nimiq Testnet refund also completed successfully by transaction hash.
+Abhinav confirmed that the returned funds and terminal refund presentation were
+proper on the physical Nimiq Pay path before approving the move into Phase 4.
 
 ## Implemented boundary
 
@@ -128,5 +128,5 @@ full `8 NIM` Testnet refund.
   refund entitlement, and one `800000` Luna refund confirmation.
 - Full isolated verification after the RPC fix: copy, lint, typecheck, 151
   unit/component tests, 26 integration tests, and web/worker builds all PASS.
-- Pending physical observation: Abhinav must confirm the participant wallet now
-  shows `110000 NIM` and the reopened Mini App shows the terminal refund state.
+- Physical observation: Abhinav confirmed the refund and terminal presentation
+  were proper in Nimiq Pay before the Phase 4 build began.

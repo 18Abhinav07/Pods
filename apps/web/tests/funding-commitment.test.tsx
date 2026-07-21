@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -64,6 +64,11 @@ describe("FundingCommitment", () => {
     for (const outcome of ["Approved", "Timeout-protected", "Grace", "Rejected", "Missed"]) {
       expect(screen.getByRole("row", { name: new RegExp(outcome, "i") })).toBeInTheDocument();
     }
+    const rejected = screen.getByRole("row", { name: /Rejected/i });
+    expect(within(rejected).getByText("Provisionally forfeited"))
+      .toHaveAttribute("data-label", "Your slice");
+    expect(within(rejected).getByText("Not eligible"))
+      .toHaveAttribute("data-label", "Bonus");
 
     const button = screen.getByRole("button", { name: "Commit 0.5 NIM" });
     expect(button).toBeDisabled();

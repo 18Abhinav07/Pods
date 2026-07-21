@@ -113,6 +113,28 @@ test("the hydrated connect control reaches the injected wallet provider", async 
   );
 });
 
+test("the four primary destinations keep distinct first-run purposes", async ({ context, page }) => {
+  await authenticate(context);
+
+  await page.goto("/today");
+  await expect(page.getByRole("heading", { name: "Choose your next commitment." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Discover public Pods" })).toBeVisible();
+  await expect(page.getByText("No history yet")).toHaveCount(0);
+
+  await page.goto("/discover");
+  await expect(page.getByRole("heading", { name: "Find people moving in your direction." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No matching public Pods yet." })).toBeVisible();
+
+  await page.goto("/my-pods");
+  await expect(page.getByRole("heading", { name: "Your activity spaces." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No Pods yet." })).toBeVisible();
+
+  await page.goto("/inbox");
+  await expect(page.getByRole("heading", { name: "Your Pod history." })).toBeVisible();
+  await expect(page.getByText("No history yet")).toBeVisible();
+  await expect(page.getByText("Today remains the place for your next action.")).toBeVisible();
+});
+
 test("a creator publishes one immutable Build and Ship contract", async ({ context, page }) => {
   await authenticate(context);
   await page.goto("/pods/create/template");
@@ -186,7 +208,7 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
     `.my-pod-row[href="/pods/${podId}/admin"], .my-pod-row:has(a[href="/pods/${podId}/admin"])`
   );
   await expect(publishedRow.getByText("Enrollment open", { exact: true })).toBeVisible();
-  await expect(publishedRow.getByText("Rules frozen", { exact: true })).toBeVisible();
+  await expect(publishedRow.getByText("Applications and invitations are active", { exact: true })).toBeVisible();
   await expect(publishedRow.locator(".template-symbol.template-build svg")).toBeVisible();
 });
 

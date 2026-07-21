@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import type { DepositExceptionCode, DepositState } from "@pods/domain";
 
 import type { ParticipantDepositIntent } from "../lib/funding-client";
+import { formatZonedMoment } from "../lib/format-moment";
 
 const stages = [
   ["Wallet", "Wallet confirmation"],
@@ -117,6 +118,22 @@ export function FundingStatusRail({ intent }: { intent: ParticipantDepositIntent
   const currentIndex = stateIndex[intent.state];
   const copy = statusCopy[intent.state];
   const isAlert = intent.state === "wallet_rejected" || intent.state === "exception_review";
+  const completedThroughCurrent = intent.state === "applied_to_roster";
+  const podDestination = intent.state === "credited_provisional"
+    ? "View Pod status"
+    : intent.state === "applied_to_roster"
+      ? "Open Pod"
+      : intent.state === "refund_pending"
+        ? "Track refund"
+        : intent.state === "refunded"
+          ? "View refund receipt"
+          : null;
+  const financialHistoryComplete = [
+    "credited_provisional",
+    "applied_to_roster",
+    "refund_pending",
+    "refunded"
+  ].includes(intent.state);
 
   return (
     <div className="funding-status-flow">
@@ -136,7 +153,11 @@ export function FundingStatusRail({ intent }: { intent: ParticipantDepositIntent
 
       <ol className="funding-stage-rail" aria-label="Funding progress">
         {stages.map(([shortLabel, accessibleLabel], index) => {
-          const relation = index < currentIndex ? "complete" : index === currentIndex ? "current" : "upcoming";
+          const relation = index < currentIndex || (completedThroughCurrent && index === currentIndex)
+            ? "complete"
+            : index === currentIndex
+              ? "current"
+              : "upcoming";
           return (
             <li aria-current={relation === "current" ? "step" : undefined} className={`is-${relation}`} key={shortLabel}>
               <span aria-hidden="true">{relation === "complete" ? "✓" : String(index + 1).padStart(2, "0")}</span>
@@ -153,15 +174,17 @@ export function FundingStatusRail({ intent }: { intent: ParticipantDepositIntent
           <div><dt>Network</dt><dd>Nimiq Testnet</dd></div>
           <div className="receipt-wide"><dt>Reference</dt><dd>{intent.reference}</dd></div>
           {intent.transactionHash ? <div className="receipt-wide"><dt>Transaction hash</dt><dd>{intent.transactionHash}</dd></div> : null}
-          {intent.observedAt ? <div><dt>Observed</dt><dd>{new Date(intent.observedAt).toLocaleString("en")}</dd></div> : null}
-          {intent.finalizedAt ? <div><dt>Finalized</dt><dd>{new Date(intent.finalizedAt).toLocaleString("en")}</dd></div> : null}
-          {intent.creditedAt ? <div><dt>Credited</dt><dd>{new Date(intent.creditedAt).toLocaleString("en")}</dd></div> : null}
+          {intent.observedAt ? <div><dt>Observed</dt><dd>{formatZonedMoment(intent.observedAt, { timeZone: "UTC", includeYear: true, includeZone: true })}</dd></div> : null}
+          {intent.finalizedAt ? <div><dt>Finalized</dt><dd>{formatZonedMoment(intent.finalizedAt, { timeZone: "UTC", includeYear: true, includeZone: true })}</dd></div> : null}
+          {intent.creditedAt ? <div><dt>Credited</dt><dd>{formatZonedMoment(intent.creditedAt, { timeZone: "UTC", includeYear: true, includeZone: true })}</dd></div> : null}
         </dl>
       </section>
 
       {intent.state === "wallet_rejected" ? <Link className="primary-action full-action" href={`/pods/${intent.podId}/fund`}>Try funding again</Link> : null}
-      {intent.state === "credited_provisional" || intent.state === "applied_to_roster" ? <Link className="primary-action full-action" href={`/pods/${intent.podId}/today`}>View activity status</Link> : null}
-      <Link className="secondary-action full-action" href="/applications">Back to applications</Link>
+      {podDestination ? <Link className="primary-action full-action" href={`/pods/${intent.podId}/today`}>{podDestination}</Link> : null}
+      <Link className="secondary-action full-action" href={financialHistoryComplete ? "/my-pods" : `/applications?pod=${intent.podId}`}>
+        {financialHistoryComplete ? "View My Pods" : "Back to applications"}
+      </Link>
     </div>
   );
 }

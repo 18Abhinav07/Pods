@@ -48,7 +48,7 @@ describe("participant Pod relationship presentation", () => {
   });
 
   it.each([
-    ["applied", "Application pending", "View application", "/applications"],
+    ["applied", "Application pending", "View application", "/applications?pod=pod-1"],
     ["accepted_unfunded", "Accepted, funding required", "Continue to funding", "/pods/pod-1/fund"],
     ["funding_failed", "Funding needs attention", "Retry funding", "/pods/pod-1/fund"],
     ["deposit_pending", "Funding in progress", "Track funding", "/pods/pod-1/fund/status?intent=intent-1"],
@@ -75,7 +75,7 @@ describe("participant Pod relationship presentation", () => {
     ).toMatchObject({
       statusLabel: "Application not accepted",
       actionLabel: "View outcome",
-      href: "/applications"
+      href: "/applications?pod=pod-1"
     });
   });
 });

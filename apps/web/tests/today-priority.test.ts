@@ -3,6 +3,33 @@ import { describe, expect, it } from "vitest";
 import { chooseTodayEnrollmentAction } from "../src/lib/today-priority";
 
 describe("Phase 2 Today priority", () => {
+  it("places an open occurrence before enrollment and creator work", () => {
+    expect(chooseTodayEnrollmentAction({
+      activities: [{
+        podId: "active-pod",
+        occurrenceId: "occurrence-1",
+        action: "lock_task"
+      }],
+      participants: [{ podId: "applied", state: "applied", depositIntentId: null }],
+      reviewPodId: "review",
+      recruitPodId: "recruit"
+    })).toEqual({
+      kind: "activity",
+      podId: "active-pod",
+      occurrenceId: "occurrence-1",
+      action: "lock_task"
+    });
+  });
+
+  it("keeps unfinished funding ahead of occurrence work", () => {
+    expect(chooseTodayEnrollmentAction({
+      activities: [{ podId: "active-pod", occurrenceId: "occurrence-1", action: "lock_task" }],
+      participants: [{ podId: "funding", state: "funding_failed", depositIntentId: null }],
+      reviewPodId: null,
+      recruitPodId: null
+    })).toMatchObject({ kind: "participant", podId: "funding" });
+  });
+
   it("places participant funding recovery before creator review and recruiting", () => {
     expect(chooseTodayEnrollmentAction({
       participants: [{ podId: "funding", state: "funding_failed", depositIntentId: null }],

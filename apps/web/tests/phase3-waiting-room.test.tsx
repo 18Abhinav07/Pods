@@ -19,7 +19,6 @@ const waitingRoom: PodWaitingRoomProps = {
   purpose: "Build one concrete product milestone together.",
   viewerRole: "participant",
   membershipState: "funded_provisional",
-  fundingStatusHref: "/pods/pod-1/fund/status?intent=intent-1",
   confirmedParticipants: 1,
   minParticipants: 2,
   maxParticipants: 4,
@@ -35,7 +34,7 @@ const waitingRoom: PodWaitingRoomProps = {
 };
 
 describe("Phase 3B waiting room", () => {
-  it("shows the participant's real funding stage, capacity, cutoff, and frozen schedule", () => {
+  it("shows the participant's Pod stage, capacity, cutoff, and frozen schedule without reopening funding", () => {
     render(<PodWaitingRoom {...waitingRoom} />);
 
     expect(screen.getByRole("heading", { name: "Ship Pods in Public" })).toBeInTheDocument();
@@ -44,8 +43,9 @@ describe("Phase 3B waiting room", () => {
     expect(screen.getByText("3 places remaining")).toBeInTheDocument();
     expect(screen.getByText("5 frozen occurrences")).toBeInTheDocument();
     expect(screen.getByText(/Pods team reviews evidence/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open funding tracker" }))
-      .toHaveAttribute("href", waitingRoom.fundingStatusHref);
+    expect(screen.queryByRole("link", { name: /funding tracker/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Review frozen rules" }))
+      .toHaveAttribute("href", "/pods/pod-1/rules");
   });
 
   it("renders a participant-safe refund rail with a persisted transaction receipt", () => {
@@ -64,6 +64,24 @@ describe("Phase 3B waiting room", () => {
     expect(screen.getByText("8 NIM")).toBeInTheDocument();
     expect(screen.getByText("a".repeat(64))).toBeInTheDocument();
     expect(screen.queryByText(/raw transaction/i)).not.toBeInTheDocument();
+  });
+
+  it("renders the confirmed refund checkpoint as complete", () => {
+    render(
+      <RefundStatusRail
+        refund={{
+          state: "confirmed",
+          amountNim: 8,
+          transactionHash: "b".repeat(64),
+          confirmedAt: "2027-03-08T01:00:00.000Z"
+        }}
+      />
+    );
+
+    const checkpoints = screen.getAllByRole("listitem");
+    expect(checkpoints).toHaveLength(4);
+    for (const checkpoint of checkpoints) expect(checkpoint).toHaveClass("is-complete");
+    expect(checkpoints.at(-1)).toHaveTextContent("✓");
   });
 
   it("routes every post-credit participant stage to the same canonical Pod room", () => {

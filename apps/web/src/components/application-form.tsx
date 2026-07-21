@@ -20,7 +20,7 @@ export function ApplicationForm({ podId, questions }: { podId: string; questions
         podId,
         questions.map((_, index) => String(formData.get(`answer-${index}`) ?? ""))
       );
-      router.push("/applications?sent=1");
+      router.push(`/applications?sent=1&pod=${podId}`);
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Application could not be sent");

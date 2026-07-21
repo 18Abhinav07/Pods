@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { FundingStatusRail } from "../../../../../components/funding-status-rail";
 import { participantDepositIntent } from "../../../../../lib/funding-server";
@@ -19,6 +19,9 @@ export default async function FundingStatusPage({
   if (!intentId) notFound();
   const storedIntent = await podsRepository.getDepositIntentForUser(session.userId, intentId);
   if (!storedIntent || storedIntent.podId !== podId) notFound();
+  if (storedIntent.state === "refund_pending" || storedIntent.state === "refunded") {
+    redirect(`/pods/${podId}/today`);
+  }
 
   return (
     <main className="app-shell funding-status-shell">

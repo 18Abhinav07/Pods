@@ -9,6 +9,12 @@ export type TodayParticipant = {
 };
 
 export type TodayEnrollmentAction =
+  | {
+      kind: "activity";
+      podId: string;
+      occurrenceId: string;
+      action: "lock_task" | "submit_evidence" | "reviewing" | "approved" | "upcoming";
+    }
   | ({ kind: "participant" } & TodayParticipant)
   | { kind: "review"; podId: string }
   | { kind: "creator_funding"; podId: string }
@@ -16,6 +22,11 @@ export type TodayEnrollmentAction =
   | { kind: "empty" };
 
 export function chooseTodayEnrollmentAction(input: {
+  activities?: Array<{
+    podId: string;
+    occurrenceId: string;
+    action: "lock_task" | "submit_evidence" | "reviewing" | "approved" | "upcoming";
+  }>;
   participants: TodayParticipant[];
   reviewPodId: string | null;
   creatorFundingPodId?: string | null;
@@ -38,6 +49,21 @@ export function chooseTodayEnrollmentAction(input: {
         item.priority !== null
     )
     .sort((left, right) => left.priority - right.priority)[0]?.candidate;
+  const financialParticipant = participant
+    ? presentPodRelationship({
+        podId: participant.podId,
+        relationship: {
+          kind: "member",
+          state: participant.state,
+          depositIntentId: participant.depositIntentId
+        }
+      }).todayPriority
+    : null;
+  if (participant && financialParticipant !== null && financialParticipant <= 20) {
+    return { kind: "participant", ...participant };
+  }
+  const activity = input.activities?.[0];
+  if (activity) return { kind: "activity", ...activity };
   if (participant) return { kind: "participant", ...participant };
   if (input.reviewPodId) return { kind: "review", podId: input.reviewPodId };
   if (input.creatorFundingPodId) {

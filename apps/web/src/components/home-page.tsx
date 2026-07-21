@@ -14,7 +14,7 @@ export function HomePage() {
           </span>
           PODS
         </div>
-        <span className="phase-pill">Phase 1 build</span>
+        <span className="phase-pill">Nimiq Testnet</span>
       </header>
 
       <section className="hero entrance entrance-hero">
@@ -40,11 +40,11 @@ export function HomePage() {
       >
         <div className="status-head">
           <span className="status-dot" aria-hidden="true" />
-          <span>Phase 1 in progress</span>
+          <span>Core lifecycle active</span>
         </div>
         <p>
-          Signed wallet sessions and immutable Pod creation are now active.
-          Participant funding remains locked until its own approval gate.
+          Signed wallet sessions, immutable Pod creation, applications, and
+          Testnet NIM funding are active.
         </p>
         <dl>
           <div>

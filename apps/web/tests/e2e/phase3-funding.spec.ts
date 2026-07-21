@@ -32,10 +32,19 @@ function databasePool() {
 }
 
 async function deleteTestUsersByWalletAddress(walletAddresses: string[]) {
-  if (walletAddresses.length === 0) return;
   const pool = databasePool();
   try {
-    await pool.query("DELETE FROM users WHERE wallet_address = ANY($1::text[])", [walletAddresses]);
+    await pool.query("DELETE FROM clock_events WHERE actor LIKE 'playwright-%'");
+    if (walletAddresses.length > 0) {
+      await pool.query(
+        `DELETE FROM pods
+         WHERE creator_user_id IN (
+           SELECT id FROM users WHERE wallet_address = ANY($1::text[])
+         )`,
+        [walletAddresses]
+      );
+      await pool.query("DELETE FROM users WHERE wallet_address = ANY($1::text[])", [walletAddresses]);
+    }
   } finally {
     await pool.end();
   }
@@ -324,6 +333,7 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     await expect(memberPage.getByText("0.5 NIM", { exact: true }).first()).toBeVisible();
     await expect(memberPage.getByText("Verification is performed by the Pods team.", { exact: false })).toBeVisible();
     await expect(memberPage.getByText("If Pods does not review within 24 hours", { exact: false })).toBeVisible();
+    expect(await memberPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const commitButton = memberPage.getByRole("button", { name: "Commit 0.5 NIM" });
     await expect(commitButton).toBeDisabled();
     await memberPage.getByRole("checkbox", { name: /I accept the frozen terms/ }).check();

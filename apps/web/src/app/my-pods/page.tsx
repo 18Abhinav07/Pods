@@ -3,34 +3,31 @@ import Link from "next/link";
 
 import { MyPodsList, type MyPodListItem } from "../../components/my-pods-list";
 import { PrimaryNav } from "../../components/primary-nav";
-import { presentPodRelationship } from "../../lib/participant-pod-state";
+import { presentCreatorPodState, presentPodRelationship } from "../../lib/participant-pod-state";
 import { podsRepository } from "../../lib/server-db";
 import { requireSession } from "../../lib/session";
 
 function ownerItem(pod: Awaited<ReturnType<typeof podsRepository.listPodsForOwner>>[number]): MyPodListItem {
   const template = templateContracts.find((item) => item.id === pod.templateId);
   const name = pod.contractData?.activity.name ?? pod.draftData.activity?.name ?? "Untitled Pod";
-  const href = pod.state === "draft"
+  const draftHref = pod.state === "draft"
     ? `/pods/create/${pod.draftData.activity ? pod.draftData.community ? pod.draftData.commitment ? "review" : "commitment" : "community" : "activity"}?draft=${pod.id}`
-    : pod.state === "enrollment_open" ? `/pods/${pod.id}/admin` : `/pods/${pod.id}/admin/funding`;
-  const ownerStatuses: Record<string, readonly [string, string]> = {
-    draft: ["Draft", "No financial exposure"],
-    enrollment_open: ["Enrollment open", "Rules frozen"],
-    cutoff_evaluating: ["Cutoff evaluating", "Roster snapshot in progress"],
-    locked_scheduled: ["Roster locked", "Activity scheduled"],
-    cancelled_refunding: ["Refunds in progress", "Full returns are being tracked"],
-    cancelled: ["Cancelled", "Refund obligations resolved"]
-  };
-  const ownerStatus = ownerStatuses[pod.state] ?? ["Creator controls", "Open Pod"];
+    : null;
+  const creatorPresentation = pod.state === "draft"
+    ? null
+    : presentCreatorPodState({
+        podId: pod.id,
+        state: pod.state as "enrollment_open" | "cutoff_evaluating" | "locked_scheduled" | "active" | "cancelled_refunding" | "cancelled"
+      });
   return {
     id: pod.id,
-    href,
+    href: draftHref ?? creatorPresentation?.href ?? "/my-pods",
     name,
     state: pod.state,
     templateId: pod.templateId,
     templateName: template?.name ?? "Activity",
-    statusLabel: ownerStatus[0],
-    statusDetail: ownerStatus[1]
+    statusLabel: pod.state === "draft" ? "Draft" : creatorPresentation?.statusLabel ?? "Creator controls",
+    statusDetail: pod.state === "draft" ? "No financial exposure" : creatorPresentation?.statusDetail ?? "Open Pod"
   };
 }
 

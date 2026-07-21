@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createPrivateInvitation, revokePrivateInvitation } from "../lib/invitation-client";
+import { formatZonedMoment } from "../lib/format-moment";
 
 export type InvitationListItem = {
   id: string;
@@ -83,7 +84,7 @@ export function InvitationManager({ podId, initial }: { podId: string; initial: 
       {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
       <div className="invitation-list">
         {invitations.map((invitation) => (
-          <article key={invitation.id}><div><strong>{invitation.status === "active" ? "Ready to use" : invitation.status}</strong><small>Expires {new Date(invitation.expiresAt).toLocaleString("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</small></div>{invitation.status === "active" ? <button onClick={() => revoke(invitation.id)} type="button">Revoke</button> : null}</article>
+          <article key={invitation.id}><div><strong>{invitation.status === "active" ? "Ready to use" : invitation.status}</strong><small>Expires {formatZonedMoment(invitation.expiresAt, { timeZone: "UTC", includeZone: true })}</small></div>{invitation.status === "active" ? <button onClick={() => revoke(invitation.id)} type="button">Revoke</button> : null}</article>
         ))}
         {invitations.length === 0 ? <div className="neutral-empty compact-empty"><span>No links yet</span><p>Create one when you are ready to invite a participant.</p></div> : null}
       </div>

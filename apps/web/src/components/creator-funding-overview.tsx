@@ -20,6 +20,10 @@ export type CreatorFundingOverviewProps = {
 };
 
 export function CreatorFundingOverview(props: CreatorFundingOverviewProps) {
+  const backHref = props.podState === "locked_scheduled"
+    ? `/pods/${props.podId}/today`
+    : `/pods/${props.podId}/admin`;
+  const backLabel = props.podState === "locked_scheduled" ? "Open Pod room" : "Back to creator controls";
   return (
     <>
       <section className="today-hero entrance entrance-hero">
@@ -45,7 +49,7 @@ export function CreatorFundingOverview(props: CreatorFundingOverviewProps) {
           </article>
         ))}
       </section>
-      <Link className="secondary-action full-action" href={`/pods/${props.podId}/admin`}>Back to creator controls</Link>
+      <Link className="secondary-action full-action" href={backHref}>{backLabel}</Link>
     </>
   );
 }

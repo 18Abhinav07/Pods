@@ -4,6 +4,8 @@ import type { TransferLegState } from "@pods/domain";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { formatZonedMoment } from "../lib/format-moment";
+
 export type ParticipantRefund = {
   state: TransferLegState;
   amountNim: number;
@@ -51,6 +53,7 @@ export function RefundStatusRail({ refund }: { refund: ParticipantRefund }) {
   const [title, detail] = copy[refund.state];
   const stage = currentStage[refund.state];
   const attention = attentionStates.includes(refund.state);
+  const completedThroughCurrent = refund.state === "confirmed";
 
   useEffect(() => {
     if (refund.state === "confirmed" || attention) return;
@@ -66,12 +69,19 @@ export function RefundStatusRail({ refund }: { refund: ParticipantRefund }) {
         <p>{detail}</p>
       </div>
       <ol aria-label="Refund progress">
-        {["Queued", "Prepared", "Submitted", "Confirmed"].map((label, index) => (
-          <li className={index < stage ? "is-complete" : index === stage ? "is-current" : ""} key={label}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{label}</strong>
-          </li>
-        ))}
+        {["Queued", "Prepared", "Submitted", "Confirmed"].map((label, index) => {
+          const relation = index < stage || (completedThroughCurrent && index === stage)
+            ? "complete"
+            : index === stage
+              ? "current"
+              : "upcoming";
+          return (
+            <li className={`is-${relation}`} key={label}>
+              <span>{relation === "complete" ? "✓" : String(index + 1).padStart(2, "0")}</span>
+              <strong>{label}</strong>
+            </li>
+          );
+        })}
       </ol>
       <dl>
         <div><dt>Return amount</dt><dd>{nim(refund.amountNim)}</dd></div>
@@ -79,7 +89,7 @@ export function RefundStatusRail({ refund }: { refund: ParticipantRefund }) {
           <div className="refund-hash"><dt>Transaction hash</dt><dd>{refund.transactionHash}</dd></div>
         ) : null}
         {refund.confirmedAt ? (
-          <div><dt>Confirmed</dt><dd>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(refund.confirmedAt))}</dd></div>
+          <div><dt>Confirmed</dt><dd>{formatZonedMoment(refund.confirmedAt, { timeZone: "UTC", includeYear: true, includeZone: true })}</dd></div>
         ) : null}
       </dl>
     </section>

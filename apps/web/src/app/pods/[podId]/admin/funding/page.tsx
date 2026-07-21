@@ -16,6 +16,7 @@ const fundingCopy = {
   funding_failed: ["Funding needs attention", "No funds credited"],
   funded_provisional: ["Commitment credited", "Waiting for roster lock"],
   roster_locked: ["Place secured", "Included in the locked roster"],
+  active: ["Activity live", "Included in the active roster"],
   excluded_at_cutoff: ["Not included", "Full refund required"],
   refund_pending: ["Refund in progress", "Full commitment queued for return"],
   refunded: ["Refund completed", "Full commitment returned"]

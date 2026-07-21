@@ -8,13 +8,57 @@ import { podsRepository } from "../../../../lib/server-db";
 export default async function PodAdminPage({ params }: { params: Promise<{ podId: string }> }) {
   const { podId } = await params;
   const { session, pod } = await requireEnrollmentOwner(podId, `/pods/${podId}/admin`);
+  const contract = pod.contractData;
+  if (!contract) return null;
+  if (pod.state !== "enrollment_open") {
+    const stateCopy = pod.state === "locked_scheduled"
+      ? {
+          eyebrow: "Roster locked",
+          detail: "Enrollment is complete. The Pod room is now the source of truth for the activity schedule.",
+          primaryLabel: "Open Pod room",
+          primaryHref: `/pods/${pod.id}/today`
+        }
+      : pod.state === "cutoff_evaluating"
+        ? {
+            eyebrow: "Roster evaluating",
+            detail: "Enrollment is closed while the audited cutoff resolves funded places and returns.",
+            primaryLabel: "Open funding overview",
+            primaryHref: `/pods/${pod.id}/admin/funding`
+          }
+        : pod.state === "cancelled_refunding"
+          ? {
+              eyebrow: "Returns in progress",
+              detail: "The Pod did not lock. Participant commitments are being returned through the transfer engine.",
+              primaryLabel: "Track participant returns",
+              primaryHref: `/pods/${pod.id}/admin/funding`
+            }
+          : {
+              eyebrow: "Pod cancelled",
+              detail: "Enrollment is closed and all recorded return obligations are resolved.",
+              primaryLabel: "View financial history",
+              primaryHref: `/pods/${pod.id}/admin/funding`
+            };
+    return (
+      <main className="app-shell admin-shell">
+        <header className="app-topbar entrance entrance-topbar">
+          <Link className="wordmark" href="/my-pods"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+          <span className="phase-pill">Creator controls</span>
+        </header>
+        <section className="today-hero entrance entrance-hero">
+          <p className="eyebrow">{stateCopy.eyebrow}</p>
+          <h1>{contract.activity.name}</h1>
+          <p className="screen-copy">{stateCopy.detail}</p>
+        </section>
+        <Link className="primary-action full-action" href={stateCopy.primaryHref}>{stateCopy.primaryLabel}</Link>
+        <Link className="secondary-action full-action" href={`/pods/${pod.id}/rules`}>Review frozen rules</Link>
+      </main>
+    );
+  }
   const applications = await podsRepository.listApplicationsForCreator({ creatorUserId: session.userId, podId });
   const invitations = await podsRepository.listInvitationsForCreator({ creatorUserId: session.userId, podId });
   const pending = applications.filter(({ application }) => application.state === "applied").length;
   const accepted = applications.filter(({ application }) => application.state === "accepted_unfunded").length;
   const rejected = applications.filter(({ application }) => application.state === "application_rejected").length;
-  const contract = pod.contractData;
-  if (!contract) return null;
   const renderedAt = new Date().getTime();
 
   return (
@@ -28,9 +72,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
         <p className="screen-copy">Manage who enters. Frozen rules, evidence decisions, and future financial outcomes remain outside creator control.</p>
       </section>
       <Link className="secondary-action full-action admin-funding-link" href={`/pods/${pod.id}/admin/funding`}>View participant funding stages</Link>
-      {pod.state === "cancelled" ? (
-        <section className="neutral-empty"><span>Cancelled</span><p>This Pod is no longer accepting applications or invitations. Its frozen history remains available.</p></section>
-      ) : contract.community.visibility === "public" ? (
+      {contract.community.visibility === "public" ? (
         <>
           <section className="admin-metrics">
             <div><span>Pending</span><strong>{pending}</strong></div><div><span>Accepted</span><strong>{accepted}</strong></div><div><span>Not accepted</span><strong>{rejected}</strong></div>
@@ -48,7 +90,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
           podId={pod.id}
         />
       )}
-      {pod.state === "enrollment_open" ? <CancelPodControl podId={pod.id} podName={contract.activity.name} /> : null}
+      <CancelPodControl podId={pod.id} podName={contract.activity.name} />
     </main>
   );
 }

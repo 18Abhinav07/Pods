@@ -152,7 +152,7 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await applicantPage.getByLabel("Why does this cadence fit?").fill("The five-day cadence matches my build week");
     await applicantPage.getByLabel(/I understand that applying/).check();
     await applicantPage.getByRole("button", { name: "Send application" }).click();
-    await expect(applicantPage).toHaveURL(/\/applications\?sent=1$/);
+    await expect(applicantPage).toHaveURL(new RegExp(`/applications\\?sent=1&pod=${pod.id}$`));
     await expect(applicantPage.getByText("Application pending")).toBeVisible();
     await applicantPage.goto(`${baseUrl}/discover?template=build`);
     const appliedCard = applicantPage.locator(".public-pod-card").filter({ hasText: pod.name });

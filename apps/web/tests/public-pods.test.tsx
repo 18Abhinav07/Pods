@@ -82,7 +82,7 @@ describe("PublicPodCard", () => {
     expect(screen.getByText("Application pending")).toBeVisible();
     expect(screen.getByRole("link", { name: "View application" })).toHaveAttribute(
       "href",
-      "/applications"
+      "/applications?pod=pod-applied"
     );
     expect(screen.queryByText("Open to apply")).not.toBeInTheDocument();
   });

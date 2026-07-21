@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
+import { presentPodRelationship } from "../../../../lib/participant-pod-state";
 
 function nim(luna: number) {
   return new Intl.NumberFormat("en", { maximumFractionDigits: 5 }).format(luna / 100_000);
@@ -15,10 +16,32 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
   const owned = await podsRepository.getPodForOwner(session.userId, podId);
   const pod = owned ?? await podsRepository.getPodForAcceptedMember(session.userId, podId);
   if (!pod?.contractData || !pod.contractHash) notFound();
+  const membership = owned ? null : await podsRepository.getMembershipForUser(session.userId, podId);
+  if (!owned && !membership) notFound();
   const contract = pod.contractData;
   const template = templateContracts.find((item) => item.id === contract.templateId);
-  const nextHref = owned && pod.state === "enrollment_open" ? `/pods/${pod.id}/admin` : owned ? "/my-pods" : `/pods/${pod.id}/fund`;
-  const nextLabel = owned && pod.state === "enrollment_open" ? "Open creator controls" : owned ? "View My Pods" : "Review funding handoff";
+  const memberPresentation = membership ? presentPodRelationship({
+    podId: pod.id,
+    relationship: {
+      kind: "member",
+      state: membership.state,
+      depositIntentId: membership.depositIntentId
+    }
+  }) : null;
+  const nextHref = owned
+    ? pod.state === "enrollment_open"
+      ? `/pods/${pod.id}/admin`
+      : pod.state === "locked_scheduled"
+        ? `/pods/${pod.id}/today`
+        : `/pods/${pod.id}/admin/funding`
+    : memberPresentation?.href ?? "/my-pods";
+  const nextLabel = owned
+    ? pod.state === "enrollment_open"
+      ? "Open creator controls"
+      : pod.state === "locked_scheduled"
+        ? "Open Pod room"
+        : "Open funding overview"
+    : memberPresentation?.actionLabel ?? "View My Pods";
   return <main className="app-shell rules-shell">
     <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="frozen-pill">Contract frozen</span></header>
     <section className="rules-hero entrance entrance-hero"><p className="eyebrow">Immutable Pod rules</p><h1>{contract.activity.name}</h1><p>{contract.activity.purpose}</p></section>

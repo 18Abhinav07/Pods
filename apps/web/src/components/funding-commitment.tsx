@@ -101,7 +101,12 @@ export function FundingCommitment(props: {
             <thead><tr><th>Decision</th><th>Your slice</th><th>Bonus</th><th>Streak</th></tr></thead>
             <tbody>
               {outcomes.map(([decision, slice, bonus, streak]) => (
-                <tr key={decision}><th scope="row">{decision}</th><td>{slice}</td><td>{bonus}</td><td>{streak}</td></tr>
+                <tr key={decision}>
+                  <th data-label="Decision" scope="row">{decision}</th>
+                  <td data-label="Your slice">{slice}</td>
+                  <td data-label="Bonus">{bonus}</td>
+                  <td data-label="Streak">{streak}</td>
+                </tr>
               ))}
             </tbody>
           </table>

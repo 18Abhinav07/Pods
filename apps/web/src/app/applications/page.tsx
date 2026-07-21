@@ -8,7 +8,7 @@ import { requireSession } from "../../lib/session";
 export default async function ApplicationsPage({
   searchParams
 }: {
-  searchParams: Promise<{ sent?: string }>;
+  searchParams: Promise<{ sent?: string; pod?: string }>;
 }) {
   const session = await requireSession("/applications");
   const query = await searchParams;
@@ -21,6 +21,9 @@ export default async function ApplicationsPage({
       membership.applicationId ? [[membership.applicationId, membership] as const] : []
     )
   );
+  const visibleRecords = query.pod
+    ? records.filter(({ pod }) => pod.id === query.pod)
+    : records;
 
   return (
     <main className="app-shell">
@@ -33,9 +36,9 @@ export default async function ApplicationsPage({
         <h1>{query.sent === "1" ? "Application sent." : "Track every decision."}</h1>
         <p className="screen-copy">Acceptance is one gate. Funding finality and roster lock still determine the final place.</p>
       </section>
-      {records.length > 0 ? (
+      {visibleRecords.length > 0 ? (
         <section className="application-status-list">
-          {records.map(({ application, pod }) => {
+          {visibleRecords.map(({ application, pod }) => {
             const membership = membershipByApplication.get(application.id);
             const presentation = presentPodRelationship({
               podId: pod.id,
@@ -46,17 +49,16 @@ export default async function ApplicationsPage({
               }
             });
             const name = pod.contractData?.activity.name ?? "Pod";
-            const cancelled = pod.state === "cancelled";
             return (
               <article className="application-status-card" key={application.id}>
-                <div><span>{cancelled ? "Pod cancelled" : presentation.statusLabel}</span><time>{application.updatedAt.toLocaleDateString("en", { month: "short", day: "numeric" })}</time></div>
+                <div><span>{presentation.statusLabel}</span><time>{application.updatedAt.toLocaleDateString("en", { month: "short", day: "numeric" })}</time></div>
                 <h2>{name}</h2>
-                <p>{cancelled ? "The creator cancelled this Pod before funding." : presentation.statusDetail}</p>
+                <p>{presentation.statusDetail}</p>
                 <Link
-                  className={cancelled ? "secondary-action full-action" : "primary-action full-action"}
-                  href={cancelled ? "/my-pods" : presentation.href}
+                  className="primary-action full-action"
+                  href={presentation.href}
                 >
-                  {cancelled ? "View My Pods" : presentation.actionLabel}
+                  {presentation.actionLabel}
                 </Link>
               </article>
             );
@@ -68,6 +70,8 @@ export default async function ApplicationsPage({
           <Link className="primary-action full-action" href="/discover">Browse public Pods</Link>
         </section>
       )}
+      {query.pod ? <Link className="secondary-action full-action" href="/applications">View all applications</Link> : null}
+      <Link className="quiet-link centered-link" href="/inbox">Return to Inbox</Link>
       <PrimaryNav active="inbox" />
     </main>
   );

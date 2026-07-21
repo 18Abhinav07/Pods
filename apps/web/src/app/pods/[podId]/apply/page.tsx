@@ -10,8 +10,9 @@ export default async function ApplyPage({ params }: { params: Promise<{ podId: s
   const pod = await podsRepository.getPublicPod(podId, new Date());
   if (!pod?.contractData || pod.contractData.community.visibility !== "public") notFound();
   const session = await requireSession(`/pods/${podId}/apply`);
+  if (pod.creatorUserId === session.userId) notFound();
   const existing = await podsRepository.getMembershipForUser(session.userId, podId);
-  if (existing) redirect("/applications");
+  if (existing) redirect(`/applications?pod=${podId}`);
   const contract = pod.contractData;
   if (contract.community.visibility !== "public") notFound();
 

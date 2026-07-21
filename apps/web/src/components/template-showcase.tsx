@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { templates, type TemplateId } from "./template-data";
 import { TemplateSymbol } from "./template-symbol";
+import { useHydrated } from "../lib/use-hydrated";
 
 const selectionSpring = {
   type: "spring",
@@ -15,6 +16,7 @@ const selectionSpring = {
 
 export function TemplateShowcase() {
   const [selectedId, setSelectedId] = useState<TemplateId>(templates[0].id);
+  const hydrated = useHydrated();
   const shouldReduceMotion = useReducedMotion();
   const selected = templates.find((template) => template.id === selectedId) ?? templates[0];
   const selectionTransition = shouldReduceMotion
@@ -31,6 +33,7 @@ export function TemplateShowcase() {
             <motion.button
               aria-pressed={isSelected}
               className="template-row template-selector"
+              disabled={!hydrated}
               key={template.id}
               onClick={() => setSelectedId(template.id)}
               transition={selectionTransition}

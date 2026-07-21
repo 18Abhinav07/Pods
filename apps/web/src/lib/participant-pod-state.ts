@@ -1,4 +1,4 @@
-import type { MembershipState } from "@pods/domain";
+import type { MembershipState, PodState } from "@pods/domain";
 
 export type PodRelationship =
   | { kind: "visitor" }
@@ -22,6 +22,86 @@ export type PodRelationshipPresentation = {
   todayTitle: string;
   todayDetail: string;
 };
+
+export type CreatorPodPresentation = {
+  statusLabel: string;
+  statusDetail: string;
+  actionLabel: string;
+  href: string;
+  todayEyebrow: string;
+  todayTitle: string;
+  todayDetail: string;
+};
+
+export function presentCreatorPodState(input: {
+  podId: string;
+  state: Exclude<PodState, "draft">;
+}): CreatorPodPresentation {
+  if (input.state === "enrollment_open") {
+    return {
+      statusLabel: "Enrollment open",
+      statusDetail: "Applications and invitations are active",
+      actionLabel: "Manage enrollment",
+      href: `/pods/${input.podId}/admin`,
+      todayEyebrow: "Enrollment open",
+      todayTitle: "Your public Pod is ready to grow.",
+      todayDetail: "Review applications or share the frozen public contract."
+    };
+  }
+  if (input.state === "locked_scheduled") {
+    return {
+      statusLabel: "Roster locked",
+      statusDetail: "Activity scheduled",
+      actionLabel: "Open Pod room",
+      href: `/pods/${input.podId}/today`,
+      todayEyebrow: "Roster locked",
+      todayTitle: "Your Pod is ready for the activity.",
+      todayDetail: "Enrollment is complete. Open the Pod room for the frozen schedule."
+    };
+  }
+  if (input.state === "active") {
+    return {
+      statusLabel: "Activity live",
+      statusDetail: "Occurrence commitments and evidence are active",
+      actionLabel: "Open Pod room",
+      href: `/pods/${input.podId}/today`,
+      todayEyebrow: "Activity live",
+      todayTitle: "Your Pod is building now.",
+      todayDetail: "Open the Pod room to follow approved group progress."
+    };
+  }
+  if (input.state === "cutoff_evaluating") {
+    return {
+      statusLabel: "Cutoff evaluating",
+      statusDetail: "Roster snapshot in progress",
+      actionLabel: "Open funding overview",
+      href: `/pods/${input.podId}/admin/funding`,
+      todayEyebrow: "Roster evaluating",
+      todayTitle: "The enrollment cutoff is resolving.",
+      todayDetail: "Review the participant-safe funding stages while the roster snapshot completes."
+    };
+  }
+  if (input.state === "cancelled_refunding") {
+    return {
+      statusLabel: "Returns in progress",
+      statusDetail: "Participant commitments are being returned",
+      actionLabel: "Track participant returns",
+      href: `/pods/${input.podId}/admin/funding`,
+      todayEyebrow: "Returns in progress",
+      todayTitle: "This Pod is returning commitments.",
+      todayDetail: "Track every participant-safe return until the financial state is final."
+    };
+  }
+  return {
+    statusLabel: "Cancelled",
+    statusDetail: "Financial obligations resolved",
+    actionLabel: "View financial history",
+    href: `/pods/${input.podId}/admin/funding`,
+    todayEyebrow: "Pod cancelled",
+    todayTitle: "This Pod is closed.",
+    todayDetail: "The frozen contract and resolved financial history remain available."
+  };
+}
 
 export function relationshipForViewer(input: {
   creatorUserId: string;
@@ -143,6 +223,17 @@ const memberPresentations = {
     todayTitle: "You are part of this Pod.",
     todayDetail: "Open the frozen Pod contract and prepare for the next scheduled occurrence."
   },
+  active: {
+    statusLabel: "Activity live",
+    statusDetail: "Your occurrence flow is active",
+    actionLabel: "Open Pod",
+    destination: "waiting_room",
+    tone: "secured",
+    todayPriority: null,
+    todayEyebrow: "Activity live",
+    todayTitle: "Your current occurrence is ready.",
+    todayDetail: "Lock the task, ship visible work, and submit it before the frozen deadline."
+  },
   excluded_at_cutoff: {
     statusLabel: "Not included at cutoff",
     statusDetail: "Your commitment will be returned",
@@ -183,7 +274,7 @@ function memberHref(input: {
   destination: MemberPresentation["destination"];
   depositIntentId: string | null;
 }) {
-  if (input.destination === "applications") return "/applications";
+  if (input.destination === "applications") return `/applications?pod=${input.podId}`;
   if (input.destination === "fund") return `/pods/${input.podId}/fund`;
   if (input.destination === "waiting_room") return `/pods/${input.podId}/today`;
   if (input.destination === "my_pods") return "/my-pods";

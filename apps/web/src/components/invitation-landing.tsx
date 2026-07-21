@@ -61,7 +61,7 @@ export function InvitationLanding({ connected }: { connected: boolean }) {
       <section className="public-preview-hero entrance entrance-hero"><TemplateSymbol templateId={preview.templateId} /><p className="eyebrow">{template?.name}</p><h1>{preview.activityName}</h1><p>{preview.purpose}</p></section>
       <section className="public-preview-ledger entrance entrance-status">
         <div><span>Schedule</span><strong>{preview.occurrenceCount} occurrences</strong><small>{preview.startDate} to {preview.endDate}</small></div>
-        <div><span>Upfront commitment</span><strong>{nim(preview.totalLuna)} NIM</strong><small>Funding begins in Phase 3</small></div>
+        <div><span>Upfront commitment</span><strong>{nim(preview.totalLuna)} NIM</strong><small>Required after acceptance</small></div>
         <div><span>Community</span><strong>{preview.minParticipants} to {preview.maxParticipants} people</strong><small>Hidden private activity</small></div>
         <div><span>Verification</span><strong>Pods team review</strong><small>Not peer-voted or creator-controlled</small></div>
       </section>

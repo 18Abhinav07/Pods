@@ -10,7 +10,6 @@ export type PodWaitingRoomProps = {
   purpose: string;
   viewerRole: "creator" | "participant";
   membershipState: MembershipState | null;
-  fundingStatusHref: string | null;
   confirmedParticipants: number;
   minParticipants: number;
   maxParticipants: number;
@@ -33,6 +32,10 @@ const participantStateCopy: Partial<Record<MembershipState, readonly [string, st
   roster_locked: [
     "Place secured",
     "The minimum roster was met and your place is locked for the activity."
+  ],
+  active: [
+    "Activity live",
+    "Your roster is locked and the occurrence lifecycle is now active."
   ],
   excluded_at_cutoff: [
     "Refund required",
@@ -105,20 +108,15 @@ export function PodWaitingRoom(props: PodWaitingRoomProps) {
         <p>Pods team reviews evidence against the frozen rules. Creators and participants cannot approve their own financial outcomes.</p>
       </aside>
 
-      <aside className="waiting-announcement">
-        <span>Creator announcements</span>
-        <p>No announcements yet. The frozen rules and schedule remain the source of truth.</p>
-      </aside>
-
       <div className="waiting-actions">
         {props.viewerRole === "creator" ? (
           <Link className="primary-action full-action" href={`/pods/${props.podId}/admin/funding`}>Open creator funding view</Link>
-        ) : props.fundingStatusHref ? (
-          <Link className="primary-action full-action" href={props.fundingStatusHref}>Open funding tracker</Link>
         ) : (
-          <Link className="primary-action full-action" href={`/pods/${props.podId}/rules`}>Read frozen rules</Link>
+          <Link className="primary-action full-action" href={`/pods/${props.podId}/rules`}>Review frozen rules</Link>
         )}
-        <Link className="secondary-action full-action" href={`/pods/${props.podId}/rules`}>Review complete Pod contract</Link>
+        {props.viewerRole === "creator" ? (
+          <Link className="secondary-action full-action" href={`/pods/${props.podId}/rules`}>Review frozen rules</Link>
+        ) : null}
       </div>
     </>
   );

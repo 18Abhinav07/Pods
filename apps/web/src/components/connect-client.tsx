@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { establishWalletSession } from "../lib/nimiq-wallet-client";
+import { useHydrated } from "../lib/use-hydrated";
 
 type ConnectState = "idle" | "connecting" | "signing" | "error";
 
 export function ConnectClient({ returnTo }: { returnTo: string }) {
   const router = useRouter();
+  const hydrated = useHydrated();
   const [state, setState] = useState<ConnectState>("idle");
   const [error, setError] = useState("");
 
@@ -52,7 +54,7 @@ export function ConnectClient({ returnTo }: { returnTo: string }) {
           <span>{error}</span>
         </div>
       ) : null}
-      <button className="primary-action full-action" disabled={pending} onClick={connect} type="button">
+      <button className="primary-action full-action" disabled={!hydrated || pending} onClick={connect} type="button">
         {pending ? "Waiting for Nimiq Pay" : error ? "Try wallet again" : "Connect Nimiq wallet"}
       </button>
       <p className="fine-print">The session stays on this device for seven days.</p>

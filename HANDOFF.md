@@ -56,22 +56,22 @@ are hard-disabled in both the funding UI and deposit-intent API.
 - Integration tests: 32 PASS.
 - Production web and worker builds: PASS.
 - No U+2014 characters: PASS.
-- First Railway web deployment `c0918ba9-988a-4d55-be3a-ded218c54276`:
+- Final Railway web deployment `664efce8-cdef-4e7c-8776-96abf0a4ecb3`:
   SUCCESS with migrations and readiness health.
 
 ## Git State
 
 - Branch: `phase/04a-social-alpha-foundation`.
 - Base: `81cfbc1` from `phase/04-activity`.
+- Implementation checkpoint: `b2f2f07`.
 - Original Phase 4 worktree and phone fixture were not modified.
 - Phase 4A changes are not merged to `main` and are not pushed pending the
   physical gate and Abhinav's approval.
 
 ## Next 3 Tasks
 
-1. Redeploy the final accepted-participant realtime-harness adjustment and
-   verify Railway reaches `SUCCESS`.
-2. Run the physical realtime procedure in
+1. Run the physical realtime procedure in
    `validation/phase-4a-results.md` and record PASS or the exact failure.
-3. Resolve the Railway worker service slot, then request Abhinav's Phase 4A
+2. Resolve the Railway worker service slot without merging worker and web.
+3. Request Abhinav's Phase 4A
    approval before beginning Phase 4B.

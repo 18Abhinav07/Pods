@@ -87,10 +87,10 @@ slot is available.
 - Environment: `alpha`.
 - Web service: `pods-web`.
 - Public domain: `https://pods-web-alpha.up.railway.app`.
-- First health-verified deployment: `c0918ba9-988a-4d55-be3a-ded218c54276`.
+- Final health-verified deployment: `664efce8-cdef-4e7c-8776-96abf0a4ecb3`.
 - External DNS resolution from the Codex execution environment remained
-  unavailable immediately after domain creation. Railway marked the domain
-  active and the deployment successful after its internal readiness check.
+  unavailable after domain creation. Railway marked the domain active and the
+  final deployment successful after its internal readiness check.
 
 ## Physical realtime gate
 

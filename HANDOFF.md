@@ -18,7 +18,7 @@ Phase 4 Build & Ship activity is implemented and automated-pass from first-occur
 - Task: run the real Nimiq Pay phone approval gate for the Phase 4 Build & Ship journey.
 - URL: `http://192.168.29.244:3411/`.
 - Runtime: LAN web server and lifecycle worker are running against healthy local Postgres and MinIO services.
-- Fixture: public `Phase 4 Build Lab`, Pod `fad860b4-cb09-4b61-b62a-3baaa6b568e1`. Both real wallets funded `0.1 NIM`, joined the locked roster, and are active in occurrence one. The occurrence is in `commitment_open` until 9:00 AM IST.
+- Fixture: public `Phase 4 Build Lab`, Pod `fad860b4-cb09-4b61-b62a-3baaa6b568e1`. Both real wallets funded `0.1 NIM` and are active. Submission `d20a9683-0a1c-405b-a512-c0268df08e34` from wallet tail `GMF3 KKYQ` was manually approved once and is present in the approved feed.
 
 ## Open Errors / Blockers
 
@@ -35,6 +35,6 @@ Phase 4 Build & Ship activity is implemented and automated-pass from first-occur
 
 ## Next 3 Tasks
 
-1. Open Today on one physical wallet, lock a task, and verify the commitment survives WebView closure.
-2. Save an evidence draft, upload an optional image, submit it, and verify every reviewing projection on the phone.
-3. Approve the submission through the Pods reviewer workspace, verify the approved feed and streak, and record Abhinav's Phase 4 PASS or exact corrections.
+1. Refresh Today on wallet tail `GMF3 KKYQ` and verify the approved occurrence state and streak.
+2. Verify the Inbox, My Pods, submission detail, and Pod feed use the same approved state without exposing the private image.
+3. Record Abhinav's Phase 4 PASS or exact corrections, then close the physical gate.

@@ -59,3 +59,5 @@ Related: [[HANDOFF]] | [[sessions/INDEX]] | [[validation/phase-4-spike-results]]
 - First occurrence opens at `2026-07-21T18:30:00Z`; its immutable-task cutoff is `2026-07-22T03:30:00Z`.
 - Both real wallets applied, were accepted, and finalized distinct `0.1 NIM` deposits before cutoff.
 - Audited Clock event `07e87121-6e02-47bf-94ac-cd7ba3a7cd6d` moved effective time to `2026-07-21T18:35:00Z`; the Pod, two memberships, and first occurrence then activated correctly.
+- Wallet tail `GMF3 KKYQ` submitted the frozen `Ship phase 4` task with public commit `79794f5`, a result summary, and private image evidence.
+- The authenticated reviewer API returned the private sanitized image, and one manual approval produced one review decision and one approved feed item. Participant phone confirmation remains pending.

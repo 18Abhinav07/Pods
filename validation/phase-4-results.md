@@ -70,7 +70,11 @@ They do not prove the injected provider behavior of a physical Nimiq Pay WebView
 - Both deposits finalized before cutoff and produced exactly two `10,000 Luna` deposit-credit ledger movements.
 - Audited Clock event: `07e87121-6e02-47bf-94ac-cd7ba3a7cd6d`, effective at `2026-07-21T18:35:00.000Z`.
 - Post-cutoff state: Pod `active`, two active memberships, both deposits `applied_to_roster`, and occurrence one `commitment_open`.
-- Activity submission, reviewer approval, and participant confirmation remain pending.
+- Wallet tail `GMF3 KKYQ` locked `Ship phase 4` with a commit deliverable and submitted `d20a9683-0a1c-405b-a512-c0268df08e34`.
+- Public artifact `79794f5b887aa1c2cd8e637200129f02b9cc3f8e` exists on GitHub `main` and contains the Phase 4 participant and reviewer implementation.
+- The private evidence endpoint returned a sanitized `image/webp` object of `171,028` bytes to an authenticated reviewer only.
+- The reviewer approved once with reason `meets_frozen_commitment`; exactly one review decision and one approved feed item exist.
+- Participant confirmation of the approved phone projections remains pending.
 
 ## Final verdict
 

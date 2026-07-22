@@ -76,3 +76,5 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 - Browser inspection covered 390 by 844 and 1440 by 1100, with no horizontal overflow and no console warnings or errors.
 - Fresh `pnpm check` passed with 229 web tests, 48 worker tests, 48 integration tests, copy and type checks, and both production builds.
 - Published `d87bdad` to GitHub `main` and the phase branch. Railway accepted source-linked deployment `ba755a24-e0ca-4124-9f0b-51d28baba2c1`, which remains queued rather than live.
+- After GitHub merge commit `90eef67` also remained queued due to upstream GitHub issues, deployed the identical verified application tree directly with Railway CLI.
+- Direct deployment `e860b76f-1156-4ed9-94a6-b770a55311de` reached `SUCCESS`; migrations applied, Next.js started, and production `/health/ready` returned `200` with configuration, database, and evidence storage ready.

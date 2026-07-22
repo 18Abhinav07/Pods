@@ -66,3 +66,13 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 - Reran the full repository gate successfully: 318 root/unit/component tests, 48 live integration tests, copy and lint, all typechecks, and both production builds.
 - Published application release `b3d96cb` to GitHub `main` and `phase/04a-social-alpha-foundation`, then verified both remote refs.
 - Railway production cleanup and deployment remain blocked because the authenticated account lists zero projects and cannot access the linked Pods project. No duplicate Railway project was created.
+
+## Activity Atlas landing release
+
+- Replaced the redundant landing-to-connect-page journey with the existing signed Nimiq wallet session action directly in the landing header.
+- Reduced the landing navigation to a black `Pods` discovery link followed by one lime `Wallet` pill, with loading and recoverable inline error states.
+- Removed both actions from the hero so its message and activity composition remain the only focal point.
+- Moved the giant lowercase footer wordmark outside the closing dark card and corrected overflow, padding, line height, and tracking so the left edge of the `p` remains visible at mobile and desktop widths.
+- Browser inspection covered 390 by 844 and 1440 by 1100, with no horizontal overflow and no console warnings or errors.
+- Fresh `pnpm check` passed with 229 web tests, 48 worker tests, 48 integration tests, copy and type checks, and both production builds.
+- Published `d87bdad` to GitHub `main` and the phase branch. Railway accepted source-linked deployment `ba755a24-e0ca-4124-9f0b-51d28baba2c1`, which remains queued rather than live.

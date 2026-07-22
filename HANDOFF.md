@@ -11,13 +11,13 @@ The complete Phase 4 adaptive social release is committed and published to GitHu
 
 ## In Progress (resume here)
 
-- Open `https://pods-activity.up.railway.app` inside Nimiq Pay on a physical phone.
+- Open `https://pods-nimiq-activity.up.railway.app` inside Nimiq Pay on a physical phone.
 - Complete wallet connection, profile onboarding, Pod creation, room messaging, and proof privacy checks with two wallets.
 - Record route-specific physical PASS or defects before enabling any financial capability.
 
 ## Open Errors / Blockers
 
-- External DNS for `pods-activity.up.railway.app` remains unavailable from the Codex execution environment. Railway reports the domain `ACTIVE`, deployment `fbd1b400-e6af-4469-aa99-7aadc5423fdf` as `SUCCESS`, one running replica, and a successful internal `/health/ready` gate.
+- Google DNS and Cloudflare DNS resolve `pods-nimiq-activity.up.railway.app`, and direct HTTPS verification returns 200 with every readiness check ready. The default resolver on the current network still refuses `*.up.railway.app`, so physical testing requires mobile data or secure DNS until that resolver cache clears.
 - The new project has no separate worker service or treasury configuration. Deposits, alpha refunds, review exceptions, and proportional settlement remain disabled. This is intentional and prevents the web service from accepting funds it cannot safely reconcile.
 - Physical Nimiq Pay approval remains pending and is not replaced by browser verification.
 

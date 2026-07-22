@@ -1,13 +1,13 @@
 ---
 project: pods
-last-updated: 2026-07-22 20:40
+last-updated: 2026-07-22 20:45
 last-agent: codex
 mode: HACKATHON
 ---
 
 ## State
 
-Phase 4 social alpha with the approved Signal Bloom identity is live at `https://pods-nimiq-activity.up.railway.app` on Railway deployment `d7c0b394-1bf6-40af-a55e-b92c55a843a3`.
+Phase 4 social alpha with the approved Signal Bloom identity is live at `https://pods-nimiq-activity.up.railway.app` on source-linked Railway deployment `df60fc37-c2fb-4594-b45e-e3be6d72e44d`, built successfully from `main` commit `39aeb8f89d1d63e88061adea37d881c2222e6954`.
 
 ## In Progress (resume here)
 
@@ -21,7 +21,7 @@ Phase 4 social alpha with the approved Signal Bloom identity is live at `https:/
 
 ## Git State
 
-- Branch `phase/04a-social-alpha-foundation` was deployed from and pushed through `fa17c24 docs: record Signal Bloom identity`; production health, favicon, SVG, and browser checks passed.
+- Production application source is `origin/main` at `39aeb8f89d1d63e88061adea37d881c2222e6954`; the phase branch carries this handoff-only deployment record after that application commit. Production startup, database readiness, evidence storage, favicon, SVG, title, and lowercase wordmark checks passed.
 
 ## Next 3 Tasks
 

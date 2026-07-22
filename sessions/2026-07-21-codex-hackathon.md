@@ -61,3 +61,21 @@ Related: [[HANDOFF]] | [[sessions/INDEX]] | [[validation/phase-4-spike-results]]
 - Audited Clock event `07e87121-6e02-47bf-94ac-cd7ba3a7cd6d` moved effective time to `2026-07-21T18:35:00Z`; the Pod, two memberships, and first occurrence then activated correctly.
 - Wallet tail `GMF3 KKYQ` submitted the frozen `Ship phase 4` task with public commit `79794f5`, a result summary, and private image evidence.
 - The authenticated reviewer API returned the private sanitized image, and one manual approval produced one review decision and one approved feed item. Participant phone confirmation remains pending.
+
+## Phase 4 social extension
+
+- Added mandatory wallet-owned profiles with unique handles, adaptive onboarding, public and private profile projections, and avatar-led navigation.
+- Added Pod rooms with text, safe links, replies, fixed reactions, creator announcements, pinning, moderation tombstones, retryable optimistic delivery, polling reconciliation, and authoritative activity cards.
+- Added immutable proof sharing choice, group-safe proof images, public artifacts, and owner-only reviewer evidence.
+- Added follows, friend requests, canonical friendships, blocks, reports, targeted private-Pod invitations, friend DMs, and non-friend message requests.
+- Froze `full_refund_alpha` into every newly published Phase 4 contract. Roster lock queues one idempotent full Testnet return per included member without removing Pod access.
+- Enforced per-deposit and aggregate treasury exposure caps under a serialized database reservation lock.
+- Corrected shared-database Clock integration tests to advance through the audited Clock contract without deleting existing demo history.
+
+### Extension validation
+
+- Lint and no-U+2014 copy check pass.
+- All workspace types and production web and worker builds pass.
+- 262 unit/component tests and 46 Postgres/object-storage integration tests pass.
+- Local web readiness, evidence storage, database readiness, and the worker cycle are healthy.
+- Physical Nimiq Pay validation of this exact extension remains pending.

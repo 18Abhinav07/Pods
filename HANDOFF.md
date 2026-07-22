@@ -1,77 +1,34 @@
 ---
 project: pods
-last-updated: 2026-07-21 21:10
+last-updated: 2026-07-22 17:07
 last-agent: codex
 mode: HACKATHON
 ---
 
-# Pods Handoff
-
-Related: [[README]] | [[validation/phase-4a-results]] | [[docs/superpowers/plans/2026-07-21-phase-4-social-alpha]]
-
 ## State
 
-Phase 4A closed-alpha foundation is automated-pass. The active implementation
-lives on `phase/04a-social-alpha-foundation` in the isolated worktree
-`/private/tmp/pods-phase-04a`.
+The complete Phase 4 adaptive social release is committed and published to GitHub. The local app database and evidence bucket are clean, the full release gate passes, and both `main` and `phase/04a-social-alpha-foundation` point to application release commit `b3d96cb`.
 
-The Railway `alpha` environment has a healthy web deployment, isolated
-Postgres, a private evidence bucket, and a separate reserved social bucket.
-Alpha access is enforced for the two real participant wallets and NIM deposits
-are hard-disabled in both the funding UI and deposit-intent API.
+## In Progress (resume here)
 
-## In Progress
+- Authenticate the Railway CLI with the account or workspace that owns project `0c50f124-130b-4518-8010-d0fd4f1d471c`.
+- Count and clear the `alpha` environment's application tables and private bucket objects while preserving migrations and schema.
+- Deploy `pods-web`, poll the deployment to terminal `SUCCESS`, and verify Railway readiness before claiming the remote release.
 
-- Task: complete the physical Nimiq Pay realtime transport gate.
-- URL: `https://pods-web-alpha.up.railway.app`.
-- Harness: `/validation/realtime?podId=<created-alpha-pod-id>`.
-- Required result: two allowlisted wallets, 20 minutes connected, 100 events
-  each, 90 seconds backgrounded, network interruption and recovery, zero gaps,
-  zero duplicates, and no cross-Pod leakage.
-- If the physical gate passes, Phase 4C may use SSE with replay. If it fails,
-  Phase 4C uses two-second cursor polling.
+## Open Errors / Blockers
 
-## Open Errors and Blockers
-
-- Railway refused the separate `pods-worker` service because the account's
-  free-plan resource limit was reached after Postgres and `pods-web`.
-- The worker code has alpha preflight and safe health probes, but no remote
-  worker exists yet.
-- Do not merge the worker into the web process. Add a Railway service slot or
-  select another approved worker host.
-- External DNS resolution for the new Railway domain failed from the Codex
-  execution environment immediately after creation. Railway itself marked the
-  domain active and the first deployment healthy.
-- Phase 4B through Phase 4G remain unimplemented by the one-phase-at-a-time
-  approval contract.
-
-## Verification
-
-- Full `pnpm check`: PASS against isolated Postgres database `pods_phase04a`.
-- Root tests: 6 PASS.
-- Domain tests: 30 PASS.
-- UI tests: 2 PASS.
-- Web tests: 138 PASS.
-- Worker tests: 48 PASS.
-- Integration tests: 32 PASS.
-- Production web and worker builds: PASS.
-- No U+2014 characters: PASS.
-- Final Railway web deployment `664efce8-cdef-4e7c-8776-96abf0a4ecb3`:
-  SUCCESS with migrations and readiness health.
+- Railway account mismatch: the authenticated account `Open Assets (theopenassets@gmail.com)` is valid but lists zero projects and receives `Unauthorized` for the linked Pods project. Production reset and deployment are not complete.
+- External DNS for `pods-web-alpha.up.railway.app` remains unavailable from the Codex execution environment, so Railway deployment state and internal health must remain the primary remote gate after access is restored.
+- Physical Nimiq Pay approval remains pending and is not replaced by browser verification.
 
 ## Git State
 
-- Branch: `phase/04a-social-alpha-foundation`.
-- Base: `81cfbc1` from `phase/04-activity`.
-- Implementation checkpoint: `b2f2f07`.
-- Original Phase 4 worktree and phone fixture were not modified.
-- Phase 4A changes are not merged to `main` and are not pushed pending the
-  physical gate and Abhinav's approval.
+- Branch: `phase/04a-social-alpha-foundation` in linked worktree `/private/tmp/pods-phase-04a`.
+- Application release commit: `b3d96cb feat: complete phase 4 adaptive social experience`.
+- GitHub `main` and `phase/04a-social-alpha-foundation` were both verified at `b3d96cb52d883486df8631d948393b6d60077f57` after push.
 
 ## Next 3 Tasks
 
-1. Run the physical realtime procedure in
-   `validation/phase-4a-results.md` and record PASS or the exact failure.
-2. Resolve the Railway worker service slot without merging worker and web.
-3. Request Abhinav's Phase 4A
-   approval before beginning Phase 4B.
+1. Restore Railway access to the existing Pods project without creating a duplicate project.
+2. Complete and verify the production data reset and `pods-web` deployment.
+3. Run the deployed release inside Nimiq Pay and record route-specific physical PASS or defects.

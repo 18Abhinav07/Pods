@@ -1,35 +1,31 @@
 ---
 project: pods
-last-updated: 2026-07-22 17:31
+last-updated: 2026-07-22 20:07
 last-agent: codex
 mode: HACKATHON
 ---
 
 ## State
 
-The complete Phase 4 adaptive social release is committed and published to GitHub. The new Railway project `shimmering-empathy` now runs the web release from commit `84e19b5` with Postgres and a private evidence bucket. Production starts from 10 migrations, 28 application tables with zero rows, and an empty evidence bucket.
+Phase 4 social alpha now has the approved Signal Bloom identity implemented across every route, with a lowercase wordmark and catalog-safe transparent SVG.
 
 ## In Progress (resume here)
 
-- Open `https://pods-nimiq-activity.up.railway.app` inside Nimiq Pay on a physical phone.
-- Complete wallet connection, profile onboarding, Pod creation, room messaging, and proof privacy checks with two wallets.
-- Record route-specific physical PASS or defects before enabling any financial capability.
+- Task: verify the pushed identity inside Nimiq Pay after the next deployment, including the Mini App tile or custom-URL favicon.
+- File: `apps/web/public/brand/pods-mark.svg` is the production master; catalog publication still requires the external Nimiq Mini App submission flow.
 
 ## Open Errors / Blockers
 
-- Google DNS and Cloudflare DNS resolve `pods-nimiq-activity.up.railway.app`, and direct HTTPS verification returns 200 with every readiness check ready. The default resolver on the current network still refuses `*.up.railway.app`, so physical testing requires mobile data or secure DNS until that resolver cache clears.
-- The new project has no separate worker service or treasury configuration. Deposits, alpha refunds, review exceptions, and proportional settlement remain disabled. This is intentional and prevents the web service from accepting funds it cannot safely reconcile.
-- Physical Nimiq Pay approval remains pending and is not replaced by browser verification.
+- The current Railway release still points at the earlier deployed commit until the new branch commit is promoted or merged.
+- Nimiq Pay catalog artwork is sourced through the official `nimiq/awesome` submission, so pushing this repository alone cannot change the public catalog tile.
+- Financial worker and treasury configuration remain intentionally disabled in production.
 
 ## Git State
 
-- Branch: `phase/04a-social-alpha-foundation` in linked worktree `/private/tmp/pods-phase-04a`.
-- Application release commit: `b3d96cb feat: complete phase 4 adaptive social experience`.
-- Deployment source commit: `84e19b5 docs: record phase 4 release boundary`.
-- GitHub `main` and `phase/04a-social-alpha-foundation` were both verified at `84e19b59bd7c49f3bf29648a4d1ae892ecee206a`.
+- Branch `phase/04a-social-alpha-foundation` pushed through `7a775df feat: add Signal Bloom brand identity`; documentation closeout follows in the next commit.
 
 ## Next 3 Tasks
 
-1. Run the deployed release inside Nimiq Pay and record route-specific physical PASS or defects.
-2. Decide whether this Railway plan can support the required separate worker before enabling capped `full_refund_alpha` funding.
-3. Keep deposits and settlement disabled until the worker, treasury, and two-wallet refund path pass independently.
+1. Promote the verified identity commit to the production deployment and complete a Nimiq Pay device check.
+2. Submit the SVG with the Pods Mini App catalog entry using the required developer-prefixed filename.
+3. Run the separate-worker Railway gate before enabling the capped Testnet dogfood cohort.

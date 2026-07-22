@@ -6,6 +6,7 @@ import "@fontsource/fira-mono/400.css";
 import "@fontsource/fira-mono/700.css";
 import "./globals.css";
 import "./design-system.css";
+import "./landing-page.css";
 
 export const metadata: Metadata = {
   applicationName: "pods",

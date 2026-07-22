@@ -26,8 +26,8 @@ export default async function RealtimeValidationPage({
     <main className="app-shell realtime-spike-shell">
       <header className="app-topbar entrance entrance-topbar">
         <Link className="wordmark" href={`/pods/${podId}/today`}>
-          <span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>
-          PODS
+          <span className="pod-mark" aria-hidden="true" />
+          pods
         </Link>
         <span className="phase-pill">Realtime lab</span>
       </header>

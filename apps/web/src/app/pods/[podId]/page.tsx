@@ -40,7 +40,7 @@ export default async function PublicPodPage({
   return (
     <main className="app-shell public-preview-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/discover"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/discover"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="phase-pill">Public Pod</span>
       </header>
       <section className="public-preview-hero entrance entrance-hero">

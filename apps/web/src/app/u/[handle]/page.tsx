@@ -22,7 +22,7 @@ export default async function PublicProfilePage({
   if (presence.kind === "private") {
     return (
       <main className="foundation-shell public-profile-shell">
-        <header className="app-topbar"><Link className="wordmark" href="/discover?view=people"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link></header>
+        <header className="app-topbar"><Link className="wordmark" href="/discover?view=people"><span className="pod-mark" aria-hidden="true" />pods</Link></header>
         <section className="private-public-profile">
           <span aria-hidden="true">P</span>
           <p className="eyebrow">Private profile</p>
@@ -37,7 +37,7 @@ export default async function PublicProfilePage({
   const profile = presence.profile;
   return (
     <main className="foundation-shell public-profile-shell">
-      <header className="public-profile-header"><Link className="wordmark" href="/discover?view=people"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span>@{profile.handle}</span></header>
+      <header className="public-profile-header"><Link className="wordmark" href="/discover?view=people"><span className="pod-mark" aria-hidden="true" />pods</Link><span>@{profile.handle}</span></header>
       <section className="public-profile-cover">
         <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} size="cover" priority />
         <div className="public-profile-cover-shade" />

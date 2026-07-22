@@ -137,54 +137,26 @@ body {
 }
 
 .pod-mark {
-  position: relative;
+  display: inline-block;
   width: 27px;
-  height: 25px;
-}
-
-.pod-mark i {
-  position: absolute;
-  width: 15px;
-  height: 15px;
-  border: 2px solid var(--action);
-  border-radius: 50%;
+  height: 27px;
+  flex: 0 0 auto;
+  background: var(--ink);
+  -webkit-mask: url("/brand/pods-mark.svg") center / contain no-repeat;
+  mask: url("/brand/pods-mark.svg") center / contain no-repeat;
   animation: mark-settle 560ms var(--ease-premium) both;
-}
-
-.pod-mark i:nth-child(2) {
-  animation-delay: 45ms;
-}
-
-.pod-mark i:nth-child(3) {
-  animation-delay: 90ms;
 }
 
 @keyframes mark-settle {
   from {
     opacity: 0;
-    transform: translateY(5px) scale(0.72);
+    transform: rotate(-18deg) scale(0.72);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: rotate(0) scale(1);
   }
-}
-
-.pod-mark i:nth-child(1) {
-  left: 0;
-  top: 8px;
-}
-
-.pod-mark i:nth-child(2) {
-  right: 0;
-  top: 8px;
-}
-
-.pod-mark i:nth-child(3) {
-  left: 6px;
-  top: 1px;
-  background: var(--paper);
 }
 
 .phase-pill {
@@ -2960,7 +2932,7 @@ button.secondary-action {
 
   .entrance,
   .template-selector,
-  .pod-mark i,
+  .pod-mark,
   .status-dot,
   .status-panel::after,
   .evidence-contract p {

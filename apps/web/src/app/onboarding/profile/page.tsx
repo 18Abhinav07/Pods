@@ -28,8 +28,8 @@ export default async function ProfileOnboardingPage({
     <main className="profile-onboarding-shell">
       <header className="onboarding-topbar">
         <Link className="wordmark" href="/" aria-label="Pods home">
-          <span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>
-          PODS
+          <span className="pod-mark" aria-hidden="true" />
+          pods
         </Link>
       </header>
       <ProfileOnboardingForm returnTo={returnTo} />

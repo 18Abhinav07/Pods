@@ -20,8 +20,8 @@ export function CreatorShell({
     <main className="app-shell creator-shell adaptive-creator-shell">
       <header className="app-topbar entrance entrance-topbar">
         <Link className="wordmark" href="/today" aria-label="Pods Today">
-          <span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>
-          PODS
+          <span className="pod-mark" aria-hidden="true" />
+          pods
         </Link>
         <Link className="quiet-link" href="/my-pods">Save and exit</Link>
       </header>

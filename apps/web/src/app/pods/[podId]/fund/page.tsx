@@ -18,7 +18,7 @@ export default async function FundingHandoffPage({ params }: { params: Promise<{
 
   return (
     <main className="app-shell funding-shell">
-      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="network-pill"><i aria-hidden="true" />Nimiq Testnet</span></header>
+      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link><span className="network-pill"><i aria-hidden="true" />Nimiq Testnet</span></header>
       <section className="today-hero funding-hero entrance entrance-hero"><p className="eyebrow">Accepted, commitment required</p><h1>Back your place.</h1><p className="screen-copy">Review the complete financial contract before Nimiq Pay asks for wallet confirmation.</p></section>
       {depositsEnabled ? (
         <FundingCommitment

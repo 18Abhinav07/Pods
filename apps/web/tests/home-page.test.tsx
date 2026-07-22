@@ -7,6 +7,7 @@ describe("HomePage", () => {
   it("presents one clear entry path without technical lifecycle clutter", () => {
     render(<HomePage />);
 
+    expect(screen.getByLabelText("Pods")).toHaveTextContent("pods");
     expect(screen.getByRole("heading", { name: "Show up for what matters." })).toBeVisible();
     expect(screen.queryByText("Core lifecycle active")).not.toBeInTheDocument();
     expect(screen.queryByText("Five polished modes")).not.toBeInTheDocument();

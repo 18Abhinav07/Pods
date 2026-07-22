@@ -41,7 +41,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
     return (
       <main className="app-shell admin-shell">
         <header className="app-topbar entrance entrance-topbar">
-          <Link className="wordmark" href="/my-pods"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+          <Link className="wordmark" href="/my-pods"><span className="pod-mark" aria-hidden="true" />pods</Link>
           <span className="phase-pill">Creator controls</span>
         </header>
         <section className="today-hero entrance entrance-hero">
@@ -67,7 +67,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   return (
     <main className="app-shell admin-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/my-pods"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/my-pods"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="phase-pill">Creator controls</span>
       </header>
       <section className="today-hero entrance entrance-hero">

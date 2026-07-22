@@ -19,7 +19,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ podId: s
   return (
     <main className="app-shell application-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href={`/pods/${podId}`}><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href={`/pods/${podId}`}><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="phase-pill">Application</span>
       </header>
       <section className="today-hero entrance entrance-hero">

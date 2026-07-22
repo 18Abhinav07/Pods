@@ -59,7 +59,7 @@ export default async function DiscoverPage({
 
   return (
     <main className="app-shell adaptive-discover">
-      {session ? <AppHeader profile={profileForSession(session)} title="Discover" /> : <header className="app-topbar"><Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link></header>}
+      {session ? <AppHeader profile={profileForSession(session)} title="Discover" /> : <header className="app-topbar"><Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true" />pods</Link></header>}
       <p className="route-lede entrance entrance-hero">Public Pods are discoverable and application-based. Private Pods arrive by invitation.</p>
       <nav className="template-filter" aria-label="Filter public Pods">
         <Link aria-current={!activeTemplate ? "page" : undefined} href="/discover">For you</Link>

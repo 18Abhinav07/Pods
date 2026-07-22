@@ -11,5 +11,5 @@ export default async function NewDirectMessagePage({ searchParams }: { searchPar
   const session = await requireSession(`/messages/new?handle=${encodeURIComponent(handle)}`);
   const presence = await podsRepository.getSocialProfilePresence({ viewerUserId: session.userId, handle });
   if (presence.kind !== "public" || presence.relationship.self) notFound();
-  return <main className="app-shell direct-start-shell"><header className="app-topbar"><Link className="wordmark" href={`/u/${handle}`}><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="phase-pill">Private message</span></header><DirectStartForm friend={presence.relationship.friend} handle={presence.profile.handle} /></main>;
+  return <main className="app-shell direct-start-shell"><header className="app-topbar"><Link className="wordmark" href={`/u/${handle}`}><span className="pod-mark" aria-hidden="true" />pods</Link><span className="phase-pill">Private message</span></header><DirectStartForm friend={presence.relationship.friend} handle={presence.profile.handle} /></main>;
 }

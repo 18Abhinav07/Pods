@@ -98,10 +98,6 @@ body {
   color: var(--color-ink);
 }
 
-.pod-mark i {
-  border-color: var(--color-ink);
-}
-
 .eyebrow {
   color: var(--color-ink);
 }

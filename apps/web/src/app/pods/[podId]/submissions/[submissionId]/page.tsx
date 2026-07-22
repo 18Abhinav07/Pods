@@ -30,7 +30,7 @@ export default async function ParticipantSubmissionPage({
   return (
     <main className="app-shell submission-detail-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className={`phase-pill is-${submission.state}`}>{submission.state}</span>
       </header>
       <section className="today-hero entrance entrance-hero">

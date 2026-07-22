@@ -35,7 +35,7 @@ export default async function CreatorFundingPage({ params }: { params: Promise<{
   return (
     <main className="app-shell admin-shell creator-funding-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href={`/pods/${podId}/admin`}><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href={`/pods/${podId}/admin`}><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="network-pill"><i aria-hidden="true" />Nimiq Testnet</span>
       </header>
       <CreatorFundingOverview

@@ -24,6 +24,6 @@ describe("AppHeader", () => {
   it("keeps the Pods wordmark for the Today home", () => {
     render(<AppHeader profile={profile} />);
 
-    expect(screen.getByRole("link", { name: "Pods Today" })).toHaveTextContent("PODS");
+    expect(screen.getByRole("link", { name: "Pods Today" })).toHaveTextContent("pods");
   });
 });

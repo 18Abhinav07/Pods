@@ -18,7 +18,7 @@ export default async function PodTodayPage({ params }: { params: Promise<{ podId
   return (
     <main className="app-shell waiting-room-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="phase-pill">Pod room</span>
       </header>
       <PodWaitingRoom

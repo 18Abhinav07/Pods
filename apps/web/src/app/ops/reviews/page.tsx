@@ -19,7 +19,7 @@ export default async function ReviewQueuePage() {
   return (
     <main className="app-shell ops-shell">
       <header className="app-topbar">
-        <Link className="wordmark" href="/ops/reviews"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/ops/reviews"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="phase-pill">Reviewer queue</span>
       </header>
       <section className="today-hero entrance entrance-hero">

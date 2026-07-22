@@ -6,12 +6,8 @@ export function HomePage() {
     <main className="foundation-shell landing-shell">
       <header className="topbar landing-topbar entrance entrance-topbar">
         <div className="wordmark" aria-label="Pods">
-          <span className="pod-mark" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
-          PODS
+          <span className="pod-mark" aria-hidden="true" />
+          pods
         </div>
         <Link className="landing-discover-link" href="/discover">Discover</Link>
       </header>

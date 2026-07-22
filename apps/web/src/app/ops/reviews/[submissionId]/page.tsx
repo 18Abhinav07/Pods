@@ -18,7 +18,7 @@ export default async function ReviewWorkspacePage({
   return (
     <main className="app-shell ops-shell review-workspace">
       <header className="app-topbar">
-        <Link className="wordmark" href="/ops/reviews"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/ops/reviews"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="phase-pill">Occurrence {occurrence.ordinal}</span>
       </header>
       <section className="today-hero entrance entrance-hero">

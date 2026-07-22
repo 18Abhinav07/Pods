@@ -47,7 +47,7 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
         : "Open funding overview"
     : memberPresentation?.actionLabel ?? "View My Pods";
   return <main className="app-shell rules-shell">
-    <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="frozen-pill">Contract frozen</span></header>
+    <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link><span className="frozen-pill">Contract frozen</span></header>
     <section className="rules-hero entrance entrance-hero"><p className="eyebrow">Immutable Pod rules</p><h1>{contract.activity.name}</h1><p>{contract.activity.purpose}</p></section>
     <div className="contract-hash entrance entrance-status"><span>Contract fingerprint</span><code>{pod.contractHash}</code></div>
     <div className="rules-list entrance entrance-templates">

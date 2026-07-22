@@ -28,7 +28,7 @@ export default async function ApplicationsPage({
   return (
     <main className="app-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <span className="phase-pill">Applications</span>
       </header>
       <section className="today-hero entrance entrance-hero">

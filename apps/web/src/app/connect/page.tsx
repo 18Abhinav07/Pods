@@ -27,8 +27,8 @@ export default async function ConnectPage({
     <main className="app-shell connection-shell">
       <header className="app-topbar connection-topbar entrance entrance-topbar">
         <Link className="wordmark" href="/" aria-label="Pods home">
-          <span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>
-          PODS
+          <span className="pod-mark" aria-hidden="true" />
+          pods
         </Link>
       </header>
       <section className="connection-stage entrance entrance-hero">

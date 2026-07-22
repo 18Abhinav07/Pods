@@ -20,11 +20,11 @@ export function AppHeader({
   return (
     <header className="app-topbar social-topbar entrance entrance-topbar">
       {title ? (
-        <h1 className="app-route-title"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>{title}</h1>
+        <h1 className="app-route-title"><span className="pod-mark" aria-hidden="true" />{title}</h1>
       ) : (
         <Link className="wordmark" href="/today" aria-label="Pods Today">
-          <span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>
-          PODS
+          <span className="pod-mark" aria-hidden="true" />
+          pods
         </Link>
       )}
       <div className="social-topbar-actions">

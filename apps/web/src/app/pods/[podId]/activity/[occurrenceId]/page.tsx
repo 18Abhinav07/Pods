@@ -38,7 +38,7 @@ export default async function ActivityOccurrencePage({
   return (
     <main className="app-shell activity-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <Link className="phase-pill" href={`/pods/${podId}/room`}>Pod room</Link>
       </header>
       <ActivityOccurrence

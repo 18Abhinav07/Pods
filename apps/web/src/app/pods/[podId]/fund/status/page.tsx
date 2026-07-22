@@ -25,7 +25,7 @@ export default async function FundingStatusPage({
 
   return (
     <main className="app-shell funding-status-shell">
-      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="network-pill"><i aria-hidden="true" />Nimiq Testnet</span></header>
+      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link><span className="network-pill"><i aria-hidden="true" />Nimiq Testnet</span></header>
       <section className="funding-status-intro entrance entrance-hero"><p className="eyebrow">Funding tracker</p><h2>Your commitment persists here.</h2><p>Pods reads this status from the server and independently reconciles the chain.</p></section>
       <FundingStatusRail intent={participantDepositIntent(storedIntent)} />
     </main>

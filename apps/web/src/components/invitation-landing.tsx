@@ -47,7 +47,7 @@ export function InvitationLanding({ connected }: { connected: boolean }) {
   if (!invitation) {
     return (
       <main className="app-shell private-invite-shell">
-        <header className="app-topbar"><Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="phase-pill">Private invitation</span></header>
+        <header className="app-topbar"><Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true" />pods</Link><span className="phase-pill">Private invitation</span></header>
         <section className="invite-loading" role="status"><span /><strong>Checking invitation</strong><p>Validating this single-use private entry.</p></section>
       </main>
     );
@@ -57,7 +57,7 @@ export function InvitationLanding({ connected }: { connected: boolean }) {
   const template = templateContracts.find((item) => item.id === preview.templateId);
   return (
     <main className="app-shell private-invite-shell">
-      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><span className="phase-pill">Private invitation</span></header>
+      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/"><span className="pod-mark" aria-hidden="true" />pods</Link><span className="phase-pill">Private invitation</span></header>
       <section className="public-preview-hero entrance entrance-hero"><TemplateSymbol templateId={preview.templateId} /><p className="eyebrow">{template?.name}</p><h1>{preview.activityName}</h1><p>{preview.purpose}</p></section>
       <section className="public-preview-ledger entrance entrance-status">
         <div><span>Schedule</span><strong>{preview.occurrenceCount} occurrences</strong><small>{preview.startDate} to {preview.endDate}</small></div>

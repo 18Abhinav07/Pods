@@ -16,7 +16,7 @@ export default async function ProfilePage() {
   return (
     <main className="app-shell private-profile-shell">
       <header className="profile-page-header">
-        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
+        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
         <ProfileSettingsSheet
           profile={{
             handle: profile.handle,

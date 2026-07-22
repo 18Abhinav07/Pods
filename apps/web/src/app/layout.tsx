@@ -8,8 +8,13 @@ import "./globals.css";
 import "./design-system.css";
 
 export const metadata: Metadata = {
-  title: "Pods | Earned Momentum",
-  description: "NIM-backed group activity accountability inside Nimiq Pay."
+  applicationName: "pods",
+  title: "pods | Earned Momentum",
+  description: "NIM-backed group activity accountability inside Nimiq Pay.",
+  icons: {
+    icon: [{ url: "/brand/pods-mark.svg", type: "image/svg+xml" }],
+    shortcut: "/brand/pods-mark.svg"
+  }
 };
 
 export const viewport: Viewport = {

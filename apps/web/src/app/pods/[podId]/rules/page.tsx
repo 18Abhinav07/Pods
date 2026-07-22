@@ -14,7 +14,11 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
   const { podId } = await params;
   const session = await requireSession(`/pods/${podId}/rules`);
   const owned = await podsRepository.getPodForOwner(session.userId, podId);
-  const pod = owned ?? await podsRepository.getPodForAcceptedMember(session.userId, podId);
+  const accepted = owned ? null : await podsRepository.getPodForAcceptedMember(session.userId, podId);
+  const activeRoom = owned || accepted
+    ? null
+    : await podsRepository.getWaitingRoomForUser({ userId: session.userId, podId });
+  const pod = owned ?? accepted ?? activeRoom?.pod;
   if (!pod?.contractData || !pod.contractHash) notFound();
   const membership = owned ? null : await podsRepository.getMembershipForUser(session.userId, podId);
   if (!owned && !membership) notFound();
@@ -32,7 +36,7 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
     ? pod.state === "enrollment_open"
       ? `/pods/${pod.id}/admin`
       : pod.state === "locked_scheduled"
-        ? `/pods/${pod.id}/today`
+        ? `/pods/${pod.id}/room`
         : `/pods/${pod.id}/admin/funding`
     : memberPresentation?.href ?? "/my-pods";
   const nextLabel = owned
@@ -50,9 +54,9 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
       <section><span>Template</span><strong>{template?.name}</strong><p>{template?.evidence}</p></section>
       <section><span>Schedule</span><strong>{contract.commitment.occurrenceCount} frozen occurrences</strong><p>{contract.activity.startDate} to {contract.activity.endDate}, {contract.activity.timeZone}</p></section>
       <section><span>Community</span><strong>{contract.community.visibility === "public" ? "Public application community" : "Private invitation community"}</strong><p>{contract.community.minParticipants} minimum, {contract.community.maxParticipants} maximum</p></section>
-      <section><span>Commitment</span><strong>{nim(contract.commitment.totalLuna)} NIM upfront</strong><p>{nim(contract.commitment.lunaPerOccurrence)} NIM per occurrence</p></section>
+      <section><span>Commitment</span><strong>{nim(contract.commitment.totalLuna)} Testnet NIM upfront</strong><p>{contract.settlementMode === "full_refund_alpha" ? "Full return after roster lock. This contract cannot switch to proportional redistribution." : `${nim(contract.commitment.lunaPerOccurrence)} NIM per occurrence`}</p></section>
       <section><span>Evidence authority</span><strong>Pods team review</strong><p>Creators and participants cannot decide evidence or financial outcomes.</p></section>
-      <section><span>Timeout protection</span><strong>24-hour hard protection</strong><p>Principal protected, no bonus, streak extended.</p></section>
+      <section><span>{contract.settlementMode === "full_refund_alpha" ? "Return policy" : "Timeout protection"}</span><strong>{contract.settlementMode === "full_refund_alpha" ? "100% full-return alpha" : "24-hour hard protection"}</strong><p>{contract.settlementMode === "full_refund_alpha" ? "Activity review affects the participant record, never the return amount." : "Principal protected, no bonus, streak extended."}</p></section>
     </div>
     <Link className="primary-action full-action" href={nextHref}>{nextLabel}</Link>
   </main>;

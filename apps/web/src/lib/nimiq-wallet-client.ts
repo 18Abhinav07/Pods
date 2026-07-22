@@ -78,7 +78,10 @@ export async function establishWalletSession(dependencies?: {
   if (typeof session.walletAddress !== "string") {
     throw new Error("Wallet session response is incomplete");
   }
-  return { walletAddress: session.walletAddress };
+  return {
+    walletAddress: session.walletAddress,
+    needsProfile: session.needsProfile === true
+  };
 }
 
 export async function sendNimCommitment(

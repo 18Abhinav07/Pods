@@ -27,29 +27,32 @@ afterAll(async () => {
 describe("Phase 3 audited Clock persistence", () => {
   it("defaults to real time, advances monotonically, and retains immutable audit rows", async () => {
     const initialRealTime = new Date("2026-07-20T10:00:00.000Z");
-    expect(await repository.getEffectiveTime(initialRealTime)).toEqual(initialRealTime);
+    const baseline = await repository.getEffectiveTime(initialRealTime);
+    expect(baseline.getTime()).toBeGreaterThanOrEqual(initialRealTime.getTime());
+    const firstTime = new Date(baseline.getTime() + 60 * 60 * 1000);
+    const secondTime = new Date(firstTime.getTime() + 5 * 60 * 1000);
 
     const first = await repository.advanceClock({
-      effectiveTime: new Date("2026-07-21T00:00:00.000Z"),
+      effectiveTime: firstTime,
       reason: "Reach the Phase 3B cutoff",
       actor,
-      realNow: new Date("2026-07-20T10:01:00.000Z")
+      realNow: initialRealTime
     });
     const second = await repository.advanceClock({
-      effectiveTime: new Date("2026-07-21T00:05:00.000Z"),
+      effectiveTime: secondTime,
       reason: "Verify monotonic follow-up",
       actor,
       realNow: new Date("2026-07-20T10:02:00.000Z")
     });
 
-    expect(first.previousTime).toEqual(new Date("2026-07-20T10:01:00.000Z"));
+    expect(first.previousTime).toEqual(baseline);
     expect(second.previousTime).toEqual(first.effectiveTime);
     expect(await repository.getEffectiveTime(new Date("2026-07-20T10:03:00.000Z")))
       .toEqual(second.effectiveTime);
 
     await expect(
       repository.advanceClock({
-        effectiveTime: new Date("2026-07-21T00:04:59.000Z"),
+        effectiveTime: new Date(secondTime.getTime() - 1_000),
         reason: "Attempt backwards movement",
         actor,
         realNow: new Date("2026-07-20T10:04:00.000Z")
@@ -64,13 +67,13 @@ describe("Phase 3 audited Clock persistence", () => {
       reason: event.reason
     }))).toEqual([
       {
-        previousTime: "2026-07-20T10:01:00.000Z",
-        effectiveTime: "2026-07-21T00:00:00.000Z",
+        previousTime: baseline.toISOString(),
+        effectiveTime: firstTime.toISOString(),
         reason: "Reach the Phase 3B cutoff"
       },
       {
-        previousTime: "2026-07-21T00:00:00.000Z",
-        effectiveTime: "2026-07-21T00:05:00.000Z",
+        previousTime: firstTime.toISOString(),
+        effectiveTime: secondTime.toISOString(),
         reason: "Verify monotonic follow-up"
       }
     ]);

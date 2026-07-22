@@ -34,8 +34,8 @@ describe("participant Pod relationship presentation", () => {
     expect(
       presentPodRelationship({ podId: "pod-1", relationship: { kind: "visitor" } })
     ).toMatchObject({
-      statusLabel: "Open to apply",
-      actionLabel: "View Pod",
+      statusLabel: "Accepting applications",
+      actionLabel: "Apply",
       href: "/pods/pod-1"
     });
     expect(
@@ -53,7 +53,8 @@ describe("participant Pod relationship presentation", () => {
     ["funding_failed", "Funding needs attention", "Retry funding", "/pods/pod-1/fund"],
     ["deposit_pending", "Funding in progress", "Track funding", "/pods/pod-1/fund/status?intent=intent-1"],
     ["funded_provisional", "Commitment credited", "Track commitment", "/pods/pod-1/today"],
-    ["roster_locked", "Joined", "Open Pod", "/pods/pod-1/today"],
+    ["roster_locked", "Joined", "Open Pod", "/pods/pod-1/room"],
+    ["active", "Activity live", "Open Pod", "/pods/pod-1/room"],
     ["excluded_at_cutoff", "Not included at cutoff", "View refund status", "/pods/pod-1/today"],
     ["refund_pending", "Refund in progress", "Track refund", "/pods/pod-1/today"],
     ["refunded", "Refund completed", "View receipt", "/pods/pod-1/today"]

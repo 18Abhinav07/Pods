@@ -10,4 +10,8 @@ describe("Next LAN development contract", () => {
   it("keeps Nimiq Core external so its Node WASM asset resolves", () => {
     expect(nextConfig.serverExternalPackages).toContain("@nimiq/core");
   });
+
+  it("does not let the development indicator cover bottom-mounted mobile controls", () => {
+    expect(nextConfig.devIndicators).toBe(false);
+  });
 });

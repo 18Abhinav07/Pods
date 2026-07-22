@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { alphaDepositsEnabled } from "../../../../../lib/alpha-access";
+import { alphaDepositsEnabled, alphaFundingPolicy } from "../../../../../lib/alpha-access";
 import { participantDepositIntent, readFundingConfiguration } from "../../../../../lib/funding-server";
 import { podsRepository } from "../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../lib/session";
@@ -26,6 +26,7 @@ export async function POST(
       return NextResponse.json({ intent: participantDepositIntent(existing) });
     }
     const configuration = readFundingConfiguration();
+    const policy = alphaFundingPolicy(process.env);
     const intent = await podsRepository.createDepositIntent({
       podId,
       userId: session.userId,
@@ -33,7 +34,9 @@ export async function POST(
       treasuryAddress: configuration.treasuryAddress,
       network: configuration.network,
       reference: `pods-${randomBytes(12).toString("hex")}`,
-      now: new Date()
+      now: new Date(),
+      maximumDepositLuna: policy.maximumDepositLuna,
+      maximumTreasuryExposureLuna: policy.maximumTreasuryExposureLuna
     });
     return NextResponse.json({ intent: participantDepositIntent(intent) }, { status: 201 });
   } catch (error) {

@@ -263,6 +263,35 @@ describe("public enrollment", () => {
 });
 
 describe("private invitations", () => {
+  it("delivers a revocable private invitation directly to a friend", async () => {
+    const owner = await createUser();
+    const friend = await createUser();
+    const ownerHandle = `owner_${owner.userId.slice(0, 6)}`;
+    const friendHandle = `friend_${friend.userId.slice(0, 6)}`;
+    await repository.saveProfile(owner.userId, { handle: ownerHandle, displayName: "Owner", bio: "", avatar: { kind: "preset", preset: "ember" }, visibility: "public", dmPolicy: "requests", activityStatusVisible: true });
+    await repository.saveProfile(friend.userId, { handle: friendHandle, displayName: "Friend", bio: "", avatar: { kind: "preset", preset: "moss" }, visibility: "public", dmPolicy: "requests", activityStatusVisible: true });
+    await repository.sendFriendRequest({ senderUserId: owner.userId, handle: friendHandle, now: new Date() });
+    await repository.sendFriendRequest({ senderUserId: friend.userId, handle: ownerHandle, now: new Date() });
+    const pod = await publishPod(owner.userId, "private");
+    const invitation = await repository.createInvitation({
+      creatorUserId: owner.userId,
+      podId: pod.id,
+      tokenHash: hashToken(invitationToken("t")),
+      targetHandle: friendHandle,
+      now: new Date("2026-08-01T00:00:00.000Z")
+    });
+    expect(invitation.targetUserId).toBe(friend.userId);
+    const requests = await repository.listTargetedInvitations(friend.userId, new Date("2026-08-01T00:01:00.000Z"));
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({ invitationId: invitation.id, activityName: pod.contractData?.activity.name });
+    const membership = await repository.acceptTargetedInvitation({
+      invitationId: invitation.id,
+      userId: friend.userId,
+      now: new Date("2026-08-01T00:02:00.000Z")
+    });
+    expect(membership).toMatchObject({ podId: pod.id, state: "accepted_unfunded" });
+  });
+
   it("shows a minimal preview and accepts an opaque invite exactly once", async () => {
     const owner = await createUser();
     const firstInvitee = await createUser();

@@ -1,4 +1,4 @@
-import type { MembershipState } from "@pods/domain";
+import type { MembershipState, SettlementMode } from "@pods/domain";
 import Link from "next/link";
 
 import type { ParticipantRefund } from "./refund-status-rail";
@@ -21,6 +21,7 @@ export type PodWaitingRoomProps = {
   timeZone: string;
   nimPerOccurrence: number;
   totalNim: number;
+  settlementMode: SettlementMode;
   refund: ParticipantRefund | null;
 };
 
@@ -67,6 +68,7 @@ function nim(value: number) {
 
 export function PodWaitingRoom(props: PodWaitingRoomProps) {
   const remaining = Math.max(0, props.maxParticipants - props.confirmedParticipants);
+  const isAlphaRefund = props.settlementMode === "full_refund_alpha";
   const stateCopy = props.viewerRole === "creator"
     ? ["Creator overview", "Track funded places without exposing participant payment data."] as const
     : participantStateCopy[props.membershipState ?? "applied"] ?? [
@@ -90,6 +92,14 @@ export function PodWaitingRoom(props: PodWaitingRoomProps) {
 
       {props.refund ? <RefundStatusRail refund={props.refund} /> : null}
 
+      {isAlphaRefund ? (
+        <aside className="waiting-verification alpha-return-notice">
+          <span>Immutable Phase 4 contract</span>
+          <strong>Your full Testnet commitment returns after roster lock.</strong>
+          <p>Activity review changes streaks and progress only. It cannot reduce your return or create a winner pool.</p>
+        </aside>
+      ) : null}
+
       <section className="waiting-contract entrance entrance-templates">
         <div className="section-title-row"><span>Frozen contract</span><h2>Your activity clock</h2></div>
         <dl>
@@ -97,7 +107,7 @@ export function PodWaitingRoom(props: PodWaitingRoomProps) {
           <div><dt>First occurrence</dt><dd>{formatMoment(props.firstOccurrenceAt, props.timeZone)}</dd></div>
           <div><dt>Cadence</dt><dd>{props.weekdays.map((day) => weekdayNames[day]).join(" · ")}</dd></div>
           <div><dt>Schedule</dt><dd>{props.occurrenceCount} frozen occurrences</dd></div>
-          <div><dt>At risk each time</dt><dd>{nim(props.nimPerOccurrence)} NIM</dd></div>
+          <div><dt>{isAlphaRefund ? "Activity slice" : "At risk each time"}</dt><dd>{nim(props.nimPerOccurrence)} NIM</dd></div>
           <div><dt>Total commitment</dt><dd>{nim(props.totalNim)} NIM</dd></div>
         </dl>
       </section>

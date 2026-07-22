@@ -19,8 +19,12 @@ export function ConnectClient({ returnTo }: { returnTo: string }) {
     setState("connecting");
     try {
       setState("signing");
-      await establishWalletSession();
-      router.replace(returnTo);
+      const session = await establishWalletSession();
+      router.replace(
+        session.needsProfile
+          ? `/onboarding/profile?returnTo=${encodeURIComponent(returnTo)}`
+          : returnTo
+      );
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Wallet connection failed");
@@ -32,22 +36,11 @@ export function ConnectClient({ returnTo }: { returnTo: string }) {
 
   return (
     <div className="connect-panel">
-      <div className="wallet-glyph" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
-      <p className="eyebrow">Nimiq wallet identity</p>
-      <h1>One signature. No account form.</h1>
+      <p className="eyebrow">Enter Pods</p>
+      <h1>Your wallet is your key.</h1>
       <p className="screen-copy">
-        Pods asks Nimiq Pay to sign a one-time message. Signing proves wallet
-        ownership and never sends NIM.
+        Sign once in Nimiq Pay. No password and no NIM leaves your wallet.
       </p>
-      <ol className="connection-steps" aria-label="Connection steps">
-        <li className={state !== "idle" ? "is-active" : ""}>Open Nimiq Pay</li>
-        <li className={state === "signing" ? "is-active" : ""}>Sign challenge</li>
-        <li>Enter Pods</li>
-      </ol>
       {error ? (
         <div className="inline-error" role="alert">
           <strong>Connection paused</strong>
@@ -57,7 +50,7 @@ export function ConnectClient({ returnTo }: { returnTo: string }) {
       <button className="primary-action full-action" disabled={!hydrated || pending} onClick={connect} type="button">
         {pending ? "Waiting for Nimiq Pay" : error ? "Try wallet again" : "Connect Nimiq wallet"}
       </button>
-      <p className="fine-print">The session stays on this device for seven days.</p>
+      <p className="fine-print">Signing only verifies ownership.</p>
     </div>
   );
 }

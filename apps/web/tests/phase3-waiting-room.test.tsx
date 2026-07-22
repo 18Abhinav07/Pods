@@ -30,6 +30,7 @@ const waitingRoom: PodWaitingRoomProps = {
   timeZone: "UTC",
   nimPerOccurrence: 0.1,
   totalNim: 0.5,
+  settlementMode: "full_refund_alpha",
   refund: null
 };
 
@@ -84,10 +85,9 @@ describe("Phase 3B waiting room", () => {
     expect(checkpoints.at(-1)).toHaveTextContent("✓");
   });
 
-  it("routes every post-credit participant stage to the same canonical Pod room", () => {
+  it("keeps provisional and refund stages in the waiting room", () => {
     for (const state of [
       "funded_provisional",
-      "roster_locked",
       "excluded_at_cutoff",
       "refund_pending",
       "refunded"
@@ -98,6 +98,17 @@ describe("Phase 3B waiting room", () => {
           relationship: { kind: "member", state, depositIntentId: "intent-1" }
         }).href
       ).toBe("/pods/pod-1/today");
+    }
+  });
+
+  it("routes roster-locked and active participants to the conversation-first room", () => {
+    for (const state of ["roster_locked", "active"] as const) {
+      expect(
+        presentPodRelationship({
+          podId: "pod-1",
+          relationship: { kind: "member", state, depositIntentId: "intent-1" }
+        }).href
+      ).toBe("/pods/pod-1/room");
     }
   });
 });

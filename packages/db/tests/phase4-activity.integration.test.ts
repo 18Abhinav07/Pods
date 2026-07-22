@@ -17,6 +17,7 @@ const contract: PublishedPodContract = {
   version: 1,
   templateId: "build",
   evidenceMode: "per_occurrence_commitment",
+  settlementMode: "proportional",
   activity: {
     name: "Build Pods in Public",
     purpose: "Ship a visible and reviewable improvement on every scheduled occurrence.",
@@ -63,6 +64,15 @@ async function createUser() {
     expiresAt: new Date("2028-01-01T00:00:00.000Z")
   });
   testUserIds.add(session.userId);
+  await repository.saveProfile(session.userId, {
+    handle: `builder_${session.userId.slice(0, 8)}`,
+    displayName: "Pods Builder",
+    bio: "Shipping a visible improvement with Pods.",
+    avatar: { kind: "preset", preset: "indigo" },
+    visibility: "public",
+    dmPolicy: "requests",
+    activityStatusVisible: true
+  });
   return session;
 }
 
@@ -115,6 +125,51 @@ describe("Phase 4 Build and Ship persistence", () => {
       .toMatchObject({ state: "active" });
   });
 
+  it("returns the complete frozen occurrence schedule for one active member", async () => {
+    const fixture = await createLockedFixture();
+    const secondOccurrenceId = randomUUID();
+    const recurringContract: PublishedPodContract = {
+      ...contract,
+      activity: {
+        ...contract.activity,
+        endDate: "2027-04-07",
+        weekdays: [1, 3]
+      },
+      commitment: { lunaPerOccurrence: 10_000, occurrenceCount: 2, totalLuna: 20_000 }
+    };
+    const pool = new Pool({ connectionString: databaseUrl });
+    try {
+      await pool.query("UPDATE pods SET contract_data = $2::jsonb WHERE id = $1", [
+        fixture.podId,
+        JSON.stringify(recurringContract)
+      ]);
+      await pool.query(
+        `INSERT INTO occurrences (id, pod_id, ordinal, local_date, opens_at, closes_at, commitment_deadline_at, state)
+         VALUES ($1, $2, 2, '2027-04-07', $3, $4, $5, 'scheduled')`,
+        [
+          secondOccurrenceId,
+          fixture.podId,
+          new Date("2027-04-07T00:00:00.000Z"),
+          new Date("2027-04-07T23:59:59.999Z"),
+          new Date("2027-04-07T09:00:00.000Z")
+        ]
+      );
+    } finally {
+      await pool.end();
+    }
+    await repository.runOccurrenceTransitions(new Date("2027-04-05T08:00:00.000Z"));
+
+    const schedule = await repository.listActivityScheduleForMember({
+      userId: fixture.member.userId,
+      podId: fixture.podId
+    });
+    expect(schedule?.map(({ occurrence }) => occurrence.id)).toEqual([
+      fixture.occurrenceId,
+      secondOccurrenceId
+    ]);
+    expect(schedule?.every(({ commitment, submission }) => !commitment && !submission)).toBe(true);
+  });
+
   it("locks one immutable task before the frozen cutoff", async () => {
     const fixture = await createLockedFixture();
     const now = new Date("2027-04-05T08:00:00.000Z");
@@ -150,6 +205,21 @@ describe("Phase 4 Build and Ship persistence", () => {
       deliverableType: "pull_request",
       now: new Date("2027-04-05T08:05:00.000Z")
     });
+    const room = await repository.ensurePodConversation({
+      podId: fixture.podId,
+      userId: fixture.member.userId
+    });
+    const committedRoom = await repository.listConversationMessages({
+      conversationId: room.id,
+      userId: fixture.member.userId,
+      afterSequence: 0,
+      limit: 20
+    });
+    expect(committedRoom.messages).toHaveLength(1);
+    expect(committedRoom.messages[0]).toMatchObject({
+      kind: "activity",
+      activity: { commitmentId: commitment.id, state: "committed" }
+    });
     const draft = await repository.saveSubmissionDraft({
       userId: fixture.member.userId,
       podId: fixture.podId,
@@ -161,6 +231,7 @@ describe("Phase 4 Build and Ship persistence", () => {
         contentType: "image/webp",
         byteSize: 1234
       },
+      proofShareMode: "pod_shared",
       now: new Date("2027-04-05T10:00:00.000Z")
     });
     expect(draft).toMatchObject({ commitmentId: commitment.id, state: "draft" });
@@ -173,6 +244,44 @@ describe("Phase 4 Build and Ship persistence", () => {
     expect(submitted).toMatchObject({ state: "reviewing" });
     expect(submitted.reviewTargetAt?.toISOString()).toBe("2027-04-05T23:00:00.000Z");
     expect(submitted.reviewHardDeadlineAt?.toISOString()).toBe("2027-04-06T11:00:00.000Z");
+    const reviewingRoom = await repository.listConversationMessages({
+      conversationId: room.id,
+      userId: fixture.owner.userId,
+      afterSequence: 0,
+      limit: 20
+    });
+    expect(reviewingRoom.messages).toHaveLength(1);
+    expect(reviewingRoom.messages[0]).toMatchObject({
+      activity: {
+        state: "reviewing",
+        resultSummary: "Implemented immutable task locks, evidence drafts, and reviewer-controlled approval.",
+        artifactUrl: "https://github.com/18Abhinav07/Pods/pull/42",
+        sharedEvidenceAvailable: true
+      }
+    });
+    const visibleProofs = await repository.listPodVisibleSubmissions({
+      userId: fixture.owner.userId,
+      podId: fixture.podId,
+      memberQuery: "builder_",
+      viewerOnly: false,
+      page: 1,
+      limit: 20
+    });
+    expect(visibleProofs?.items).toHaveLength(1);
+    expect(visibleProofs?.items[0]).toMatchObject({
+      submission: { id: draft.id, state: "reviewing" },
+      participant: { displayName: "Pods Builder" },
+      sharedEvidenceAvailable: true
+    });
+    expect(visibleProofs?.items[0]?.submission).not.toHaveProperty("evidenceObjectKey");
+    expect(await repository.getSharedSubmissionEvidence({
+      podId: fixture.podId,
+      submissionId: draft.id,
+      userId: fixture.owner.userId
+    })).toMatchObject({
+      objectKey: `pods/${fixture.podId}/proof.webp`,
+      contentType: "image/webp"
+    });
 
     const queue = await repository.listPendingReviews();
     expect(queue).toEqual(expect.arrayContaining([
@@ -194,6 +303,16 @@ describe("Phase 4 Build and Ship persistence", () => {
       authority: "reviewer"
     });
     expect(approved).toMatchObject({ state: "approved" });
+    const approvedRoom = await repository.listConversationMessages({
+      conversationId: room.id,
+      userId: fixture.member.userId,
+      afterSequence: 0,
+      limit: 20
+    });
+    expect(approvedRoom.messages[0]).toMatchObject({
+      id: committedRoom.messages[0]?.id,
+      activity: { state: "approved", sharedEvidenceAvailable: true }
+    });
     expect(await repository.getSubmissionForOwner({
       userId: fixture.member.userId,
       submissionId: draft.id

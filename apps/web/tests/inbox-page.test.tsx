@@ -68,13 +68,13 @@ vi.mock("../src/lib/server-db", () => ({
   }
 }));
 
-import InboxPage from "../src/app/inbox/page";
+import UpdatesPage from "../src/app/updates/page";
 
-describe("InboxPage", () => {
+describe("UpdatesPage", () => {
   it("renders durable lifecycle events with canonical deep links", async () => {
-    render(await InboxPage());
+    render(await UpdatesPage());
 
-    expect(screen.getByRole("heading", { name: "Your Pod history." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Updates" })).toBeVisible();
     expect(screen.getByText("Place secured").closest("a"))
       .toHaveAttribute("href", "/pods/pod-1/today");
     expect(screen.getAllByText("Application accepted").at(-1)?.closest("a"))

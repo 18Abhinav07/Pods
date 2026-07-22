@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -33,7 +33,8 @@ const props = {
   templateName: "Build & Ship",
   occurrenceCount: 5,
   lunaPerOccurrence: 10_000,
-  totalLuna: 50_000
+  totalLuna: 50_000,
+  settlementMode: "full_refund_alpha" as const
 };
 
 describe("FundingCommitment", () => {
@@ -48,7 +49,7 @@ describe("FundingCommitment", () => {
     expect(screen.getByText("5 scheduled occurrences")).toBeInTheDocument();
     expect(screen.getByText("0.1 NIM per occurrence")).toBeInTheDocument();
     expect(screen.getAllByText("0.5 NIM", { selector: "strong" })).toHaveLength(2);
-    expect(screen.getByText("Maximum amount at risk")).toBeInTheDocument();
+    expect(screen.getByText("Maximum temporary custody")).toBeInTheDocument();
     expect(
       screen.getByText(
         "Verification is performed by the Pods team. Pod creators and participants do not vote on evidence or financial outcomes."
@@ -56,23 +57,17 @@ describe("FundingCommitment", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "If Pods does not review within 24 hours, your occurrence deposit is protected but is not eligible for a bonus."
+        "Your complete Testnet commitment returns after roster lock. Review decisions affect progress only."
       )
     ).toBeInTheDocument();
-    expect(screen.getByText(/shared Pods-controlled treasury/i)).toBeInTheDocument();
-
-    for (const outcome of ["Approved", "Timeout-protected", "Grace", "Rejected", "Missed"]) {
-      expect(screen.getByRole("row", { name: new RegExp(outcome, "i") })).toBeInTheDocument();
-    }
-    const rejected = screen.getByRole("row", { name: /Rejected/i });
-    expect(within(rejected).getByText("Provisionally forfeited"))
-      .toHaveAttribute("data-label", "Your slice");
-    expect(within(rejected).getByText("Not eligible"))
-      .toHaveAttribute("data-label", "Bonus");
+    expect(screen.getByText(/idempotent worker after roster lock/i)).toBeInTheDocument();
+    expect(screen.getByText("Full return queued")).toBeInTheDocument();
+    expect(screen.getByText("Disabled in this contract")).toBeInTheDocument();
+    expect(screen.queryByRole("row", { name: /Rejected/i })).not.toBeInTheDocument();
 
     const button = screen.getByRole("button", { name: "Commit 0.5 NIM" });
     expect(button).toBeDisabled();
-    await user.click(screen.getByRole("checkbox", { name: /I accept the frozen terms/i }));
+    await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     expect(button).toBeEnabled();
   });
 
@@ -98,7 +93,7 @@ describe("FundingCommitment", () => {
     vi.mocked(recordDepositTransactionHint).mockResolvedValue(undefined as never);
     render(<FundingCommitment {...props} />);
 
-    await user.click(screen.getByRole("checkbox", { name: /I accept the frozen terms/i }));
+    await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
 
     expect(createDepositIntent).toHaveBeenCalledWith("pod-1");
@@ -134,7 +129,7 @@ describe("FundingCommitment", () => {
     vi.mocked(recordDepositWalletAttempt).mockResolvedValue(undefined as never);
     render(<FundingCommitment {...props} />);
 
-    await user.click(screen.getByRole("checkbox", { name: /I accept the frozen terms/i }));
+    await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
 
     expect(recordDepositWalletAttempt).toHaveBeenNthCalledWith(1, "intent-1", "open");
@@ -162,7 +157,7 @@ describe("FundingCommitment", () => {
     });
     render(<FundingCommitment {...props} />);
 
-    await user.click(screen.getByRole("checkbox", { name: /I accept the frozen terms/i }));
+    await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
 
     expect(sendNimCommitment).not.toHaveBeenCalled();

@@ -16,6 +16,7 @@
     "@fontsource/fira-mono": "^5.2.7",
     "@nimiq/core": "2.7.1",
     "@nimiq/mini-app-sdk": "0.1.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@pods/db": "workspace:*",
     "@pods/domain": "workspace:*",
     "@pods/ui": "workspace:*",

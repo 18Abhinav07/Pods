@@ -53,7 +53,7 @@ export function presentCreatorPodState(input: {
       statusLabel: "Roster locked",
       statusDetail: "Activity scheduled",
       actionLabel: "Open Pod room",
-      href: `/pods/${input.podId}/today`,
+      href: `/pods/${input.podId}/room`,
       todayEyebrow: "Roster locked",
       todayTitle: "Your Pod is ready for the activity.",
       todayDetail: "Enrollment is complete. Open the Pod room for the frozen schedule."
@@ -64,7 +64,7 @@ export function presentCreatorPodState(input: {
       statusLabel: "Activity live",
       statusDetail: "Occurrence commitments and evidence are active",
       actionLabel: "Open Pod room",
-      href: `/pods/${input.podId}/today`,
+      href: `/pods/${input.podId}/room`,
       todayEyebrow: "Activity live",
       todayTitle: "Your Pod is building now.",
       todayDetail: "Open the Pod room to follow approved group progress."
@@ -120,7 +120,7 @@ export function relationshipForViewer(input: {
 }
 
 type MemberPresentation = Omit<PodRelationshipPresentation, "href"> & {
-  destination: "applications" | "fund" | "funding_status" | "waiting_room" | "my_pods";
+  destination: "applications" | "fund" | "funding_status" | "waiting_room" | "pod_room" | "my_pods";
 };
 
 const memberPresentations = {
@@ -216,7 +216,7 @@ const memberPresentations = {
     statusLabel: "Joined",
     statusDetail: "Your place is secured",
     actionLabel: "Open Pod",
-    destination: "waiting_room",
+    destination: "pod_room",
     tone: "secured",
     todayPriority: 30,
     todayEyebrow: "Place secured",
@@ -227,7 +227,7 @@ const memberPresentations = {
     statusLabel: "Activity live",
     statusDetail: "Your occurrence flow is active",
     actionLabel: "Open Pod",
-    destination: "waiting_room",
+    destination: "pod_room",
     tone: "secured",
     todayPriority: null,
     todayEyebrow: "Activity live",
@@ -277,6 +277,7 @@ function memberHref(input: {
   if (input.destination === "applications") return `/applications?pod=${input.podId}`;
   if (input.destination === "fund") return `/pods/${input.podId}/fund`;
   if (input.destination === "waiting_room") return `/pods/${input.podId}/today`;
+  if (input.destination === "pod_room") return `/pods/${input.podId}/room`;
   if (input.destination === "my_pods") return "/my-pods";
   return input.depositIntentId
     ? `/pods/${input.podId}/fund/status?intent=${input.depositIntentId}`
@@ -289,13 +290,13 @@ export function presentPodRelationship(input: {
 }): PodRelationshipPresentation {
   if (input.relationship.kind === "visitor") {
     return {
-      statusLabel: "Open to apply",
+      statusLabel: "Accepting applications",
       statusDetail: "Review the frozen rules",
-      actionLabel: "View Pod",
+      actionLabel: "Apply",
       href: `/pods/${input.podId}`,
       tone: "open",
       todayPriority: null,
-      todayEyebrow: "Open to apply",
+      todayEyebrow: "Accepting applications",
       todayTitle: "Find your next commitment.",
       todayDetail: "Review the frozen Pod rules before applying."
     };

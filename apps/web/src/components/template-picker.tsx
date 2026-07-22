@@ -2,11 +2,12 @@
 
 import { templateContracts, type TemplateId } from "@pods/domain";
 import { motion, useReducedMotion } from "motion/react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createPodDraft } from "../lib/wizard-client";
-import { TemplateSymbol } from "./template-symbol";
+import { adaptiveThemeForTemplate, mediaForTemplate } from "../lib/template-presentation";
 
 export function TemplatePicker() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function TemplatePicker() {
     <div className="creation-template-list">
       {templateContracts.map((template, index) => (
         <motion.button
-          className="creation-template"
+          className={`creation-template adaptive-template-card theme-${adaptiveThemeForTemplate(template.id)}`}
           disabled={pending !== null}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -43,8 +44,8 @@ export function TemplatePicker() {
           onClick={() => choose(template.id)}
           type="button"
         >
-          <TemplateSymbol templateId={template.id} />
-          <span>
+          <span className="adaptive-template-media"><Image alt="" fill sizes="120px" src={mediaForTemplate(template.id).hero} /></span>
+          <span className="adaptive-template-copy">
             <strong>{template.name}</strong>
             <small>{template.summary}</small>
             <em>{template.evidence}</em>

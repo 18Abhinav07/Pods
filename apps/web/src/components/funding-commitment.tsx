@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import type { SettlementMode } from "@pods/domain";
+
 import {
   createDepositIntent,
   recordDepositTransactionHint,
@@ -30,12 +32,14 @@ export function FundingCommitment(props: {
   occurrenceCount: number;
   lunaPerOccurrence: number;
   totalLuna: number;
+  settlementMode: SettlementMode;
 }) {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const totalNim = nim(props.totalLuna);
+  const isAlphaRefund = props.settlementMode === "full_refund_alpha";
 
   async function commit() {
     if (!accepted || working) return;
@@ -86,33 +90,49 @@ export function FundingCommitment(props: {
           <p>{nim(props.lunaPerOccurrence)} NIM per occurrence</p>
         </div>
         <div className="funding-risk">
-          <span>Maximum amount at risk</span>
+          <span>{isAlphaRefund ? "Maximum temporary custody" : "Maximum amount at risk"}</span>
           <strong>{totalNim} NIM</strong>
-          <p>Only rejected or missed occurrence slices are provisionally forfeited.</p>
+          <p>{isAlphaRefund
+            ? "The entire Testnet commitment is queued for return after roster lock. Activity outcomes cannot reduce it."
+            : "Only rejected or missed occurrence slices are provisionally forfeited."}</p>
         </div>
       </section>
 
-      <section className="funding-outcomes entrance entrance-templates" aria-labelledby="outcomes-title">
-        <div className="section-title-row">
-          <div><span>Financial outcomes</span><h2 id="outcomes-title">What each decision means</h2></div>
-        </div>
-        <div className="outcome-table-wrap">
-          <table>
-            <thead><tr><th>Decision</th><th>Your slice</th><th>Bonus</th><th>Streak</th></tr></thead>
-            <tbody>
-              {outcomes.map(([decision, slice, bonus, streak]) => (
-                <tr key={decision}>
-                  <th data-label="Decision" scope="row">{decision}</th>
-                  <td data-label="Your slice">{slice}</td>
-                  <td data-label="Bonus">{bonus}</td>
-                  <td data-label="Streak">{streak}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="outcome-footnote">Provisional forfeitures are shared only among manually approved members for the same occurrence. If nobody is manually approved, each forfeited slice returns to its original owner.</p>
-      </section>
+      {isAlphaRefund ? (
+        <section className="funding-outcomes entrance entrance-templates" aria-labelledby="outcomes-title">
+          <div className="section-title-row">
+            <div><span>Phase 4 alpha contract</span><h2 id="outcomes-title">Full return, independent of outcome</h2></div>
+          </div>
+          <div className="outcome-compact alpha-return-outcomes">
+            <div><span>Roster locks</span><b>Full return queued</b></div>
+            <div><span>Activity review</span><b>Updates streak and record</b></div>
+            <div><span>Redistribution</span><b>Disabled in this contract</b></div>
+          </div>
+          <p className="outcome-footnote">NIM on Testnet has no real-world value. This Pod cannot convert into a proportional or winner-funded contract after publication.</p>
+        </section>
+      ) : (
+        <section className="funding-outcomes entrance entrance-templates" aria-labelledby="outcomes-title">
+          <div className="section-title-row">
+            <div><span>Financial outcomes</span><h2 id="outcomes-title">What each decision means</h2></div>
+          </div>
+          <div className="outcome-table-wrap">
+            <table>
+              <thead><tr><th>Decision</th><th>Your slice</th><th>Bonus</th><th>Streak</th></tr></thead>
+              <tbody>
+                {outcomes.map(([decision, slice, bonus, streak]) => (
+                  <tr key={decision}>
+                    <th data-label="Decision" scope="row">{decision}</th>
+                    <td data-label="Your slice">{slice}</td>
+                    <td data-label="Bonus">{bonus}</td>
+                    <td data-label="Streak">{streak}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="outcome-footnote">Provisional forfeitures are shared only among manually approved members for the same occurrence. If nobody is manually approved, each forfeited slice returns to its original owner.</p>
+        </section>
+      )}
 
       <section className="funding-disclosures entrance entrance-templates">
         <div className="trust-disclosure">
@@ -120,12 +140,16 @@ export function FundingCommitment(props: {
           <p>Verification is performed by the Pods team. Pod creators and participants do not vote on evidence or financial outcomes.</p>
         </div>
         <div className="trust-disclosure is-protection">
-          <span aria-hidden="true">24h</span>
-          <p>If Pods does not review within 24 hours, your occurrence deposit is protected but is not eligible for a bonus.</p>
+          <span aria-hidden="true">{isAlphaRefund ? "100%" : "24h"}</span>
+          <p>{isAlphaRefund
+            ? "Your complete Testnet commitment returns after roster lock. Review decisions affect progress only."
+            : "If Pods does not review within 24 hours, your occurrence deposit is protected but is not eligible for a bonus."}</p>
         </div>
         <div className="custody-disclosure">
           <strong>Custodial testnet treasury</strong>
-          <p>Your full commitment is held in a shared Pods-controlled treasury and tracked in an off-chain participant ledger until roster lock and settlement.</p>
+          <p>{isAlphaRefund
+            ? "Your commitment is tracked in the participant ledger and returned by an idempotent worker after roster lock. Server caps limit each deposit and total treasury exposure."
+            : "Your full commitment is held in a shared Pods-controlled treasury and tracked in an off-chain participant ledger until roster lock and settlement."}</p>
         </div>
       </section>
 
@@ -135,7 +159,9 @@ export function FundingCommitment(props: {
           onChange={(event) => setAccepted(event.currentTarget.checked)}
           type="checkbox"
         />
-        <span>I accept the frozen terms, centralized Pods-team verification, custodial treasury, and maximum commitment shown above.</span>
+        <span>{isAlphaRefund
+          ? "I accept the immutable full-return Testnet contract, centralized Pods-team verification, custodial treasury, and maximum commitment shown above."
+          : "I accept the frozen terms, centralized Pods-team verification, custodial treasury, and maximum commitment shown above."}</span>
       </label>
       {error ? <div className="inline-error funding-error" role="alert"><span>{error}</span></div> : null}
       <button

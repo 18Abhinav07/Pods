@@ -33,7 +33,11 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-    const response = NextResponse.json({ walletAddress: session.walletAddress });
+    const profile = await podsRepository.getProfileForUser(session.userId);
+    const response = NextResponse.json({
+      walletAddress: session.walletAddress,
+      needsProfile: profile === null
+    });
     response.cookies.set(
       SESSION_COOKIE_NAME,
       session.token,

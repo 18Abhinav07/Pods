@@ -26,9 +26,10 @@ vi.mock("../src/lib/session", () => ({
 vi.mock("../src/lib/server-db", () => ({
   podsRepository: {
     getPodForOwner: vi.fn(async () => null),
-    getPodForAcceptedMember: vi.fn(async () => pod),
+    getPodForAcceptedMember: vi.fn(async () => null),
+    getWaitingRoomForUser: vi.fn(async () => ({ pod })),
     getMembershipForUser: vi.fn(async () => ({
-      state: "roster_locked",
+      state: "active",
       depositIntentId: "intent-1"
     }))
   }
@@ -37,11 +38,11 @@ vi.mock("../src/lib/server-db", () => ({
 import RulesPage from "../src/app/pods/[podId]/rules/page";
 
 describe("RulesPage", () => {
-  it("returns a roster-locked participant to the Pod instead of the closed funding route", async () => {
+  it("keeps the frozen contract available to an active participant", async () => {
     render(await RulesPage({ params: Promise.resolve({ podId: "pod-1" }) }));
 
     expect(screen.getByRole("link", { name: "Open Pod" }))
-      .toHaveAttribute("href", "/pods/pod-1/today");
+      .toHaveAttribute("href", "/pods/pod-1/room");
     expect(screen.queryByText("Review funding handoff")).not.toBeInTheDocument();
   });
 });

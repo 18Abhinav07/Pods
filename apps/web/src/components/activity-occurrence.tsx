@@ -1,10 +1,10 @@
 "use client";
 
-import type { BuildDeliverableType, SubmissionState } from "@pods/domain";
+import type { BuildDeliverableType, SettlementMode, SubmissionState } from "@pods/domain";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { formatZonedMoment } from "../lib/format-moment";
 
@@ -21,6 +21,7 @@ type SubmissionView = {
   resultSummary: string;
   artifactUrl: string;
   evidenceObjectKey: string | null;
+  proofShareMode: "reviewer_only" | "pod_shared";
 };
 
 type Props = {
@@ -33,6 +34,7 @@ type Props = {
   commitmentDeadlineAt: string;
   closesAt: string;
   stakeNim: number;
+  settlementMode: SettlementMode;
   currentStreak: number;
   timeZone: string;
   commitment: CommitmentView | null;
@@ -66,16 +68,31 @@ export function ActivityOccurrence(props: Props) {
   const [artifactUrl, setArtifactUrl] = useState(props.submission?.artifactUrl ?? "");
   const [savedValues, setSavedValues] = useState({
     resultSummary: props.submission?.resultSummary ?? "",
-    artifactUrl: props.submission?.artifactUrl ?? ""
+    artifactUrl: props.submission?.artifactUrl ?? "",
+    proofShareMode: props.submission?.proofShareMode ?? "reviewer_only"
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [draftState, setDraftState] = useState<"idle" | "saving" | "saved">(
+    props.submission?.state === "draft" ? "saved" : "idle"
+  );
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadComplete, setUploadComplete] = useState(
     Boolean(props.submission?.evidenceObjectKey)
   );
+  const [proofShareMode, setProofShareMode] = useState<"reviewer_only" | "pod_shared">(
+    props.submission?.proofShareMode ?? "reviewer_only"
+  );
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const evidenceForm = useRef<HTMLFormElement>(null);
+  const draftSaveVersion = useRef(0);
+  const autoSaveTimer = useRef<number | null>(null);
   const dirty =
-    resultSummary !== savedValues.resultSummary || artifactUrl !== savedValues.artifactUrl;
+    resultSummary !== savedValues.resultSummary ||
+    artifactUrl !== savedValues.artifactUrl ||
+    proofShareMode !== savedValues.proofShareMode;
 
   async function lock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,9 +120,9 @@ export function ActivityOccurrence(props: Props) {
     }
   }
 
-  async function saveDraft(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    setBusy(true);
+  const persistDraft = useCallback(async () => {
+    const version = ++draftSaveVersion.current;
+    setDraftState("saving");
     setError("");
     try {
       const response = await fetch(
@@ -113,32 +130,60 @@ export function ActivityOccurrence(props: Props) {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resultSummary, artifactUrl })
+          body: JSON.stringify({ resultSummary, artifactUrl, proofShareMode })
         }
       );
       const body = await responseBody(response);
       if (!response.ok || !body.submission) {
         throw new Error(body.error ?? "Evidence draft could not be saved");
       }
-      setSubmission(body.submission);
-      setSavedValues({ resultSummary, artifactUrl });
-      router.refresh();
+      if (version === draftSaveVersion.current) {
+        setSubmission(body.submission);
+        setSavedValues({ resultSummary, artifactUrl, proofShareMode });
+        setDraftState("saved");
+      }
       return body.submission;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Evidence draft could not be saved");
+      if (version === draftSaveVersion.current) {
+        setDraftState("idle");
+        setError(cause instanceof Error ? cause.message : "Evidence draft could not be saved");
+      }
       return null;
-    } finally {
-      setBusy(false);
     }
-  }
+  }, [artifactUrl, proofShareMode, props.occurrenceId, props.podId, resultSummary]);
 
-  function uploadImage(file: File) {
-    if (!submission || submission.state !== "draft") return;
+  useEffect(() => {
+    if (!commitment || (submission && submission.state !== "draft") || !dirty) return;
+    if (resultSummary.trim().length < 20 || !artifactUrl.startsWith("https://")) return;
+    autoSaveTimer.current = window.setTimeout(() => {
+      autoSaveTimer.current = null;
+      void persistDraft();
+    }, 900);
+    return () => {
+      if (autoSaveTimer.current !== null) window.clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    };
+  }, [artifactUrl, commitment, dirty, persistDraft, resultSummary, submission]);
+
+  async function uploadImage(file: File) {
+    if (resultSummary.trim().length < 20 || !artifactUrl.startsWith("https://")) {
+      evidenceForm.current?.reportValidity();
+      setError("Add a result summary and public artifact before attaching reviewer evidence.");
+      return;
+    }
+    if (autoSaveTimer.current !== null) {
+      window.clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+    const draft = !submission || submission.state !== "draft" || dirty
+      ? await persistDraft()
+      : submission;
+    if (!draft || draft.state !== "draft") return;
     setError("");
     setUploadProgress(0);
     setUploadComplete(false);
     const form = new FormData();
-    form.set("submissionId", submission.id);
+    form.set("submissionId", draft.id);
     form.set("image", file);
     const request = new XMLHttpRequest();
     request.open(
@@ -177,13 +222,26 @@ export function ActivityOccurrence(props: Props) {
     request.send(form);
   }
 
-  async function submitForReview() {
-    if (!submission || submission.state !== "draft" || dirty) return;
+  async function submitForReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (resultSummary.trim().length < 20 || !artifactUrl.startsWith("https://")) {
+      evidenceForm.current?.reportValidity();
+      setError("Add a complete result summary and public artifact before submitting.");
+      return;
+    }
+    if (autoSaveTimer.current !== null) {
+      window.clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
     setBusy(true);
     setError("");
     try {
+      const draft = !submission || submission.state !== "draft" || dirty
+        ? await persistDraft()
+        : submission;
+      if (!draft || draft.state !== "draft") throw new Error("Evidence draft could not be prepared");
       const response = await fetch(
-        `/api/pods/${props.podId}/submissions/${submission.id}/submit`,
+        `/api/pods/${props.podId}/submissions/${draft.id}/submit`,
         { method: "POST" }
       );
       const body = await responseBody(response);
@@ -200,6 +258,7 @@ export function ActivityOccurrence(props: Props) {
   }
 
   const status = submission?.state;
+  const fullReturnAlpha = props.settlementMode === "full_refund_alpha";
   return (
     <>
       <section className="activity-hero entrance entrance-hero">
@@ -208,10 +267,11 @@ export function ActivityOccurrence(props: Props) {
         <p>{props.projectTheme}</p>
       </section>
       <section className="occurrence-context-grid entrance entrance-status">
-        <div><span>At risk</span><strong>{props.stakeNim} NIM</strong></div>
+        <div><span>{fullReturnAlpha ? "Activity slice" : "At risk"}</span><strong>{props.stakeNim} NIM</strong></div>
         <div><span>Current streak</span><strong>{props.currentStreak} occurrences</strong></div>
         <div><span>Evidence closes</span><strong>{formatZonedMoment(props.closesAt, { timeZone: props.timeZone })}</strong></div>
       </section>
+      {fullReturnAlpha ? <p className="occurrence-consequence-note">Your full Testnet principal remains returnable.</p> : null}
 
       {!commitment ? (
         <motion.form
@@ -220,7 +280,8 @@ export function ActivityOccurrence(props: Props) {
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           onSubmit={lock}
         >
-          <div className="activity-card-heading"><span>Commit before building</span><h2>Lock one concrete task.</h2></div>
+          <div className="commitment-studio-visual" aria-hidden="true"><i /><i /><i /><strong>{props.occurrenceOrdinal.toString().padStart(2, "0")}</strong></div>
+          <div className="activity-card-heading"><span>Commit before building</span><h2>Make the finish line visible.</h2><p>One concrete promise becomes your shared activity card.</p></div>
           <label htmlFor="occurrence-task">Today&apos;s task</label>
           <textarea
             id="occurrence-task"
@@ -232,16 +293,9 @@ export function ActivityOccurrence(props: Props) {
             rows={4}
             value={task}
           />
-          <label htmlFor="deliverable-type">Visible deliverable</label>
-          <select
-            id="deliverable-type"
-            onChange={(event) => setDeliverableType(event.target.value as BuildDeliverableType)}
-            value={deliverableType}
-          >
-            {props.allowedDeliverables.map((value) => (
-              <option key={value} value={value}>{deliverableLabel(value)}</option>
-            ))}
-          </select>
+          <fieldset className="deliverable-choice-grid"><legend>Visible deliverable</legend>{props.allowedDeliverables.map((value) => (
+            <label className={deliverableType === value ? "is-selected" : ""} key={value}><input checked={deliverableType === value} name="deliverable" onChange={() => setDeliverableType(value)} type="radio" value={value} /><span>{deliverableLabel(value)}</span><i aria-hidden="true">{value === "pull_request" ? "PR" : value === "live_artifact" ? "LIVE" : value === "commit" ? "COMMIT" : "ISSUE"}</i></label>
+          ))}</fieldset>
           <aside className="activity-lock-disclosure">
             <strong>Locked by {formatZonedMoment(props.commitmentDeadlineAt, { timeZone: props.timeZone })}</strong>
             <p>Once locked, this task cannot be changed for this occurrence.</p>
@@ -255,7 +309,7 @@ export function ActivityOccurrence(props: Props) {
         <section className={`submission-status-card is-${status}`}>
           <span>{status === "approved" ? "Manually approved" : "Pods team review"}</span>
           <h2>{status === "approved" ? "Occurrence completed." : "Your evidence is under review."}</h2>
-          <p>{status === "approved" ? "The public artifact completed the locked task and is bonus-eligible." : "The 12-hour response time is a target. Your review deadline remains visible while the Pods team evaluates the work."}</p>
+          <p>{status === "approved" ? "The public artifact completed the locked task and now contributes to the participant record." : "The 12-hour response time is a target. Your review deadline remains visible while the Pods team evaluates the work."}</p>
           <Link className="primary-action full-action" href={`/pods/${props.podId}/submissions/${submission.id}`}>View submission</Link>
         </section>
       ) : (
@@ -263,15 +317,16 @@ export function ActivityOccurrence(props: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="activity-evidence-card"
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          onSubmit={saveDraft}
+          onSubmit={submitForReview}
+          ref={evidenceForm}
         >
-          <div className="locked-task-panel"><span>Locked task</span><strong>{commitment.task}</strong><small>{deliverableLabel(commitment.deliverableType)}</small></div>
+          <div className="locked-task-panel"><span>Locked task · occurrence {props.occurrenceOrdinal}</span><strong>{commitment.task}</strong><small>{deliverableLabel(commitment.deliverableType)}</small></div>
           <label htmlFor="result-summary">Result summary</label>
           <textarea
             id="result-summary"
             maxLength={1200}
             minLength={20}
-            onChange={(event) => setResultSummary(event.target.value)}
+            onChange={(event) => { setResultSummary(event.target.value); setDraftState("idle"); }}
             placeholder="Describe what changed and what a reviewer can verify."
             required
             rows={5}
@@ -280,47 +335,52 @@ export function ActivityOccurrence(props: Props) {
           <label htmlFor="artifact-url">Public artifact URL</label>
           <input
             id="artifact-url"
-            onChange={(event) => setArtifactUrl(event.target.value)}
+            onChange={(event) => { setArtifactUrl(event.target.value); setDraftState("idle"); }}
             placeholder="https://github.com/owner/repo/pull/42"
             required
             type="url"
             value={artifactUrl}
           />
-          {submission ? (
-            <div className="optional-evidence-upload">
-              <label htmlFor="evidence-image">Optional supporting image</label>
-              <input
-                accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
-                id="evidence-image"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) uploadImage(file);
-                }}
-                type="file"
-              />
-              {uploadProgress !== null ? (
-                <div className="upload-progress" aria-live="polite"><i style={{ width: `${uploadProgress}%` }} /><span>{uploadComplete ? "Image secured" : uploadProgress === 99 ? "Securing image" : `Uploading ${uploadProgress}%`}</span></div>
-              ) : null}
-            </div>
-          ) : null}
+          <div className="proof-add-studio">
+            <div className="proof-add-heading"><div><span>Evidence</span><strong>Choose what the room can see</strong></div><button aria-expanded={addMenuOpen} aria-label="Add evidence" onClick={() => setAddMenuOpen((open) => !open)} type="button">{addMenuOpen ? "Close" : "+ Add"}</button></div>
+            <fieldset className="proof-privacy-choice"><legend>Supporting image visibility</legend><label className={proofShareMode === "reviewer_only" ? "is-selected" : ""}><input checked={proofShareMode === "reviewer_only"} name="proof-share" onChange={() => { setProofShareMode("reviewer_only"); setDraftState("idle"); }} type="radio" /><span><strong>Pods reviewer only</strong>Private evidence for the decision</span></label><label className={proofShareMode === "pod_shared" ? "is-selected" : ""}><input checked={proofShareMode === "pod_shared"} name="proof-share" onChange={() => { setProofShareMode("pod_shared"); setDraftState("idle"); }} type="radio" /><span><strong>Share with Pod</strong>Visible inside this locked room</span></label></fieldset>
+            {addMenuOpen ? <div className="proof-action-sheet">
+              <button onClick={() => cameraInput.current?.click()} type="button"><i>CAM</i><span>Camera<strong>Capture now</strong></span></button>
+              <button onClick={() => imageInput.current?.click()} type="button"><i>IMG</i><span>Image<strong>Choose a file</strong></span></button>
+              <a href="#artifact-url"><i>URL</i><span>Link<strong>Public artifact</strong></span></a>
+            </div> : null}
+            <input
+              accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
+              aria-label="Capture evidence photo"
+              capture="environment"
+              className="proof-file-input"
+              onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadImage(file); }}
+              ref={cameraInput}
+              type="file"
+            />
+            <input
+              accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
+              aria-label="Choose evidence image"
+              className="proof-file-input"
+              id="evidence-image"
+              onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadImage(file); }}
+              ref={imageInput}
+              type="file"
+            />
+            <p className="proof-lock-note">This visibility choice becomes immutable when you submit.</p>
+            {uploadProgress !== null ? (
+              <div className="upload-progress" aria-live="polite"><i style={{ width: `${uploadProgress}%` }} /><span>{uploadComplete ? "Image secured" : uploadProgress === 99 ? "Securing image" : `Uploading ${uploadProgress}%`}</span></div>
+            ) : null}
+          </div>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
-          {!submission ? (
-            <button className="primary-action full-action" disabled={busy} type="submit">
-              {busy ? "Saving draft" : "Save evidence draft"}
-            </button>
-          ) : (
-            <>
-              {dirty ? <button className="secondary-action full-action" disabled={busy} type="submit">Save changes</button> : <p className="draft-saved-state">Draft saved privately</p>}
-              <button
-                className="primary-action full-action"
-                disabled={busy || dirty || (uploadProgress !== null && !uploadComplete)}
-                onClick={submitForReview}
-                type="button"
-              >
-                {busy ? "Submitting evidence" : "Submit for Pods review"}
-              </button>
-            </>
-          )}
+          <p className={`draft-saved-state is-${draftState}`} aria-live="polite">{draftState === "saving" ? "Saving draft automatically" : draftState === "saved" ? "Draft saved automatically" : "Changes save automatically"}</p>
+          <button
+            className="primary-action full-action"
+            disabled={busy || (uploadProgress !== null && !uploadComplete)}
+            type="submit"
+          >
+            {busy ? "Submitting evidence" : "Review and submit"}
+          </button>
         </motion.form>
       )}
     </>

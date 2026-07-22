@@ -16,8 +16,23 @@ import type {
   TemplateId,
   TransferLegState
 } from "@pods/domain";
+import type {
+  ConversationKind,
+  DirectConversationState,
+  DmPolicy,
+  FriendRequestState,
+  MessageKind,
+  ProfileAvatar,
+  ProfileVisibility,
+  ProofShareMode,
+  ReactionCode,
+  ReportReason,
+  RoomState
+} from "@pods/domain";
 import {
   bigint,
+  bigserial,
+  boolean,
   date,
   index,
   integer,
@@ -43,6 +58,140 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
 });
+
+export const profiles = pgTable(
+  "profiles",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    handle: text("handle").notNull(),
+    displayName: text("display_name").notNull(),
+    bio: text("bio").notNull(),
+    avatar: jsonb("avatar").$type<ProfileAvatar>().notNull(),
+    visibility: text("visibility").$type<ProfileVisibility>().notNull(),
+    dmPolicy: text("dm_policy").$type<DmPolicy>().notNull(),
+    activityStatusVisible: boolean("activity_status_visible").notNull(),
+    onboardingCompletedAt: timestamp("onboarding_completed_at", {
+      withTimezone: true,
+      mode: "date"
+    }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("profiles_handle_unique").on(table.handle),
+    index("profiles_visibility_updated_idx").on(table.visibility, table.updatedAt)
+  ]
+);
+
+export const userFollows = pgTable(
+  "user_follows",
+  {
+    followerUserId: uuid("follower_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    followedUserId: uuid("followed_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.followerUserId, table.followedUserId] }),
+    index("user_follows_followed_idx").on(table.followedUserId, table.createdAt)
+  ]
+);
+
+export const friendRequests = pgTable(
+  "friend_requests",
+  {
+    id: uuid("id").primaryKey(),
+    senderUserId: uuid("sender_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recipientUserId: uuid("recipient_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    state: text("state").$type<FriendRequestState>().notNull(),
+    decidedAt: timestamp("decided_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("friend_requests_direction_unique").on(
+      table.senderUserId,
+      table.recipientUserId
+    ),
+    index("friend_requests_recipient_state_idx").on(
+      table.recipientUserId,
+      table.state,
+      table.updatedAt
+    )
+  ]
+);
+
+export const friendships = pgTable(
+  "friendships",
+  {
+    firstUserId: uuid("first_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    secondUserId: uuid("second_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.firstUserId, table.secondUserId] }),
+    index("friendships_second_user_idx").on(table.secondUserId, table.createdAt)
+  ]
+);
+
+export const userBlocks = pgTable(
+  "user_blocks",
+  {
+    blockerUserId: uuid("blocker_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    blockedUserId: uuid("blocked_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [primaryKey({ columns: [table.blockerUserId, table.blockedUserId] })]
+);
+
+export const userReports = pgTable(
+  "user_reports",
+  {
+    id: uuid("id").primaryKey(),
+    reporterUserId: uuid("reporter_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    reportedUserId: uuid("reported_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    reason: text("reason").$type<ReportReason>().notNull(),
+    details: text("details").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [index("user_reports_reported_created_idx").on(table.reportedUserId, table.createdAt)]
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    readAt: timestamp("read_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [index("notifications_user_created_idx").on(table.userId, table.createdAt)]
+);
 
 export const walletChallenges = pgTable(
   "wallet_challenges",
@@ -160,6 +309,10 @@ export const submissions = pgTable(
     evidenceObjectKey: text("evidence_object_key"),
     evidenceContentType: text("evidence_content_type"),
     evidenceByteSize: integer("evidence_byte_size"),
+    proofShareMode: text("proof_share_mode")
+      .$type<ProofShareMode>()
+      .notNull()
+      .default("reviewer_only"),
     submittedAt: timestamp("submitted_at", { withTimezone: true, mode: "date" }),
     reviewTargetAt: timestamp("review_target_at", { withTimezone: true, mode: "date" }),
     reviewHardDeadlineAt: timestamp("review_hard_deadline_at", {
@@ -242,11 +395,15 @@ export const invitations = pgTable(
     acceptedByUserId: uuid("accepted_by_user_id").references(() => users.id, {
       onDelete: "set null"
     }),
+    targetUserId: uuid("target_user_id").references(() => users.id, {
+      onDelete: "cascade"
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
   },
   (table) => [
     uniqueIndex("invitations_token_hash_unique").on(table.tokenHash),
-    index("invitations_pod_expiry_idx").on(table.podId, table.expiresAt)
+    index("invitations_pod_expiry_idx").on(table.podId, table.expiresAt),
+    index("invitations_target_expiry_idx").on(table.targetUserId, table.expiresAt)
   ]
 );
 
@@ -280,6 +437,144 @@ export const memberships = pgTable(
     uniqueIndex("memberships_deposit_intent_unique").on(table.depositIntentId),
     index("memberships_user_state_idx").on(table.userId, table.state),
     index("memberships_pod_state_idx").on(table.podId, table.state)
+  ]
+);
+
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: uuid("id").primaryKey(),
+    kind: text("kind").$type<ConversationKind>().notNull(),
+    podId: uuid("pod_id").references(() => pods.id, { onDelete: "cascade" }),
+    directPairKey: text("direct_pair_key"),
+    firstUserId: uuid("first_user_id").references(() => users.id, { onDelete: "cascade" }),
+    secondUserId: uuid("second_user_id").references(() => users.id, { onDelete: "cascade" }),
+    requestSenderUserId: uuid("request_sender_user_id").references(() => users.id, {
+      onDelete: "cascade"
+    }),
+    directState: text("direct_state").$type<DirectConversationState>(),
+    roomState: text("room_state").$type<RoomState>().notNull().default("open"),
+    lastSequence: integer("last_sequence").notNull().default(0),
+    archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("conversations_pod_unique").on(table.podId),
+    uniqueIndex("conversations_direct_pair_unique").on(table.directPairKey),
+    index("conversations_first_user_idx").on(table.firstUserId, table.updatedAt),
+    index("conversations_second_user_idx").on(table.secondUserId, table.updatedAt)
+  ]
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").primaryKey(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    sequence: integer("sequence").notNull(),
+    senderUserId: uuid("sender_user_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    kind: text("kind").$type<MessageKind>().notNull(),
+    body: text("body").notNull(),
+    clientMessageId: uuid("client_message_id"),
+    replyToMessageId: uuid("reply_to_message_id"),
+    hiddenAt: timestamp("hidden_at", { withTimezone: true, mode: "date" }),
+    hiddenByUserId: uuid("hidden_by_user_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+    pinnedAt: timestamp("pinned_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("messages_conversation_sequence_unique").on(
+      table.conversationId,
+      table.sequence
+    ),
+    uniqueIndex("messages_client_retry_unique").on(
+      table.conversationId,
+      table.senderUserId,
+      table.clientMessageId
+    ),
+    index("messages_conversation_created_idx").on(table.conversationId, table.createdAt),
+    index("messages_reply_idx").on(table.replyToMessageId)
+  ]
+);
+
+export const activityMessages = pgTable(
+  "activity_messages",
+  {
+    commitmentId: uuid("commitment_id")
+      .primaryKey()
+      .references(() => occurrenceCommitments.id, { onDelete: "cascade" }),
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => messages.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [uniqueIndex("activity_messages_message_unique").on(table.messageId)]
+);
+
+export const messageReactions = pgTable(
+  "message_reactions",
+  {
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => messages.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    code: text("code").$type<ReactionCode>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.messageId, table.userId] }),
+    index("message_reactions_message_idx").on(table.messageId, table.code)
+  ]
+);
+
+export const conversationReads = pgTable(
+  "conversation_reads",
+  {
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    lastReadSequence: integer("last_read_sequence").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.conversationId, table.userId] }),
+    index("conversation_reads_user_idx").on(table.userId, table.updatedAt)
+  ]
+);
+
+export const realtimeEvents = pgTable(
+  "realtime_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    conversationId: uuid("conversation_id").references(() => conversations.id, {
+      onDelete: "cascade"
+    }),
+    recipientUserId: uuid("recipient_user_id").references(() => users.id, {
+      onDelete: "cascade"
+    }),
+    kind: text("kind").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    index("realtime_events_conversation_id_idx").on(table.conversationId, table.id),
+    index("realtime_events_recipient_id_idx").on(table.recipientUserId, table.id)
   ]
 );
 

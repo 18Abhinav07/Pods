@@ -10,7 +10,13 @@ const allowedReturnPrefixes = [
   "/my-pods",
   "/applications",
   "/profile",
+  "/onboarding/",
+  "/updates",
+  "/messages",
+  "/messages/",
+  "/report/",
   "/inbox",
+  "/u/",
   "/pods/",
   "/invite/",
   "/validation/"

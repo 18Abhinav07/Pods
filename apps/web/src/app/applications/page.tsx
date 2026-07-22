@@ -71,8 +71,8 @@ export default async function ApplicationsPage({
         </section>
       )}
       {query.pod ? <Link className="secondary-action full-action" href="/applications">View all applications</Link> : null}
-      <Link className="quiet-link centered-link" href="/inbox">Return to Inbox</Link>
-      <PrimaryNav active="inbox" />
+      <Link className="quiet-link centered-link" href="/updates">Return to Updates</Link>
+      <PrimaryNav active="messages" />
     </main>
   );
 }

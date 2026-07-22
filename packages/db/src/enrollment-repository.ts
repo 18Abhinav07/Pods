@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import {
   canDecideApplication,
+  canonicalUserPair,
   validateApplicationAnswers,
   type ApplicationAnswer,
   type ApplicationDecision
@@ -10,7 +11,7 @@ import { and, asc, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import * as schema from "./schema";
-import { applications, invitations, memberships, occurrences, pods } from "./schema";
+import { applications, friendships, invitations, memberships, occurrences, pods, profiles } from "./schema";
 
 export type PodsDatabase = NodePgDatabase<typeof schema>;
 
@@ -244,6 +245,7 @@ export function createEnrollmentMethods(database: PodsDatabase) {
       creatorUserId: string;
       podId: string;
       tokenHash: string;
+      targetHandle?: string;
       now: Date;
     }) {
       return database.transaction(async (transaction) => {
@@ -263,6 +265,24 @@ export function createEnrollmentMethods(database: PodsDatabase) {
           .where(and(eq(occurrences.podId, pod.id), eq(occurrences.ordinal, 1)));
         if (!isEnrollmentOpen(pod, firstOccurrence?.opensAt ?? null, input.now)) {
           throw new Error("Private Pod is no longer accepting invitations");
+        }
+        let targetUserId: string | null = null;
+        if (input.targetHandle) {
+          const [target] = await transaction
+            .select({ userId: profiles.userId })
+            .from(profiles)
+            .where(eq(profiles.handle, input.targetHandle.trim().toLowerCase()));
+          if (!target) throw new Error("Friend profile not found");
+          const pair = canonicalUserPair(input.creatorUserId, target.userId);
+          const [friendship] = await transaction
+            .select({ firstUserId: friendships.firstUserId })
+            .from(friendships)
+            .where(and(
+              eq(friendships.firstUserId, pair.firstUserId),
+              eq(friendships.secondUserId, pair.secondUserId)
+            ));
+          if (!friendship) throw new Error("Private Pod invitations can only target friends");
+          targetUserId = target.userId;
         }
         const activeInvitations = await transaction
           .select({ id: invitations.id })
@@ -296,6 +316,7 @@ export function createEnrollmentMethods(database: PodsDatabase) {
             revokedAt: null,
             usedAt: null,
             acceptedByUserId: null,
+            targetUserId,
             createdAt: input.now
           })
           .returning();
@@ -317,6 +338,72 @@ export function createEnrollmentMethods(database: PodsDatabase) {
         .from(invitations)
         .where(eq(invitations.podId, input.podId))
         .orderBy(desc(invitations.createdAt));
+    },
+
+    async listTargetedInvitations(userId: string, now: Date) {
+      const rows = await database
+        .select({ invitation: invitations, pod: pods })
+        .from(invitations)
+        .innerJoin(pods, eq(invitations.podId, pods.id))
+        .where(and(
+          eq(invitations.targetUserId, userId),
+          isNull(invitations.revokedAt),
+          isNull(invitations.usedAt),
+          gt(invitations.expiresAt, now)
+        ))
+        .orderBy(desc(invitations.createdAt));
+      return rows.flatMap(({ invitation, pod }) => pod.contractData ? [{
+        invitationId: invitation.id,
+        podId: pod.id,
+        activityName: pod.contractData.activity.name,
+        purpose: pod.contractData.activity.purpose,
+        totalLuna: pod.contractData.commitment.totalLuna,
+        occurrenceCount: pod.contractData.commitment.occurrenceCount,
+        expiresAt: invitation.expiresAt
+      }] : []);
+    },
+
+    async acceptTargetedInvitation(input: { invitationId: string; userId: string; now: Date }) {
+      try {
+        return await database.transaction(async (transaction) => {
+          const [invitation] = await transaction
+            .update(invitations)
+            .set({ usedAt: input.now, acceptedByUserId: input.userId })
+            .where(and(
+              eq(invitations.id, input.invitationId),
+              eq(invitations.targetUserId, input.userId),
+              isNull(invitations.revokedAt),
+              isNull(invitations.usedAt),
+              gt(invitations.expiresAt, input.now)
+            ))
+            .returning();
+          if (!invitation) return null;
+          const [pod] = await transaction.select().from(pods).where(eq(pods.id, invitation.podId)).for("update");
+          const [firstOccurrence] = await transaction
+            .select({ opensAt: occurrences.opensAt })
+            .from(occurrences)
+            .where(and(eq(occurrences.podId, invitation.podId), eq(occurrences.ordinal, 1)));
+          if (!pod || pod.contractData?.community.visibility !== "private" || !isEnrollmentOpen(pod, firstOccurrence?.opensAt ?? null, input.now)) {
+            throw new Error("Invitation is unavailable");
+          }
+          const [membership] = await transaction.insert(memberships).values({
+            id: randomUUID(),
+            podId: pod.id,
+            userId: input.userId,
+            admissionSource: "private_invitation",
+            state: "accepted_unfunded",
+            applicationId: null,
+            invitationId: invitation.id,
+            acceptedAt: input.now,
+            createdAt: input.now,
+            updatedAt: input.now
+          }).returning();
+          return membership ?? null;
+        });
+      } catch (error) {
+        if (isUniqueViolation(error)) return null;
+        throw error;
+      }
     },
 
     async revokeInvitation(input: {
@@ -406,6 +493,9 @@ export function createEnrollmentMethods(database: PodsDatabase) {
             )
             .returning();
           if (!invitation) return null;
+          if (invitation.targetUserId && invitation.targetUserId !== input.userId) {
+            throw new Error("Invitation is unavailable");
+          }
 
           const [pod] = await transaction
             .select()

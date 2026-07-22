@@ -9,8 +9,12 @@ async function responseError(response: Response, fallback: string) {
   }
 }
 
-export async function createPrivateInvitation(podId: string, fetcher: Fetcher = fetch) {
-  const response = await fetcher(`/api/pods/${podId}/invitations`, { method: "POST" });
+export async function createPrivateInvitation(podId: string, fetcher: Fetcher = fetch, targetHandle?: string) {
+  const response = await fetcher(`/api/pods/${podId}/invitations`, targetHandle ? {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ targetHandle })
+  } : { method: "POST" });
   if (!response.ok) throw new Error(await responseError(response, "Invitation could not be created"));
   return response.json() as Promise<{ invitation: { id: string; expiresAt: string }; token: string }>;
 }

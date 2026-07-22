@@ -2,12 +2,13 @@
 
 import type { TemplateId } from "@pods/domain";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { deletePodDraft } from "../lib/wizard-client";
-import { TemplateSymbol } from "./template-symbol";
+import { adaptiveThemeForTemplate, mediaForTemplate } from "../lib/template-presentation";
 
 export type MyPodListItem = {
   id: string;
@@ -46,19 +47,19 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
   return (
     <div className="my-pods-list">
       <AnimatePresence initial={false}>
-        {items.filter((item) => !removedIds.includes(item.id)).map((item) => {
+        {items.filter((item) => !removedIds.includes(item.id)).map((item, visualIndex) => {
           const isDraft = item.state === "draft";
           const isConfirming = confirmingId === item.id;
           return (
             <motion.article
-              className="my-pod-row"
+              className={`my-pod-row adaptive-my-pod-row theme-${adaptiveThemeForTemplate(item.templateId)}`}
               exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, y: -8 }}
               key={item.id}
               layout
               transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link className="my-pod-main" href={item.href}>
-                <TemplateSymbol templateId={item.templateId} />
+                <span className="my-pod-thumbnail"><Image alt="" fill sizes="64px" src={mediaForTemplate(item.templateId, visualIndex).hero} /></span>
                 <span className="my-pod-copy">
                   <strong>{item.name}</strong>
                   <small>{item.templateName}</small>

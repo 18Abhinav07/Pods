@@ -1,9 +1,9 @@
 import { alphaRequiresAuthenticatedBrowsing } from "./alpha-access";
-import { getCurrentSession, requireSession } from "./session";
+import { getOptionalProfileSession, requireSession } from "./session";
 
 export async function alphaAwarePageSession(returnTo: string) {
   if (alphaRequiresAuthenticatedBrowsing(process.env)) {
     return requireSession(returnTo);
   }
-  return getCurrentSession();
+  return getOptionalProfileSession(returnTo);
 }

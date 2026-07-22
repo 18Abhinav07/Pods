@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   alphaDepositsEnabled,
+  alphaFundingPolicy,
   walletHasAlphaAccess
 } from "../src/lib/alpha-access";
 
@@ -42,5 +43,20 @@ describe("alpha access enforcement", () => {
     expect(
       alphaDepositsEnabled({ APP_ENV: "alpha", NIMIQ_NETWORK: "testnet" })
     ).toBe(false);
+  });
+
+  it("projects an immutable refund-only contract and server caps", () => {
+    expect(alphaFundingPolicy({
+      APP_ENV: "alpha",
+      NIMIQ_NETWORK: "testnet",
+      PODS_DEPOSIT_MODE: "allowlist_refund_only",
+      PODS_ALPHA_REFUND_ENABLED: "true",
+      PODS_MAX_DEPOSIT_LUNA: "50000",
+      PODS_MAX_TREASURY_EXPOSURE_LUNA: "200000"
+    })).toEqual({
+      settlementMode: "full_refund_alpha",
+      maximumDepositLuna: 50_000,
+      maximumTreasuryExposureLuna: 200_000
+    });
   });
 });

@@ -16,6 +16,7 @@ const base = {
   commitmentDeadlineAt: "2027-04-05T09:00:00.000Z",
   closesAt: "2027-04-05T23:59:59.999Z",
   stakeNim: 0.1,
+  settlementMode: "full_refund_alpha" as const,
   currentStreak: 0,
   timeZone: "UTC"
 };
@@ -36,18 +37,29 @@ describe("Build and Ship occurrence", () => {
       .toBeInTheDocument();
   });
 
-  it("saves a complete draft before exposing submission to review", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({
-        submission: {
-          id: "submission-1",
-          state: "draft",
-          resultSummary: "Shipped the complete participant activity screen and tests.",
-          artifactUrl: "https://github.com/18Abhinav07/Pods/pull/42",
-          evidenceObjectKey: null
-        }
-      }), { status: 201, headers: { "Content-Type": "application/json" } })
-    );
+  it("states the full-return alpha consequence without implying principal is at risk", () => {
+    render(<ActivityOccurrence {...base} commitment={null} submission={null} />);
+
+    expect(screen.getByText("Activity slice")).toBeInTheDocument();
+    expect(screen.getByText("Your full Testnet principal remains returnable.")).toBeInTheDocument();
+    expect(screen.queryByText("At risk")).not.toBeInTheDocument();
+  });
+
+  it("creates the draft and submits it through one final review action", async () => {
+    const draft = {
+      id: "submission-1",
+      state: "draft",
+      resultSummary: "Shipped the complete participant activity screen and tests.",
+      artifactUrl: "https://github.com/18Abhinav07/Pods/pull/42",
+      evidenceObjectKey: null,
+      proofShareMode: "reviewer_only"
+    } as const;
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      return new Response(JSON.stringify({
+        submission: url.endsWith("/submit") ? { ...draft, state: "reviewing" } : draft
+      }), { status: url.endsWith("/submit") ? 200 : 201, headers: { "Content-Type": "application/json" } });
+    });
     render(<ActivityOccurrence
       {...base}
       commitment={{
@@ -64,13 +76,37 @@ describe("Build and Ship occurrence", () => {
     fireEvent.change(screen.getByLabelText("Public artifact URL"), {
       target: { value: "https://github.com/18Abhinav07/Pods/pull/42" }
     });
-    fireEvent.click(screen.getByRole("button", { name: "Save evidence draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and submit" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
       "/api/pods/pod-1/occurrences/occurrence-1/draft",
       expect.objectContaining({ method: "POST" })
     ));
-    expect(await screen.findByRole("button", { name: "Submit for Pods review" }))
-      .toBeInTheDocument();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/pods/pod-1/submissions/submission-1/submit",
+      { method: "POST" }
+    ));
+    expect(await screen.findByText("Your evidence is under review.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
+  });
+
+  it("shows evidence and privacy controls before a database draft exists", () => {
+    const { container } = render(<ActivityOccurrence
+      {...base}
+      commitment={{
+        id: "commitment-1",
+        task: "Ship the participant activity screen and its tests.",
+        deliverableType: "pull_request",
+        lockedAt: "2027-04-05T08:00:00.000Z"
+      }}
+      submission={null}
+    />);
+
+    expect(screen.getByRole("radio", { name: /Pods reviewer only/i })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Share with Pod/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add evidence" }));
+    expect(screen.getByRole("button", { name: /Camera/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Image/i })).toBeInTheDocument();
+    expect(container.querySelectorAll("input.proof-file-input")).toHaveLength(2);
   });
 });

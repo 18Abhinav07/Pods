@@ -52,7 +52,7 @@ async function queueDepositRefund(
   transaction: Transaction,
   deposit: Deposit,
   membership: Membership,
-  membershipState: Extract<MembershipState, "refund_pending" | "excluded_at_cutoff">,
+  membershipState: Extract<MembershipState, "refund_pending" | "excluded_at_cutoff"> | null,
   now: Date
 ) {
   const idempotencyKey = `refund:${deposit.id}`;
@@ -107,10 +107,12 @@ async function queueDepositRefund(
     .update(depositIntents)
     .set({ state: "refund_pending", updatedAt: now })
     .where(eq(depositIntents.id, deposit.id));
-  await transaction
-    .update(memberships)
-    .set({ state: membershipState, updatedAt: now })
-    .where(eq(memberships.id, membership.id));
+  if (membershipState) {
+    await transaction
+      .update(memberships)
+      .set({ state: membershipState, updatedAt: now })
+      .where(eq(memberships.id, membership.id));
+  }
   return leg;
 }
 
@@ -259,6 +261,16 @@ export function createCutoffMethods(database: PodsDatabase) {
             .update(memberships)
             .set({ state: "roster_locked", updatedAt: input.now })
             .where(eq(memberships.id, candidate.membership.id));
+          if (pod.contractData.settlementMode === "full_refund_alpha") {
+            const leg = await queueDepositRefund(
+              transaction,
+              candidate.deposit,
+              candidate.membership,
+              null,
+              input.now
+            );
+            refundLegIds.push(leg.id);
+          }
         }
         for (const candidate of excluded) {
           const leg = await queueDepositRefund(

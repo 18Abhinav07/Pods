@@ -56,6 +56,9 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   }
   const applications = await podsRepository.listApplicationsForCreator({ creatorUserId: session.userId, podId });
   const invitations = await podsRepository.listInvitationsForCreator({ creatorUserId: session.userId, podId });
+  const friends = contract.community.visibility === "private"
+    ? await podsRepository.listFriends(session.userId)
+    : [];
   const pending = applications.filter(({ application }) => application.state === "applied").length;
   const accepted = applications.filter(({ application }) => application.state === "accepted_unfunded").length;
   const rejected = applications.filter(({ application }) => application.state === "application_rejected").length;
@@ -87,6 +90,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
             expiresAt: invitation.expiresAt.toISOString(),
             status: invitation.usedAt ? "used" : invitation.revokedAt ? "revoked" : invitation.expiresAt.getTime() <= renderedAt ? "expired" : "active"
           }))}
+          friends={friends.map(({ handle, displayName }) => ({ handle, displayName }))}
           podId={pod.id}
         />
       )}

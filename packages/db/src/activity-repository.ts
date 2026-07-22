@@ -7,14 +7,19 @@ import {
   validateBuildEvidence,
   validateBuildTask
 } from "@pods/domain";
-import { and, asc, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, lte, ne, or, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
 import {
+  activityMessages,
+  conversations,
   memberships,
+  messages,
   occurrenceCommitments,
   occurrences,
   pods,
+  profiles,
+  realtimeEvents,
   reviewDecisions,
   submissions
 } from "./schema";
@@ -172,6 +177,73 @@ export function createActivityMethods(database: PodsDatabase) {
           })
           .returning();
         if (!commitment) throw new Error("Occurrence commitment could not be locked");
+
+        const [createdConversation] = await transaction
+          .insert(conversations)
+          .values({
+            id: randomUUID(),
+            kind: "pod",
+            podId: input.podId,
+            directPairKey: null,
+            firstUserId: null,
+            secondUserId: null,
+            requestSenderUserId: null,
+            directState: null,
+            roomState: "open",
+            lastSequence: 0,
+            archivedAt: null,
+            createdAt: input.now,
+            updatedAt: input.now
+          })
+          .onConflictDoNothing({ target: conversations.podId })
+          .returning();
+        const conversation = createdConversation ?? (await transaction
+          .select()
+          .from(conversations)
+          .where(eq(conversations.podId, input.podId)))[0];
+        if (!conversation) throw new Error("Pod room could not be projected");
+        const [advanced] = await transaction
+          .update(conversations)
+          .set({
+            lastSequence: sql`${conversations.lastSequence} + 1`,
+            updatedAt: input.now
+          })
+          .where(eq(conversations.id, conversation.id))
+          .returning({ sequence: conversations.lastSequence });
+        if (!advanced) throw new Error("Pod room could not be advanced");
+        const [message] = await transaction
+          .insert(messages)
+          .values({
+            id: randomUUID(),
+            conversationId: conversation.id,
+            sequence: advanced.sequence,
+            senderUserId: input.userId,
+            kind: "activity",
+            body: validation.value.task,
+            clientMessageId: null,
+            replyToMessageId: null,
+            hiddenAt: null,
+            hiddenByUserId: null,
+            editedAt: null,
+            deletedAt: null,
+            pinnedAt: null,
+            createdAt: input.now,
+            updatedAt: input.now
+          })
+          .returning();
+        if (!message) throw new Error("Activity card could not be projected");
+        await transaction.insert(activityMessages).values({
+          commitmentId: commitment.id,
+          messageId: message.id,
+          createdAt: input.now
+        });
+        await transaction.insert(realtimeEvents).values({
+          conversationId: conversation.id,
+          recipientUserId: null,
+          kind: "activity.committed",
+          payload: { messageId: message.id, commitmentId: commitment.id },
+          createdAt: input.now
+        });
         return commitment;
       });
     },
@@ -183,6 +255,7 @@ export function createActivityMethods(database: PodsDatabase) {
       resultSummary: unknown;
       artifactUrl: unknown;
       evidence?: EvidenceObject | null;
+      proofShareMode?: unknown;
       now: Date;
     }) {
       return database.transaction(async (transaction) => {
@@ -253,6 +326,10 @@ export function createActivityMethods(database: PodsDatabase) {
           evidenceObjectKey: evidence?.objectKey ?? null,
           evidenceContentType: evidence?.contentType ?? null,
           evidenceByteSize: evidence?.byteSize ?? null,
+          proofShareMode:
+            input.proofShareMode === "pod_shared" || input.proofShareMode === "reviewer_only"
+              ? input.proofShareMode
+              : existing?.proofShareMode ?? "reviewer_only",
           updatedAt: input.now
         };
         if (existing) {
@@ -560,6 +637,45 @@ export function createActivityMethods(database: PodsDatabase) {
       return result;
     },
 
+    async listActivityScheduleForMember(input: { userId: string; podId: string }) {
+      const [base] = await database
+        .select({ membership: memberships })
+        .from(memberships)
+        .innerJoin(pods, eq(memberships.podId, pods.id))
+        .where(
+          and(
+            eq(memberships.userId, input.userId),
+            eq(memberships.podId, input.podId),
+            eq(memberships.state, "active"),
+            eq(pods.state, "active")
+          )
+        );
+      if (!base) return null;
+      return database
+        .select({
+          occurrence: occurrences,
+          commitment: occurrenceCommitments,
+          submission: submissions
+        })
+        .from(occurrences)
+        .leftJoin(
+          occurrenceCommitments,
+          and(
+            eq(occurrenceCommitments.occurrenceId, occurrences.id),
+            eq(occurrenceCommitments.membershipId, base.membership.id)
+          )
+        )
+        .leftJoin(
+          submissions,
+          and(
+            eq(submissions.occurrenceId, occurrences.id),
+            eq(submissions.membershipId, base.membership.id)
+          )
+        )
+        .where(eq(occurrences.podId, input.podId))
+        .orderBy(asc(occurrences.ordinal));
+    },
+
     async listApprovedFeedForPod(input: { userId: string; podId: string }) {
       const [membership] = await database
         .select({ id: memberships.id })
@@ -589,6 +705,90 @@ export function createActivityMethods(database: PodsDatabase) {
           and(eq(occurrences.podId, input.podId), eq(submissions.state, "approved"))
         )
         .orderBy(asc(occurrences.ordinal), asc(submissions.approvedAt));
+    },
+
+    async listPodVisibleSubmissions(input: {
+      userId: string;
+      podId: string;
+      memberQuery?: string;
+      viewerOnly?: boolean;
+      page?: number;
+      limit?: number;
+    }) {
+      const [membership] = await database
+        .select({ id: memberships.id })
+        .from(memberships)
+        .where(
+          and(
+            eq(memberships.userId, input.userId),
+            eq(memberships.podId, input.podId),
+            inArray(memberships.state, ["roster_locked", "active"])
+          )
+        );
+      const [owned] = await database
+        .select({ id: pods.id })
+        .from(pods)
+        .where(and(eq(pods.id, input.podId), eq(pods.creatorUserId, input.userId)));
+      if (!membership && !owned) return null;
+
+      const page = Math.max(Math.floor(input.page ?? 1), 1);
+      const limit = Math.min(Math.max(Math.floor(input.limit ?? 20), 1), 40);
+      const query = input.memberQuery?.trim() ?? "";
+      const filters = [
+        eq(occurrences.podId, input.podId),
+        ne(submissions.state, "draft")
+      ];
+      if (input.viewerOnly) filters.push(eq(memberships.userId, input.userId));
+      if (query.length >= 2) {
+        const memberFilter = or(
+          ilike(profiles.handle, `%${query}%`),
+          ilike(profiles.displayName, `%${query}%`)
+        );
+        if (memberFilter) filters.push(memberFilter);
+      }
+
+      const rows = await database
+        .select({
+          submission: {
+            id: submissions.id,
+            state: submissions.state,
+            resultSummary: submissions.resultSummary,
+            artifactUrl: submissions.artifactUrl,
+            submittedAt: submissions.submittedAt
+          },
+          commitment: {
+            task: occurrenceCommitments.task,
+            deliverableType: occurrenceCommitments.deliverableType
+          },
+          occurrence: {
+            ordinal: occurrences.ordinal,
+            localDate: occurrences.localDate
+          },
+          participant: {
+            handle: profiles.handle,
+            displayName: profiles.displayName,
+            avatar: profiles.avatar
+          },
+          participantUserId: memberships.userId,
+          sharedEvidenceAvailable: sql<boolean>`${submissions.proofShareMode} = 'pod_shared' AND ${submissions.evidenceObjectKey} IS NOT NULL`
+        })
+        .from(submissions)
+        .innerJoin(occurrenceCommitments, eq(submissions.commitmentId, occurrenceCommitments.id))
+        .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+        .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
+        .innerJoin(profiles, eq(memberships.userId, profiles.userId))
+        .where(and(...filters))
+        .orderBy(desc(submissions.submittedAt), desc(submissions.id))
+        .limit(limit + 1)
+        .offset((page - 1) * limit);
+      return {
+        items: rows.slice(0, limit).map(({ participantUserId, ...row }) => ({
+          ...row,
+          isViewer: participantUserId === input.userId
+        })),
+        page,
+        hasNext: rows.length > limit
+      };
     },
 
     async getActivityStreak(input: {

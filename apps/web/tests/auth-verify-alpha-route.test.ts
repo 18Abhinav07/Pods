@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { completeWalletSession, deleteSession } = vi.hoisted(() => ({
+const { completeWalletSession, deleteSession, getProfileForUser } = vi.hoisted(() => ({
   completeWalletSession: vi.fn(),
-  deleteSession: vi.fn()
+  deleteSession: vi.fn(),
+  getProfileForUser: vi.fn()
 }));
 
 vi.mock("../src/lib/auth", async (importOriginal) => {
@@ -10,7 +11,7 @@ vi.mock("../src/lib/auth", async (importOriginal) => {
   return { ...original, completeWalletSession };
 });
 vi.mock("../src/lib/server-db", () => ({
-  podsRepository: { deleteSession }
+  podsRepository: { deleteSession, getProfileForUser }
 }));
 
 import { POST } from "../src/app/api/auth/verify/route";
@@ -19,6 +20,8 @@ describe("wallet verification alpha access", () => {
   beforeEach(() => {
     completeWalletSession.mockReset();
     deleteSession.mockReset();
+    getProfileForUser.mockReset();
+    getProfileForUser.mockResolvedValue(null);
     completeWalletSession.mockResolvedValue({
       walletAddress: "NQ38 PLXF NXKJ LFGA TRDP VRA8 F810 2BKN N4X6",
       token: "session-token",
@@ -49,5 +52,29 @@ describe("wallet verification alpha access", () => {
       error: "This wallet is not included in the current Pods alpha"
     });
     expect(deleteSession).toHaveBeenCalledWith("session-token-hash");
+  });
+
+  it("marks a first wallet session for mandatory profile onboarding", async () => {
+    vi.stubEnv(
+      "PODS_ALPHA_WALLET_ALLOWLIST",
+      "NQ38 PLXF NXKJ LFGA TRDP VRA8 F810 2BKN N4X6"
+    );
+    const response = await POST(
+      new Request("http://localhost/api/auth/verify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          challengeId: "challenge",
+          publicKey: "public-key",
+          signature: "signature"
+        })
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      walletAddress: "NQ38 PLXF NXKJ LFGA TRDP VRA8 F810 2BKN N4X6",
+      needsProfile: true
+    });
   });
 });

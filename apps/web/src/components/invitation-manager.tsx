@@ -13,7 +13,7 @@ export type InvitationListItem = {
   status: "active" | "used" | "revoked" | "expired";
 };
 
-export function InvitationManager({ podId, initial }: { podId: string; initial: InvitationListItem[] }) {
+export function InvitationManager({ podId, initial, friends = [] }: { podId: string; initial: InvitationListItem[]; friends?: Array<{ handle: string; displayName: string }> }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [invitations, setInvitations] = useState(initial);
@@ -21,17 +21,18 @@ export function InvitationManager({ podId, initial }: { podId: string; initial: 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [targetHandle, setTargetHandle] = useState("");
 
-  async function create() {
+  async function create(targeted = false) {
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      const result = await createPrivateInvitation(podId);
+      const result = await createPrivateInvitation(podId, fetch, targeted ? targetHandle : undefined);
       const link = `${window.location.origin}/invite#${result.token}`;
-      setNewLink(link);
+      setNewLink(targeted ? "" : link);
       setInvitations((current) => [{ id: result.invitation.id, expiresAt: result.invitation.expiresAt, status: "active" }, ...current]);
-      setMessage("New single-use link ready. It will not be shown again after you leave this screen.");
+      setMessage(targeted ? `Private invitation delivered to @${targetHandle}.` : "New single-use link ready. It will not be shown again after you leave this screen.");
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Invitation could not be created");
@@ -70,8 +71,9 @@ export function InvitationManager({ podId, initial }: { podId: string; initial: 
 
   return (
     <section className="invitation-manager">
-      <div className="invitation-manager-head"><div><span>Private entry</span><h2>Single-use invitations</h2></div><button className="primary-action" disabled={busy} onClick={create} type="button">{busy ? "Creating" : "Create link"}</button></div>
+      <div className="invitation-manager-head"><div><span>Private entry</span><h2>Single-use invitations</h2></div><button className="primary-action" disabled={busy} onClick={() => void create(false)} type="button">{busy ? "Creating" : "Create link"}</button></div>
       <p>Each opaque link admits one connected wallet, expires automatically, and can be revoked before use.</p>
+      {friends.length > 0 ? <div className="targeted-invite-row"><label htmlFor="invite-friend">Invite a friend directly</label><div><select id="invite-friend" onChange={(event) => setTargetHandle(event.target.value)} value={targetHandle}><option value="">Choose a friend</option>{friends.map((friend) => <option key={friend.handle} value={friend.handle}>{friend.displayName} · @{friend.handle}</option>)}</select><button disabled={busy || !targetHandle} onClick={() => void create(true)} type="button">Send in Pods</button></div><small>They receive a private invitation request. No link is exposed.</small></div> : null}
       <AnimatePresence initial={false}>
         {newLink ? (
           <motion.div animate={{ opacity: 1, y: 0 }} className="new-invite-link" initial={reduceMotion ? false : { opacity: 0, y: 8 }}>

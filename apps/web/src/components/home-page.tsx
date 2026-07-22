@@ -1,11 +1,10 @@
 import Link from "next/link";
-
-import { TemplateShowcase } from "./template-showcase";
+import Image from "next/image";
 
 export function HomePage() {
   return (
-    <main className="foundation-shell">
-      <header className="topbar entrance entrance-topbar">
+    <main className="foundation-shell landing-shell">
+      <header className="topbar landing-topbar entrance entrance-topbar">
         <div className="wordmark" aria-label="Pods">
           <span className="pod-mark" aria-hidden="true">
             <i />
@@ -14,63 +13,30 @@ export function HomePage() {
           </span>
           PODS
         </div>
-        <span className="phase-pill">Nimiq Testnet</span>
+        <Link className="landing-discover-link" href="/discover">Discover</Link>
       </header>
 
-      <section className="hero entrance entrance-hero">
-        <p className="eyebrow">Earned momentum</p>
-        <h1>Momentum starts with a clear commitment.</h1>
-        <p className="hero-copy">
-          Join a focused group, put NIM behind the days you commit to showing up,
-          prove the work, and finish together.
+      <section className="landing-visual entrance entrance-hero" aria-label="Activities on Pods">
+        <div className="landing-media landing-media-main">
+          <Image alt="Builder working with a focused team" fill priority sizes="(max-width: 520px) 92vw, 520px" src="/media/build.jpg" />
+          <span>Build together</span>
+        </div>
+        <div className="landing-media landing-media-side">
+          <Image alt="A runner training at night" fill sizes="160px" src="/media/fitness.jpg" />
+          <span>Move</span>
+        </div>
+      </section>
+
+      <section className="landing-copy entrance entrance-status">
+        <p className="eyebrow">Activity with real commitment</p>
+        <h1>Show up for what matters.</h1>
+        <p>
+          Put NIM behind a shared goal, prove the work, and build momentum with people who care.
         </p>
         <div className="hero-actions">
-          <Link className="primary-action" href="/connect?returnTo=%2Ftoday">
-            Connect wallet
-          </Link>
-          <Link className="secondary-action" href="/pods/create/template">
-            Create a Pod
-          </Link>
+          <Link className="primary-action" href="/connect?returnTo=%2Ftoday">Connect wallet</Link>
+          <Link className="secondary-action" href="/discover">Explore public Pods</Link>
         </div>
-      </section>
-
-      <section
-        className="status-panel entrance entrance-status"
-        aria-label="Foundation status"
-      >
-        <div className="status-head">
-          <span className="status-dot" aria-hidden="true" />
-          <span>Core lifecycle active</span>
-        </div>
-        <p>
-          Signed wallet sessions, immutable Pod creation, applications, and
-          Testnet NIM funding are active.
-        </p>
-        <dl>
-          <div>
-            <dt>Network</dt>
-            <dd>Nimiq Testnet</dd>
-          </div>
-          <div>
-            <dt>Currency</dt>
-            <dd>NIM</dd>
-          </div>
-          <div>
-            <dt>Review</dt>
-            <dd>Pods team</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="template-section entrance entrance-templates">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Five polished modes</p>
-            <h2>One activity engine.</h2>
-          </div>
-          <span>Cycle I</span>
-        </div>
-        <TemplateShowcase />
       </section>
     </main>
   );

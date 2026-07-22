@@ -39,7 +39,7 @@ export default async function ActivityOccurrencePage({
     <main className="app-shell activity-shell">
       <header className="app-topbar entrance entrance-topbar">
         <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link>
-        <Link className="phase-pill" href={`/pods/${podId}/today`}>Pod room</Link>
+        <Link className="phase-pill" href={`/pods/${podId}/room`}>Pod room</Link>
       </header>
       <ActivityOccurrence
         allowedDeliverables={allowedDeliverables(configuration.allowedDeliverables)}
@@ -57,13 +57,15 @@ export default async function ActivityOccurrencePage({
         podId={podId}
         podName={activity.pod.contractData.activity.name}
         projectTheme={String(configuration.projectTheme ?? "")}
+        settlementMode={activity.pod.contractData.settlementMode ?? "proportional"}
         stakeNim={activity.pod.contractData.commitment.lunaPerOccurrence / 100_000}
         submission={activity.submission ? {
           id: activity.submission.id,
           state: activity.submission.state,
           resultSummary: activity.submission.resultSummary,
           artifactUrl: activity.submission.artifactUrl,
-          evidenceObjectKey: activity.submission.evidenceObjectKey
+          evidenceObjectKey: activity.submission.evidenceObjectKey,
+          proofShareMode: activity.submission.proofShareMode
         } : null}
         timeZone={activity.pod.contractData.activity.timeZone}
       />

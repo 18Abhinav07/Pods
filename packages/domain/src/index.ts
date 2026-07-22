@@ -2,6 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 
 export type TemplateId = "fitness" | "reading" | "study" | "build" | "create";
 export type EvidenceMode = "repeating_criterion" | "per_occurrence_commitment";
+export type SettlementMode = "proportional" | "full_refund_alpha";
 export type PodVisibility = "public" | "private";
 export type PodState =
   | "draft"
@@ -16,6 +17,7 @@ export * from "./enrollment";
 export * from "./funding";
 export * from "./activity";
 export * from "./alpha-capabilities";
+export * from "./social";
 
 export const templateContracts = [
   {
@@ -108,6 +110,7 @@ export interface PublishedPodContract {
   version: 1;
   templateId: TemplateId;
   evidenceMode: EvidenceMode;
+  settlementMode: SettlementMode;
   activity: ActivityStepInput;
   community: CommunityStepInput;
   commitment: {
@@ -322,7 +325,8 @@ export function validatePublicationTiming(
 }
 
 export function buildPublishedContract(
-  draft: PodDraftInput
+  draft: PodDraftInput,
+  options: { settlementMode?: SettlementMode } = {}
 ):
   | { success: true; contract: PublishedPodContract; occurrences: FrozenOccurrence[] }
   | { success: false; errors: string[] } {
@@ -362,6 +366,7 @@ export function buildPublishedContract(
       version: 1,
       templateId: draft.templateId,
       evidenceMode: template.mode,
+      settlementMode: options.settlementMode ?? "full_refund_alpha",
       activity: structuredClone(draft.activity),
       community: structuredClone(draft.community),
       commitment: {

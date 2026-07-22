@@ -1,10 +1,12 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { PublicPodCard } from "../src/components/public-pod-card";
 
 describe("PublicPodCard", () => {
-  it("renders the frozen public enrollment terms without exposing a wallet", () => {
+  it("reveals the frozen public enrollment terms on demand without exposing a wallet", async () => {
+    const user = userEvent.setup();
     render(
       <PublicPodCard
         pod={{
@@ -23,13 +25,21 @@ describe("PublicPodCard", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Build Pods in Public" })).toBeVisible();
+    expect(document.querySelector("details")).toBeNull();
+    expect(screen.getByLabelText("Show Pod details")).toBeVisible();
+    expect(screen.getByText("1.5 NIM upfront")).not.toBeVisible();
+    await user.click(screen.getByLabelText("Show Pod details"));
     expect(screen.getByText("1.5 NIM upfront")).toBeVisible();
     expect(screen.getByText("3 occurrences")).toBeVisible();
-    expect(screen.getByText("Open to apply")).toBeVisible();
-    expect(screen.getByRole("link", { name: "View Pod" })).toHaveAttribute(
+    expect(screen.getByLabelText("Hide Pod details")).toBeVisible();
+    expect(screen.queryByText("Open to apply")).not.toBeInTheDocument();
+    const apply = screen.getByRole("link", { name: "Review and apply to Build Pods in Public" });
+    expect(apply).toHaveAttribute(
       "href",
       "/pods/pod-public"
     );
+    expect(apply).toHaveClass("discover-apply-orb");
+    expect(apply).not.toHaveTextContent("Apply");
     expect(screen.queryByText(/NQ[A-Z0-9 ]{20,}/)).not.toBeInTheDocument();
   });
 

@@ -2,8 +2,10 @@ import { templateContracts } from "@pods/domain";
 import Link from "next/link";
 
 import { MyPodsList, type MyPodListItem } from "../../components/my-pods-list";
+import { AppHeader } from "../../components/app-header";
 import { PrimaryNav } from "../../components/primary-nav";
 import { presentCreatorPodState, presentPodRelationship } from "../../lib/participant-pod-state";
+import { profileForSession } from "../../lib/profile-presentation";
 import { podsRepository } from "../../lib/server-db";
 import { requireSession } from "../../lib/session";
 
@@ -62,11 +64,15 @@ export default async function MyPodsPage() {
   const empty = ownedItems.length === 0 && joinedItems.length === 0;
 
   return (
-    <main className="app-shell">
-      <header className="app-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><Link className="phase-pill" href="/pods/create/template">New Pod</Link></header>
-      <section className="today-hero entrance entrance-hero"><p className="eyebrow">My Pods</p><h1>Your activity spaces.</h1><p className="screen-copy">Creator controls and joined activities stay distinct. Every status links to its canonical next step.</p></section>
+    <main className="app-shell adaptive-my-pods">
+      <AppHeader
+        action={<Link aria-label="Create a Pod" className="new-pod-button" href="/pods/create/template"><span aria-hidden="true">+</span></Link>}
+        profile={profileForSession(session)}
+        title="My Pods"
+      />
+      <p className="route-lede entrance entrance-hero">Active groups, commitments, and drafts.</p>
       {empty ? (
-        <section className="empty-state"><span className="empty-index">00</span><h2>No Pods yet.</h2><p>Browse a public activity or create one of the five fixed templates.</p><Link className="secondary-action full-action" href="/discover">Browse public Pods</Link><Link className="primary-action full-action" href="/pods/create/template">Create a Pod</Link></section>
+        <section className="empty-state"><h2>No Pods yet.</h2><p>Join a public activity or start your own.</p><Link className="secondary-action full-action" href="/discover">Browse public Pods</Link><Link className="primary-action full-action" href="/pods/create/template">Create a Pod</Link></section>
       ) : (
         <div className="my-pods-groups">
           {joinedItems.length > 0 ? <section><div className="section-heading"><span>Participant</span><strong>{joinedItems.length}</strong></div><MyPodsList items={joinedItems} /></section> : null}

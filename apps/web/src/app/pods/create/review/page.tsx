@@ -28,8 +28,8 @@ export default async function ReviewStepPage({ searchParams }: { searchParams: P
     <section><span>Activity</span><strong>{contract.activity.name}</strong><p>{contract.activity.purpose}</p></section>
     <section><span>Schedule</span><strong>{contract.commitment.occurrenceCount} occurrences</strong><p>{contract.activity.startDate} to {contract.activity.endDate} in {contract.activity.timeZone}</p></section>
     <section><span>Community</span><strong>{contract.community.visibility === "public" ? "Public, application-based" : "Private, invitation-only"}</strong><p>{contract.community.minParticipants} to {contract.community.maxParticipants} participants</p></section>
-    <section className="contract-money"><span>Commitment</span><strong>{nim(contract.commitment.totalLuna)} NIM upfront</strong><p>{nim(contract.commitment.lunaPerOccurrence)} NIM allocated to each occurrence</p></section>
-    <section><span>Verification</span><strong>Pods team</strong><p>12-hour target. At 24 hours without a decision, principal is protected and no bonus is earned.</p></section>
+    <section className="contract-money"><span>Commitment</span><strong>{nim(contract.commitment.totalLuna)} Testnet NIM upfront</strong><p>Full return after roster lock. No proportional redistribution in this immutable contract.</p></section>
+    <section><span>Verification</span><strong>Pods team</strong><p>Review outcomes update progress and streaks. They do not change the Phase 4 alpha return.</p></section>
     <PublishClient podId={pod.id} />
   </div></CreatorShell>;
 }

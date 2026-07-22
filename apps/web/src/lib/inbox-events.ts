@@ -81,7 +81,10 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
           tone: "attention"
         }, row);
       }
-    } else if (row.membership.acceptedAt) {
+    } else if (
+      row.membership.acceptedAt &&
+      row.membership.admissionSource === "private_invitation"
+    ) {
       addEvent(events, {
         id: `invitation-accepted-${row.membership.id}`,
         title: "Private invitation accepted",
@@ -139,7 +142,7 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
       addEvent(events, {
         id: `evidence-approved-${row.submission.id}`,
         title: "Occurrence approved",
-        detail: "Your visible work counted and is bonus-eligible.",
+        detail: "Your visible work counted toward this Pod and your participant record.",
         href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
         occurredAt: row.submission.approvedAt,
         tone: "positive"

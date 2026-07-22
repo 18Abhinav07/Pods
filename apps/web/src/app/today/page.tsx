@@ -1,10 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 
+import { AppHeader } from "../../components/app-header";
 import { PrimaryNav } from "../../components/primary-nav";
-import { TemplateSymbol } from "../../components/template-symbol";
 import { presentCreatorPodState, presentPodRelationship } from "../../lib/participant-pod-state";
+import { profileForSession } from "../../lib/profile-presentation";
 import { podsRepository } from "../../lib/server-db";
 import { requireSession } from "../../lib/session";
+import { adaptiveThemeForTemplate, mediaForTemplate } from "../../lib/template-presentation";
 import { chooseTodayEnrollmentAction } from "../../lib/today-priority";
 
 export default async function TodayPage() {
@@ -78,23 +81,19 @@ export default async function TodayPage() {
       : action.kind === "recruit"
         ? recruit
         : null;
-  const shortWallet = `${session.walletAddress.slice(0, 9)}...${session.walletAddress.slice(-5)}`;
   const activityCopy = action.kind === "activity"
     ? action.action === "lock_task"
-      ? { eyebrow: "Task lock open", title: "Name the work before you build.", detail: "Lock one concrete task and its visible deliverable before the frozen cutoff.", cta: "Lock today's task" }
+      ? { eyebrow: "Commitment open", title: "Name the work before you build.", detail: "Lock one concrete task and its visible deliverable before the frozen cutoff.", cta: "Lock today's task", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
       : action.action === "submit_evidence"
-        ? { eyebrow: "Evidence due", title: "Turn shipped work into visible progress.", detail: "Save your result and public artifact, then send the occurrence to Pods team review.", cta: "Complete evidence" }
+        ? { eyebrow: "Proof due", title: "Turn shipped work into visible progress.", detail: "Add your result and public artifact, then send this occurrence to Pods team review.", cta: "Add today's proof", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
         : action.action === "reviewing"
-          ? { eyebrow: "Under review", title: "Your work is with the Pods team.", detail: "The locked task and public artifact are being reviewed against the frozen contract.", cta: "View review status" }
+          ? { eyebrow: "Review in progress", title: "Your work is with the Pods team.", detail: "Your locked task and submitted proof are being checked against the Pod contract.", cta: "View review", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
           : action.action === "approved"
-            ? { eyebrow: "Occurrence approved", title: "Your visible work counted.", detail: "This occurrence was manually approved and now contributes to your streak.", cta: "View achievement" }
-            : { eyebrow: "Next occurrence", title: "Your next build is already scheduled.", detail: "Open the occurrence to review its frozen timing and project theme.", cta: "Preview occurrence" }
+            ? { eyebrow: "Counted today", title: "Your work is counted.", detail: "This approved occurrence is already part of your streak. Keep the group moving in the Pod room.", cta: "Open Pod room", href: `/pods/${action.podId}/room` }
+            : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
     : null;
   const copy = action.kind === "activity" && activityCopy
-    ? {
-        ...activityCopy,
-        href: `/pods/${action.podId}/activity/${action.occurrenceId}`
-      }
+    ? activityCopy
     : action.kind === "participant" && participantPresentation
     ? {
         eyebrow: participantPresentation.todayEyebrow,
@@ -111,20 +110,60 @@ export default async function TodayPage() {
         ? { eyebrow: "Enrollment open", title: "Your public Pod is ready to grow.", detail: "Share the public preview so the right participants can inspect the contract and apply.", cta: "Open creator controls", href: `/pods/${action.podId}/admin` }
         : { eyebrow: "Today", title: "Choose your next commitment.", detail: "Join a public activity with a cadence that fits, or create a focused group of your own.", cta: "Discover public Pods", href: "/discover" };
 
+  const templateId = actionPod?.templateId ?? "build";
+  const theme = adaptiveThemeForTemplate(templateId);
+  const media = mediaForTemplate(templateId, actionPod?.id);
+  const otherPods = memberships
+    .filter(({ pod }) => pod.id !== actionPod?.id)
+    .slice(0, 2);
+  const dateLabel = new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    month: "long",
+    day: "numeric"
+  }).format(now);
+
   return (
-    <main className="app-shell">
-      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today" aria-label="Pods Today"><span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>PODS</Link><Link className="wallet-chip" href="/profile" aria-label="Open wallet profile">{shortWallet}</Link></header>
-      <section className="today-hero entrance entrance-hero"><p className="eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p className="screen-copy">{copy.detail}</p></section>
-      <section className="today-action-card entrance entrance-status">
-        {actionPod ? <TemplateSymbol templateId={actionPod.templateId} /> : <span className="today-action-index">01</span>}
-        <div><span>{action.kind === "empty" ? "Start here" : actionPod?.contractData?.activity.name}</span><strong>{copy.cta}</strong></div>
-        <Link className="primary-action full-action" href={copy.href}>{copy.cta}</Link>
+    <main className={`app-shell adaptive-today theme-${theme}`}>
+      <AppHeader profile={profileForSession(session)} />
+      <header className="mobile-page-title today-page-title entrance entrance-hero">
+        <p>{dateLabel}</p>
+        <h1>{action.kind === "empty" ? "Start moving." : "Your move."}</h1>
+      </header>
+
+      <section className="today-focus-card entrance entrance-status">
+        <Image alt={actionPod?.contractData?.activity.name ?? "Builders creating momentum together"} fill priority sizes="430px" src={media.hero} />
+        <div className="today-focus-shade" />
+        <div className="today-focus-copy">
+          <span className="today-focus-state"><i />{copy.eyebrow}</span>
+          <div>
+            {actionPod?.contractData?.activity.name ? <small>{actionPod.contractData.activity.name}</small> : null}
+            <h2>{copy.title}</h2>
+            <p>{copy.detail}</p>
+          </div>
+          <Link className="today-focus-action" href={copy.href}>{copy.cta}<span aria-hidden="true">→</span></Link>
+        </div>
       </section>
-      {action.kind !== "empty" ? (
-        <Link className="secondary-action full-action today-secondary" href="/my-pods">View all My Pods</Link>
-      ) : (
-        <Link className="secondary-action full-action today-secondary" href="/pods/create/template">Create a Pod</Link>
-      )}
+
+      {otherPods.length > 0 ? (
+        <section className="also-moving">
+          <div className="adaptive-section-heading"><h2>Also in motion</h2><Link href="/my-pods">View all</Link></div>
+          <div className="moving-strip">
+            {otherPods.map(({ membership, pod }, visualIndex) => {
+              const presentation = presentPodRelationship({
+                podId: pod.id,
+                relationship: { kind: "member", state: membership.state, depositIntentId: membership.depositIntentId }
+              });
+              const otherMedia = mediaForTemplate(pod.templateId, visualIndex);
+              return (
+                <Link className={`moving-card theme-${adaptiveThemeForTemplate(pod.templateId)}`} href={presentation.href} key={pod.id}>
+                  <Image alt="" fill sizes="260px" src={otherMedia.hero} />
+                  <span><small>{presentation.statusLabel}</small><strong>{pod.contractData?.activity.name ?? "Your Pod"}</strong></span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
       <PrimaryNav active="today" />
     </main>
   );

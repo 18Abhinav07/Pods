@@ -17,6 +17,9 @@ import { createEnrollmentMethods } from "./enrollment-repository";
 import { createActivityMethods } from "./activity-repository";
 import { createFundingMethods } from "./funding-repository";
 import { createInboxMethods } from "./inbox-repository";
+import { createProfileMethods } from "./profile-repository";
+import { createSocialMethods } from "./social-repository";
+import { createMessagingMethods } from "./messaging-repository";
 import { createClockMethods } from "./clock-repository";
 import { createCutoffMethods } from "./cutoff-repository";
 import { createTransferMethods } from "./transfer-repository";
@@ -65,6 +68,9 @@ export function createPodsRepository(connectionString: string) {
     ...createEnrollmentMethods(database),
     ...createFundingMethods(database),
     ...createInboxMethods(database),
+    ...createProfileMethods(database),
+    ...createSocialMethods(database),
+    ...createMessagingMethods(database),
     ...createCutoffMethods(database),
     ...createTransferMethods(database),
     ...createWaitingRoomMethods(database),

@@ -35,8 +35,8 @@ export function CommitmentForm({ podId, occurrenceCount, initialNim }: { podId: 
   return <form className="wizard-form" onSubmit={submit}>
     <label className="field-block commitment-input"><span>NIM per occurrence</span><div><input name="nimPerOccurrence" inputMode="decimal" value={nim} onChange={(event) => setNim(event.target.value)} required /><b>NIM</b></div><small>Every participant funds the maximum commitment upfront.</small></label>
     <div className="commitment-math"><div><span>Occurrences</span><strong>{occurrenceCount}</strong></div><i>×</i><div><span>Per occurrence</span><strong>{nim || "0"} NIM</strong></div><i>=</i><div className="is-total"><span>Total upfront</span><strong>{total} NIM</strong></div></div>
-    <div className="outcome-compact"><div><span>Approved</span><b>Principal + bonus eligible</b></div><div><span>Timeout or grace</span><b>Principal protected</b></div><div><span>Rejected or missed</span><b>Slice provisionally forfeited</b></div></div>
-    <div className="authority-note"><strong>Centralized verification</strong><span>Evidence is reviewed by the Pods team. Creators and participants do not vote on financial outcomes.</span></div>
+    <div className="outcome-compact"><div><span>Roster lock</span><b>Full Testnet return queued</b></div><div><span>Approved work</span><b>Builds streak and public record</b></div><div><span>Rejected or missed</span><b>Affects progress, never the return</b></div></div>
+    <div className="authority-note"><strong>Phase 4 full-return contract</strong><span>Testnet NIM has no real-world value. The complete commitment returns after roster lock and cannot become a proportional payout later.</span></div>
     {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
     <button className="primary-action full-action" disabled={saving} type="submit">{saving ? "Saving commitment" : "Review frozen contract"}</button>
   </form>;

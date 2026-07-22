@@ -29,7 +29,9 @@ describe("MyPodsPage creator routing", () => {
     render(await MyPodsPage());
 
     expect(screen.getByRole("link", { name: /Ship together/i }))
-      .toHaveAttribute("href", "/pods/pod-locked/today");
+      .toHaveAttribute("href", "/pods/pod-locked/room");
     expect(screen.getByText("Roster locked")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Create a Pod" }))
+      .toHaveAttribute("href", "/pods/create/template");
   });
 });

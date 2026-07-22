@@ -51,8 +51,9 @@ describe("TodayPage wallet identity", () => {
     render(await TodayPage());
 
     expect(screen.getByRole("link", { name: "Open Pod room" }))
-      .toHaveAttribute("href", "/pods/pod-locked/today");
-    expect(screen.getByRole("link", { name: "View all My Pods" }))
+      .toHaveAttribute("href", "/pods/pod-locked/room");
+    expect(screen.queryByRole("link", { name: "View all My Pods" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "My Pods" }))
       .toHaveAttribute("href", "/my-pods");
     expect(screen.queryByText("Open funding overview")).not.toBeInTheDocument();
   });

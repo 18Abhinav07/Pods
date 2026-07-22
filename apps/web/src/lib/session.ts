@@ -21,8 +21,20 @@ export async function getCurrentSession() {
   return podsRepository.getSession(hashSessionToken(token), new Date());
 }
 
-export async function requireSession(returnTo: string) {
+export async function getOptionalProfileSession(returnTo = "/") {
   const session = await getCurrentSession();
+  if (!session) return null;
+  const profile = await podsRepository.getProfileForUser(session.userId);
+  if (!profile) {
+    redirect(
+      `/onboarding/profile?returnTo=${encodeURIComponent(safeReturnTarget(returnTo))}`
+    );
+  }
+  return { ...session, profile };
+}
+
+export async function requireSession(returnTo: string) {
+  const session = await getOptionalProfileSession(returnTo);
   if (!session) {
     redirect(`/connect?returnTo=${encodeURIComponent(safeReturnTarget(returnTo))}`);
   }

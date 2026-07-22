@@ -17,7 +17,7 @@ export function CreatorShell({
   copy: string;
 }) {
   return (
-    <main className="app-shell creator-shell">
+    <main className="app-shell creator-shell adaptive-creator-shell">
       <header className="app-topbar entrance entrance-topbar">
         <Link className="wordmark" href="/today" aria-label="Pods Today">
           <span className="pod-mark" aria-hidden="true"><i /><i /><i /></span>

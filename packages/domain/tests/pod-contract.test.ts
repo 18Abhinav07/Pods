@@ -156,4 +156,38 @@ describe("occurrence materialization", () => {
     expect(serializePublishedContract(result.contract))
       .toBe(serializePublishedContract(structuredClone(result.contract)));
   });
+
+  it("freezes the alpha refund mode into the contract fingerprint", () => {
+    const draft = {
+      templateId: "build" as const,
+      activity: {
+        ...sharedActivity,
+        config: {
+          projectTheme: "Pods",
+          allowedDeliverables: ["pull_request"],
+          commitmentCutoff: "09:00"
+        }
+      },
+      community: {
+        visibility: "private" as const,
+        minParticipants: 2,
+        maxParticipants: 4,
+        inviteExpiryHours: 72
+      },
+      commitment: { nimPerOccurrence: "0.1" }
+    };
+
+    const alpha = buildPublishedContract(draft, {
+      settlementMode: "full_refund_alpha"
+    });
+    const proportional = buildPublishedContract(draft, { settlementMode: "proportional" });
+    expect(alpha.success).toBe(true);
+    expect(proportional.success).toBe(true);
+    if (!alpha.success || !proportional.success) return;
+
+    expect(alpha.contract.settlementMode).toBe("full_refund_alpha");
+    expect(proportional.contract.settlementMode).toBe("proportional");
+    expect(serializePublishedContract(alpha.contract))
+      .not.toBe(serializePublishedContract(proportional.contract));
+  });
 });

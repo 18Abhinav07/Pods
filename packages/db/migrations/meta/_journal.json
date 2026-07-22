@@ -43,6 +43,34 @@
       "when": 1784611199016,
       "tag": "0005_early_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784650138405,
+      "tag": "0006_curly_thanos",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784651612313,
+      "tag": "0007_round_earthquake",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784652518510,
+      "tag": "0008_strong_barracuda",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784652927527,
+      "tag": "0009_complete_whirlwind",
+      "breakpoints": true
     }
   ]
 }

@@ -1,11 +1,16 @@
+"use client";
+
 import type { TemplateId } from "@pods/domain";
+import { ArrowRight, Info, X } from "@phosphor-icons/react";
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 import {
   presentPodRelationship,
   type PodRelationship
 } from "../lib/participant-pod-state";
-import { TemplateSymbol } from "./template-symbol";
+import { adaptiveThemeForTemplate, mediaForTemplate } from "../lib/template-presentation";
 
 export type PublicPodCardData = {
   id: string;
@@ -26,38 +31,65 @@ function nim(luna: number) {
 
 export function PublicPodCard({
   pod,
-  relationship = { kind: "visitor" }
+  relationship = { kind: "visitor" },
+  visualIndex
 }: {
   pod: PublicPodCardData;
   relationship?: PodRelationship;
+  visualIndex?: number;
 }) {
   const presentation = presentPodRelationship({ podId: pod.id, relationship });
+  const theme = adaptiveThemeForTemplate(pod.templateId);
+  const media = mediaForTemplate(pod.templateId, visualIndex ?? pod.id);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailPanelId = `pod-${pod.id}-details`;
   return (
-    <article className="public-pod-card entrance entrance-status">
-      <div className="public-pod-card-head">
-        <TemplateSymbol templateId={pod.templateId} />
-        <div>
-          <p className="eyebrow">{pod.templateId === "build" ? "Build & Ship" : "Activity Pod"}</p>
-          <h2>{pod.name}</h2>
+    <article className={`public-pod-card adaptive-pod-card theme-${theme} entrance entrance-status${relationship.kind === "visitor" ? " is-visitor" : ""}`}>
+      <div className="adaptive-pod-media">
+        <Image alt="" fill sizes="390px" src={media.hero} />
+        <div className="adaptive-pod-overlay" />
+        <div className="pod-card-details">
+          <button
+            aria-controls={detailPanelId}
+            aria-expanded={detailsOpen}
+            aria-label={detailsOpen ? "Hide Pod details" : "Show Pod details"}
+            onClick={() => setDetailsOpen((open) => !open)}
+            type="button"
+          >
+            {detailsOpen ? <X aria-hidden="true" size={19} weight="bold" /> : <Info aria-hidden="true" size={20} weight="bold" />}
+          </button>
+          <div aria-hidden={!detailsOpen} className={`pod-card-detail-panel${detailsOpen ? " is-open" : ""}`} hidden={!detailsOpen} id={detailPanelId}>
+            <p>{pod.purpose}</p>
+            <dl className="public-pod-facts">
+              <div><dt>Commitment</dt><dd>{nim(pod.totalLuna)} NIM upfront</dd></div>
+              <div><dt>Cadence</dt><dd>{pod.occurrenceCount} {pod.occurrenceCount === 1 ? "occurrence" : "occurrences"}</dd></div>
+              <div><dt>Dates</dt><dd>{pod.startDate} to {pod.endDate}</dd></div>
+              <div><dt>Group</dt><dd>{pod.minParticipants} to {pod.maxParticipants} people</dd></div>
+            </dl>
+          </div>
         </div>
+        <div className={`adaptive-pod-title${relationship.kind === "visitor" ? " has-apply" : ""}`}><h2>{pod.name}</h2></div>
+        {relationship.kind === "visitor" ? (
+          <Link
+            aria-label={`Review and apply to ${pod.name}`}
+            className="discover-apply-orb"
+            href={presentation.href}
+          >
+            <ArrowRight aria-hidden="true" size={21} weight="bold" />
+          </Link>
+        ) : null}
       </div>
-      <p className="public-pod-purpose">{pod.purpose}</p>
-      <dl className="public-pod-facts">
-        <div><dt>Commitment</dt><dd>{nim(pod.totalLuna)} NIM upfront</dd></div>
-        <div><dt>Cadence</dt><dd>{pod.occurrenceCount} occurrences</dd></div>
-        <div><dt>Dates</dt><dd>{pod.startDate} to {pod.endDate}</dd></div>
-        <div><dt>Group</dt><dd>{pod.minParticipants} to {pod.maxParticipants} people</dd></div>
-      </dl>
-      <div className={`public-pod-relationship is-${presentation.tone}`}>
-        <strong>{presentation.statusLabel}</strong>
-        <span>{presentation.statusDetail}</span>
-      </div>
-      <Link
-        className="primary-action full-action"
+      {relationship.kind !== "visitor" ? <Link
+        aria-label={presentation.actionLabel}
+        className={`adaptive-card-action is-${presentation.tone}`}
         href={presentation.href}
       >
-        {presentation.actionLabel}
-      </Link>
+        <span>
+          <small>{presentation.statusLabel}</small>
+          <strong>{presentation.actionLabel}</strong>
+        </span>
+        <i aria-hidden="true">→</i>
+      </Link> : null}
     </article>
   );
 }

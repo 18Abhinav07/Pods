@@ -148,6 +148,31 @@ describe("Phase 3 deposit persistence", () => {
       .toMatchObject({ state: "deposit_pending" });
   });
 
+  it("enforces per-deposit and reserved treasury exposure caps", async () => {
+    const cappedTreasuryAddress = `NQCAP${randomUUID()}`;
+    const first = await createAcceptedFixture();
+    await expect(repository.createDepositIntent({
+      ...intentInput(first, "pods-cap-too-small-001"),
+      treasuryAddress: cappedTreasuryAddress,
+      maximumDepositLuna: 49_999,
+      maximumTreasuryExposureLuna: 100_000
+    })).rejects.toThrow("Commitment exceeds the alpha deposit cap");
+
+    await repository.createDepositIntent({
+      ...intentInput(first, "pods-cap-first-reserved"),
+      treasuryAddress: cappedTreasuryAddress,
+      maximumDepositLuna: 50_000,
+      maximumTreasuryExposureLuna: 50_000
+    });
+    const second = await createAcceptedFixture();
+    await expect(repository.createDepositIntent({
+      ...intentInput(second, "pods-cap-second-blocked"),
+      treasuryAddress: cappedTreasuryAddress,
+      maximumDepositLuna: 50_000,
+      maximumTreasuryExposureLuna: 50_000
+    })).rejects.toThrow("Alpha treasury exposure cap has been reached");
+  });
+
   it("detaches a rejected wallet intent so the member can retry funding", async () => {
     const fixture = await createAcceptedFixture();
     const firstIntent = await repository.createDepositIntent(

@@ -13,6 +13,7 @@ export async function POST(
   const body = (await request.json()) as {
     resultSummary?: unknown;
     artifactUrl?: unknown;
+    proofShareMode?: unknown;
   };
   try {
     const now = await podsRepository.getEffectiveTime(new Date());
@@ -22,6 +23,7 @@ export async function POST(
       occurrenceId,
       resultSummary: body.resultSummary,
       artifactUrl: body.artifactUrl,
+      proofShareMode: body.proofShareMode,
       now
     });
     return NextResponse.json({ submission }, { status: 201 });

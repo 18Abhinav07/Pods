@@ -42,7 +42,12 @@ async function createUser() {
   return { ...session, walletAddress };
 }
 
-async function publishPod(creatorUserId: string, minParticipants: number, maxParticipants: number) {
+async function publishPod(
+  creatorUserId: string,
+  minParticipants: number,
+  maxParticipants: number,
+  settlementMode: "proportional" | "full_refund_alpha" = "proportional"
+) {
   const draft = await repository.createDraft(creatorUserId, "build");
   const activity = {
     name: `Phase 3B Cutoff ${randomUUID()}`,
@@ -67,12 +72,15 @@ async function publishPod(creatorUserId: string, minParticipants: number, maxPar
   await repository.saveActivityStep(creatorUserId, draft.id, activity);
   await repository.saveCommunityStep(creatorUserId, draft.id, community);
   await repository.saveCommitmentStep(creatorUserId, draft.id, commitment);
-  const frozen = buildPublishedContract({
-    templateId: "build",
-    activity,
-    community,
-    commitment
-  });
+  const frozen = buildPublishedContract(
+    {
+      templateId: "build",
+      activity,
+      community,
+      commitment
+    },
+    { settlementMode }
+  );
   if (!frozen.success) throw new Error(frozen.errors.join(", "));
   return repository.publishDraft({
     creatorUserId,
@@ -85,6 +93,17 @@ async function publishPod(creatorUserId: string, minParticipants: number, maxPar
 async function createPodFixture(minParticipants: number, maxParticipants: number) {
   const creator = await createUser();
   const pod = await publishPod(creator.userId, minParticipants, maxParticipants);
+  return { creator, pod };
+}
+
+async function createAlphaRefundPodFixture(minParticipants: number, maxParticipants: number) {
+  const creator = await createUser();
+  const pod = await publishPod(
+    creator.userId,
+    minParticipants,
+    maxParticipants,
+    "full_refund_alpha"
+  );
   return { creator, pod };
 }
 
@@ -234,6 +253,38 @@ describe("Phase 3 serialized cutoff", () => {
       .toMatchObject({ state: "roster_locked" });
     expect(await repository.getDepositIntentForUser(earlier.member.userId, earlier.intent.id))
       .toMatchObject({ state: "applied_to_roster" });
+  });
+
+  it("locks the alpha roster while queuing every full return exactly once", async () => {
+    const fixture = await createAlphaRefundPodFixture(2, 4);
+    const first = await fundMember({
+      podId: fixture.pod.id,
+      creatorUserId: fixture.creator.userId,
+      blockNumber: 100,
+      transactionIndex: 0
+    });
+    const second = await fundMember({
+      podId: fixture.pod.id,
+      creatorUserId: fixture.creator.userId,
+      blockNumber: 101,
+      transactionIndex: 0
+    });
+
+    const applied = await repository.applyPodCutoff({ podId: fixture.pod.id, now: cutoff });
+    const replay = await repository.applyPodCutoff({ podId: fixture.pod.id, now: cutoff });
+    const transfers = await repository.listTransferLegsForPod(fixture.pod.id);
+
+    expect(applied).toMatchObject({
+      podState: "locked_scheduled",
+      includedMembershipIds: [first.membership.id, second.membership.id]
+    });
+    expect(replay.refundLegIds).toHaveLength(2);
+    expect(transfers).toHaveLength(2);
+    expect(transfers.map((transfer) => transfer.amountLuna)).toEqual([50_000, 50_000]);
+    expect(await repository.getMembershipForUser(first.member.userId, fixture.pod.id))
+      .toMatchObject({ state: "roster_locked" });
+    expect(await repository.getDepositIntentForUser(first.member.userId, first.intent.id))
+      .toMatchObject({ state: "refund_pending" });
   });
 
   it("cancels below minimum and queues one full refund exactly once", async () => {

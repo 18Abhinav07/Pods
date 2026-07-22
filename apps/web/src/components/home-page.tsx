@@ -63,6 +63,7 @@ export function HomePage() {
           <span aria-hidden="true" className="pod-mark" />
           pods
         </div>
+        <LandingActions />
       </header>
 
       <section className="atlas-hero" aria-labelledby="atlas-hero-title">
@@ -72,7 +73,6 @@ export function HomePage() {
           <p className="atlas-hero-body">
             Create a Pod. Put NIM behind the activity. Prove the work together.
           </p>
-          <LandingActions />
           <p className="atlas-hero-note">
             <span>Five activity modes</span>
             <span>Human-reviewed proof</span>

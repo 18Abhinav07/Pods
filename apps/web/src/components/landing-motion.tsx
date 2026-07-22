@@ -1,11 +1,14 @@
 "use client";
 
-import { ArrowUpRight, Wallet } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { memo, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+
+import { establishWalletSession } from "../lib/nimiq-wallet-client";
+import { useHydrated } from "../lib/use-hydrated";
 
 const revealEase = [0.16, 1, 0.3, 1] as const;
 const orbitEase = [0.45, 0, 0.55, 1] as const;
@@ -61,36 +64,54 @@ export function LandingReveal({
 }
 
 export function LandingActions() {
+  const router = useRouter();
+  const hydrated = useHydrated();
+  const [state, setState] = useState<"idle" | "connecting" | "error">("idle");
+  const [error, setError] = useState("");
+  const pending = state === "connecting";
+
+  async function connect() {
+    setError("");
+    setState("connecting");
+    try {
+      const session = await establishWalletSession();
+      router.replace(
+        session.needsProfile
+          ? `/onboarding/profile?returnTo=${encodeURIComponent("/today")}`
+          : "/today"
+      );
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Wallet connection failed");
+      setState("error");
+    }
+  }
+
   return (
     <div className="atlas-actions">
-      <motion.div
-        transition={{ type: "spring", stiffness: 220, damping: 22 }}
+      <Link className="atlas-action atlas-action-secondary" href="/discover">
+        Pods
+      </Link>
+      <motion.button
+        aria-describedby={error ? "atlas-connect-error" : undefined}
+        aria-label="Wallet"
+        aria-busy={pending}
+        className="atlas-action atlas-action-primary"
+        disabled={!hydrated || pending}
+        onClick={connect}
+        transition={{ duration: 0.22, ease: revealEase }}
+        type="button"
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.98 }}
       >
-        <Link
-          className="atlas-action atlas-action-primary"
-          href="/connect?returnTo=%2Ftoday"
-        >
-          <Wallet aria-hidden="true" size={18} weight="light" />
-          <span>Connect wallet</span>
-          <i aria-hidden="true">
-            <ArrowUpRight size={15} weight="light" />
-          </i>
-        </Link>
-      </motion.div>
-      <motion.div
-        transition={{ type: "spring", stiffness: 220, damping: 22 }}
-        whileHover={{ y: -2 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <Link className="atlas-action atlas-action-secondary" href="/discover">
-          <span>Discover Pods</span>
-          <i aria-hidden="true">
-            <ArrowUpRight size={15} weight="light" />
-          </i>
-        </Link>
-      </motion.div>
+        <span>Wallet</span>
+        {pending ? <i aria-hidden="true" className="atlas-wallet-spinner" /> : null}
+      </motion.button>
+      {error ? (
+        <p className="atlas-connect-feedback" id="atlas-connect-error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,22 +1,96 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const navigation = vi.hoisted(() => ({ replace: vi.fn(), refresh: vi.fn() }));
+const wallet = vi.hoisted(() => ({ establishWalletSession: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => navigation
+}));
+
+vi.mock("../src/lib/nimiq-wallet-client", () => ({
+  establishWalletSession: wallet.establishWalletSession
+}));
 
 import { HomePage } from "../src/components/home-page";
 
 describe("HomePage", () => {
-  it("offers exactly the two approved entry actions", () => {
-    render(<HomePage />);
+  beforeEach(() => {
+    navigation.replace.mockReset();
+    navigation.refresh.mockReset();
+    wallet.establishWalletSession.mockReset();
+  });
 
+  it("offers exactly the two approved entry actions", () => {
+    const { container } = render(<HomePage />);
+
+    const header = container.querySelector<HTMLElement>(".atlas-header");
+    const hero = screen.getByRole("region", { name: "Make showing up feel real." });
+    expect(header).not.toBeNull();
     const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "Connect wallet" })).toHaveAttribute(
-      "href",
-      "/connect?returnTo=%2Ftoday"
-    );
-    expect(screen.getByRole("link", { name: "Discover Pods" })).toHaveAttribute(
+    expect(links).toHaveLength(1);
+    expect(within(header!).getByRole("link", { name: "Pods" })).toHaveAttribute(
       "href",
       "/discover"
     );
+    expect(within(header!).getByRole("button", { name: "Wallet" })).toBeVisible();
+    const actions = header!.querySelectorAll(".atlas-action");
+    expect(actions).toHaveLength(2);
+    expect(actions[0]).toHaveTextContent("Pods");
+    expect(actions[1]).toHaveTextContent("Wallet");
+    expect(within(hero).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(hero).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("connects the wallet from the landing header without a redundant route", async () => {
+    wallet.establishWalletSession.mockResolvedValue({
+      walletAddress: "NQ38 PLXF NXKJ LFGA TRDP VRA8 F810 2BKN N4X6",
+      needsProfile: false
+    });
+    render(<HomePage />);
+
+    const connect = screen.getByRole("button", { name: "Wallet" });
+    await waitFor(() => expect(connect).toBeEnabled());
+    fireEvent.click(connect);
+
+    await waitFor(() => expect(wallet.establishWalletSession).toHaveBeenCalledOnce());
+    expect(navigation.replace).toHaveBeenCalledWith("/today");
+    expect(navigation.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("continues profile-less wallets into onboarding from the landing header", async () => {
+    wallet.establishWalletSession.mockResolvedValue({
+      walletAddress: "NQ38 PLXF NXKJ LFGA TRDP VRA8 F810 2BKN N4X6",
+      needsProfile: true
+    });
+    render(<HomePage />);
+
+    const connect = screen.getByRole("button", { name: "Wallet" });
+    await waitFor(() => expect(connect).toBeEnabled());
+    fireEvent.click(connect);
+
+    await waitFor(() =>
+      expect(navigation.replace).toHaveBeenCalledWith(
+        "/onboarding/profile?returnTo=%2Ftoday"
+      )
+    );
+  });
+
+  it("keeps wallet failures recoverable in place", async () => {
+    wallet.establishWalletSession.mockRejectedValue(
+      new Error("Open this page inside Nimiq Pay")
+    );
+    render(<HomePage />);
+
+    const connect = screen.getByRole("button", { name: "Wallet" });
+    await waitFor(() => expect(connect).toBeEnabled());
+    fireEvent.click(connect);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Open this page inside Nimiq Pay"
+    );
+    expect(screen.getByRole("button", { name: "Wallet" })).toBeEnabled();
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 
   it("explains the complete Pods experience without unsupported claims", () => {

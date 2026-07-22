@@ -159,18 +159,11 @@ test.afterAll(async () => {
 
 test("captures the complete first-run wallet and profile journey", async ({ context, page }, testInfo) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Show up for what matters." })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Connect wallet" })).toHaveAttribute(
-    "href",
-    "/connect?returnTo=%2Ftoday"
-  );
+  await expect(page.getByRole("heading", { name: "Make showing up feel real." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Pods" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Wallet" })).toBeVisible();
   await page.waitForTimeout(750);
   await page.screenshot({ path: testInfo.outputPath("landing.png"), fullPage: true });
-
-  await page.goto("/connect?returnTo=/today");
-  await expect(page.getByRole("button", { name: "Connect Nimiq wallet" })).toBeVisible();
-  await page.waitForTimeout(650);
-  await page.screenshot({ path: testInfo.outputPath("connect-wallet.png"), fullPage: true });
 
   await authenticate(context);
   await page.goto("/today");

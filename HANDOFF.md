@@ -1,56 +1,68 @@
 ---
 project: pods
-last-updated: 2026-07-23 15:32
+last-updated: 2026-07-23 16:05
 last-agent: codex
 mode: HACKATHON
 ---
 
 ## State
 
-The latest public visitor release and native-friendly Pods web metadata are
-deployed. Production Postgres now contains the transaction-verified local
-`Pods in Pods` graph, and the empty `Agentic commerce` test Pod is removed.
+Pods is on a verified local and production clean slate. The latest V2 public
+visitor release is deployed from the same commit as `origin/main`.
+
+- Local Postgres: all 32 application tables are empty.
+- Production Postgres: all 32 application tables are empty.
+- Migration history: 12 Drizzle migrations preserved in both databases.
+- Local evidence storage: no bucket or stored evidence exists.
+- Production `pods-evidence` bucket: 0 objects, 0 bytes.
+- Production Discover: empty state verified, with no stale `Agentic commerce`
+  or `Pods in Pods` records.
+- Existing sessions were intentionally removed. Every wallet must reconnect
+  and complete profile onboarding again.
 
 ## In Progress (resume here)
 
-- Task: make `Pods in Pods` lifecycle-ready without weakening its frozen contract.
-- Production Pod: `430296c7-9554-43e6-9b43-bfd063391028`.
-- Current graph: 1 application, 1 funded membership, 1 finalized 700 NIM
-  deposit, 7 scheduled occurrences.
-- File: `validation/spike-results.md` still contains the pending V2 visitor
-  room device matrix.
+- Task: create a new `Pods in Pods` contract using the current V2 flow.
+- For a build-in-public Pod, choose Public activity and enable the
+  visitor-readable room before freezing the contract.
+- The creator can publish, share, review applications, and build the public
+  visitor surface on the current deployment.
+- File: `validation/spike-results.md` still contains the pending physical V2
+  visitor room device matrix.
 
 ## Open Errors / Blockers
 
-- Production deposits are deliberately disabled:
-  `PODS_DEPOSIT_MODE=off`, no web treasury address, and the only service runs
-  as `PODS_SERVICE_KIND=web`.
-- No dedicated Railway worker is deployed, so cutoff, occurrence activation,
-  and reconciliation will not advance automatically.
-- `Pods in Pods` is a V1 contract with no `roomAudience`. It remains public
-  during enrollment but cannot become a visitor-readable V2 room after lock
-  without violating the frozen participant contract.
-- The database contradicts the reported two funded participants. Only one
-  finalized 700 NIM deposit exists in both local and production ledgers.
-- Nimiq Pay labels unknown custom Mini Apps by URL. The deployed site now
-  publishes the correct `pods` manifest and icon set, but the native wallet
-  tile still requires official Nimiq Pay list registration.
-- Physical V2 room proof remains pending.
-- Financial settlement and treasury payout features remain outside this release.
+- Production NIM deposits are disabled:
+  `PODS_DEPOSIT_MODE=off`, no treasury address, and no treasury private key.
+- Railway contains only the Pods web service and Postgres. No dedicated
+  worker is deployed, so deposit reconciliation, cutoff, occurrence
+  activation, and later automation will not advance in production.
+- Do not ask participants to send NIM until the worker and treasury
+  configuration are deployed and verified with low-value Testnet funds.
+- Nimiq Pay labels unknown custom Mini Apps by URL. The deployed site publishes
+  the correct `pods` manifest and icon set, but the native wallet tile still
+  requires official Nimiq Pay list registration.
+- Financial settlement and treasury payout features remain outside this
+  release.
+- Physical V2 visitor-room proof remains pending.
 
-## Git State
+## Git and Deployment State
 
-- Product release commit: `7f43f49 feat: package pods native app identity`.
-- `origin/main` and `origin/phase/04a-social-alpha-foundation` were synchronized before this handoff update.
-- Railway deployment `3f8039ec-4b29-451a-9c29-b53d52269884`: `SUCCESS`.
-- Production health, Discover, manifest, PNG icon, and public Pod route all
-  passed read-back verification.
+- `HEAD`, `origin/main`, and
+  `origin/phase/04a-social-alpha-foundation` are synchronized at session close.
+- The integration gate serializes files because all integration suites share
+  one local Postgres schema.
+- Railway deployment `be2364f4-14f5-40d6-bdd4-83c779237ad6`: `SUCCESS`.
+- Production health reports configuration, database, and evidence storage
+  ready.
+- Manifest name and short name are `pods`; the production PNG icon returns
+  successfully.
 
 ## Next 3 Tasks
 
-1. Decide whether `Pods in Pods` remains V1 member-only after lock or is
-   replaced with a new V2 visitor-enabled contract.
-2. Provision a real Railway worker and safe production funding configuration
-   before accepting another deposit.
-3. Complete normal two-wallet funding, finality, cutoff, and the physical
-   Nimiq Pay V2 room matrix.
+1. Reconnect the creator wallet, complete profile onboarding, and create the
+   new V2 visitor-enabled `Pods in Pods` contract without funding it.
+2. Provision and verify a dedicated Railway worker plus isolated Testnet
+   treasury configuration before enabling deposits.
+3. Complete the two-wallet funding, cutoff, occurrence, and physical Nimiq Pay
+   visitor-room matrix.

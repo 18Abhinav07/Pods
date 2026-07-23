@@ -379,6 +379,7 @@ describe("Phase 4 Build and Ship persistence", () => {
       expect.objectContaining({ submission: expect.objectContaining({ id: draft.id }) })
     ]));
     expect(queue?.[0]).toMatchObject({
+      timeZone: "UTC",
       commitment: { id: commitment.id },
       occurrence: { id: fixture.occurrenceId },
       participant: {
@@ -515,6 +516,88 @@ describe("Phase 4 Build and Ship persistence", () => {
         }
       }]
     });
+  });
+
+  it("finds the first pending creator review with one active-Pod aggregate query", async () => {
+    const laterActive = await createReviewingFixture();
+    const earlierFinalReview = await createReviewingFixture();
+    const legacyEarlier = await createReviewingFixture(
+      "reviewer_only",
+      legacyReviewerContract
+    );
+    const historicalEarlier = await createReviewingFixture();
+    const pool = new Pool({ connectionString: databaseUrl });
+    try {
+      await pool.query(
+        `UPDATE pods
+         SET creator_user_id = $1,
+             state = CASE
+               WHEN id = $2 THEN 'final_review'
+               WHEN id = $3 THEN 'completed'
+               ELSE state
+             END
+         WHERE id = ANY($4::uuid[])`,
+        [
+          laterActive.owner.userId,
+          earlierFinalReview.podId,
+          historicalEarlier.podId,
+          [
+            earlierFinalReview.podId,
+            legacyEarlier.podId,
+            historicalEarlier.podId
+          ]
+        ]
+      );
+      await pool.query(
+        `UPDATE submissions
+         SET review_target_at = CASE
+           WHEN id = $1 THEN $5::timestamptz
+           WHEN id = $2 THEN $6::timestamptz
+           WHEN id = $3 THEN $7::timestamptz
+           WHEN id = $4 THEN $8::timestamptz
+         END
+         WHERE id = ANY($9::uuid[])`,
+        [
+          laterActive.submission.id,
+          earlierFinalReview.submission.id,
+          legacyEarlier.submission.id,
+          historicalEarlier.submission.id,
+          new Date("2027-04-05T22:00:00.000Z"),
+          new Date("2027-04-05T20:00:00.000Z"),
+          new Date("2027-04-05T18:00:00.000Z"),
+          new Date("2027-04-05T17:00:00.000Z"),
+          [
+            laterActive.submission.id,
+            earlierFinalReview.submission.id,
+            legacyEarlier.submission.id,
+            historicalEarlier.submission.id
+          ]
+        ]
+      );
+
+      expect(await repository.findFirstPendingReviewForCreator({
+        creatorUserId: laterActive.owner.userId
+      })).toMatchObject({
+        id: earlierFinalReview.podId,
+        creatorUserId: laterActive.owner.userId,
+        state: "final_review",
+        contractData: { verification: { verifier: "creator" } }
+      });
+      expect(await repository.findFirstPendingReviewForCreator({
+        creatorUserId: laterActive.member.userId
+      })).toBeNull();
+    } finally {
+      await pool.query(
+        "DELETE FROM pods WHERE id = ANY($1::uuid[])",
+        [[
+          laterActive.podId,
+          earlierFinalReview.podId,
+          legacyEarlier.podId,
+          historicalEarlier.podId
+        ]]
+      );
+      await pool.end();
+    }
   });
 
   it("denies creator review authority for a legacy Pods-team verifier contract", async () => {

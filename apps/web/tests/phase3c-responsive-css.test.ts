@@ -49,4 +49,12 @@ describe("Phase 3C narrow mobile contract", () => {
       /\.creator-review-queue-row time\s*\{[^}]*grid-column:\s*2[^}]*white-space:\s*normal/
     );
   });
+
+  it.each([".locked-task-panel strong", ".review-contract-card strong"])(
+    "contains long locked task values in %s",
+    (selector) => {
+      expect(rule(selector)).toMatch(/min-width:\s*0/);
+      expect(rule(selector)).toMatch(/overflow-wrap:\s*anywhere/);
+    }
+  );
 });

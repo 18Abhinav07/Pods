@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 type DecisionResponse = {
   error?: string;
@@ -9,6 +9,9 @@ type DecisionResponse = {
     state?: string;
   };
 };
+
+type DecisionStatus = "idle" | "pending" | "saved";
+const SAVED_NAVIGATION_DELAY_MS = 400;
 
 export function CreatorReviewForm({
   podId,
@@ -21,16 +24,27 @@ export function CreatorReviewForm({
   const [approvalNote, setApprovalNote] = useState("");
   const [rejectionOpen, setRejectionOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [pending, setPending] = useState(false);
+  const [status, setStatus] = useState<DecisionStatus>("idle");
+  const statusRef = useRef<DecisionStatus>("idle");
+  const rejectionReasonRef = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (rejectionOpen) rejectionReasonRef.current?.focus();
+  }, [rejectionOpen]);
+
+  function moveToStatus(nextStatus: DecisionStatus) {
+    statusRef.current = nextStatus;
+    setStatus(nextStatus);
+  }
 
   async function recordDecision(
     decision:
       | { decision: "approve"; note: string }
       | { decision: "reject"; reason: string }
   ) {
-    setPending(true);
+    if (statusRef.current !== "idle") return;
+    moveToStatus("pending");
     setError("");
     try {
       const response = await fetch(
@@ -48,17 +62,19 @@ export function CreatorReviewForm({
       if (!response.ok || !body.submission) {
         throw new Error(body.error ?? "Review decision could not be recorded");
       }
-      setSaved(true);
+      moveToStatus("saved");
+      await new Promise((resolve) => {
+        globalThis.setTimeout(resolve, SAVED_NAVIGATION_DELAY_MS);
+      });
       router.replace(`/pods/${podId}/admin/reviews`);
       router.refresh();
     } catch (cause) {
+      moveToStatus("idle");
       setError(
         cause instanceof Error
           ? cause.message
           : "Review decision could not be recorded"
       );
-    } finally {
-      setPending(false);
     }
   }
 
@@ -77,7 +93,7 @@ export function CreatorReviewForm({
       <form className="review-decision-card" onSubmit={approve}>
         <label htmlFor="creator-approval-note">Approval note</label>
         <textarea
-          disabled={pending}
+          disabled={status !== "idle"}
           id="creator-approval-note"
           maxLength={500}
           onChange={(event) => setApprovalNote(event.target.value)}
@@ -87,17 +103,17 @@ export function CreatorReviewForm({
         />
         <button
           className="primary-action full-action"
-          disabled={pending}
+          disabled={status !== "idle"}
           type="submit"
         >
-          {pending ? "Saving decision" : "Approve proof"}
+          {status === "pending" ? "Saving decision" : "Approve proof"}
         </button>
       </form>
 
       {!rejectionOpen ? (
         <button
           className="secondary-action full-action creator-reject-trigger"
-          disabled={pending}
+          disabled={status !== "idle"}
           onClick={() => setRejectionOpen(true)}
           type="button"
         >
@@ -105,29 +121,35 @@ export function CreatorReviewForm({
         </button>
       ) : (
         <form className="creator-rejection-panel" onSubmit={reject}>
+          <p className="creator-rejection-announcement" role="status">
+            Rejection reason required
+          </p>
           <label htmlFor="creator-rejection-reason">Rejection reason</label>
           <textarea
-            disabled={pending}
+            disabled={status !== "idle"}
             id="creator-rejection-reason"
             maxLength={500}
             minLength={12}
             onChange={(event) => setRejectionReason(event.target.value)}
+            ref={rejectionReasonRef}
             required
             rows={4}
             value={rejectionReason}
           />
           <button
             className="secondary-action full-action is-destructive"
-            disabled={pending}
+            disabled={status !== "idle"}
             type="submit"
           >
-            {pending ? "Saving decision" : "Confirm rejection"}
+            {status === "pending" ? "Saving decision" : "Confirm rejection"}
           </button>
         </form>
       )}
 
       {error ? <p className="form-error" role="alert">{error}</p> : null}
-      {saved ? <p className="decision-saved" role="status">Decision saved</p> : null}
+      {status === "saved" ? (
+        <p className="decision-saved" role="status">Decision saved</p>
+      ) : null}
     </section>
   );
 }

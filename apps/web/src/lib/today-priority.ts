@@ -9,12 +9,21 @@ export type TodayParticipant = {
   depositIntentId: string | null;
 };
 
+export type TodayActivityAction =
+  | "lock_task"
+  | "submit_evidence"
+  | "reviewing"
+  | "approved"
+  | "rejected"
+  | "timeout_protected"
+  | "upcoming";
+
 export type TodayEnrollmentAction =
   | {
       kind: "activity";
       podId: string;
       occurrenceId: string;
-      action: "lock_task" | "submit_evidence" | "reviewing" | "approved" | "upcoming";
+      action: TodayActivityAction;
     }
   | ({ kind: "participant" } & TodayParticipant)
   | { kind: "creator_review"; podId: string }
@@ -27,7 +36,7 @@ export function chooseTodayEnrollmentAction(input: {
   activities?: Array<{
     podId: string;
     occurrenceId: string;
-    action: "lock_task" | "submit_evidence" | "reviewing" | "approved" | "upcoming";
+    action: TodayActivityAction;
   }>;
   participants: TodayParticipant[];
   creatorReviewPodId?: string | null;
@@ -67,11 +76,15 @@ export function chooseTodayEnrollmentAction(input: {
   if (participant && financialParticipant !== null && financialParticipant <= 20) {
     return { kind: "participant", ...participant };
   }
-  const activity = input.activities?.[0];
-  if (activity) return { kind: "activity", ...activity };
+  const dueActivity = input.activities?.find(
+    ({ action }) => action === "lock_task" || action === "submit_evidence"
+  );
+  if (dueActivity) return { kind: "activity", ...dueActivity };
   if (input.creatorReviewPodId) {
     return { kind: "creator_review", podId: input.creatorReviewPodId };
   }
+  const passiveActivity = input.activities?.[0];
+  if (passiveActivity) return { kind: "activity", ...passiveActivity };
   if (participant) return { kind: "participant", ...participant };
   if (input.reviewPodId) return { kind: "review", podId: input.reviewPodId };
   if (input.creatorFundingPodId) {

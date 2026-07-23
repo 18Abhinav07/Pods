@@ -25,6 +25,7 @@ const submissionId = "b5322c1c-4441-4f12-87ba-8fe6d68b20f5";
 const occurrenceId = "5c195050-5b5b-4145-ad90-df57fd5ed12d";
 
 const queueRecord = {
+  timeZone: "Asia/Kolkata",
   submission: {
     id: submissionId,
     state: "reviewing",
@@ -109,8 +110,12 @@ describe("creator proof review pages", () => {
     expect(screen.getByText("Pods Builder")).toBeVisible();
     expect(screen.getByText("@pods-builder")).toBeVisible();
     expect(screen.getByText("Occurrence 4")).toBeVisible();
-    expect(screen.getByText("Submitted Apr 5 · 11:00 AM")).toBeVisible();
-    expect(screen.getByText("Target Apr 5 · 11:00 PM")).toBeVisible();
+    expect(screen.getByText(
+      "Submitted Apr 5 · 4:30 PM Asia/Kolkata"
+    )).toBeVisible();
+    expect(screen.getByText(
+      "Target Apr 6 · 4:30 AM Asia/Kolkata"
+    )).toBeVisible();
     expect(screen.getByRole("link", { name: /Review Pods Builder proof/i }))
       .toHaveAttribute("href", `/pods/${podId}/admin/reviews/${submissionId}`);
     expect(screen.queryByText("Already Decided")).not.toBeInTheDocument();
@@ -176,6 +181,15 @@ describe("creator proof review pages", () => {
     expect(screen.getByText("Submitted")).toBeVisible();
     expect(screen.getByText("Review target")).toBeVisible();
     expect(screen.getByText("Hard deadline")).toBeVisible();
+    expect(screen.getByText(
+      "Apr 5, 2027 · 4:30 PM Asia/Kolkata"
+    )).toBeVisible();
+    expect(screen.getByText(
+      "Apr 6, 2027 · 4:30 AM Asia/Kolkata"
+    )).toBeVisible();
+    expect(screen.getByText(
+      "Apr 6, 2027 · 4:30 PM Asia/Kolkata"
+    )).toBeVisible();
     expect(screen.getByRole("button", { name: "Approve proof" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Reject proof" })).toBeVisible();
 

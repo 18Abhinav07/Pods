@@ -6,7 +6,7 @@ const repositoryMocks = vi.hoisted(() => ({
   listApplicationsForCreator: vi.fn(),
   listPodsForOwner: vi.fn(),
   listCurrentActivitiesForUser: vi.fn(),
-  listPendingReviewsForCreator: vi.fn(),
+  findFirstPendingReviewForCreator: vi.fn(),
   getEffectiveTime: vi.fn()
 }));
 
@@ -25,11 +25,12 @@ import TodayPage from "../src/app/today/page";
 
 describe("TodayPage wallet identity", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     repositoryMocks.listMembershipsForUser.mockResolvedValue([]);
     repositoryMocks.listApplicationsForCreator.mockResolvedValue([]);
     repositoryMocks.listPodsForOwner.mockResolvedValue([]);
     repositoryMocks.listCurrentActivitiesForUser.mockResolvedValue([]);
-    repositoryMocks.listPendingReviewsForCreator.mockResolvedValue([]);
+    repositoryMocks.findFirstPendingReviewForCreator.mockResolvedValue(null);
     repositoryMocks.getEffectiveTime.mockResolvedValue(new Date("2027-04-05T08:00:00.000Z"));
   });
 
@@ -60,7 +61,7 @@ describe("TodayPage wallet identity", () => {
     expect(screen.queryByText("Open funding overview")).not.toBeInTheDocument();
   });
 
-  it("prioritizes the first owned creator-verifier Pod with pending proofs", async () => {
+  it("uses one aggregate lookup for the first creator-verifier Pod with pending proofs", async () => {
     repositoryMocks.listPodsForOwner.mockResolvedValue([
       {
         id: "legacy-verifier",
@@ -90,9 +91,15 @@ describe("TodayPage wallet identity", () => {
         }
       }
     ]);
-    repositoryMocks.listPendingReviewsForCreator.mockResolvedValueOnce([
-      { submission: { id: "proof-1", state: "reviewing" } }
-    ]);
+    repositoryMocks.findFirstPendingReviewForCreator.mockResolvedValue({
+      id: "creator-proof-pod",
+      state: "active",
+      templateId: "build",
+      contractData: {
+        activity: { name: "Pods in Pods" },
+        verification: { verifier: "creator" }
+      }
+    });
 
     render(await TodayPage());
 
@@ -103,10 +110,9 @@ describe("TodayPage wallet identity", () => {
     )).toBeVisible();
     expect(screen.getByRole("link", { name: "Review proofs" }))
       .toHaveAttribute("href", "/pods/creator-proof-pod/admin/reviews");
-    expect(repositoryMocks.listPendingReviewsForCreator).toHaveBeenCalledTimes(1);
-    expect(repositoryMocks.listPendingReviewsForCreator).toHaveBeenCalledWith({
-      creatorUserId: "user-1",
-      podId: "creator-proof-pod"
+    expect(repositoryMocks.findFirstPendingReviewForCreator).toHaveBeenCalledTimes(1);
+    expect(repositoryMocks.findFirstPendingReviewForCreator).toHaveBeenCalledWith({
+      creatorUserId: "user-1"
     });
   });
 });

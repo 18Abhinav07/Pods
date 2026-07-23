@@ -7,9 +7,9 @@ import { isUuidRouteParam } from "../../../../../lib/route-params";
 import { podsRepository } from "../../../../../lib/server-db";
 import { requireSession } from "../../../../../lib/session";
 
-function reviewMoment(value: Date | null) {
+function reviewMoment(value: Date | null, timeZone: string) {
   return value
-    ? formatZonedMoment(value, { timeZone: "UTC" })
+    ? formatZonedMoment(value, { timeZone, includeZone: true })
     : "Not available";
 }
 
@@ -49,7 +49,7 @@ export default async function CreatorReviewQueuePage({
 
       {pending.length > 0 ? (
         <section className="review-queue creator-review-queue" aria-label="Pending proofs">
-          {pending.map(({ submission, occurrence, participant }) => (
+          {pending.map(({ submission, occurrence, participant, timeZone }) => (
             <Link
               aria-label={`Review ${participant.displayName} proof`}
               className="review-queue-row creator-review-queue-row"
@@ -65,10 +65,12 @@ export default async function CreatorReviewQueuePage({
                 <small>Occurrence {occurrence.ordinal}</small>
                 <strong>{participant.displayName}</strong>
                 <em>@{participant.handle}</em>
-                <span>Submitted {reviewMoment(submission.submittedAt)}</span>
+                <span>
+                  Submitted {reviewMoment(submission.submittedAt, timeZone)}
+                </span>
               </span>
               <time dateTime={submission.reviewTargetAt?.toISOString()}>
-                Target {reviewMoment(submission.reviewTargetAt)}
+                Target {reviewMoment(submission.reviewTargetAt, timeZone)}
               </time>
             </Link>
           ))}

@@ -3271,6 +3271,8 @@ button.secondary-action {
 .locked-task-panel strong {
   font-size: 0.91rem;
   line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .locked-task-panel small {
@@ -3550,6 +3552,8 @@ button.secondary-action {
 .review-contract-card strong {
   font-size: 0.8rem;
   line-height: 1.45;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .review-decision-card {

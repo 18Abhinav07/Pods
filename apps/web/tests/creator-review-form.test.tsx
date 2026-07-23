@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const refresh = vi.hoisted(() => vi.fn());
 const replace = vi.hoisted(() => vi.fn());
@@ -22,7 +22,12 @@ describe("CreatorReviewForm", () => {
     replace.mockReset();
   });
 
-  it("approves with only the decision and optional note", async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("paints a terminal saved phase before delayed navigation and blocks duplicates", async () => {
+    vi.useFakeTimers();
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ submission: { state: "approved" } }), {
         status: 200,
@@ -36,20 +41,40 @@ describe("CreatorReviewForm", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Approve proof" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(decisionUrl, {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(fetchMock).toHaveBeenCalledWith(decisionUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         decision: "approve",
         note: "The public artifact matches the locked task."
       })
-    }));
-    expect(await screen.findByText("Decision saved")).toBeVisible();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Decision saved");
+    expect(screen.getByLabelText("Approval note")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Approve proof" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reject proof" })).toBeDisabled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+
+    fireEvent.submit(screen.getByRole("button", { name: "Approve proof" }).closest("form")!);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(399);
+    });
+    expect(replace).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
     expect(replace).toHaveBeenCalledWith(`/pods/${podId}/admin/reviews`);
     expect(refresh).toHaveBeenCalled();
   });
 
-  it("reveals a required rejection reason and submits no approval note", async () => {
+  it("reveals, announces, and focuses a required rejection reason", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ submission: { state: "rejected" } }), {
         status: 200,
@@ -61,6 +86,10 @@ describe("CreatorReviewForm", () => {
     expect(screen.queryByLabelText("Rejection reason")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reject proof" }));
     const reason = screen.getByLabelText("Rejection reason");
+    expect(reason).toHaveFocus();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Rejection reason required"
+    );
     expect(reason).toBeRequired();
     expect(reason).toHaveAttribute("minLength", "12");
     expect(reason).toHaveAttribute("maxLength", "500");

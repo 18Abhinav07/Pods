@@ -594,13 +594,11 @@ export function createActivityMethods(database: PodsDatabase) {
             eq(pods.creatorUserId, input.creatorUserId)
           )
         );
-      if (
-        !owned ||
-        owned.pod.contractData?.verification.verifier !== "creator"
-      ) {
+      const contract = owned?.pod.contractData;
+      if (!owned || contract?.verification.verifier !== "creator") {
         return null;
       }
-      return database
+      const queue = await database
         .select({
           submission: submissions,
           commitment: occurrenceCommitments,
@@ -623,6 +621,34 @@ export function createActivityMethods(database: PodsDatabase) {
           )
         )
         .orderBy(asc(submissions.reviewTargetAt), asc(submissions.id));
+      return queue.map((record) => ({
+        ...record,
+        timeZone: contract.activity.timeZone
+      }));
+    },
+
+    async findFirstPendingReviewForCreator(input: {
+      creatorUserId: string;
+    }) {
+      const [result] = await database
+        .select({ pod: pods })
+        .from(submissions)
+        .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+        .innerJoin(pods, eq(occurrences.podId, pods.id))
+        .where(
+          and(
+            eq(pods.creatorUserId, input.creatorUserId),
+            inArray(pods.state, ["active", "final_review"]),
+            eq(submissions.state, "reviewing"),
+            sql`${pods.contractData} -> 'verification' ->> 'verifier' = 'creator'`
+          )
+        )
+        .orderBy(asc(submissions.reviewTargetAt), asc(submissions.id))
+        .limit(1);
+      if (result?.pod.contractData?.verification.verifier !== "creator") {
+        return null;
+      }
+      return result.pod;
     },
 
     async getReviewSubmissionForCreator(input: {

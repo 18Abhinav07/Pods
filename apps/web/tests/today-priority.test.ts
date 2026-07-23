@@ -100,6 +100,46 @@ describe("Phase 2 Today priority", () => {
     })).toEqual({ kind: "creator_review", podId: "creator-review" });
   });
 
+  it.each([
+    "upcoming",
+    "reviewing",
+    "approved",
+    "rejected",
+    "timeout_protected"
+  ] as const)(
+    "places creator review before passive %s participant activity",
+    (activity) => {
+      expect(chooseTodayEnrollmentAction({
+        activities: [{
+          podId: "activity",
+          occurrenceId: "occurrence-1",
+          action: activity
+        }],
+        participants: [],
+        creatorReviewPodId: "creator-review",
+        reviewPodId: null,
+        recruitPodId: null
+      })).toEqual({ kind: "creator_review", podId: "creator-review" });
+    }
+  );
+
+  it.each(["lock_task", "submit_evidence"] as const)(
+    "keeps due member work %s before creator review",
+    (activity) => {
+      expect(chooseTodayEnrollmentAction({
+        activities: [{
+          podId: "activity",
+          occurrenceId: "occurrence-1",
+          action: activity
+        }],
+        participants: [],
+        creatorReviewPodId: "creator-review",
+        reviewPodId: null,
+        recruitPodId: null
+      })).toMatchObject({ kind: "activity", action: activity });
+    }
+  );
+
   it("keeps a creator roster or refund outcome visible before recruiting", () => {
     expect(chooseTodayEnrollmentAction({
       participants: [],

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CreatorReviewForm } from "../../../../../../components/creator-review-form";
+import { CreatorReviewEvidence } from "../../../../../../components/creator-review-evidence";
 import { ProfileAvatar } from "../../../../../../components/profile-avatar";
 import { formatZonedMoment } from "../../../../../../lib/format-moment";
 import { isUuidRouteParam } from "../../../../../../lib/route-params";
@@ -53,7 +54,11 @@ export default async function CreatorReviewWorkspacePage({
   if (!contract) notFound();
   const timeZone = contract.activity.timeZone;
   const moment = (value: Date | null) => value
-    ? formatZonedMoment(value, { timeZone, includeYear: true })
+    ? formatZonedMoment(value, {
+        timeZone,
+        includeYear: true,
+        includeZone: true
+      })
     : "Not available";
   const terminal = submission.state !== "reviewing";
 
@@ -107,10 +112,9 @@ export default async function CreatorReviewWorkspacePage({
       {submission.evidenceObjectKey ? (
         <section className="review-evidence-card">
           <span>Creator-only evidence</span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt="Creator-only evidence"
-            src={`/api/pods/${podId}/admin/reviews/${submissionId}/evidence`}
+          <CreatorReviewEvidence
+            podId={podId}
+            submissionId={submissionId}
           />
         </section>
       ) : null}

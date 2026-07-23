@@ -9,30 +9,30 @@ import { profileForSession } from "../../lib/profile-presentation";
 import { podsRepository } from "../../lib/server-db";
 import { requireSession } from "../../lib/session";
 import { adaptiveThemeForTemplate, mediaForTemplate } from "../../lib/template-presentation";
-import { chooseTodayEnrollmentAction } from "../../lib/today-priority";
+import {
+  chooseTodayEnrollmentAction,
+  type TodayActivityAction
+} from "../../lib/today-priority";
 
 export default async function TodayPage() {
   const session = await requireSession("/today");
   const now = await podsRepository.getEffectiveTime(new Date());
-  const [memberships, creatorApplications, ownedPods, activities] = await Promise.all([
+  const [
+    memberships,
+    creatorApplications,
+    ownedPods,
+    activities,
+    creatorReview
+  ] = await Promise.all([
     podsRepository.listMembershipsForUser(session.userId),
     podsRepository.listApplicationsForCreator({ creatorUserId: session.userId }),
     podsRepository.listPodsForOwner(session.userId),
-    podsRepository.listCurrentActivitiesForUser({ userId: session.userId, now })
+    podsRepository.listCurrentActivitiesForUser({ userId: session.userId, now }),
+    podsRepository.findFirstPendingReviewForCreator({
+      creatorUserId: session.userId
+    })
   ]);
   const pendingReview = creatorApplications.find(({ application, pod }) => application.state === "applied" && pod.state === "enrollment_open");
-  let creatorReview: (typeof ownedPods)[number] | undefined;
-  for (const pod of ownedPods) {
-    if (pod.contractData?.verification?.verifier !== "creator") continue;
-    const reviews = await podsRepository.listPendingReviewsForCreator({
-      creatorUserId: session.userId,
-      podId: pod.id
-    });
-    if (reviews?.some(({ submission }) => submission.state === "reviewing")) {
-      creatorReview = pod;
-      break;
-    }
-  }
   const recruit = ownedPods.find((pod) => pod.state === "enrollment_open" && pod.contractData?.community.visibility === "public");
   const creatorFunding = ownedPods.find((pod) =>
     ["cutoff_evaluating", "locked_scheduled", "active", "final_review", "completed", "cancelled_refunding", "cancelled"].includes(pod.state)
@@ -48,7 +48,7 @@ export default async function TodayPage() {
           : !submission || submission.state === "draft"
             ? "submit_evidence"
             : submission.state
-    ) as "lock_task" | "submit_evidence" | "reviewing" | "approved" | "upcoming"
+    ) as TodayActivityAction
   }));
   const action = chooseTodayEnrollmentAction({
     activities: activityActions,
@@ -108,7 +108,11 @@ export default async function TodayPage() {
           ? { eyebrow: "Review in progress", title: "Your work is with the Pods team.", detail: "Your locked task and submitted proof are being checked against the Pod contract.", cta: "View review", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
           : action.action === "approved"
             ? { eyebrow: "Counted today", title: "Your work is counted.", detail: "This approved occurrence is already part of your streak. Keep the group moving in the Pod room.", cta: "Open Pod room", href: `/pods/${action.podId}/room` }
-            : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+            : action.action === "rejected"
+              ? { eyebrow: "Proof not verified", title: "Your proof needs attention.", detail: "Review the final result against your locked commitment.", cta: "View result", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+              : action.action === "timeout_protected"
+                ? { eyebrow: "Review protected", title: "Your proof is protected.", detail: "The review window ended without a creator decision.", cta: "View result", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+                : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
     : null;
   const copy = action.kind === "activity" && activityCopy
     ? activityCopy

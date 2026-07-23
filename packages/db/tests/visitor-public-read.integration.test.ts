@@ -276,12 +276,15 @@ describe("public visitor read model", () => {
     });
     if (!beforeDecision) throw new Error("Public room missing");
 
-    await repository.approveSubmission({
+    await repository.decideSubmissionAsCreator({
+      creatorUserId: fixture.creator.userId,
+      podId: fixture.pod.id,
       submissionId: fixture.submissionId,
-      reviewerId: "pods-team-reviewer",
-      note: "The public artifact satisfies the frozen build commitment.",
-      now: new Date("2027-04-06T00:05:00.000Z"),
-      authority: "reviewer"
+      decision: {
+        decision: "approve",
+        note: "The public artifact satisfies the frozen build commitment."
+      },
+      now: new Date("2027-04-06T00:05:00.000Z")
     });
     const afterDecision = await repository.getPublicVisitorRoom({
       podId: fixture.pod.id,
@@ -333,6 +336,53 @@ describe("public visitor read model", () => {
       reaction: "support",
       now: new Date("2027-04-06T00:08:00.000Z")
     })).rejects.toThrow("This room is archived and read only");
+  });
+
+  it("maps rejection and timeout protection distinctly without exposing private review data", async () => {
+    const rejectedFixture = await activateVisitorPod();
+    const privateReason =
+      "The public artifact does not satisfy the participant's locked commitment.";
+    await repository.decideSubmissionAsCreator({
+      creatorUserId: rejectedFixture.creator.userId,
+      podId: rejectedFixture.pod.id,
+      submissionId: rejectedFixture.submissionId,
+      decision: { decision: "reject", reason: privateReason },
+      now: new Date("2027-04-05T11:00:00.000Z")
+    });
+    const rejectedRoom = await repository.getPublicVisitorRoom({
+      podId: rejectedFixture.pod.id,
+      afterSequence: 0,
+      limit: 20
+    });
+    expect(rejectedRoom?.messages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "activity",
+        activity: expect.objectContaining({ state: "rejected" })
+      })
+    ]));
+    const rejectedJson = JSON.stringify(rejectedRoom);
+    expect(rejectedJson).not.toContain(privateReason);
+    expect(rejectedJson).not.toContain(rejectedFixture.creator.userId);
+    expect(rejectedJson).not.toContain("private/");
+
+    const protectedFixture = await activateVisitorPod();
+    await repository.protectTimedOutReviews(
+      new Date("2027-04-06T10:05:00.000Z")
+    );
+    const protectedRoom = await repository.getPublicVisitorRoom({
+      podId: protectedFixture.pod.id,
+      afterSequence: 0,
+      limit: 20
+    });
+    expect(protectedRoom?.messages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "activity",
+        activity: expect.objectContaining({ state: "timeout_protected" })
+      })
+    ]));
+    const protectedJson = JSON.stringify(protectedRoom);
+    expect(protectedJson).not.toContain(protectedFixture.creator.userId);
+    expect(protectedJson).not.toContain("private/");
   });
 
   it("keeps public moderation separate from authoritative room and proof records", async () => {

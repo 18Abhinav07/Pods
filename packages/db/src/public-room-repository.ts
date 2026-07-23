@@ -39,6 +39,8 @@ function publicPodStage(state: string) {
 
 function publicSubmissionState(state: SubmissionState | null) {
   if (state === "approved") return "approved" as const;
+  if (state === "rejected") return "rejected" as const;
+  if (state === "timeout_protected") return "timeout_protected" as const;
   if (state === null) return "committed" as const;
   return "under_review" as const;
 }

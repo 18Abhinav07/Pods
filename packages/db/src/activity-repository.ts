@@ -5,6 +5,7 @@ import {
   nextSubmissionState,
   occurrenceWindowState,
   reviewDeadline,
+  validateCreatorReviewDecision,
   validateBuildEvidence,
   validateBuildTask
 } from "@pods/domain";
@@ -169,7 +170,7 @@ export function createActivityMethods(database: PodsDatabase) {
             .where(
               and(
                 eq(occurrences.podId, candidate.id),
-                inArray(submissions.state, ["submitted", "reviewing"])
+                eq(submissions.state, "reviewing")
               )
             )
             .limit(1);
@@ -457,6 +458,7 @@ export function createActivityMethods(database: PodsDatabase) {
             submittedAt: null,
             reviewTargetAt: null,
             reviewHardDeadlineAt: null,
+            reviewedAt: null,
             approvedAt: null,
             createdAt: input.now
           })
@@ -540,9 +542,7 @@ export function createActivityMethods(database: PodsDatabase) {
           artifactUrl: owned.submission.artifactUrl
         });
         if (!validation.success) throw new Error(validation.errors[0]);
-        const submitted = nextSubmissionState("draft", "submit", "participant");
-        if (submitted !== "submitted") throw new Error("Evidence cannot be submitted");
-        const reviewing = nextSubmissionState(submitted, "start_review", "system");
+        const reviewing = nextSubmissionState("draft", "submit", "participant");
         if (reviewing !== "reviewing") throw new Error("Review could not start");
         const deadlines = reviewDeadline(input.now);
         const [updated] = await transaction
@@ -581,80 +581,234 @@ export function createActivityMethods(database: PodsDatabase) {
       });
     },
 
-    async listPendingReviews() {
+    async listPendingReviewsForCreator(input: {
+      creatorUserId: string;
+      podId: string;
+    }) {
+      const [owned] = await database
+        .select({ id: pods.id })
+        .from(pods)
+        .where(
+          and(
+            eq(pods.id, input.podId),
+            eq(pods.creatorUserId, input.creatorUserId)
+          )
+        );
+      if (!owned) return null;
       return database
         .select({
           submission: submissions,
           commitment: occurrenceCommitments,
           occurrence: occurrences,
-          pod: pods
+          participant: {
+            handle: profiles.handle,
+            displayName: profiles.displayName,
+            avatar: profiles.avatar
+          }
         })
         .from(submissions)
         .innerJoin(occurrenceCommitments, eq(submissions.commitmentId, occurrenceCommitments.id))
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
-        .innerJoin(pods, eq(occurrences.podId, pods.id))
-        .where(eq(submissions.state, "reviewing"))
+        .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
+        .innerJoin(profiles, eq(memberships.userId, profiles.userId))
+        .where(
+          and(
+            eq(occurrences.podId, input.podId),
+            eq(submissions.state, "reviewing")
+          )
+        )
         .orderBy(asc(submissions.reviewTargetAt), asc(submissions.id));
     },
 
-    async getReviewSubmission(submissionId: string) {
+    async getReviewSubmissionForCreator(input: {
+      creatorUserId: string;
+      podId: string;
+      submissionId: string;
+    }) {
       const [result] = await database
         .select({
           submission: submissions,
           commitment: occurrenceCommitments,
           occurrence: occurrences,
-          pod: pods
+          pod: pods,
+          participant: {
+            handle: profiles.handle,
+            displayName: profiles.displayName,
+            avatar: profiles.avatar
+          },
+          reviewDecision: reviewDecisions
         })
         .from(submissions)
         .innerJoin(occurrenceCommitments, eq(submissions.commitmentId, occurrenceCommitments.id))
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
         .innerJoin(pods, eq(occurrences.podId, pods.id))
-        .where(eq(submissions.id, submissionId));
+        .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
+        .innerJoin(profiles, eq(memberships.userId, profiles.userId))
+        .leftJoin(reviewDecisions, eq(reviewDecisions.submissionId, submissions.id))
+        .where(
+          and(
+            eq(pods.id, input.podId),
+            eq(pods.creatorUserId, input.creatorUserId),
+            eq(submissions.id, input.submissionId)
+          )
+        );
       return result ?? null;
     },
 
-    async approveSubmission(input: {
+    async getCreatorSubmissionEvidence(input: {
+      creatorUserId: string;
+      podId: string;
       submissionId: string;
-      reviewerId: string;
-      note: string;
-      now: Date;
-      authority: "participant" | "reviewer";
     }) {
-      if (input.authority !== "reviewer") {
-        throw new Error("Pods reviewer authority is required");
-      }
-      const note = input.note.trim();
-      if (note.length < 12 || note.length > 1000) {
-        throw new Error("Review note must contain 12 to 1000 characters");
-      }
+      const [result] = await database
+        .select({
+          objectKey: submissions.evidenceObjectKey,
+          contentType: submissions.evidenceContentType,
+          byteSize: submissions.evidenceByteSize
+        })
+        .from(submissions)
+        .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+        .innerJoin(pods, eq(occurrences.podId, pods.id))
+        .where(
+          and(
+            eq(pods.id, input.podId),
+            eq(pods.creatorUserId, input.creatorUserId),
+            eq(submissions.id, input.submissionId),
+            ne(submissions.state, "draft")
+          )
+        );
+      if (!result?.objectKey) return null;
+      return {
+        objectKey: result.objectKey,
+        contentType: result.contentType ?? "image/webp",
+        byteSize: result.byteSize
+      };
+    },
+
+    async decideSubmissionAsCreator(input: {
+      creatorUserId: string;
+      podId: string;
+      submissionId: string;
+      decision: unknown;
+      now: Date;
+    }) {
       return database.transaction(async (transaction) => {
-        const [submission] = await transaction
-          .select()
+        const [owned] = await transaction
+          .select({ submission: submissions })
           .from(submissions)
-          .where(eq(submissions.id, input.submissionId))
-          .for("update");
-        if (!submission || submission.state !== "reviewing") {
-          throw new Error("Submission is not awaiting review");
+          .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+          .innerJoin(pods, eq(occurrences.podId, pods.id))
+          .where(
+            and(
+              eq(pods.id, input.podId),
+              eq(pods.creatorUserId, input.creatorUserId),
+              eq(submissions.id, input.submissionId)
+            )
+          )
+          .for("update", { of: submissions });
+        if (!owned) return null;
+        if (
+          owned.submission.state === "approved" ||
+          owned.submission.state === "rejected" ||
+          owned.submission.state === "timeout_protected"
+        ) {
+          return { kind: "already_decided" as const, submission: owned.submission };
         }
-        const state = nextSubmissionState("reviewing", "approve", "reviewer");
-        if (state !== "approved") throw new Error("Submission cannot be approved");
+        if (owned.submission.state !== "reviewing") return null;
+        if (
+          !owned.submission.reviewHardDeadlineAt ||
+          owned.submission.reviewHardDeadlineAt.getTime() <= input.now.getTime()
+        ) {
+          const state = nextSubmissionState(
+            "reviewing",
+            "protect_timeout",
+            "system"
+          );
+          if (state !== "timeout_protected") {
+            throw new Error("Timed out review cannot be protected");
+          }
+          const [submission] = await transaction
+            .update(submissions)
+            .set({
+              state,
+              reviewedAt: input.now,
+              approvedAt: null,
+              updatedAt: input.now
+            })
+            .where(
+              and(
+                eq(submissions.id, owned.submission.id),
+                eq(submissions.state, "reviewing")
+              )
+            )
+            .returning();
+          if (!submission) throw new Error("Timed out review could not be protected");
+
+          const [projection] = await transaction
+            .select({
+              messageId: activityMessages.messageId,
+              conversationId: messages.conversationId
+            })
+            .from(activityMessages)
+            .innerJoin(messages, eq(activityMessages.messageId, messages.id))
+            .where(eq(activityMessages.commitmentId, submission.commitmentId));
+          if (projection) {
+            await transaction.insert(realtimeEvents).values({
+              conversationId: projection.conversationId,
+              recipientUserId: null,
+              kind: "submission.timeout_protected",
+              payload: {
+                messageId: projection.messageId,
+                submissionId: submission.id
+              },
+              createdAt: input.now
+            });
+          }
+          return { kind: "already_decided" as const, submission };
+        }
+
+        const validation = validateCreatorReviewDecision(input.decision);
+        if (!validation.success) throw new Error(validation.errors[0]);
+        const action = validation.value.decision === "approve" ? "approved" : "rejected";
+        const state = nextSubmissionState(
+          "reviewing",
+          validation.value.decision,
+          "creator"
+        );
+        if (state !== action) throw new Error("Submission cannot be decided");
+
         await transaction.insert(reviewDecisions).values({
           id: randomUUID(),
-          submissionId: submission.id,
-          action: "approved",
-          reviewerId: input.reviewerId,
-          reasonCode: "meets_frozen_commitment",
-          note,
+          submissionId: owned.submission.id,
+          action,
+          reviewerId: input.creatorUserId,
+          reasonCode:
+            action === "approved"
+              ? "meets_commitment"
+              : "does_not_meet_commitment",
+          note:
+            validation.value.decision === "approve"
+              ? validation.value.note
+              : validation.value.reason,
           createdAt: input.now
         });
-        const [approved] = await transaction
+        const [submission] = await transaction
           .update(submissions)
-          .set({ state, approvedAt: input.now, updatedAt: input.now })
+          .set({
+            state,
+            reviewedAt: input.now,
+            approvedAt: action === "approved" ? input.now : null,
+            updatedAt: input.now
+          })
           .where(
-            and(eq(submissions.id, submission.id), eq(submissions.state, "reviewing"))
+            and(
+              eq(submissions.id, owned.submission.id),
+              eq(submissions.state, "reviewing")
+            )
           )
           .returning();
-        if (!approved) throw new Error("Submission could not be approved");
+        if (!submission) throw new Error("Submission could not be decided");
+
         const [projection] = await transaction
           .select({
             messageId: activityMessages.messageId,
@@ -667,15 +821,86 @@ export function createActivityMethods(database: PodsDatabase) {
           await transaction.insert(realtimeEvents).values({
             conversationId: projection.conversationId,
             recipientUserId: null,
-            kind: "submission.approved",
+            kind:
+              action === "approved"
+                ? "submission.approved"
+                : "submission.rejected",
             payload: {
               messageId: projection.messageId,
-              submissionId: approved.id
+              submissionId: submission.id
             },
             createdAt: input.now
           });
         }
-        return approved;
+        return { kind: "decided" as const, submission };
+      });
+    },
+
+    async protectTimedOutReviews(now: Date) {
+      return database.transaction(async (transaction) => {
+        const due = await transaction
+          .select({ submission: submissions })
+          .from(submissions)
+          .where(
+            and(
+              eq(submissions.state, "reviewing"),
+              lte(submissions.reviewHardDeadlineAt, now)
+            )
+          )
+          .orderBy(asc(submissions.reviewHardDeadlineAt), asc(submissions.id))
+          .limit(100)
+          .for("update", { of: submissions, skipLocked: true });
+        const state = nextSubmissionState(
+          "reviewing",
+          "protect_timeout",
+          "system"
+        );
+        if (state !== "timeout_protected") {
+          throw new Error("Timed out review cannot be protected");
+        }
+
+        let protectedSubmissions = 0;
+        for (const candidate of due) {
+          const [submission] = await transaction
+            .update(submissions)
+            .set({
+              state,
+              reviewedAt: now,
+              approvedAt: null,
+              updatedAt: now
+            })
+            .where(
+              and(
+                eq(submissions.id, candidate.submission.id),
+                eq(submissions.state, "reviewing")
+              )
+            )
+            .returning();
+          if (!submission) continue;
+          protectedSubmissions += 1;
+
+          const [projection] = await transaction
+            .select({
+              messageId: activityMessages.messageId,
+              conversationId: messages.conversationId
+            })
+            .from(activityMessages)
+            .innerJoin(messages, eq(activityMessages.messageId, messages.id))
+            .where(eq(activityMessages.commitmentId, submission.commitmentId));
+          if (projection) {
+            await transaction.insert(realtimeEvents).values({
+              conversationId: projection.conversationId,
+              recipientUserId: null,
+              kind: "submission.timeout_protected",
+              payload: {
+                messageId: projection.messageId,
+                submissionId: submission.id
+              },
+              createdAt: now
+            });
+          }
+        }
+        return { protectedSubmissions };
       });
     },
 
@@ -685,13 +910,15 @@ export function createActivityMethods(database: PodsDatabase) {
           submission: submissions,
           commitment: occurrenceCommitments,
           occurrence: occurrences,
-          pod: pods
+          pod: pods,
+          reviewDecision: reviewDecisions
         })
         .from(submissions)
         .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
         .innerJoin(occurrenceCommitments, eq(submissions.commitmentId, occurrenceCommitments.id))
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
         .innerJoin(pods, eq(occurrences.podId, pods.id))
+        .leftJoin(reviewDecisions, eq(reviewDecisions.submissionId, submissions.id))
         .where(
           and(eq(submissions.id, input.submissionId), eq(memberships.userId, input.userId))
         );
@@ -846,7 +1073,10 @@ export function createActivityMethods(database: PodsDatabase) {
         .innerJoin(occurrenceCommitments, eq(submissions.commitmentId, occurrenceCommitments.id))
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
         .where(
-          and(eq(occurrences.podId, input.podId), eq(submissions.state, "approved"))
+          and(
+            eq(occurrences.podId, input.podId),
+            inArray(submissions.state, ["approved", "timeout_protected"])
+          )
         )
         .orderBy(asc(occurrences.ordinal), asc(submissions.approvedAt));
     },
@@ -955,12 +1185,18 @@ export function createActivityMethods(database: PodsDatabase) {
       const decided = rows.filter(
         ({ occurrence, submission }) =>
           occurrence.closesAt.getTime() <= input.now.getTime() ||
-          submission?.state === "approved"
+          submission?.state === "approved" ||
+          submission?.state === "timeout_protected"
       );
       let streak = 0;
       for (let index = decided.length - 1; index >= 0; index -= 1) {
         const row = decided[index]!;
-        if (row.submission?.state !== "approved") break;
+        if (
+          row.submission?.state !== "approved" &&
+          row.submission?.state !== "timeout_protected"
+        ) {
+          break;
+        }
         streak += 1;
       }
       return streak;

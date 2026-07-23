@@ -428,6 +428,7 @@ export const submissions = pgTable(
       withTimezone: true,
       mode: "date"
     }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: "date" }),
     approvedAt: timestamp("approved_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
@@ -438,6 +439,11 @@ export const submissions = pgTable(
       table.membershipId
     ),
     index("submissions_state_review_idx").on(table.state, table.reviewTargetAt),
+    index("submissions_state_hard_deadline_idx").on(
+      table.state,
+      table.reviewHardDeadlineAt,
+      table.id
+    ),
     index("submissions_membership_updated_idx").on(table.membershipId, table.updatedAt)
   ]
 );
@@ -449,17 +455,16 @@ export const reviewDecisions = pgTable(
     submissionId: uuid("submission_id")
       .notNull()
       .references(() => submissions.id, { onDelete: "cascade" }),
-    action: text("action").$type<"approved">().notNull(),
+    action: text("action").$type<"approved" | "rejected">().notNull(),
     reviewerId: text("reviewer_id").notNull(),
-    reasonCode: text("reason_code").$type<"meets_frozen_commitment">().notNull(),
+    reasonCode: text("reason_code")
+      .$type<"meets_commitment" | "does_not_meet_commitment">()
+      .notNull(),
     note: text("note").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
   },
   (table) => [
-    uniqueIndex("review_decisions_submission_action_unique").on(
-      table.submissionId,
-      table.action
-    ),
+    uniqueIndex("review_decisions_submission_unique").on(table.submissionId),
     index("review_decisions_reviewer_created_idx").on(table.reviewerId, table.createdAt)
   ]
 );

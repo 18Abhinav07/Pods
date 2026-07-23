@@ -9,7 +9,8 @@ import {
   templateContracts,
   validateActivityStep,
   validateCommunityStep,
-  validatePublicationTiming
+  validatePublicationTiming,
+  type PublishedPodContract
 } from "../src/index";
 
 const sharedActivity = {
@@ -171,6 +172,16 @@ describe("occurrence materialization", () => {
       targetReviewHours: 12,
       timeoutProtectionHours: 24
     });
+    const legacyContract: PublishedPodContract = {
+      ...result.contract,
+      verification: {
+        ...result.contract.verification,
+        verifier: "pods_team"
+      }
+    };
+    expect(serializePublishedContract(legacyContract)).toContain(
+      '"verifier":"pods_team"'
+    );
     expect(result.occurrences).toHaveLength(6);
     expect(serializePublishedContract(result.contract))
       .toBe(serializePublishedContract(structuredClone(result.contract)));

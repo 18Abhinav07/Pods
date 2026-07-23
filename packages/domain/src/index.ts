@@ -122,7 +122,7 @@ interface PublishedPodContractBase {
     totalLuna: number;
   };
   verification: {
-    verifier: "creator";
+    verifier: "pods_team" | "creator";
     targetReviewHours: 12;
     timeoutProtectionHours: 24;
   };

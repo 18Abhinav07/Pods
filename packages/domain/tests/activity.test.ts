@@ -12,6 +12,25 @@ import {
   type SubmissionState
 } from "../src/activity";
 
+const submissionStates: Record<SubmissionState, true> = {
+  draft: true,
+  reviewing: true,
+  approved: true,
+  rejected: true,
+  timeout_protected: true
+};
+const submissionEvents: Record<SubmissionEvent, true> = {
+  submit: true,
+  approve: true,
+  reject: true,
+  protect_timeout: true
+};
+const submissionActors: Record<SubmissionActor, true> = {
+  participant: true,
+  system: true,
+  creator: true
+};
+
 describe("Phase 4 Build and Ship activity contract", () => {
   it("opens commitment, evidence, and review windows from frozen UTC boundaries", () => {
     const occurrence = {
@@ -81,20 +100,9 @@ describe("Phase 4 Build and Ship activity contract", () => {
   });
 
   it("allows only the four creator-review submission transitions", () => {
-    const states: SubmissionState[] = [
-      "draft",
-      "reviewing",
-      "approved",
-      "rejected",
-      "timeout_protected"
-    ];
-    const events: SubmissionEvent[] = [
-      "submit",
-      "approve",
-      "reject",
-      "protect_timeout"
-    ];
-    const actors: SubmissionActor[] = ["participant", "system", "creator"];
+    const states = Object.keys(submissionStates) as SubmissionState[];
+    const events = Object.keys(submissionEvents) as SubmissionEvent[];
+    const actors = Object.keys(submissionActors) as SubmissionActor[];
     const allowed = new Map<string, SubmissionState>([
       ["draft:submit:participant", "reviewing"],
       ["reviewing:approve:creator", "approved"],
@@ -119,13 +127,8 @@ describe("Phase 4 Build and Ship activity contract", () => {
       "rejected",
       "timeout_protected"
     ];
-    const events: SubmissionEvent[] = [
-      "submit",
-      "approve",
-      "reject",
-      "protect_timeout"
-    ];
-    const actors: SubmissionActor[] = ["participant", "system", "creator"];
+    const events = Object.keys(submissionEvents) as SubmissionEvent[];
+    const actors = Object.keys(submissionActors) as SubmissionActor[];
 
     for (const state of terminalStates) {
       for (const event of events) {
@@ -147,16 +150,28 @@ describe("Phase 4 Build and Ship activity contract", () => {
         note: "Clear proof of the committed work."
       }
     });
-    expect(validateCreatorReviewDecision({ decision: "approve" })).toEqual({
-      success: true,
-      value: { decision: "approve", note: "" }
-    });
+    for (const input of [
+      { decision: "approve" },
+      { decision: "approve", note: undefined }
+    ]) {
+      expect(validateCreatorReviewDecision(input)).toEqual({
+        success: true,
+        value: { decision: "approve", note: "" }
+      });
+    }
     expect(validateCreatorReviewDecision({
       decision: "approve",
       note: "x".repeat(501)
     })).toEqual({
       success: false,
       errors: ["Keep the approval note within 500 characters"]
+    });
+    expect(validateCreatorReviewDecision({
+      decision: "approve",
+      note: 42
+    })).toEqual({
+      success: false,
+      errors: ["Approval note must be text"]
     });
   });
 

@@ -125,6 +125,12 @@ export function validateCreatorReviewDecision(input: unknown):
       : {};
 
   if (candidate.decision === "approve") {
+    if (candidate.note !== undefined && typeof candidate.note !== "string") {
+      return {
+        success: false,
+        errors: ["Approval note must be text"]
+      };
+    }
     const note = typeof candidate.note === "string" ? candidate.note.trim() : "";
     if (note.length > 500) {
       return {

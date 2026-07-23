@@ -52,7 +52,7 @@ visitor release is deployed from the same commit as `origin/main`.
   `origin/phase/04a-social-alpha-foundation` are synchronized at session close.
 - The integration gate serializes files because all integration suites share
   one local Postgres schema.
-- Railway deployment `be2364f4-14f5-40d6-bdd4-83c779237ad6`: `SUCCESS`.
+- Railway deployment `2c3db292-c8be-4903-9387-64e95d4c7f6c`: `SUCCESS`.
 - Production health reports configuration, database, and evidence storage
   ready.
 - Manifest name and short name are `pods`; the production PNG icon returns

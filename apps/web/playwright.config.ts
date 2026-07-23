@@ -24,9 +24,8 @@ export default defineConfig({
     : {
         command: "corepack pnpm dev --hostname 127.0.0.1 --port 3410",
         env: {
-          PODS_OPS_ACCESS_TOKEN: "pods-playwright-reviewer",
-          PODS_OPS_SESSION_SECRET: "pods-playwright-session-secret",
-          PODS_OPS_REVIEWER_ID: "pods-playwright-reviewer"
+          PODS_MODERATION_ENABLED: "true",
+          PODS_PUBLIC_VISITOR_ROOMS_ENABLED: "true"
         },
         url: "http://127.0.0.1:3410",
         reuseExistingServer: false,

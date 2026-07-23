@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { presentRoomActivitySchedule } from "../src/lib/room-activity-presentation";
+import {
+  presentRoomActivitySchedule,
+  roomSubmissionStateLabel
+} from "../src/lib/room-activity-presentation";
 
 const now = new Date("2027-04-05T10:00:00.000Z");
 const base = {
@@ -15,6 +18,17 @@ const base = {
 };
 
 describe("presentRoomActivitySchedule", () => {
+  it.each([
+    ["committed", "Commitment locked"],
+    ["reviewing", "Creator review"],
+    ["approved", "Approved"],
+    ["rejected", "Not verified"],
+    ["grace", "Grace applied"],
+    ["timeout_protected", "Protected after review timeout"]
+  ])("maps %s to the participant-safe room label", (state, label) => {
+    expect(roomSubmissionStateLabel(state)).toBe(label);
+  });
+
   it.each([
     [{ ...base }, "lock", "Lock commitment"],
     [{ ...base, commitment: { id: "commitment-1" } }, "add", "Add proof"],
@@ -56,7 +70,7 @@ describe("presentRoomActivitySchedule", () => {
 
   it.each([
     ["rejected", "Not verified"],
-    ["timeout_protected", "Protected after timeout"]
+    ["timeout_protected", "Protected after review timeout"]
   ])(
     "keeps a terminal %s occurrence viewable with its participant-safe label",
     (state, stateLabel) => {

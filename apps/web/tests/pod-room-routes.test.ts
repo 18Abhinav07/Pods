@@ -114,6 +114,10 @@ describe("Pod room APIs", () => {
       new Request("http://localhost", { method: "POST", body: JSON.stringify({ sequence: 9 }) }),
       params({ conversationId: "room-1" })
     )).status).toBe(200);
+    expect((await markRead(
+      new Request("http://localhost", { method: "POST" }),
+      params({ conversationId: "room-1" })
+    )).status).toBe(400);
 
     repository.setMessageReaction.mockResolvedValue({ code: "support" });
     expect((await react(

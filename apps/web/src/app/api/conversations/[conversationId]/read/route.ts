@@ -10,7 +10,12 @@ export async function POST(
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: "Wallet session required" }, { status: 401 });
   const { conversationId } = await params;
-  const body = (await request.json()) as { sequence?: unknown };
+  let body: { sequence?: unknown };
+  try {
+    body = (await request.json()) as { sequence?: unknown };
+  } catch {
+    return NextResponse.json({ error: "Read sequence is invalid" }, { status: 400 });
+  }
   if (typeof body.sequence !== "number" || !Number.isInteger(body.sequence)) {
     return NextResponse.json({ error: "Read sequence is invalid" }, { status: 400 });
   }

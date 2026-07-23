@@ -3,7 +3,7 @@ created: 2026-07-23
 project: pods
 ecosystem: nimiq
 tags: [pods, phase-4, implementation-plan, creator-review, proof]
-status: awaiting-execution
+status: awaiting-local-device-approval
 ---
 
 # Pods Creator Review MVP Implementation Plan
@@ -135,7 +135,7 @@ status: awaiting-execution
 - Test: `packages/domain/tests/activity.test.ts`
 - Test: `packages/domain/tests/pod-contract.test.ts`
 
-- [ ] **Step 1: Write the failing creator-review state tests**
+- [x] **Step 1: Write the failing creator-review state tests**
 
 Replace the old reviewer-authority test in `packages/domain/tests/activity.test.ts` with:
 
@@ -185,7 +185,7 @@ expect(result.contract.verification).toEqual({
 });
 ```
 
-- [ ] **Step 2: Run the focused domain tests and verify failure**
+- [x] **Step 2: Run the focused domain tests and verify failure**
 
 Run:
 
@@ -195,7 +195,7 @@ pnpm --filter @pods/domain test -- activity.test.ts pod-contract.test.ts
 
 Expected: FAIL because `creator`, `reject`, `protect_timeout`, terminal states, and `validateCreatorReviewDecision` do not exist yet.
 
-- [ ] **Step 3: Implement the minimal domain types and transitions**
+- [x] **Step 3: Implement the minimal domain types and transitions**
 
 Use this contract in `packages/domain/src/activity.ts`:
 
@@ -273,7 +273,7 @@ verification: {
 }
 ```
 
-- [ ] **Step 4: Run the domain tests and typecheck**
+- [x] **Step 4: Run the domain tests and typecheck**
 
 Run:
 
@@ -284,7 +284,7 @@ pnpm --filter @pods/domain typecheck
 
 Expected: all domain tests pass and TypeScript reports no errors.
 
-- [ ] **Step 5: Commit the domain contract**
+- [x] **Step 5: Commit the domain contract**
 
 ```bash
 git add packages/domain/src/activity.ts packages/domain/src/index.ts packages/domain/tests/activity.test.ts packages/domain/tests/pod-contract.test.ts
@@ -304,7 +304,7 @@ git commit -m "feat: freeze creator proof review contract"
 - Test: `packages/db/tests/phase4-activity.integration.test.ts`
 - Test: `packages/db/tests/visitor-public-read.integration.test.ts`
 
-- [ ] **Step 1: Rewrite the integration fixture contract and decision assertions**
+- [x] **Step 1: Rewrite the integration fixture contract and decision assertions**
 
 Change every Phase 4 fixture to:
 
@@ -456,7 +456,7 @@ it("protects an undecided proof at its hard deadline", async () => {
 });
 ```
 
-- [ ] **Step 2: Run integration tests and verify failure**
+- [x] **Step 2: Run integration tests and verify failure**
 
 Run:
 
@@ -467,7 +467,7 @@ pnpm test:integration -- phase4-activity.integration.test.ts visitor-public-read
 
 Expected: FAIL because creator repository methods, terminal states, review decisions, and timeout protection are absent.
 
-- [ ] **Step 3: Expand the schema and generate migration 0012**
+- [x] **Step 3: Expand the schema and generate migration 0012**
 
 Use these fields in `packages/db/src/schema.ts`:
 
@@ -505,7 +505,7 @@ DROP INDEX "review_decisions_submission_action_unique";
 CREATE UNIQUE INDEX "review_decisions_submission_unique" ON "review_decisions" USING btree ("submission_id");
 ```
 
-- [ ] **Step 4: Replace centralized repository methods with creator-scoped methods**
+- [x] **Step 4: Replace centralized repository methods with creator-scoped methods**
 
 In `packages/db/src/activity-repository.ts`:
 
@@ -585,7 +585,7 @@ event payload.
 and append `submission.timeout_protected` with only `messageId` and
 `submissionId`. It must create no `review_decisions` row.
 
-- [ ] **Step 5: Correct public and participant projections**
+- [x] **Step 5: Correct public and participant projections**
 
 In `packages/db/src/public-room-repository.ts`, use:
 
@@ -606,7 +606,7 @@ In `packages/db/src/inbox-repository.ts`, keep selecting the submission row so
 `reviewedAt` and state reach the pure inbox presenter. Do not join decision
 notes into the general timeline.
 
-- [ ] **Step 6: Run database tests and typecheck**
+- [x] **Step 6: Run database tests and typecheck**
 
 Run:
 
@@ -618,7 +618,7 @@ pnpm test:integration -- phase4-activity.integration.test.ts visitor-public-read
 Expected: creator authorization, rejection privacy, one-decision uniqueness,
 timeout protection, streaks, and visitor redaction all pass.
 
-- [ ] **Step 7: Commit persistence**
+- [x] **Step 7: Commit persistence**
 
 ```bash
 git add packages/domain packages/db
@@ -633,7 +633,7 @@ git commit -m "feat: persist creator proof decisions"
 - Create: `apps/worker/tests/run-review-timeout-cycle.test.ts`
 - Modify: `apps/worker/tests/worker-configuration.test.ts`
 
-- [ ] **Step 1: Write the failing timeout-cycle test**
+- [x] **Step 1: Write the failing timeout-cycle test**
 
 Create `apps/worker/tests/run-review-timeout-cycle.test.ts`:
 
@@ -661,7 +661,7 @@ describe("runReviewTimeoutCycle", () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify failure**
+- [x] **Step 2: Run the focused test and verify failure**
 
 Run:
 
@@ -671,7 +671,7 @@ pnpm --filter @pods/worker test -- run-review-timeout-cycle.test.ts
 
 Expected: FAIL because `runReviewTimeoutCycle` does not exist.
 
-- [ ] **Step 3: Add the worker cycle**
+- [x] **Step 3: Add the worker cycle**
 
 Create `apps/worker/src/activity/run-review-timeout-cycle.ts`:
 
@@ -709,7 +709,7 @@ try {
 }
 ```
 
-- [ ] **Step 4: Run worker tests, typecheck, and build**
+- [x] **Step 4: Run worker tests, typecheck, and build**
 
 Run:
 
@@ -721,7 +721,7 @@ pnpm --filter @pods/worker build
 
 Expected: all worker tests pass and the production import succeeds.
 
-- [ ] **Step 5: Commit worker protection**
+- [x] **Step 5: Commit worker protection**
 
 ```bash
 git add apps/worker
@@ -739,7 +739,7 @@ git commit -m "feat: protect inactive creator reviews"
 - Delete: `apps/web/src/app/api/ops/reviews/[submissionId]/approve/route.ts`
 - Delete: `apps/web/src/app/api/ops/reviews/[submissionId]/evidence/route.ts`
 
-- [ ] **Step 1: Write route authorization and decision tests**
+- [x] **Step 1: Write route authorization and decision tests**
 
 In `apps/web/tests/creator-review-route.test.ts`, mock
 `getCurrentSession`, `listPendingReviewsForCreator`, and
@@ -855,7 +855,7 @@ await expect(response.json()).resolves.toEqual({
 expect(readImage).not.toHaveBeenCalled();
 ```
 
-- [ ] **Step 2: Run route tests and verify failure**
+- [x] **Step 2: Run route tests and verify failure**
 
 Run:
 
@@ -865,7 +865,7 @@ pnpm --filter @pods/web test -- creator-review-route.test.ts creator-review-evid
 
 Expected: FAIL because the creator review routes do not exist.
 
-- [ ] **Step 3: Implement the queue and decision routes**
+- [x] **Step 3: Implement the queue and decision routes**
 
 The queue route must:
 
@@ -905,12 +905,12 @@ The evidence route must call `getCreatorSubmissionEvidence()` before reading
 the private object and must return `Cache-Control: private, no-store` and
 `Content-Security-Policy: default-src 'none'`.
 
-- [ ] **Step 4: Delete centralized mutation routes**
+- [x] **Step 4: Delete centralized mutation routes**
 
 Delete both `/api/ops/reviews` files. There must be no callable route that
 passes an environment reviewer ID to the repository.
 
-- [ ] **Step 5: Run route tests and web typecheck**
+- [x] **Step 5: Run route tests and web typecheck**
 
 Run:
 
@@ -921,7 +921,7 @@ pnpm --filter @pods/web typecheck
 
 Expected: all focused route tests pass and no deleted operation import remains.
 
-- [ ] **Step 6: Commit creator APIs**
+- [x] **Step 6: Commit creator APIs**
 
 ```bash
 git add apps/web/src/app/api apps/web/tests/creator-review-route.test.ts apps/web/tests/creator-review-evidence-route.test.ts
@@ -943,7 +943,7 @@ git commit -m "feat: authorize creator proof review routes"
 - Modify: `apps/web/tests/today-page.test.tsx`
 - Modify: `apps/web/tests/today-priority.test.ts`
 
-- [ ] **Step 1: Write failing creator UI tests**
+- [x] **Step 1: Write failing creator UI tests**
 
 The review workspace test must assert:
 
@@ -982,7 +982,7 @@ expect(chooseTodayEnrollmentAction({
 })).toEqual({ kind: "creator_review", podId: "pod-review" });
 ```
 
-- [ ] **Step 2: Run focused page tests and verify failure**
+- [x] **Step 2: Run focused page tests and verify failure**
 
 Run:
 
@@ -992,7 +992,7 @@ pnpm --filter @pods/web test -- creator-review-page.test.tsx creator-admin-state
 
 Expected: FAIL because the routes, form, and creator-review priority are absent.
 
-- [ ] **Step 3: Build the server-rendered queue and workspace**
+- [x] **Step 3: Build the server-rendered queue and workspace**
 
 Both pages must call `requireSession()` and then a creator-scoped repository
 method. Call `notFound()` on `null`.
@@ -1015,7 +1015,7 @@ The detail page must use
 `/api/pods/${podId}/admin/reviews/${submission.id}/evidence` for creator-only
 media. Do not use raw object keys in the page props or DOM.
 
-- [ ] **Step 4: Build the approve and reject form**
+- [x] **Step 4: Build the approve and reject form**
 
 `apps/web/src/components/creator-review-form.tsx` must:
 
@@ -1038,7 +1038,7 @@ The request body must be exactly one of:
 { decision: "reject", reason: rejectionReason }
 ```
 
-- [ ] **Step 5: Add the creator command-center and Today actions**
+- [x] **Step 5: Add the creator command-center and Today actions**
 
 For active or final-review Pods, keep the creator command center available
 instead of collapsing it to a room-only screen. Query
@@ -1062,7 +1062,7 @@ Use this Today copy:
 }
 ```
 
-- [ ] **Step 6: Add compact mobile styling**
+- [x] **Step 6: Add compact mobile styling**
 
 Use existing Pods tokens in `apps/web/src/app/globals.css`. The review route
 must remain a single-column mobile surface, keep actions at least 44 pixels
@@ -1071,7 +1071,7 @@ high, avoid horizontal overflow at 390 pixels, and use existing
 primitives. Do not introduce another theme, card system, font, or navigation
 bar.
 
-- [ ] **Step 7: Run focused UI tests**
+- [x] **Step 7: Run focused UI tests**
 
 Run:
 
@@ -1081,7 +1081,7 @@ pnpm --filter @pods/web test -- creator-review-page.test.tsx creator-admin-state
 
 Expected: all creator queue, workspace, admin, and Today tests pass.
 
-- [ ] **Step 8: Commit creator UI**
+- [x] **Step 8: Commit creator UI**
 
 ```bash
 git add apps/web/src/app/pods apps/web/src/app/today apps/web/src/components/creator-review-form.tsx apps/web/src/lib/today-priority.ts apps/web/src/app/globals.css apps/web/tests
@@ -1106,7 +1106,7 @@ git commit -m "feat: add creator proof review workspace"
 - Modify: `apps/web/src/app/ops/public-safety/page.tsx`
 - Modify: affected tests in `apps/web/tests`.
 
-- [ ] **Step 1: Write failing terminal-projection tests**
+- [x] **Step 1: Write failing terminal-projection tests**
 
 Add these state assertions:
 
@@ -1163,7 +1163,7 @@ expect(screen.getByText(/counts toward your progress and streak/i)).toBeVisible(
 The public visitor test must assert the state is visible while the private
 reason is absent.
 
-- [ ] **Step 2: Run projection tests and verify failure**
+- [x] **Step 2: Run projection tests and verify failure**
 
 Run:
 
@@ -1173,7 +1173,7 @@ pnpm --filter @pods/web test -- room-activity-presentation.test.ts participant-s
 
 Expected: FAIL because rejected and timeout-protected states are incomplete.
 
-- [ ] **Step 3: Render all participant terminal states**
+- [x] **Step 3: Render all participant terminal states**
 
 Use this participant state model consistently:
 
@@ -1187,7 +1187,7 @@ Use this participant state model consistently:
 Keep `reviewDecision.note` visible only to the submission owner and creator.
 Room members and visitors receive status only.
 
-- [ ] **Step 4: Replace centralized-review copy**
+- [x] **Step 4: Replace centralized-review copy**
 
 Replace review-specific wording with:
 
@@ -1207,13 +1207,13 @@ rg -n "Pods team review|Pods reviewer only|Pods team reviews evidence|not peer-v
 
 Expected: no matches.
 
-- [ ] **Step 5: Remove proof review from operations**
+- [x] **Step 5: Remove proof review from operations**
 
 Delete the review pages and form. Change the ops connection default return path
 to `/ops/public-safety`. Remove the `Reviews` navigation item from public safety.
 Do not change report moderation, suppressions, or public visitor safety.
 
-- [ ] **Step 6: Run web tests, copy lint, and typecheck**
+- [x] **Step 6: Run web tests, copy lint, and typecheck**
 
 Run:
 
@@ -1226,21 +1226,21 @@ pnpm --filter @pods/web typecheck
 Expected: all web tests pass, no U+2014 characters are present, and no deleted
 ops-review import remains.
 
-- [ ] **Step 7: Commit unified projections**
+- [x] **Step 7: Commit unified projections**
 
 ```bash
 git add apps/web
 git commit -m "feat: project creator review across Pods"
 ```
 
-## Task 7: Prove the Complete Two-Wallet Flow Before Deployment
+## Task 7: Prove the Complete Three-Wallet Flow Before Deployment
 
 **Files:**
 - Modify: `apps/web/tests/e2e/phase4-activity.spec.ts`
 - Modify: `HANDOFF.md`
 - Modify: `docs/superpowers/plans/2026-07-23-pods-creator-review-mvp.md`
 
-- [ ] **Step 1: Replace the operations E2E actor with the creator wallet**
+- [x] **Step 1: Replace the operations E2E actor with the creator wallet**
 
 Update `apps/web/tests/e2e/phase4-activity.spec.ts` so the creator:
 
@@ -1254,7 +1254,7 @@ Update `apps/web/tests/e2e/phase4-activity.spec.ts` so the creator:
 
 Remove the ops access token, `/ops/reviews`, and `pods_team` fixture values.
 
-- [ ] **Step 2: Run the complete repository gate**
+- [x] **Step 2: Run the complete repository gate**
 
 Run:
 
@@ -1270,7 +1270,7 @@ Expected:
 - all packages typecheck;
 - production web and worker builds pass.
 
-- [ ] **Step 3: Start the LAN web and worker**
+- [x] **Step 3: Start the LAN web and worker**
 
 Run in separate terminals:
 
@@ -1290,12 +1290,12 @@ Expected:
 
 - [ ] **Step 4: Run the physical Nimiq Pay gate**
 
-Using two Testnet wallets:
+Using three Testnet wallets, one creator and two participants:
 
 1. Creator publishes a public visitor-enabled Build & Ship Pod.
-2. Member applies.
-3. Creator accepts.
-4. Member funds and reaches roster lock.
+2. Both participants apply.
+3. Creator accepts both participants.
+4. Both participants fund and the Pod reaches roster lock.
 5. Advance only through the audited Clock command until the occurrence opens.
 6. Member locks a task and submits a public artifact plus `Creator only`
    evidence.

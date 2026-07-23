@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { createClientUuid } from "../lib/client-id";
+import { roomSubmissionStateLabel } from "../lib/room-activity-presentation";
 import {
   localReplyPreview,
   MessageReplyPreviewView,
@@ -460,7 +461,7 @@ export function PodRoom({
                   ) : null}
                   {message.kind === "activity" && message.activity ? (
                     <div className="room-activity-card">
-                      <div><span>Occurrence {message.activity.occurrenceOrdinal}</span><i>{message.activity.state.replaceAll("_", " ")}</i></div>
+                      <div><span>Occurrence {message.activity.occurrenceOrdinal}</span><i>{roomSubmissionStateLabel(message.activity.state)}</i></div>
                       <div className="room-activity-main">
                         <div className="room-activity-copy">
                           <h3>{message.activity.task}</h3>

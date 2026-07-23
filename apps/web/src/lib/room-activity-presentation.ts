@@ -19,12 +19,13 @@ export type RoomActivityPresentation = {
   targetLabel: "remaining" | "until next occurrence" | null;
 };
 
-function submittedStateLabel(state: string) {
+export function roomSubmissionStateLabel(state: string) {
+  if (state === "committed") return "Commitment locked";
   if (state === "reviewing" || state === "submitted") return "Creator review";
   if (state === "approved") return "Approved";
   if (state === "rejected") return "Not verified";
   if (state === "grace") return "Grace applied";
-  if (state === "timeout_protected") return "Protected after timeout";
+  if (state === "timeout_protected") return "Protected after review timeout";
   return "Submission recorded";
 }
 
@@ -65,7 +66,7 @@ export function presentRoomActivitySchedule({
       ...standard,
       mode: "view",
       label: "View submission",
-      stateLabel: submittedStateLabel(open.submission.state),
+      stateLabel: roomSubmissionStateLabel(open.submission.state),
       progressLabel: `Occurrence ${open.occurrence.ordinal} of ${total}${future ? " complete" : ""}`,
       targetAt: future?.occurrence.opensAt.toISOString() ?? standard.targetAt,
       targetLabel: future ? "until next occurrence" : standard.targetLabel

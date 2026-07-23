@@ -73,6 +73,37 @@ describe("Pod room", () => {
     expect(screen.queryByRole("button", { name: /Heart 0/i })).not.toBeInTheDocument();
   });
 
+  it("renders participant-safe review labels on activity cards", () => {
+    render(
+      <PodRoom
+        conversationId="room-1"
+        initialMessages={[{
+          ...messages[0]!,
+          id: "activity-rejected",
+          kind: "activity",
+          body: null,
+          activity: {
+            commitmentId: "commitment-1",
+            occurrenceOrdinal: 1,
+            task: "Ship the private rejection projection.",
+            deliverableType: "pull_request",
+            state: "rejected",
+            submissionId: "submission-1",
+            resultSummary: "Submitted a public artifact.",
+            artifactUrl: "https://github.com/18Abhinav07/Pods/pull/43",
+            sharedEvidenceAvailable: false
+          }
+        }]}
+        initialLastSequence={1}
+        isCreator={false}
+        podId="pod-1"
+        roomState="open"
+      />
+    );
+    expect(screen.getByText("Not verified")).toBeVisible();
+    expect(screen.queryByText("rejected")).not.toBeInTheDocument();
+  });
+
   it("sends optimistically and exposes reply context", async () => {
     render(
       <PodRoom
@@ -526,7 +557,7 @@ describe("Pod room", () => {
       />
     );
     expect(screen.getByText("Occurrence 2")).toBeInTheDocument();
-    expect(screen.getByText("reviewing")).toBeInTheDocument();
+    expect(screen.getByText("Creator review")).toBeInTheDocument();
     const proofPath = "/api/pods/pod-1/submissions/submission-1/shared-evidence";
     expect(screen.getByRole("img", { name: "Pod-shared proof" })).toHaveAttribute("src", proofPath);
     expect(screen.getByRole("link", { name: "Open shared proof" })).toHaveAttribute("href", proofPath);

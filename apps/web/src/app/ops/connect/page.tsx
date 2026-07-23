@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { OpsConnectForm } from "../../../components/ops-connect-form";
+import { safeOpsReturnTarget } from "../../../lib/ops-return-target";
 
 export default async function OpsConnectPage({
   searchParams
@@ -8,7 +9,7 @@ export default async function OpsConnectPage({
   searchParams: Promise<{ returnTo?: string }>;
 }) {
   const requested = (await searchParams).returnTo;
-  const returnTo = requested?.startsWith("/ops/") ? requested : "/ops/public-safety";
+  const returnTo = safeOpsReturnTarget(requested);
   return (
     <main className="app-shell ops-shell">
       <header className="app-topbar">
@@ -16,9 +17,9 @@ export default async function OpsConnectPage({
         <span className="phase-pill">Internal</span>
       </header>
       <section className="today-hero entrance entrance-hero">
-        <p className="eyebrow">Pods team</p>
-        <h1>Evidence review.</h1>
-        <p className="screen-copy">This workspace is separate from participant and creator authority.</p>
+        <p className="eyebrow">Pods operations</p>
+        <h1>Public safety.</h1>
+        <p className="screen-copy">Handle public visitor reports without changing Pod membership, proof decisions, or money.</p>
       </section>
       <OpsConnectForm returnTo={returnTo} />
     </main>

@@ -149,7 +149,7 @@ test.afterAll(async () => {
   await repository.close();
 });
 
-test("Build and Ship runs from task lock through private evidence submission", async ({ browser, context }) => {
+test("Build and Ship runs from task lock through creator approval", async ({ browser, context }) => {
   const creatorWallet = await authenticate(context);
   const memberContext = await browser.newContext();
   const peerContext = await browser.newContext();
@@ -210,6 +210,65 @@ test("Build and Ship runs from task lock through private evidence submission", a
     await memberPage.getByRole("button", { name: "Submit for Pods review" }).click();
     await expect(memberPage.getByRole("heading", { name: "Your evidence is under review." })).toBeVisible();
 
+    const creatorQueue = await context.request.get(
+      `${baseUrl}/api/pods/${fixture.podId}/admin/reviews`
+    );
+    expect(creatorQueue.ok()).toBe(true);
+    const queuePayload = (await creatorQueue.json()) as {
+      reviews: Array<{
+        submission: { id: string; state: string };
+        commitment: { task: string };
+        evidenceAvailable: boolean;
+      }>;
+    };
+    const pendingReview = queuePayload.reviews.find(
+      ({ commitment }) => commitment.task ===
+        "Ship the participant activity screen with private evidence and reviewer states."
+    );
+    expect(pendingReview).toMatchObject({
+      submission: { state: "reviewing" },
+      evidenceAvailable: true
+    });
+    if (!pendingReview) throw new Error("Creator review queue did not include the submission");
+
+    const creatorEvidence = await context.request.get(
+      `${baseUrl}/api/pods/${fixture.podId}/admin/reviews/${pendingReview.submission.id}/evidence`
+    );
+    expect(creatorEvidence.ok()).toBe(true);
+    expect(creatorEvidence.headers()["content-type"]).toBe("image/webp");
+    expect((await creatorEvidence.body()).byteLength).toBeGreaterThan(0);
+
+    const creatorDecision = await context.request.post(
+      `${baseUrl}/api/pods/${fixture.podId}/admin/reviews/${pendingReview.submission.id}/decision`,
+      {
+        data: {
+          decision: "approve",
+          note: "The public pull request visibly completes the locked participant task."
+        }
+      }
+    );
+    expect(creatorDecision.ok()).toBe(true);
+    await expect(creatorDecision.json()).resolves.toMatchObject({
+      submission: {
+        id: pendingReview.submission.id,
+        state: "approved"
+      }
+    });
+
+    await memberPage.reload();
+    await expect(memberPage.getByRole("heading", { name: "Occurrence completed." })).toBeVisible();
+    await memberPage.goto(
+      `${baseUrl}/pods/${fixture.podId}/submissions/${pendingReview.submission.id}`
+    );
+    await expect(memberPage.getByRole("heading", { name: "Work approved." })).toBeVisible();
+    await expect(memberPage.getByText("Bonus-eligible occurrence")).toBeVisible();
+    await memberPage.goto(`${baseUrl}/today`);
+    await expect(memberPage.getByRole("heading", { name: "Your visible work counted." })).toBeVisible();
+    await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/room`);
+    await expect(
+      memberPage.getByRole("region", { name: "Current Pod activity" })
+        .getByText("Proof submitted")
+    ).toBeVisible();
   } finally {
     await memberContext.close();
     await peerContext.close();

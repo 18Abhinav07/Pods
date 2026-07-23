@@ -5,12 +5,7 @@ import {
   OPS_SESSION_COOKIE_NAME,
   opsSessionCookieOptions
 } from "../../../../lib/ops-session";
-
-function safeOpsReturnTarget(value: unknown) {
-  return typeof value === "string" && value.startsWith("/ops/") && !value.startsWith("//")
-    ? value
-    : "/ops/public-safety";
-}
+import { safeOpsReturnTarget } from "../../../../lib/ops-return-target";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { accessToken?: unknown; returnTo?: unknown };

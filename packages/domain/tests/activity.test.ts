@@ -5,7 +5,11 @@ import {
   occurrenceWindowState,
   reviewDeadline,
   validateBuildEvidence,
-  validateBuildTask
+  validateBuildTask,
+  validateCreatorReviewDecision,
+  type SubmissionActor,
+  type SubmissionEvent,
+  type SubmissionState
 } from "../src/activity";
 
 describe("Phase 4 Build and Ship activity contract", () => {
@@ -76,12 +80,110 @@ describe("Phase 4 Build and Ship activity contract", () => {
     });
   });
 
-  it("keeps submission and approval authority separated", () => {
-    expect(nextSubmissionState("draft", "submit", "participant")).toBe("submitted");
-    expect(nextSubmissionState("submitted", "start_review", "system")).toBe("reviewing");
-    expect(nextSubmissionState("reviewing", "approve", "reviewer")).toBe("approved");
-    expect(nextSubmissionState("reviewing", "approve", "participant")).toBeNull();
-    expect(nextSubmissionState("approved", "approve", "reviewer")).toBeNull();
+  it("allows only the four creator-review submission transitions", () => {
+    const states: SubmissionState[] = [
+      "draft",
+      "reviewing",
+      "approved",
+      "rejected",
+      "timeout_protected"
+    ];
+    const events: SubmissionEvent[] = [
+      "submit",
+      "approve",
+      "reject",
+      "protect_timeout"
+    ];
+    const actors: SubmissionActor[] = ["participant", "system", "creator"];
+    const allowed = new Map<string, SubmissionState>([
+      ["draft:submit:participant", "reviewing"],
+      ["reviewing:approve:creator", "approved"],
+      ["reviewing:reject:creator", "rejected"],
+      ["reviewing:protect_timeout:system", "timeout_protected"]
+    ]);
+
+    for (const state of states) {
+      for (const event of events) {
+        for (const actor of actors) {
+          const key = `${state}:${event}:${actor}`;
+          expect(nextSubmissionState(state, event, actor), key)
+            .toBe(allowed.get(key) ?? null);
+        }
+      }
+    }
+  });
+
+  it("keeps every terminal submission state immutable", () => {
+    const terminalStates: SubmissionState[] = [
+      "approved",
+      "rejected",
+      "timeout_protected"
+    ];
+    const events: SubmissionEvent[] = [
+      "submit",
+      "approve",
+      "reject",
+      "protect_timeout"
+    ];
+    const actors: SubmissionActor[] = ["participant", "system", "creator"];
+
+    for (const state of terminalStates) {
+      for (const event of events) {
+        for (const actor of actors) {
+          expect(nextSubmissionState(state, event, actor)).toBeNull();
+        }
+      }
+    }
+  });
+
+  it("validates and normalizes creator approval decisions", () => {
+    expect(validateCreatorReviewDecision({
+      decision: "approve",
+      note: "  Clear proof of the committed work.  "
+    })).toEqual({
+      success: true,
+      value: {
+        decision: "approve",
+        note: "Clear proof of the committed work."
+      }
+    });
+    expect(validateCreatorReviewDecision({ decision: "approve" })).toEqual({
+      success: true,
+      value: { decision: "approve", note: "" }
+    });
+    expect(validateCreatorReviewDecision({
+      decision: "approve",
+      note: "x".repeat(501)
+    })).toEqual({
+      success: false,
+      errors: ["Keep the approval note within 500 characters"]
+    });
+  });
+
+  it("requires a clear creator rejection reason", () => {
+    expect(validateCreatorReviewDecision({
+      decision: "reject",
+      reason: "  The artifact does not match the locked deliverable.  "
+    })).toEqual({
+      success: true,
+      value: {
+        decision: "reject",
+        reason: "The artifact does not match the locked deliverable."
+      }
+    });
+    for (const reason of [undefined, "Too short", "x".repeat(501)]) {
+      expect(validateCreatorReviewDecision({ decision: "reject", reason })).toEqual({
+        success: false,
+        errors: ["Explain the rejection in 12 to 500 characters"]
+      });
+    }
+  });
+
+  it("rejects unsupported creator review decisions", () => {
+    expect(validateCreatorReviewDecision({ decision: "later" })).toEqual({
+      success: false,
+      errors: ["Choose approve or reject"]
+    });
   });
 
   it("derives the immutable 12-hour target and 24-hour hard review deadline", () => {

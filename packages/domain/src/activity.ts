@@ -10,9 +10,18 @@ export type OccurrenceWindowState =
   | "evidence_open"
   | "review_open";
 
-export type SubmissionState = "draft" | "submitted" | "reviewing" | "approved";
-export type SubmissionActor = "participant" | "system" | "reviewer";
-export type SubmissionEvent = "submit" | "start_review" | "approve";
+export type SubmissionState =
+  | "draft"
+  | "reviewing"
+  | "approved"
+  | "rejected"
+  | "timeout_protected";
+export type SubmissionActor = "participant" | "system" | "creator";
+export type SubmissionEvent = "submit" | "approve" | "reject" | "protect_timeout";
+
+export type CreatorReviewDecision =
+  | { decision: "approve"; note: string }
+  | { decision: "reject"; reason: string };
 
 type ValidationFailure = { success: false; errors: string[] };
 
@@ -93,15 +102,54 @@ export function nextSubmissionState(
   actor: SubmissionActor
 ): SubmissionState | null {
   if (state === "draft" && event === "submit" && actor === "participant") {
-    return "submitted";
-  }
-  if (state === "submitted" && event === "start_review" && actor === "system") {
     return "reviewing";
   }
-  if (state === "reviewing" && event === "approve" && actor === "reviewer") {
+  if (state === "reviewing" && event === "approve" && actor === "creator") {
     return "approved";
   }
+  if (state === "reviewing" && event === "reject" && actor === "creator") {
+    return "rejected";
+  }
+  if (state === "reviewing" && event === "protect_timeout" && actor === "system") {
+    return "timeout_protected";
+  }
   return null;
+}
+
+export function validateCreatorReviewDecision(input: unknown):
+  | { success: true; value: CreatorReviewDecision }
+  | ValidationFailure {
+  const candidate =
+    typeof input === "object" && input !== null
+      ? input as Record<string, unknown>
+      : {};
+
+  if (candidate.decision === "approve") {
+    const note = typeof candidate.note === "string" ? candidate.note.trim() : "";
+    if (note.length > 500) {
+      return {
+        success: false,
+        errors: ["Keep the approval note within 500 characters"]
+      };
+    }
+    return { success: true, value: { decision: "approve", note } };
+  }
+
+  if (candidate.decision === "reject") {
+    const reason = typeof candidate.reason === "string" ? candidate.reason.trim() : "";
+    if (reason.length < 12 || reason.length > 500) {
+      return {
+        success: false,
+        errors: ["Explain the rejection in 12 to 500 characters"]
+      };
+    }
+    return { success: true, value: { decision: "reject", reason } };
+  }
+
+  return {
+    success: false,
+    errors: ["Choose approve or reject"]
+  };
 }
 
 export function reviewDeadline(submittedAt: Date) {

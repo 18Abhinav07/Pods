@@ -122,7 +122,7 @@ interface PublishedPodContractBase {
     totalLuna: number;
   };
   verification: {
-    verifier: "pods_team";
+    verifier: "creator";
     targetReviewHours: 12;
     timeoutProtectionHours: 24;
   };
@@ -414,7 +414,7 @@ export function buildPublishedContract(
       totalLuna
     },
     verification: {
-      verifier: "pods_team" as const,
+      verifier: "creator" as const,
       targetReviewHours: 12 as const,
       timeoutProtectionHours: 24 as const
     }

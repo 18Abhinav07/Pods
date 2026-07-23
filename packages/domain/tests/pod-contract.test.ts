@@ -166,6 +166,11 @@ describe("occurrence materialization", () => {
       occurrenceCount: 6,
       totalLuna: 300_000
     });
+    expect(result.contract.verification).toEqual({
+      verifier: "creator",
+      targetReviewHours: 12,
+      timeoutProtectionHours: 24
+    });
     expect(result.occurrences).toHaveLength(6);
     expect(serializePublishedContract(result.contract))
       .toBe(serializePublishedContract(structuredClone(result.contract)));

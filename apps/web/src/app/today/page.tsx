@@ -21,6 +21,18 @@ export default async function TodayPage() {
     podsRepository.listCurrentActivitiesForUser({ userId: session.userId, now })
   ]);
   const pendingReview = creatorApplications.find(({ application, pod }) => application.state === "applied" && pod.state === "enrollment_open");
+  let creatorReview: (typeof ownedPods)[number] | undefined;
+  for (const pod of ownedPods) {
+    if (pod.contractData?.verification?.verifier !== "creator") continue;
+    const reviews = await podsRepository.listPendingReviewsForCreator({
+      creatorUserId: session.userId,
+      podId: pod.id
+    });
+    if (reviews?.some(({ submission }) => submission.state === "reviewing")) {
+      creatorReview = pod;
+      break;
+    }
+  }
   const recruit = ownedPods.find((pod) => pod.state === "enrollment_open" && pod.contractData?.community.visibility === "public");
   const creatorFunding = ownedPods.find((pod) =>
     ["cutoff_evaluating", "locked_scheduled", "active", "final_review", "completed", "cancelled_refunding", "cancelled"].includes(pod.state)
@@ -46,6 +58,7 @@ export default async function TodayPage() {
       state: membership.state,
       depositIntentId: membership.depositIntentId
     })),
+    creatorReviewPodId: creatorReview?.id ?? null,
     reviewPodId: pendingReview?.pod.id ?? null,
     creatorFundingPodId: creatorFunding?.id ?? null,
     recruitPodId: recruit?.id ?? null
@@ -77,6 +90,8 @@ export default async function TodayPage() {
     ? activeRecord?.pod
     : action.kind === "participant"
     ? participantRecord?.pod
+    : action.kind === "creator_review"
+      ? creatorReview
     : action.kind === "review"
       ? pendingReview?.pod
       : action.kind === "creator_funding"
@@ -105,6 +120,14 @@ export default async function TodayPage() {
         cta: participantPresentation.actionLabel,
         href: participantPresentation.href
       }
+    : action.kind === "creator_review"
+      ? {
+          eyebrow: "Proofs waiting",
+          title: "Members are waiting for your review.",
+          detail: "Compare each proof with its locked commitment and record one final result.",
+          cta: "Review proofs",
+          href: `/pods/${action.podId}/admin/reviews`
+        }
     : action.kind === "review"
       ? { eyebrow: "Creator decision", title: "A builder is waiting for your answer.", detail: "Review their frozen application responses and make one terminal enrollment decision.", cta: "Review applications", href: `/pods/${action.podId}/admin/applications` }
     : action.kind === "creator_funding" && creatorPresentation

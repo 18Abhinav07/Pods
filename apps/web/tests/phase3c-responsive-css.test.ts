@@ -23,4 +23,10 @@ describe("Phase 3C narrow mobile contract", () => {
       expect(rule(selector)).toMatch(/min-height:\s*44px/);
     }
   );
+
+  it("stacks creator review timing on common phone widths", () => {
+    expect(css).toMatch(
+      /@media \(max-width:\s*480px\)\s*\{\s*\.review-timing-card\s*\{[^}]*grid-template-columns:\s*1fr/
+    );
+  });
 });

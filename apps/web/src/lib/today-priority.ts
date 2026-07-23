@@ -17,6 +17,7 @@ export type TodayEnrollmentAction =
       action: "lock_task" | "submit_evidence" | "reviewing" | "approved" | "upcoming";
     }
   | ({ kind: "participant" } & TodayParticipant)
+  | { kind: "creator_review"; podId: string }
   | { kind: "review"; podId: string }
   | { kind: "creator_funding"; podId: string }
   | { kind: "recruit"; podId: string }
@@ -29,6 +30,7 @@ export function chooseTodayEnrollmentAction(input: {
     action: "lock_task" | "submit_evidence" | "reviewing" | "approved" | "upcoming";
   }>;
   participants: TodayParticipant[];
+  creatorReviewPodId?: string | null;
   reviewPodId: string | null;
   creatorFundingPodId?: string | null;
   recruitPodId: string | null;
@@ -67,6 +69,9 @@ export function chooseTodayEnrollmentAction(input: {
   }
   const activity = input.activities?.[0];
   if (activity) return { kind: "activity", ...activity };
+  if (input.creatorReviewPodId) {
+    return { kind: "creator_review", podId: input.creatorReviewPodId };
+  }
   if (participant) return { kind: "participant", ...participant };
   if (input.reviewPodId) return { kind: "review", podId: input.reviewPodId };
   if (input.creatorFundingPodId) {

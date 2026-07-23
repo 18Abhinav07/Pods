@@ -12,6 +12,7 @@ describe("Phase 2 Today priority", () => {
       }],
       participants: [{ podId: "applied", state: "applied", depositIntentId: null }],
       reviewPodId: "review",
+      creatorReviewPodId: "creator-review",
       recruitPodId: "recruit"
     })).toEqual({
       kind: "activity",
@@ -34,6 +35,7 @@ describe("Phase 2 Today priority", () => {
     expect(chooseTodayEnrollmentAction({
       participants: [{ podId: "funding", state: "funding_failed", depositIntentId: null }],
       reviewPodId: "review",
+      creatorReviewPodId: "creator-review",
       recruitPodId: "recruit"
     })).toEqual({
       kind: "participant",
@@ -70,6 +72,32 @@ describe("Phase 2 Today priority", () => {
 
   it("places creator review before recruiting", () => {
     expect(chooseTodayEnrollmentAction({ participants: [], reviewPodId: "review", recruitPodId: "recruit" })).toEqual({ kind: "review", podId: "review" });
+  });
+
+  it("places pending creator proofs after participant activity but before nonurgent work", () => {
+    expect(chooseTodayEnrollmentAction({
+      activities: [{
+        podId: "activity",
+        occurrenceId: "occurrence-1",
+        action: "submit_evidence"
+      }],
+      participants: [],
+      creatorReviewPodId: "creator-review",
+      reviewPodId: "application-review",
+      recruitPodId: "recruit"
+    })).toMatchObject({ kind: "activity", podId: "activity" });
+
+    expect(chooseTodayEnrollmentAction({
+      participants: [{
+        podId: "application",
+        state: "applied",
+        depositIntentId: null
+      }],
+      creatorReviewPodId: "creator-review",
+      reviewPodId: "application-review",
+      creatorFundingPodId: "creator-funding",
+      recruitPodId: "recruit"
+    })).toEqual({ kind: "creator_review", podId: "creator-review" });
   });
 
   it("keeps a creator roster or refund outcome visible before recruiting", () => {

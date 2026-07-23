@@ -10,6 +10,38 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   const { session, pod } = await requireEnrollmentOwner(podId, `/pods/${podId}/admin`);
   const contract = pod.contractData;
   if (!contract) return null;
+  if (pod.state === "active" || pod.state === "final_review") {
+    const creatorReviews = contract.verification.verifier === "creator";
+    const reviewRecords = creatorReviews
+      ? await podsRepository.listPendingReviewsForCreator({
+          creatorUserId: session.userId,
+          podId
+        })
+      : null;
+    const pendingReviews = reviewRecords?.filter(
+      ({ submission }) => submission.state === "reviewing"
+    ).length ?? 0;
+    return (
+      <main className="app-shell admin-shell">
+        <header className="app-topbar entrance entrance-topbar">
+          <Link className="wordmark" href="/my-pods"><span className="pod-mark" aria-hidden="true" />pods</Link>
+          <span className="phase-pill">Creator controls</span>
+        </header>
+        <section className="today-hero entrance entrance-hero">
+          <p className="eyebrow">Creator command center</p>
+          <h1>{contract.activity.name}</h1>
+          <p className="screen-copy">Follow the activity, review member proofs, and keep the frozen Pod contract visible.</p>
+        </section>
+        <section className="active-pod-actions creator-command-actions">
+          {creatorReviews ? <Link className="primary-action full-action" href={`/pods/${pod.id}/admin/reviews`}>Review {pendingReviews} proof{pendingReviews === 1 ? "" : "s"}</Link> : null}
+          <Link className="secondary-action full-action" href={`/pods/${pod.id}/room`}>Open Pod room</Link>
+          <Link className="secondary-action full-action" href={`/pods/${pod.id}/activity`}>View activity</Link>
+          <Link className="secondary-action full-action" href={`/pods/${pod.id}/admin/funding`}>View participant funding stages</Link>
+          <Link className="secondary-action full-action" href={`/pods/${pod.id}/rules`}>Review frozen rules</Link>
+        </section>
+      </main>
+    );
+  }
   if (pod.state !== "enrollment_open") {
     const stateCopy = pod.state === "locked_scheduled"
       ? {

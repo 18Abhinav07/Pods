@@ -182,7 +182,11 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
 
   await expect(page).toHaveURL(/\/pods\/create\/review\?draft=/);
   await expect(page.getByText("Public, application-based")).toBeVisible();
-  await expect(page.getByText("Pods team", { exact: true })).toBeVisible();
+  await expect(page.getByText("Creator review", { exact: true })).toBeVisible();
+  await expect(page.getByText(
+    "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.",
+    { exact: true }
+  )).toBeVisible();
   await page.getByRole("checkbox", { name: /Freeze this contract/ }).check();
   await page.getByRole("button", { name: "Publish Pod" }).click();
 

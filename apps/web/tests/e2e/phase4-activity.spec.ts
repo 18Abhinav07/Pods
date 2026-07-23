@@ -207,8 +207,8 @@ test("Build and Ship runs from task lock through creator approval", async ({ bro
       buffer: evidenceImage
     });
     await expect(memberPage.getByText("Image secured")).toBeVisible();
-    await memberPage.getByRole("button", { name: "Submit for Pods review" }).click();
-    await expect(memberPage.getByRole("heading", { name: "Your evidence is under review." })).toBeVisible();
+    await memberPage.getByRole("button", { name: "Review and submit" }).click();
+    await expect(memberPage.getByRole("heading", { name: "Creator review in progress" })).toBeVisible();
 
     const creatorQueue = await context.request.get(
       `${baseUrl}/api/pods/${fixture.podId}/admin/reviews`
@@ -256,14 +256,16 @@ test("Build and Ship runs from task lock through creator approval", async ({ bro
     });
 
     await memberPage.reload();
-    await expect(memberPage.getByRole("heading", { name: "Occurrence completed." })).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "Work approved" })).toBeVisible();
     await memberPage.goto(
       `${baseUrl}/pods/${fixture.podId}/submissions/${pendingReview.submission.id}`
     );
-    await expect(memberPage.getByRole("heading", { name: "Work approved." })).toBeVisible();
-    await expect(memberPage.getByText("Bonus-eligible occurrence")).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "Work approved" })).toBeVisible();
+    await expect(memberPage.getByText(
+      "The Pod creator approved this proof. It counts toward your progress and streak."
+    )).toBeVisible();
     await memberPage.goto(`${baseUrl}/today`);
-    await expect(memberPage.getByRole("heading", { name: "Your visible work counted." })).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "Your work is counted." })).toBeVisible();
     await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/room`);
     await expect(
       memberPage.getByRole("region", { name: "Current Pod activity" })

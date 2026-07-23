@@ -115,4 +115,45 @@ describe("TodayPage wallet identity", () => {
       creatorUserId: "user-1"
     });
   });
+
+  it.each([
+    {
+      state: "rejected",
+      eyebrow: "Not verified",
+      title: "The Pod creator did not verify this proof.",
+      detail: "Review the creator's private reason against your locked commitment. This occurrence does not count toward your progress or streak."
+    },
+    {
+      state: "timeout_protected",
+      eyebrow: "Protected after review timeout",
+      title: "Protected after review timeout.",
+      detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
+    }
+  ])(
+    "projects the participant's $state creator-review result",
+    async ({ state, eyebrow, title, detail }) => {
+      repositoryMocks.listCurrentActivitiesForUser.mockResolvedValue([{
+        pod: {
+          id: "pod-activity",
+          state: "active",
+          templateId: "build",
+          contractData: { activity: { name: "Ship together" } }
+        },
+        occurrence: {
+          id: "occurrence-1",
+          opensAt: new Date("2027-04-05T00:00:00.000Z")
+        },
+        commitment: { id: "commitment-1" },
+        submission: { id: "submission-1", state }
+      }]);
+
+      render(await TodayPage());
+
+      expect(screen.getByText(eyebrow)).toBeVisible();
+      expect(screen.getByRole("heading", { name: title })).toBeVisible();
+      expect(screen.getByText(detail)).toBeVisible();
+      expect(screen.getByRole("link", { name: "View submission" }))
+        .toHaveAttribute("href", "/pods/pod-activity/activity/occurrence-1");
+    }
+  );
 });

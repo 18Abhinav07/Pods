@@ -109,9 +109,9 @@ export default async function TodayPage() {
           : action.action === "approved"
             ? { eyebrow: "Work approved", title: "Your work is counted.", detail: "The Pod creator approved this proof. It counts toward your progress and streak.", cta: "Open Pod room", href: `/pods/${action.podId}/room` }
             : action.action === "rejected"
-              ? { eyebrow: "Proof not verified", title: "Your proof needs attention.", detail: "Review the final result against your locked commitment.", cta: "View result", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+              ? { eyebrow: "Not verified", title: "The Pod creator did not verify this proof.", detail: "Review the creator's private reason against your locked commitment. This occurrence does not count toward your progress or streak.", cta: "View submission", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
               : action.action === "timeout_protected"
-                ? { eyebrow: "Protected after review timeout", title: "Your proof is protected.", detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak.", cta: "View result", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+                ? { eyebrow: "Protected after review timeout", title: "Protected after review timeout.", detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak.", cta: "View submission", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
                 : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
     : null;
   const copy = action.kind === "activity" && activityCopy

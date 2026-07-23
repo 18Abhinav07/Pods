@@ -9,13 +9,11 @@ import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
 
 function proofStateLabel(state: string) {
-  if (state === "submitted" || state === "reviewing") return "Under review";
+  if (state === "submitted" || state === "reviewing") return "Creator review";
   if (state === "approved") return "Approved";
-  if (state === "rejected") return "Not approved";
+  if (state === "rejected") return "Not verified";
   if (state === "grace") return "Grace applied";
-  if (state === "timeout_protected") return "Timeout protected";
-  if (state === "needs_more_proof") return "More proof requested";
-  if (state === "disputed") return "Dispute under review";
+  if (state === "timeout_protected") return "Protected after review timeout";
   return "Submitted";
 }
 

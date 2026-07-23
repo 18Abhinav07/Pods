@@ -63,7 +63,7 @@ export function InvitationLanding({ connected }: { connected: boolean }) {
         <div><span>Schedule</span><strong>{preview.occurrenceCount} occurrences</strong><small>{preview.startDate} to {preview.endDate}</small></div>
         <div><span>Upfront commitment</span><strong>{nim(preview.totalLuna)} NIM</strong><small>Required after acceptance</small></div>
         <div><span>Community</span><strong>{preview.minParticipants} to {preview.maxParticipants} people</strong><small>Hidden private activity</small></div>
-        <div><span>Verification</span><strong>Pods team review</strong><small>Not peer-voted or creator-controlled</small></div>
+        <div><span>Verification</span><strong>Creator review</strong><small>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</small></div>
       </section>
       <aside className="reservation-disclosure"><strong>Single-use private entry</strong><p>This link admits one wallet. Acceptance does not reserve a place until funding finality and roster lock.</p></aside>
       <InvitationAcceptance connected={connected} token={token} />

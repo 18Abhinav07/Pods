@@ -20,11 +20,11 @@ export type RoomActivityPresentation = {
 };
 
 function submittedStateLabel(state: string) {
-  if (state === "reviewing" || state === "submitted") return "Under review";
+  if (state === "reviewing" || state === "submitted") return "Creator review";
   if (state === "approved") return "Proof submitted";
-  if (state === "rejected") return "Review complete";
+  if (state === "rejected") return "Not verified";
   if (state === "grace") return "Grace applied";
-  if (state === "timeout_protected") return "Timeout protected";
+  if (state === "timeout_protected") return "Protected after timeout";
   return "Submission recorded";
 }
 

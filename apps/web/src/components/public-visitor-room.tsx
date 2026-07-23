@@ -33,7 +33,12 @@ export type PublicVisitorMessage = {
     localDate: string;
     task: string;
     deliverableType: string;
-    state: "committed" | "under_review" | "approved";
+    state:
+      | "committed"
+      | "under_review"
+      | "approved"
+      | "rejected"
+      | "timeout_protected";
     submissionId: string | null;
     resultSummary: string | null;
     artifactUrl: string | null;
@@ -95,6 +100,16 @@ function roomTime(value: string) {
     minute: "2-digit",
     timeZone: "UTC"
   }).format(new Date(value));
+}
+
+function publicProofStateLabel(
+  state: NonNullable<PublicVisitorMessage["activity"]>["state"]
+) {
+  if (state === "under_review") return "Creator review";
+  if (state === "approved") return "Approved";
+  if (state === "rejected") return "Not verified";
+  if (state === "timeout_protected") return "Protected after review timeout";
+  return "Committed";
 }
 
 export function PublicVisitorRoom({
@@ -208,7 +223,7 @@ export function PublicVisitorRoom({
       </section>
       <aside className="visitor-boundary">
         <strong>Read-only visitor</strong>
-        <span>You can read public messages and proof records. Writing, reactions, activity controls, reviewer evidence, and financial details stay private.</span>
+        <span>You can read public messages and proof records. Writing, reactions, activity controls, creator-only evidence, private decision notes, and financial details stay private.</span>
       </aside>
       <section className="public-room-stream" aria-label="Public Pod room">
         {data.messages.length === 0 ? (
@@ -288,7 +303,7 @@ export function PublicVisitorRoom({
                   <div className="public-proof-card">
                     <div>
                       <span>Occurrence {message.activity.occurrenceOrdinal}</span>
-                      <b>{message.activity.state.replaceAll("_", " ")}</b>
+                      <b>{publicProofStateLabel(message.activity.state)}</b>
                     </div>
                     <h2>{message.activity.task}</h2>
                     {message.activity.resultSummary ? <p>{message.activity.resultSummary}</p> : null}

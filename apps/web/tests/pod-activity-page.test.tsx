@@ -64,7 +64,7 @@ describe("PodActivityPage", () => {
     expect(screen.getByRole("img", { name: "Ryuk avatar" })).toBeVisible();
     expect(screen.getByText("Ryuk")).toBeVisible();
     expect(screen.getByText("@ryuk_builds")).toBeVisible();
-    expect(screen.getByText("Under review")).toBeVisible();
+    expect(screen.getByText("Creator review")).toBeVisible();
     expect(screen.queryByText("Build in public")).not.toBeInTheDocument();
     expect(screen.queryByText(/Phase 4 Build Lab/)).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Pod-shared proof from Ryuk" }))
@@ -99,5 +99,32 @@ describe("PodActivityPage", () => {
     }));
 
     expect(screen.queryByRole("img", { name: "Pod-shared proof from Ryuk" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["rejected", "Not verified"],
+    ["timeout_protected", "Protected after review timeout"]
+  ])("shows the group-safe %s status without a private decision note", async (state, label) => {
+    const privateNote = "Only the participant and creator may read this note.";
+    listPodVisibleSubmissions.mockResolvedValue({
+      items: [{
+        ...proof,
+        submission: {
+          ...proof.submission,
+          state,
+          reviewDecisionNote: privateNote
+        }
+      }],
+      page: 1,
+      hasNext: false
+    });
+
+    render(await PodActivityPage({
+      params: Promise.resolve({ podId: "pod-1" }),
+      searchParams: Promise.resolve({})
+    }));
+
+    expect(screen.getByText(label)).toBeVisible();
+    expect(screen.queryByText(privateNote)).not.toBeInTheDocument();
   });
 });

@@ -139,18 +139,18 @@ export function FundingCommitment(props: {
         {props.publicVisitorRoom ? (
           <div className="custody-disclosure visitor-funding-disclosure">
             <strong>Public visitor room</strong>
-            <p>After roster lock, visitors can read the public room and explicitly public proof records. They cannot message, react, join activity, see reviewer-only evidence, or see financial details.</p>
+            <p>After roster lock, visitors can read the public room and explicitly public proof records. They cannot message, react, join activity, see creator-only evidence, or see financial details.</p>
           </div>
         ) : null}
         <div className="trust-disclosure">
           <span aria-hidden="true">01</span>
-          <p>Verification is performed by the Pods team. Pod creators and participants do not vote on evidence or financial outcomes.</p>
+          <p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p>
         </div>
         <div className="trust-disclosure is-protection">
           <span aria-hidden="true">{isAlphaRefund ? "100%" : "24h"}</span>
           <p>{isAlphaRefund
             ? "Your complete Testnet commitment returns after roster lock. Review decisions affect progress only."
-            : "If Pods does not review within 24 hours, your occurrence deposit is protected but is not eligible for a bonus."}</p>
+            : "If the creator does not review within 24 hours, your occurrence deposit is protected but is not eligible for a bonus."}</p>
         </div>
         <div className="custody-disclosure">
           <strong>Custodial testnet treasury</strong>
@@ -167,8 +167,8 @@ export function FundingCommitment(props: {
           type="checkbox"
         />
         <span>{isAlphaRefund
-          ? "I accept the immutable full-return Testnet contract, centralized Pods-team verification, custodial treasury, and maximum commitment shown above."
-          : "I accept the frozen terms, centralized Pods-team verification, custodial treasury, and maximum commitment shown above."}</span>
+          ? "I accept the immutable full-return Testnet contract, creator review, custodial treasury, and maximum commitment shown above."
+          : "I accept the frozen terms, creator review, custodial treasury, and maximum commitment shown above."}</span>
       </label>
       {error ? <div className="inline-error funding-error" role="alert"><span>{error}</span></div> : null}
       <button

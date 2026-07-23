@@ -77,6 +77,27 @@ describe("PublicVisitorRoom", () => {
     expect(screen.queryByRole("button", { name: /Support/i })).not.toBeInTheDocument();
   });
 
+  it("shows a terminal proof status without rendering a private rejection reason", () => {
+    const privateReason = "The private reviewer evidence did not match the locked task.";
+    const rejectedRoom = {
+      ...room,
+      messages: room.messages.map((message) => ({
+        ...message,
+        activity: message.activity ? {
+          ...message.activity,
+          state: "rejected",
+          reviewDecisionNote: privateReason
+        } : null
+      }))
+    } as unknown as PublicVisitorRoomData;
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<PublicVisitorRoom initial={rejectedRoom} />);
+
+    expect(screen.getByText("Not verified")).toBeVisible();
+    expect(screen.queryByText(privateReason)).not.toBeInTheDocument();
+  });
+
   it("lets a signed visitor privately report public content without gaining room controls", async () => {
     const request = vi.fn(async () =>
       new Response(JSON.stringify({ report: { id: "report-1", state: "pending" } }), {

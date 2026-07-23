@@ -331,8 +331,8 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     await expect(memberPage.getByText("5 scheduled occurrences")).toBeVisible();
     await expect(memberPage.getByText("0.1 NIM per occurrence")).toBeVisible();
     await expect(memberPage.getByText("0.5 NIM", { exact: true }).first()).toBeVisible();
-    await expect(memberPage.getByText("Verification is performed by the Pods team.", { exact: false })).toBeVisible();
-    await expect(memberPage.getByText("If Pods does not review within 24 hours", { exact: false })).toBeVisible();
+    await expect(memberPage.getByText("The Pod creator reviews member proofs.", { exact: false })).toBeVisible();
+    await expect(memberPage.getByText("If the creator does not review within 24 hours", { exact: false })).toBeVisible();
     expect(await memberPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const commitButton = memberPage.getByRole("button", { name: "Commit 0.5 NIM" });
     await expect(commitButton).toBeDisabled();

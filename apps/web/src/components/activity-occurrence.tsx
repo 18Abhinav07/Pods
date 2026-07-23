@@ -57,6 +57,36 @@ function deliverableLabel(value: BuildDeliverableType) {
   return labels[value];
 }
 
+function statusPresentation(state: Exclude<SubmissionState, "draft">) {
+  const presentations = {
+    reviewing: {
+      eyebrow: "Creator review",
+      heading: "Creator review in progress",
+      detail: "The Pod creator is checking your proof against the locked commitment."
+    },
+    approved: {
+      eyebrow: "The Pod creator approved",
+      heading: "Work approved",
+      detail: "The Pod creator approved this proof. It counts toward your progress and streak."
+    },
+    rejected: {
+      eyebrow: "Creator review complete",
+      heading: "Not verified",
+      detail: "The Pod creator did not verify this proof against the locked commitment."
+    },
+    timeout_protected: {
+      eyebrow: "Review timeout protection",
+      heading: "Protected after review timeout",
+      detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
+    }
+  } satisfies Record<Exclude<SubmissionState, "draft">, {
+    eyebrow: string;
+    heading: string;
+    detail: string;
+  }>;
+  return presentations[state];
+}
+
 async function responseBody(response: Response) {
   return response.json() as Promise<{ error?: string; commitment?: CommitmentView; submission?: SubmissionView }>;
 }
@@ -174,7 +204,7 @@ export function ActivityOccurrence(props: Props) {
   async function uploadImage(file: File) {
     if (resultSummary.trim().length < 20 || !artifactUrl.startsWith("https://")) {
       evidenceForm.current?.reportValidity();
-      setError("Add a result summary and public artifact before attaching reviewer evidence.");
+      setError("Add a result summary and public artifact before attaching creator-only evidence.");
       return;
     }
     if (autoSaveTimer.current !== null) {
@@ -265,6 +295,9 @@ export function ActivityOccurrence(props: Props) {
 
   const status = submission?.state;
   const fullReturnAlpha = props.settlementMode === "full_refund_alpha";
+  const presentation = status && status !== "draft"
+    ? statusPresentation(status)
+    : null;
   return (
     <>
       <section className="activity-hero entrance entrance-hero">
@@ -315,11 +348,11 @@ export function ActivityOccurrence(props: Props) {
             {busy ? "Locking task" : "Lock this task"}
           </button>
         </motion.form>
-      ) : submission && (status === "reviewing" || status === "approved") ? (
+      ) : submission && presentation ? (
         <section className={`submission-status-card is-${status}`}>
-          <span>{status === "approved" ? "Manually approved" : "Pods team review"}</span>
-          <h2>{status === "approved" ? "Occurrence completed." : "Your evidence is under review."}</h2>
-          <p>{status === "approved" ? "The public artifact completed the locked task and now contributes to the participant record." : "The 12-hour response time is a target. Your review deadline remains visible while the Pods team evaluates the work."}</p>
+          <span>{presentation.eyebrow}</span>
+          <h2>{presentation.heading}</h2>
+          <p>{presentation.detail}</p>
           <Link className="primary-action full-action" href={`/pods/${props.podId}/submissions/${submission.id}`}>View submission</Link>
         </section>
       ) : (
@@ -342,7 +375,7 @@ export function ActivityOccurrence(props: Props) {
             maxLength={1200}
             minLength={20}
             onChange={(event) => { setResultSummary(event.target.value); setDraftState("idle"); }}
-            placeholder="Describe what changed and what a reviewer can verify."
+            placeholder="Describe what changed and what the Pod creator can verify."
             required
             rows={5}
             value={resultSummary}
@@ -360,7 +393,7 @@ export function ActivityOccurrence(props: Props) {
             <div className="proof-add-heading"><div><span>Evidence</span><strong>Choose what the room can see</strong></div><button aria-expanded={addMenuOpen} aria-label="Add evidence" onClick={() => setAddMenuOpen((open) => !open)} type="button">{addMenuOpen ? "Close" : "+ Add"}</button></div>
             <fieldset className="proof-privacy-choice">
               <legend>Supporting image visibility</legend>
-              <label className={proofShareMode === "reviewer_only" ? "is-selected" : ""}><input checked={proofShareMode === "reviewer_only"} name="proof-share" onChange={() => { setProofShareMode("reviewer_only"); setDraftState("idle"); }} type="radio" /><span><strong>Pods reviewer only</strong>Private evidence for the decision</span></label>
+              <label className={proofShareMode === "reviewer_only" ? "is-selected" : ""}><input checked={proofShareMode === "reviewer_only"} name="proof-share" onChange={() => { setProofShareMode("reviewer_only"); setDraftState("idle"); }} type="radio" /><span><strong>Creator only</strong>Private evidence for the decision</span></label>
               <label className={proofShareMode === "pod_shared" ? "is-selected" : ""}><input checked={proofShareMode === "pod_shared"} name="proof-share" onChange={() => { setProofShareMode("pod_shared"); setDraftState("idle"); }} type="radio" /><span><strong>Share with Pod</strong>Visible to the creator and locked roster</span></label>
               {props.publicVisitorSharingEnabled ? <label className={proofShareMode === "public" ? "is-selected" : ""}><input checked={proofShareMode === "public"} name="proof-share" onChange={() => { setProofShareMode("public"); setDraftState("idle"); }} type="radio" /><span><strong>Share publicly</strong>Visible to anyone who opens this public Pod room</span></label> : null}
             </fieldset>

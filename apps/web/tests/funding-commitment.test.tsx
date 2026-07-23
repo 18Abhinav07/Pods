@@ -52,7 +52,7 @@ describe("FundingCommitment", () => {
     expect(screen.getByText("Maximum temporary custody")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Verification is performed by the Pods team. Pod creators and participants do not vote on evidence or financial outcomes."
+        "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
       )
     ).toBeInTheDocument();
     expect(
@@ -78,7 +78,7 @@ describe("FundingCommitment", () => {
     expect(screen.getByText("Public visitor room")).toBeVisible();
     expect(
       screen.getByText(
-        "After roster lock, visitors can read the public room and explicitly public proof records. They cannot message, react, join activity, see reviewer-only evidence, or see financial details."
+        "After roster lock, visitors can read the public room and explicitly public proof records. They cannot message, react, join activity, see creator-only evidence, or see financial details."
       )
     ).toBeVisible();
   });

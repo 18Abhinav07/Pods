@@ -56,7 +56,7 @@ export function CommunityForm({ podId, initial }: { podId: string; initial: Comm
         <label className={`visitor-audience-row ${roomAudience === "public_read_only" ? "is-selected" : ""}`}>
           <span className="visitor-audience-copy">
             <strong>Let visitors follow along</strong>
-            <small>Anyone with the link can read the room and Pod-shared proofs. Visitors cannot react, reply, submit, or see private review and funding details.</small>
+            <small>Anyone with the link can read the room and Pod-shared proofs. Visitors cannot react, reply, submit, or see creator-only evidence, private decision notes, or funding details.</small>
           </span>
           <input
             aria-label="Let visitors follow along"
@@ -69,7 +69,7 @@ export function CommunityForm({ podId, initial }: { podId: string; initial: Comm
         </label>
       </fieldset>
     </> : <label className="field-block"><span>Invitation expiry</span><select name="inviteExpiryHours" defaultValue={initial.visibility === "private" ? initial.inviteExpiryHours : 168}><option value="24">24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="336">14 days</option></select></label>}
-    <div className="authority-note"><strong>Creator authority</strong><span>You control enrollment and announcements. Pods team review and frozen financial terms remain outside creator control.</span></div>
+    <div className="authority-note"><strong>Creator authority</strong><span>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</span></div>
     {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
     <button className="primary-action full-action" disabled={saving} type="submit">{saving ? "Saving community" : "Continue to commitment"}</button>
   </form>;

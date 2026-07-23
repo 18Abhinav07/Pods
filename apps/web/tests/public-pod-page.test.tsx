@@ -79,6 +79,10 @@ describe("PublicPodPage", () => {
     expect(
       screen.getByRole("heading", { name: "Build Pods in Public" })
     ).toBeVisible();
+    expect(screen.getByText("Creator review")).toBeVisible();
+    expect(screen.getByText(
+      "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
+    )).toBeVisible();
     expect(publicPodPageSession).toHaveBeenCalledOnce();
     expect(alphaAwarePageSession).not.toHaveBeenCalled();
     expect(getMembershipForUser).not.toHaveBeenCalled();

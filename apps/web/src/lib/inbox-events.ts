@@ -133,8 +133,8 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
     if (row.submission?.submittedAt) {
       addEvent(events, {
         id: `evidence-submitted-${row.submission.id}`,
-        title: "Evidence submitted",
-        detail: "Pods team review started against your frozen task.",
+        title: "Proof submitted",
+        detail: "Your proof is with the Pod creator.",
         href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
         occurredAt: row.submission.submittedAt,
         tone: "neutral"
@@ -143,10 +143,33 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
     if (row.submission?.approvedAt) {
       addEvent(events, {
         id: `evidence-approved-${row.submission.id}`,
-        title: "Occurrence approved",
-        detail: "Your visible work counted toward this Pod and your participant record.",
+        title: "Work approved",
+        detail: "The Pod creator approved this proof. It counts toward your progress and streak.",
         href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
         occurredAt: row.submission.approvedAt,
+        tone: "positive"
+      }, row);
+    }
+    if (row.submission?.state === "rejected" && row.submission.reviewedAt) {
+      addEvent(events, {
+        id: `evidence-rejected-${row.submission.id}`,
+        title: "Not verified",
+        detail: "The Pod creator did not verify this proof. Open the private result for the decision note.",
+        href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
+        occurredAt: row.submission.reviewedAt,
+        tone: "attention"
+      }, row);
+    }
+    if (
+      row.submission?.state === "timeout_protected" &&
+      row.submission.reviewedAt
+    ) {
+      addEvent(events, {
+        id: `evidence-timeout-protected-${row.submission.id}`,
+        title: "Protected after review timeout",
+        detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak.",
+        href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
+        occurredAt: row.submission.reviewedAt,
         tone: "positive"
       }, row);
     }

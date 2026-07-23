@@ -126,7 +126,7 @@ describe("HomePage", () => {
     ]) {
       expect(within(ribbon).getAllByText(label).length).toBeGreaterThan(0);
     }
-    expect(screen.getByText("Pods reviewer only")).toBeVisible();
+    expect(screen.getByText("Creator only")).toBeVisible();
     expect(screen.getByText("Share with Pod")).toBeVisible();
   });
 

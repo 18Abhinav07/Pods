@@ -32,7 +32,7 @@ export function OpsConnectForm({ returnTo }: { returnTo: string }) {
 
   return (
     <form className="ops-connect-card" onSubmit={submit}>
-      <label htmlFor="ops-access-token">Pods team access token</label>
+      <label htmlFor="ops-access-token">Pods operations access token</label>
       <input
         autoComplete="current-password"
         id="ops-access-token"

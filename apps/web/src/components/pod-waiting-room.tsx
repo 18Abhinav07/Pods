@@ -113,9 +113,9 @@ export function PodWaitingRoom(props: PodWaitingRoomProps) {
       </section>
 
       <aside className="waiting-verification">
-        <span>Pods team verification</span>
-        <strong>Evidence decisions stay independent of the pool.</strong>
-        <p>Pods team reviews evidence against the frozen rules. Creators and participants cannot approve their own financial outcomes.</p>
+        <span>Creator review</span>
+        <strong>Proof decisions stay separate from member funds.</strong>
+        <p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p>
       </aside>
 
       <div className="waiting-actions">

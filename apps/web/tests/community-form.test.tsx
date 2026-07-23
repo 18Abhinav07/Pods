@@ -39,5 +39,8 @@ describe("CommunityForm room audience", () => {
     expect(visitors.closest("label")).toHaveClass("visitor-audience-row", "is-selected");
     expect(membersRow).not.toHaveClass("is-selected");
     expect(container.querySelectorAll(".visitor-audience-row")).toHaveLength(2);
+    expect(screen.getByText(
+      "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
+    )).toBeVisible();
   });
 });

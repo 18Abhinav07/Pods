@@ -208,7 +208,7 @@ export function ProfileOnboardingForm({
             <input checked={activityStatusVisible} onChange={(event) => setActivityStatusVisible(event.target.checked)} type="checkbox" />
             <span><strong>Show activity status</strong><small>Friends may see when you were recently active.</small></span>
           </label>
-          <div className="privacy-note">Your wallet address, deposits, private Pod names, and reviewer evidence never enter your social profile.</div>
+          <div className="privacy-note">Your wallet address, deposits, private Pod names, and creator-only evidence never enter your social profile.</div>
           <div className="split-actions">
             <button className="secondary-action" onClick={() => setStep(1)} type="button">Back</button>
             <button

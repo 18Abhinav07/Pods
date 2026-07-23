@@ -49,7 +49,14 @@ export default async function CreatorReviewWorkspacePage({
   });
   if (!result) notFound();
 
-  const { submission, commitment, occurrence, pod, participant } = result;
+  const {
+    submission,
+    commitment,
+    occurrence,
+    pod,
+    participant,
+    reviewDecision
+  } = result;
   const contract = pod.contractData;
   if (!contract) notFound();
   const timeZone = contract.activity.timeZone;
@@ -130,6 +137,12 @@ export default async function CreatorReviewWorkspacePage({
           <span>Decision recorded</span>
           <strong>{submissionStatusLabel(submission.state)}</strong>
           <p>This proof already has one final result.</p>
+          {reviewDecision?.note ? (
+            <aside>
+              <strong>Private decision note</strong>
+              <p>{reviewDecision.note}</p>
+            </aside>
+          ) : null}
         </section>
       ) : (
         <CreatorReviewForm podId={podId} submissionId={submissionId} />

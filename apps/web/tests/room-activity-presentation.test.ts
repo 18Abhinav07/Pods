@@ -54,6 +54,28 @@ describe("presentRoomActivitySchedule", () => {
     });
   });
 
+  it.each([
+    ["rejected", "Not verified"],
+    ["timeout_protected", "Protected after timeout"]
+  ])(
+    "keeps a terminal %s occurrence viewable with its participant-safe label",
+    (state, stateLabel) => {
+      expect(presentRoomActivitySchedule({
+        podId: "pod-1",
+        now,
+        rows: [{
+          ...base,
+          commitment: { id: "commitment-1" },
+          submission: { state }
+        }]
+      })).toMatchObject({
+        mode: "view",
+        label: "View submission",
+        stateLabel
+      });
+    }
+  );
+
   it("ends a one-occurrence schedule instead of offering another proof", () => {
     const afterClose = new Date("2027-04-06T00:00:00.000Z");
     expect(presentRoomActivitySchedule({

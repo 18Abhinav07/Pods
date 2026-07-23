@@ -43,6 +43,10 @@ describe("RulesPage", () => {
 
     expect(screen.getByRole("link", { name: "Open Pod" }))
       .toHaveAttribute("href", "/pods/pod-1/room");
+    expect(screen.getByText("Creator review")).toBeVisible();
+    expect(screen.getByText(
+      "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
+    )).toBeVisible();
     expect(screen.queryByText("Review funding handoff")).not.toBeInTheDocument();
   });
 });

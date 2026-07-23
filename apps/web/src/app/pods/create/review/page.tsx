@@ -30,7 +30,7 @@ export default async function ReviewStepPage({ searchParams }: { searchParams: P
     <section><span>Community</span><strong>{contract.community.visibility === "public" ? "Public, application-based" : "Private, invitation-only"}</strong><p>{contract.community.minParticipants} to {contract.community.maxParticipants} participants</p></section>
     {contract.version === 2 ? <section><span>Visitor room</span><strong>{contract.community.roomAudience === "public_read_only" ? "Public, read only" : "Members only"}</strong><p>{contract.community.roomAudience === "public_read_only" ? "After roster lock, visitors can read public room and proof records without activity or financial access." : "Only the creator and locked roster can enter the room."}</p></section> : null}
     <section className="contract-money"><span>Commitment</span><strong>{nim(contract.commitment.totalLuna)} Testnet NIM upfront</strong><p>Full return after roster lock. No proportional redistribution in this immutable contract.</p></section>
-    <section><span>Verification</span><strong>Pods team</strong><p>Review outcomes update progress and streaks. They do not change the Phase 4 alpha return.</p></section>
+    <section><span>Verification</span><strong>Creator review</strong><p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p></section>
     <PublishClient podId={pod.id} />
   </div></CreatorShell>;
 }

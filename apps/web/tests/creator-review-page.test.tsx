@@ -252,4 +252,23 @@ describe("creator proof review pages", () => {
         .not.toBeInTheDocument();
     }
   );
+
+  it("shows the creator the private note recorded with a rejection", async () => {
+    const privateNote = "The submitted artifact does not complete the locked commitment.";
+    repository.getReviewSubmissionForCreator.mockResolvedValue({
+      ...workspaceRecord,
+      submission: { ...workspaceRecord.submission, state: "rejected" },
+      reviewDecision: {
+        action: "rejected",
+        note: privateNote
+      }
+    });
+
+    render(await CreatorReviewWorkspacePage({
+      params: Promise.resolve({ podId, submissionId })
+    }));
+
+    expect(screen.getByText(privateNote)).toBeVisible();
+    expect(screen.getByText("Private decision note")).toBeVisible();
+  });
 });

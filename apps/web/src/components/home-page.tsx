@@ -151,7 +151,7 @@ export function HomePage() {
           <ul>
             <li>Creator announcements stay distinct.</li>
             <li>Proof remains connected to the occurrence.</li>
-            <li>You choose whether the image is Pod-shared or reviewer-only.</li>
+            <li>You choose whether the image is Pod-shared or creator-only.</li>
           </ul>
         </LandingReveal>
         <LandingReveal className="room-section-preview" delay={0.08}>

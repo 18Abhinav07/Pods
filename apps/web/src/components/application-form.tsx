@@ -71,7 +71,7 @@ export function ApplicationForm({
       {visitorConsent ? (
         <label className="consent-row">
           <input name="acceptsVisitorRoom" required type="checkbox" />
-          <span>I accept this frozen contract and understand that, after roster lock, visitors can read the Pod room, public proof records, and public supporting images. They cannot participate or see private evidence, reviewer details, or financial data.</span>
+          <span>I accept this frozen contract and understand that, after roster lock, visitors can read the Pod room, public proof records, and public supporting images. They cannot participate or see creator-only evidence, private decision notes, or financial data.</span>
         </label>
       ) : null}
       {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}

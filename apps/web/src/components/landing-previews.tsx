@@ -69,7 +69,7 @@ export function PodRoomPreview() {
         </article>
       </div>
       <footer>
-        <span>Pods reviewer only</span>
+        <span>Creator only</span>
         <span>Share with Pod</span>
       </footer>
     </div>

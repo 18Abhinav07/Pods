@@ -103,15 +103,15 @@ export default async function TodayPage() {
     ? action.action === "lock_task"
       ? { eyebrow: "Commitment open", title: "Name the work before you build.", detail: "Lock one concrete task and its visible deliverable before the frozen cutoff.", cta: "Lock today's task", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
       : action.action === "submit_evidence"
-        ? { eyebrow: "Proof due", title: "Turn shipped work into visible progress.", detail: "Add your result and public artifact, then send this occurrence to Pods team review.", cta: "Add today's proof", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+        ? { eyebrow: "Proof due", title: "Turn shipped work into visible progress.", detail: "Add your result and public artifact, then send this occurrence to creator review.", cta: "Add today's proof", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
         : action.action === "reviewing"
-          ? { eyebrow: "Review in progress", title: "Your work is with the Pods team.", detail: "Your locked task and submitted proof are being checked against the Pod contract.", cta: "View review", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+          ? { eyebrow: "Creator review in progress", title: "Your proof is with the Pod creator.", detail: "The Pod creator is checking your proof against the locked commitment.", cta: "View review", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
           : action.action === "approved"
-            ? { eyebrow: "Counted today", title: "Your work is counted.", detail: "This approved occurrence is already part of your streak. Keep the group moving in the Pod room.", cta: "Open Pod room", href: `/pods/${action.podId}/room` }
+            ? { eyebrow: "Work approved", title: "Your work is counted.", detail: "The Pod creator approved this proof. It counts toward your progress and streak.", cta: "Open Pod room", href: `/pods/${action.podId}/room` }
             : action.action === "rejected"
               ? { eyebrow: "Proof not verified", title: "Your proof needs attention.", detail: "Review the final result against your locked commitment.", cta: "View result", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
               : action.action === "timeout_protected"
-                ? { eyebrow: "Review protected", title: "Your proof is protected.", detail: "The review window ended without a creator decision.", cta: "View result", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+                ? { eyebrow: "Protected after review timeout", title: "Your proof is protected.", detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak.", cta: "View result", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
                 : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
     : null;
   const copy = action.kind === "activity" && activityCopy

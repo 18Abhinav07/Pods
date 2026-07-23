@@ -61,7 +61,7 @@ export default async function PublicPodPage({
         <div><span>Schedule</span><strong>{contract.commitment.occurrenceCount} occurrences</strong><small>{contract.activity.startDate} to {contract.activity.endDate}</small></div>
         <div><span>Upfront commitment</span><strong>{nim(contract.commitment.totalLuna)} NIM</strong><small>{nim(contract.commitment.lunaPerOccurrence)} NIM per occurrence</small></div>
         <div><span>Community</span><strong>{contract.community.minParticipants} to {contract.community.maxParticipants} people</strong><small>Creator reviews applications</small></div>
-        <div><span>Evidence authority</span><strong>Pods team review</strong><small>Not peer-voted or creator-controlled</small></div>
+        <div><span>Evidence authority</span><strong>Creator review</strong><small>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</small></div>
       </section>
       {pod.stage === "open" && relationship.kind === "visitor" ? (
         <aside className="reservation-disclosure entrance entrance-templates">

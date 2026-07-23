@@ -89,7 +89,7 @@ describe("Build and Ship occurrence", () => {
       "/api/pods/pod-1/submissions/submission-1/submit",
       { method: "POST" }
     ));
-    expect(await screen.findByText("Your evidence is under review.")).toBeInTheDocument();
+    expect(await screen.findByText("Creator review in progress")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
   });
 
@@ -105,7 +105,7 @@ describe("Build and Ship occurrence", () => {
       submission={null}
     />);
 
-    expect(screen.getByRole("radio", { name: /Pods reviewer only/i })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Creator only/i })).toBeChecked();
     expect(screen.getByRole("radio", { name: /Share with Pod/i })).toBeInTheDocument();
     expect(container.querySelector(".activity-evidence-card")).toHaveClass("is-guided-flow");
     expect(screen.getByRole("navigation", { name: "Proof progress" })).toBeInTheDocument();
@@ -140,4 +140,55 @@ describe("Build and Ship occurrence", () => {
     expect(screen.getByRole("radio", { name: /Share publicly/i }))
       .toBeInTheDocument();
   });
+
+  it.each([
+    [
+      "reviewing",
+      "Creator review in progress",
+      "The Pod creator is checking your proof against the locked commitment."
+    ],
+    [
+      "approved",
+      "Work approved",
+      "The Pod creator approved this proof. It counts toward your progress and streak."
+    ],
+    [
+      "rejected",
+      "Not verified",
+      "The Pod creator did not verify this proof against the locked commitment."
+    ],
+    [
+      "timeout_protected",
+      "Protected after review timeout",
+      "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
+    ]
+  ] as const)(
+    "renders the participant-safe %s terminal projection",
+    (state, heading, detail) => {
+      render(
+        <ActivityOccurrence
+          {...base}
+          commitment={{
+            id: "commitment-1",
+            task: "Ship the participant activity screen and its tests.",
+            deliverableType: "pull_request",
+            lockedAt: "2027-04-05T08:00:00.000Z"
+          }}
+          submission={{
+            id: "submission-1",
+            state,
+            resultSummary: "Shipped the participant activity screen and its tests.",
+            artifactUrl: "https://github.com/example/pods/pull/42",
+            evidenceObjectKey: null,
+            proofShareMode: "reviewer_only"
+          }}
+        />
+      );
+
+      expect(screen.getByRole("heading", { name: heading })).toBeVisible();
+      expect(screen.getByText(detail)).toBeVisible();
+      expect(screen.queryByRole("button", { name: /appeal|dispute/i }))
+        .not.toBeInTheDocument();
+    }
+  );
 });

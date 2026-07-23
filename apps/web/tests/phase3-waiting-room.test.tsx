@@ -43,7 +43,9 @@ describe("Phase 3B waiting room", () => {
     expect(screen.getByText("1 confirmed")).toBeInTheDocument();
     expect(screen.getByText("3 places remaining")).toBeInTheDocument();
     expect(screen.getByText("5 frozen occurrences")).toBeInTheDocument();
-    expect(screen.getByText(/Pods team reviews evidence/)).toBeInTheDocument();
+    expect(screen.getByText(
+      "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
+    )).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /funding tracker/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Review frozen rules" }))
       .toHaveAttribute("href", "/pods/pod-1/rules");

@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import {
+  isPublicVisitorContract,
   nextDepositState,
   type DepositExceptionCode,
   type DepositState,
   type FundingNetwork
 } from "@pods/domain";
-import { and, asc, eq, inArray, ne, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
 import {
@@ -41,24 +42,8 @@ export function createFundingMethods(database: PodsDatabase) {
       network: FundingNetwork;
       reference: string;
       now: Date;
-      maximumDepositLuna?: number;
-      maximumTreasuryExposureLuna?: number;
     }) {
       return database.transaction(async (transaction) => {
-        if (
-          input.maximumDepositLuna !== undefined ||
-          input.maximumTreasuryExposureLuna !== undefined
-        ) {
-          if (
-            !Number.isSafeInteger(input.maximumDepositLuna) ||
-            !Number.isSafeInteger(input.maximumTreasuryExposureLuna) ||
-            input.maximumDepositLuna! <= 0 ||
-            input.maximumTreasuryExposureLuna! <= 0
-          ) {
-            throw new Error("Alpha deposit caps must be positive safe integers");
-          }
-          await transaction.execute(sql`select pg_advisory_xact_lock(73642701)`);
-        }
         const [membership] = await transaction
           .select()
           .from(memberships)
@@ -79,31 +64,13 @@ export function createFundingMethods(database: PodsDatabase) {
         if (!pod?.contractData || pod.state !== "enrollment_open") {
           throw new Error("Pod is not accepting deposits");
         }
-        const depositAmountLuna = pod.contractData.commitment.totalLuna;
         if (
-          input.maximumDepositLuna !== undefined &&
-          depositAmountLuna > input.maximumDepositLuna
+          isPublicVisitorContract(pod.contractData) &&
+          membership.acceptedContractHash !== pod.contractHash
         ) {
-          throw new Error("Commitment exceeds the alpha deposit cap");
+          throw new Error("Accept the current frozen Pod contract before funding");
         }
-        if (input.maximumTreasuryExposureLuna !== undefined) {
-          const [exposure] = await transaction
-            .select({
-              amountLuna: sql<number>`coalesce(sum(${depositIntents.amountLuna}), 0)`
-            })
-            .from(depositIntents)
-            .where(and(
-              eq(depositIntents.treasuryAddress, input.treasuryAddress),
-              notInArray(depositIntents.state, ["wallet_rejected", "refunded"])
-            ));
-          const reservedLuna = Number(exposure?.amountLuna ?? 0);
-          if (
-            !Number.isSafeInteger(reservedLuna) ||
-            reservedLuna + depositAmountLuna > input.maximumTreasuryExposureLuna
-          ) {
-            throw new Error("Alpha treasury exposure cap has been reached");
-          }
-        }
+        const depositAmountLuna = pod.contractData.commitment.totalLuna;
         const [firstOccurrence] = await transaction
           .select({ opensAt: occurrences.opensAt })
           .from(occurrences)

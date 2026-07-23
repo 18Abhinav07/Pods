@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Lightbulb, ShareNetwork, X } from "@phosphor-icons/react";
+import { Bell, SlidersHorizontal, ShareNetwork, X } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -41,7 +41,7 @@ export function PodRoomHeader({
         </span>
         <span className="pod-room-utilities">
           <button aria-expanded={toolsOpen} aria-label="Open Pod tools" onClick={() => setToolsOpen(true)} type="button">
-            <Lightbulb aria-hidden="true" size={21} weight="bold" />
+            <SlidersHorizontal aria-hidden="true" size={21} weight="bold" />
           </button>
           <Link aria-label="Open updates" href="/updates"><Bell aria-hidden="true" size={21} weight="bold" /></Link>
         </span>

@@ -33,6 +33,7 @@ export function FundingCommitment(props: {
   lunaPerOccurrence: number;
   totalLuna: number;
   settlementMode: SettlementMode;
+  publicVisitorRoom?: boolean;
 }) {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
@@ -135,6 +136,12 @@ export function FundingCommitment(props: {
       )}
 
       <section className="funding-disclosures entrance entrance-templates">
+        {props.publicVisitorRoom ? (
+          <div className="custody-disclosure visitor-funding-disclosure">
+            <strong>Public visitor room</strong>
+            <p>After roster lock, visitors can read the public room and explicitly public proof records. They cannot message, react, join activity, see reviewer-only evidence, or see financial details.</p>
+          </div>
+        ) : null}
         <div className="trust-disclosure">
           <span aria-hidden="true">01</span>
           <p>Verification is performed by the Pods team. Pod creators and participants do not vote on evidence or financial outcomes.</p>
@@ -148,7 +155,7 @@ export function FundingCommitment(props: {
         <div className="custody-disclosure">
           <strong>Custodial testnet treasury</strong>
           <p>{isAlphaRefund
-            ? "Your commitment is tracked in the participant ledger and returned by an idempotent worker after roster lock. Server caps limit each deposit and total treasury exposure."
+            ? "Your commitment is tracked in the participant ledger and returned by an idempotent worker after roster lock."
             : "Your full commitment is held in a shared Pods-controlled treasury and tracked in an off-chain participant ledger until roster lock and settlement."}</p>
         </div>
       </section>

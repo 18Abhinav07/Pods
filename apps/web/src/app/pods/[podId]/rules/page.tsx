@@ -1,10 +1,10 @@
-import { templateContracts } from "@pods/domain";
+import { templateContracts, type PodState } from "@pods/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
-import { presentPodRelationship } from "../../../../lib/participant-pod-state";
+import { presentCreatorPodState, presentPodRelationship } from "../../../../lib/participant-pod-state";
 
 function nim(luna: number) {
   return new Intl.NumberFormat("en", { maximumFractionDigits: 5 }).format(luna / 100_000);
@@ -26,25 +26,24 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
   const template = templateContracts.find((item) => item.id === contract.templateId);
   const memberPresentation = membership ? presentPodRelationship({
     podId: pod.id,
+    podState: pod.state as Exclude<PodState, "draft">,
     relationship: {
       kind: "member",
       state: membership.state,
       depositIntentId: membership.depositIntentId
     }
   }) : null;
+  const creatorPresentation = owned
+    ? presentCreatorPodState({
+        podId: pod.id,
+        state: pod.state as Exclude<PodState, "draft">
+      })
+    : null;
   const nextHref = owned
-    ? pod.state === "enrollment_open"
-      ? `/pods/${pod.id}/admin`
-      : pod.state === "locked_scheduled"
-        ? `/pods/${pod.id}/room`
-        : `/pods/${pod.id}/admin/funding`
+    ? creatorPresentation?.href ?? "/my-pods"
     : memberPresentation?.href ?? "/my-pods";
   const nextLabel = owned
-    ? pod.state === "enrollment_open"
-      ? "Open creator controls"
-      : pod.state === "locked_scheduled"
-        ? "Open Pod room"
-        : "Open funding overview"
+    ? creatorPresentation?.actionLabel ?? "View My Pods"
     : memberPresentation?.actionLabel ?? "View My Pods";
   return <main className="app-shell rules-shell">
     <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link><span className="frozen-pill">Contract frozen</span></header>

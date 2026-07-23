@@ -100,7 +100,7 @@ describe("Pod room", () => {
     expect(screen.getByRole("button", {
       name: "Reply to Abhinav: Ship room walkthrough at 8 PM."
     })).toBeVisible();
-    expect(screen.getByText("Current builder")).toBeInTheDocument();
+    expect(screen.getByText("The mobile room is ready.").closest("article")).toHaveClass("is-viewer");
     expect(screen.getByText("Sending")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("Sending")).not.toBeInTheDocument());
   });
@@ -455,6 +455,48 @@ describe("Pod room", () => {
     expect(container.querySelector(".pod-room-panel.is-direct")).toBeInTheDocument();
     expect(container.querySelector("#viewer-message.is-viewer")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Message");
+  });
+
+  it("groups consecutive messages by sender and only repeats identity at the start", () => {
+    const { container } = render(
+      <PodRoom
+        conversationId="room-1"
+        initialLastSequence={3}
+        initialMessages={[
+          {
+            ...messages[0]!,
+            id: "first-note",
+            kind: "member_message",
+            body: "First part of the update.",
+            sender: { ...messages[0]!.sender!, isViewer: false }
+          },
+          {
+            ...messages[0]!,
+            id: "second-note",
+            sequence: 2,
+            kind: "member_message",
+            body: "Second part of the update.",
+            sender: { ...messages[0]!.sender!, isViewer: false }
+          },
+          {
+            ...messages[0]!,
+            id: "viewer-note",
+            sequence: 3,
+            kind: "member_message",
+            body: "Reply from me.",
+            sender: { ...messages[0]!.sender!, isViewer: true }
+          }
+        ]}
+        isCreator={false}
+        podId="pod-1"
+        roomState="open"
+      />
+    );
+
+    expect(container.querySelector("#first-note")).toHaveClass("is-group-start");
+    expect(container.querySelector("#second-note")).toHaveClass("is-consecutive", "is-group-end");
+    expect(container.querySelector("#viewer-note")).toHaveClass("is-viewer", "is-group-start", "is-group-end");
+    expect(screen.getAllByText("Abhinav")).toHaveLength(1);
   });
 
   it("morphs one activity entry into a group-safe proof card", () => {

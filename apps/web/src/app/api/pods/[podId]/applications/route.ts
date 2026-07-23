@@ -15,7 +15,11 @@ export async function POST(
     return NextResponse.json({ error: "Pod not found" }, { status: 404 });
   }
   const questions = pod.contractData.community.applicationQuestions;
-  const body = (await request.json()) as { answers?: unknown };
+  const body = (await request.json()) as {
+    answers?: unknown;
+    acceptedContractHash?: unknown;
+    visitorDisclosureAccepted?: unknown;
+  };
   if (!Array.isArray(body.answers)) {
     return NextResponse.json({ error: "Answer every application question" }, { status: 400 });
   }
@@ -28,6 +32,10 @@ export async function POST(
       podId,
       applicantUserId: session.userId,
       answers,
+      ...(typeof body.acceptedContractHash === "string"
+        ? { acceptedContractHash: body.acceptedContractHash }
+        : {}),
+      visitorDisclosureAccepted: body.visitorDisclosureAccepted === true,
       now: new Date()
     });
     return NextResponse.json({ application }, { status: 201 });

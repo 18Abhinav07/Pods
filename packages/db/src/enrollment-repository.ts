@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import {
   canDecideApplication,
   canonicalUserPair,
+  isPublicVisitorContract,
   validateApplicationAnswers,
   type ApplicationAnswer,
   type ApplicationDecision
@@ -82,6 +83,8 @@ export function createEnrollmentMethods(database: PodsDatabase) {
       podId: string;
       applicantUserId: string;
       answers: ApplicationAnswer[];
+      acceptedContractHash?: string;
+      visitorDisclosureAccepted?: boolean;
       now: Date;
     }) {
       try {
@@ -96,6 +99,16 @@ export function createEnrollmentMethods(database: PodsDatabase) {
           }
           if (pod.creatorUserId === input.applicantUserId) {
             throw new Error("Creators cannot apply to their own Pod");
+          }
+          const visitorContract = isPublicVisitorContract(pod.contractData);
+          if (
+            visitorContract &&
+            (
+              input.acceptedContractHash !== pod.contractHash ||
+              input.visitorDisclosureAccepted !== true
+            )
+          ) {
+            throw new Error("Accept the current frozen Pod contract");
           }
           const [firstOccurrence] = await transaction
             .select({ opensAt: occurrences.opensAt })
@@ -133,6 +146,8 @@ export function createEnrollmentMethods(database: PodsDatabase) {
               podId: pod.id,
               applicantUserId: input.applicantUserId,
               answers: normalizedAnswers,
+              acceptedContractHash: visitorContract ? pod.contractHash : null,
+              visitorDisclosureAcceptedAt: visitorContract ? input.now : null,
               state: "applied",
               decidedAt: null,
               createdAt: input.now,
@@ -148,6 +163,7 @@ export function createEnrollmentMethods(database: PodsDatabase) {
             state: "applied",
             applicationId,
             invitationId: null,
+            acceptedContractHash: visitorContract ? pod.contractHash : null,
             acceptedAt: null,
             createdAt: input.now,
             updatedAt: input.now

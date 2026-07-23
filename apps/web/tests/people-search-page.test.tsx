@@ -43,7 +43,7 @@ describe("PeopleSearchPage", () => {
         activityStatusVisible: true
       }
     ]);
-    render(
+    const { container } = render(
       await PeopleSearchPage({
         searchParams: Promise.resolve({ q: "mi" })
       })
@@ -54,5 +54,8 @@ describe("PeopleSearchPage", () => {
       "href",
       "/u/mira_moves"
     );
+    expect(container.querySelector(".public-profile-card")).toHaveClass("is-search-result");
+    expect(screen.queryByText("Running before sunrise.")).not.toBeInTheDocument();
+    expect(screen.queryByText("View")).not.toBeInTheDocument();
   });
 });

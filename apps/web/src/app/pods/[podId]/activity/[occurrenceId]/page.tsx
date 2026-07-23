@@ -67,6 +67,10 @@ export default async function ActivityOccurrencePage({
           evidenceObjectKey: activity.submission.evidenceObjectKey,
           proofShareMode: activity.submission.proofShareMode
         } : null}
+        publicVisitorSharingEnabled={
+          activity.pod.contractData.version === 2 &&
+          activity.pod.contractData.community.roomAudience === "public_read_only"
+        }
         timeZone={activity.pod.contractData.activity.timeZone}
       />
     </main>

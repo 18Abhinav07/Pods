@@ -90,11 +90,21 @@ export function mergeRoomMessages(current: RoomMessage[], incoming: RoomMessage[
   return [...byId.values()].sort((first, second) => first.sequence - second.sequence);
 }
 
+function messagesShareVisualGroup(first: RoomMessage | undefined, second: RoomMessage | undefined) {
+  if (!first || !second) return false;
+  if (first.kind !== "member_message" || second.kind !== "member_message") return false;
+  if (first.hidden || second.hidden) return false;
+  if (first.sender?.handle !== second.sender?.handle) return false;
+  if (Boolean(first.sender?.isViewer) !== Boolean(second.sender?.isViewer)) return false;
+  return Math.abs(new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime()) <= 5 * 60 * 1000;
+}
+
 export function PodRoom({
   conversationId,
   podId,
   initialMessages,
   initialLastSequence,
+  initialChangeCursor = 0,
   isCreator,
   roomState,
   proofAction,
@@ -106,6 +116,7 @@ export function PodRoom({
   podId: string;
   initialMessages: RoomMessage[];
   initialLastSequence: number;
+  initialChangeCursor?: number;
   isCreator: boolean;
   roomState: "open" | "archived";
   proofAction?: { href: string; label: string };
@@ -123,6 +134,7 @@ export function PodRoom({
   const [pendingReplyTargetId, setPendingReplyTargetId] = useState<string | null>(null);
   const [peerReadSequence, setPeerReadSequence] = useState(initialPeerReadSequence);
   const cursor = useRef(initialLastSequence);
+  const changeCursor = useRef(initialChangeCursor);
   const acknowledgedReadSequence = useRef(0);
   const longPressTimer = useRef<number | null>(null);
   const highlightTimer = useRef<number | null>(null);
@@ -153,12 +165,12 @@ export function PodRoom({
 
   const reconcile = useCallback(async () => {
     const response = await fetch(
-      `/api/conversations/${conversationId}/messages?after=${cursor.current}&limit=100`,
+      `/api/conversations/${conversationId}/messages?after=${cursor.current}&cursor=${changeCursor.current}&limit=100`,
       { cache: "no-store" }
     );
     if (!response.ok) return;
     const payload = (await response.json()) as {
-      conversation: { lastSequence: number };
+      conversation: { lastSequence: number; changeCursor?: number };
       messages: RoomMessage[];
     };
     const conversationWithRead = payload.conversation as { lastSequence: number; peerReadSequence?: number };
@@ -167,6 +179,10 @@ export function PodRoom({
       setMessages((current) => mergeRoomMessages(current, payload.messages));
     }
     cursor.current = Math.max(cursor.current, payload.conversation.lastSequence);
+    changeCursor.current = Math.max(
+      changeCursor.current,
+      payload.conversation.changeCursor ?? 0
+    );
     await markRead(payload.conversation.lastSequence);
   }, [conversationId, markRead]);
 
@@ -289,8 +305,7 @@ export function PodRoom({
   function scrollToReplyTarget(messageId: string) {
     const target = document.getElementById(messageId);
     if (!target) return false;
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    target.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
     setHighlightedMessageId(messageId);
     if (highlightTimer.current !== null) window.clearTimeout(highlightTimer.current);
     highlightTimer.current = window.setTimeout(() => {
@@ -381,33 +396,48 @@ export function PodRoom({
             <h2>{mode === "direct" ? "Start with something real." : "Set the rhythm together."}</h2>
             <p>{mode === "direct" ? "Messages are private to this conversation. Pods does not claim end-to-end encryption." : "Share encouragement, questions, and progress. Review evidence and financial outcomes remain separate."}</p>
           </div>
-        ) : messages.map((message) => {
+        ) : messages.map((message, index) => {
           const label = messageLabel(message.kind);
+          const isMemberMessage = message.kind === "member_message";
+          const groupedWithPrevious = messagesShareVisualGroup(messages[index - 1], message);
+          const groupedWithNext = messagesShareVisualGroup(message, messages[index + 1]);
+          const groupStart = !groupedWithPrevious;
+          const groupEnd = !groupedWithNext;
+          const isViewer = Boolean(message.sender?.isViewer);
+          const showHeader = !isMemberMessage || (groupStart && !isViewer);
           return (
-            <article
-              className={`room-entry room-entry-${message.kind}${message.sender?.isViewer ? " is-viewer" : ""}${message.hidden ? " is-hidden" : ""}${highlightedMessageId === message.id ? " is-reply-target" : ""}`}
-              id={message.id}
+            <div
+              className={`room-message-cluster${isMemberMessage ? " is-member" : " is-authoritative"}${isViewer ? " is-viewer" : ""}${groupStart ? " is-group-start" : ""}${groupEnd ? " is-group-end" : ""}`}
               key={message.id}
-              onContextMenu={message.hidden ? undefined : (event) => {
-                event.preventDefault();
-                setActiveMessage(message);
-              }}
-              onPointerCancel={message.hidden ? undefined : cancelLongPress}
-              onPointerDown={message.hidden ? undefined : () => startLongPress(message)}
-              onPointerLeave={message.hidden ? undefined : cancelLongPress}
-              onPointerUp={message.hidden ? undefined : cancelLongPress}
             >
+              {isMemberMessage && !isViewer ? (
+                groupStart && message.sender
+                  ? <ProfileAvatar avatar={message.sender.avatar} displayName={message.sender.displayName} size="small" />
+                  : <span className="room-avatar-spacer" aria-hidden="true" />
+              ) : null}
+              <article
+                className={`room-entry room-entry-${message.kind}${isViewer ? " is-viewer" : ""}${groupedWithPrevious ? " is-consecutive" : ""}${groupStart ? " is-group-start" : ""}${groupEnd ? " is-group-end" : ""}${message.hidden ? " is-hidden" : ""}${highlightedMessageId === message.id ? " is-reply-target" : ""}`}
+                id={message.id}
+                onContextMenu={message.hidden ? undefined : (event) => {
+                  event.preventDefault();
+                  setActiveMessage(message);
+                }}
+                onPointerCancel={message.hidden ? undefined : cancelLongPress}
+                onPointerDown={message.hidden ? undefined : () => startLongPress(message)}
+                onPointerLeave={message.hidden ? undefined : cancelLongPress}
+                onPointerUp={message.hidden ? undefined : cancelLongPress}
+              >
               {message.hidden ? (
                 <div className="room-tombstone"><span>Message removed by the Pod creator</span></div>
               ) : (
                 <>
-                  <header>
-                    {message.sender ? <ProfileAvatar avatar={message.sender.avatar} displayName={message.sender.displayName} size="small" /> : <span className="system-avatar" aria-hidden="true">P</span>}
+                  {showHeader ? <header>
+                    {!isMemberMessage ? (message.sender ? <ProfileAvatar avatar={message.sender.avatar} displayName={message.sender.displayName} size="small" /> : <span className="system-avatar" aria-hidden="true">P</span>) : null}
                     <div>
                       {label ? <span className="room-entry-label">{label}</span> : null}
                       <strong>{message.sender?.displayName ?? (message.kind === "system" ? "Pods" : "You")}</strong>
                     </div>
-                    <div className="room-message-meta">
+                    {!isMemberMessage ? <div className="room-message-meta">
                       <time dateTime={message.createdAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(message.createdAt))}</time>
                       <button
                         aria-label={`More actions for ${message.sender?.displayName ?? "this update"}`}
@@ -417,8 +447,8 @@ export function PodRoom({
                       >
                         <DotsThree aria-hidden="true" size={20} weight="bold" />
                       </button>
-                    </div>
-                  </header>
+                    </div> : null}
+                  </header> : null}
                   {message.pinned ? <span className="room-pinned">Pinned</span> : null}
                   {message.replyPreview ? (
                     message.replyPreview.available ? (
@@ -460,7 +490,7 @@ export function PodRoom({
                   ) : <MessageBody body={message.body} />}
                   {message.delivery === "sending" ? <small className="delivery-state is-sending">Sending</small> : null}
                   {message.delivery === "failed" ? <button className="delivery-state is-failed" onClick={() => void retryMessage(message)} type="button">Failed. Retry</button> : null}
-                  {!message.delivery && mode === "direct" && message.sender?.isViewer ? <small className="delivery-state">{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</small> : null}
+                  {!isMemberMessage && !message.delivery && mode === "direct" && message.sender?.isViewer ? <small className="delivery-state">{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</small> : null}
                   {message.reactions.length > 0 ? <div className="reaction-summary">
                     {message.reactions.map((summary) => (
                       <button className={summary.reactedByViewer ? "is-active" : ""} key={summary.code} onClick={() => void react(message, summary.code)} type="button" aria-label={`${reactionLabels[summary.code]} ${summary.count}`}>
@@ -469,9 +499,17 @@ export function PodRoom({
                       </button>
                     ))}
                   </div> : null}
+                  {isMemberMessage && groupEnd ? (
+                    <footer className="room-bubble-footer">
+                      <time dateTime={message.createdAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(message.createdAt))}</time>
+                      {!message.delivery && mode === "direct" && isViewer ? <span>{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</span> : null}
+                      <button aria-label={`More actions for ${message.sender?.displayName ?? "this message"}`} className="message-more" onClick={() => setActiveMessage(message)} type="button"><DotsThree aria-hidden="true" size={18} weight="bold" /></button>
+                    </footer>
+                  ) : null}
                 </>
               )}
-            </article>
+              </article>
+            </div>
           );
         })}
       </div>

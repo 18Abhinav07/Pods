@@ -96,6 +96,10 @@ export function buildCommunityPayload(form: FormData): CommunityStepInput {
     applicationQuestions: text(form, "applicationQuestions")
       .split("\n")
       .map((question) => question.trim())
-      .filter(Boolean)
+      .filter(Boolean),
+    roomAudience:
+      text(form, "roomAudience") === "public_read_only"
+        ? "public_read_only"
+        : "members_only"
   };
 }

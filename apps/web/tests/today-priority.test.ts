@@ -85,4 +85,17 @@ describe("Phase 2 Today priority", () => {
     expect(chooseTodayEnrollmentAction({ participants: [], reviewPodId: null, recruitPodId: "recruit" })).toEqual({ kind: "recruit", podId: "recruit" });
     expect(chooseTodayEnrollmentAction({ participants: [], reviewPodId: null, recruitPodId: null })).toEqual({ kind: "empty" });
   });
+
+  it("does not turn a completed participant record into current work", () => {
+    expect(chooseTodayEnrollmentAction({
+      participants: [{
+        podId: "completed-pod",
+        podState: "completed",
+        state: "active",
+        depositIntentId: "intent-1"
+      }],
+      reviewPodId: null,
+      recruitPodId: null
+    })).toEqual({ kind: "empty" });
+  });
 });

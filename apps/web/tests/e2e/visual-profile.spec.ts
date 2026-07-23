@@ -270,6 +270,14 @@ test("captures a two-wallet message request and direct conversation", async ({ b
     await recipientPage.getByRole("button", { name: "Accept" }).click();
     await expect(recipientPage).toHaveURL(/\/messages\/[0-9a-f-]+$/);
     await expect(recipientPage.getByText("I would like to compare notes on making Pod rooms feel alive.")).toBeVisible();
+    const directComposer = recipientPage.getByRole("form", { name: "Send a room message" });
+    const directComposerBox = await directComposer.boundingBox();
+    const directViewport = recipientPage.viewportSize();
+    expect(directComposerBox).not.toBeNull();
+    expect(directViewport).not.toBeNull();
+    expect(directComposerBox?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((directComposerBox?.x ?? 0) + (directComposerBox?.width ?? 0)).toBeLessThanOrEqual(directViewport?.width ?? 0);
+    expect(Math.abs((directComposerBox?.y ?? 0) + (directComposerBox?.height ?? 0) - (directViewport?.height ?? 0))).toBeLessThan(2);
     const introduction = "I would like to compare notes on making Pod rooms feel alive.";
     const introductionEntry = recipientPage.locator(".room-entry").filter({ hasText: introduction }).first();
     const introductionId = await introductionEntry.getAttribute("id");
@@ -278,7 +286,7 @@ test("captures a two-wallet message request and direct conversation", async ({ b
     await recipientPage.getByRole("button", { name: "Reply", exact: true }).click();
     await expect(recipientPage.locator(".reply-context")).toContainText(introduction);
     await recipientPage.getByRole("textbox", { name: "Message" }).fill("Absolutely. The direct thread is ready too.");
-    await expect(recipientPage.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(217, 237, 114)");
+    await expect(recipientPage.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(24, 121, 92)");
     await recipientPage.screenshot({ path: testInfo.outputPath("dm-reply-composer.png") });
     await recipientPage.getByRole("button", { name: "Send message" }).click();
     await expect(recipientPage.getByText("Absolutely. The direct thread is ready too.")).toBeVisible();
@@ -387,6 +395,8 @@ test("captures a single meaningful Today action", async ({ context, page }, test
 
   await page.getByRole("link", { name: /Lock today's task/ }).click();
   await expect(page.getByRole("button", { name: "Lock this task" })).toBeVisible();
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: testInfo.outputPath("commitment-guided.png"), fullPage: true });
   await page.getByLabel("Today's task").fill("Ship the mobile room composer and proof entry flow.");
   await page.getByRole("button", { name: "Lock this task" }).click();
   await expect(page.getByLabel("Result summary")).toBeVisible();
@@ -407,6 +417,9 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await page.getByRole("button", { name: "Review and submit" }).click();
   await expect(page.getByRole("link", { name: "View submission" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("proof-submitted.png"), fullPage: true });
+  await page.getByRole("link", { name: "View submission" }).click();
+  await expect(page.getByRole("region", { name: "Review timeline" })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("submission-detail.png"), fullPage: true });
 
   await page.goto(`/pods/${podId}/room`);
   await expect(page.getByRole("heading", { name: "Pods Build Room" })).toBeVisible();
@@ -433,6 +446,8 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   expect(composerBox).not.toBeNull();
   expect(viewport).not.toBeNull();
   expect(Math.abs((composerBox?.y ?? 0) + (composerBox?.height ?? 0) - (viewport?.height ?? 0))).toBeLessThan(2);
+  expect(composerBox?.x ?? -1).toBeGreaterThanOrEqual(0);
+  expect((composerBox?.x ?? 0) + (composerBox?.width ?? 0)).toBeLessThanOrEqual(viewport?.width ?? 0);
   await page.waitForTimeout(500);
   await page.screenshot({ path: testInfo.outputPath("room-empty.png") });
 
@@ -451,7 +466,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await page.getByRole("button", { name: "Reply", exact: true }).click();
   await expect(page.locator(".reply-context")).toContainText(roomMessage);
   await page.getByRole("textbox", { name: "Message" }).fill("The reply interaction is ready for the room.");
-  await expect(page.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(217, 237, 114)");
+  await expect(page.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(24, 121, 92)");
   await page.screenshot({ path: testInfo.outputPath("room-reply-composer.png") });
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("The reply interaction is ready for the room.")).toBeVisible();
@@ -530,9 +545,12 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   const discoverCard = page.getByRole("article").filter({
     has: page.getByRole("heading", { name: "Pods Build Room" })
   });
+  await expect(discoverCard.getByRole("button", { name: "Show Pod details" })).toHaveCount(0);
+  await expect(discoverCard.getByRole("link", { name: "Open Pods Build Room" })).toHaveAttribute(
+    "href",
+    `/applications?pod=${podId}`
+  );
+  await expect(discoverCard.getByText("Build & Ship")).toBeVisible();
   await page.waitForTimeout(650);
   await page.screenshot({ path: testInfo.outputPath("discover-card.png"), fullPage: true });
-  await discoverCard.getByRole("button", { name: "Show Pod details" }).click();
-  await expect(discoverCard.getByText("1 occurrence")).toBeVisible();
-  await discoverCard.screenshot({ path: testInfo.outputPath("discover-details.png") });
 });

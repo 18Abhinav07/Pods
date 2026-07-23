@@ -62,9 +62,11 @@ afterEach(() => {
 
 describe("ProfilePage", () => {
   it("owns following and friends without exposing a global member directory", async () => {
-    render(await ProfilePage());
+    const { container } = render(await ProfilePage());
 
     expect(screen.getByRole("heading", { name: "Your people" })).toBeVisible();
+    expect(container.querySelector(".private-profile-cover")).toHaveClass("is-compact-identity");
+    expect(container.querySelector(".profile-signal-strip")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Search people" })).toHaveAttribute(
       "href",
       "/people/search"

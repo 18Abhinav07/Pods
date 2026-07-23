@@ -71,6 +71,20 @@
       "when": 1784652927527,
       "tag": "0009_complete_whirlwind",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784790515071,
+      "tag": "0010_watery_wasp",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784793021159,
+      "tag": "0011_salty_tarot",
+      "breakpoints": true
     }
   ]
 }

@@ -1,12 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-const { listPublicPods, listMembershipsForUser } = vi.hoisted(() => ({
-  listPublicPods: vi.fn(async () => [
+const { listPublicPodDirectory, listMembershipsForUser } = vi.hoisted(() => ({
+  listPublicPodDirectory: vi.fn(async () => [
     {
       id: "pod-1",
       creatorUserId: "creator-1",
       templateId: "build",
+      stage: "open",
       contractData: {
         activity: {
           name: "Ship Together",
@@ -33,7 +34,7 @@ vi.mock("../src/lib/alpha-access-server", () => ({
 }));
 
 vi.mock("../src/lib/server-db", () => ({
-  podsRepository: { listPublicPods, listMembershipsForUser }
+  podsRepository: { listPublicPodDirectory, listMembershipsForUser }
 }));
 
 import DiscoverPage from "../src/app/discover/page";
@@ -44,10 +45,12 @@ describe("DiscoverPage", () => {
 
     expect(screen.getByRole("heading", { name: "Discover" })).toBeVisible();
     expect(screen.getByRole("img", { name: "Ryuk avatar" })).toBeVisible();
-    expect(screen.getByText(/Public Pods are discoverable and application-based/)).toBeVisible();
+    expect(screen.getByText(/Apply to open groups or watch visitor-enabled Pods/)).toBeVisible();
     expect(screen.queryByRole("navigation", { name: "Discover sections" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "People" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Following" })).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Pod lifecycle" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { name: "Ship Together" })).toBeVisible();
   });
 });

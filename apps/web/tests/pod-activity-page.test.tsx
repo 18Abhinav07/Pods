@@ -51,7 +51,7 @@ describe("PodActivityPage", () => {
   });
 
   it("identifies each participant and keeps the history searchable without repeating the Pod", async () => {
-    render(await PodActivityPage({
+    const { container } = render(await PodActivityPage({
       params: Promise.resolve({ podId: "pod-1" }),
       searchParams: Promise.resolve({})
     }));
@@ -59,6 +59,8 @@ describe("PodActivityPage", () => {
     expect(screen.getByRole("searchbox", { name: "Search proofs by member" })).toBeVisible();
     expect(screen.getByRole("link", { name: "All proofs" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "My proofs" })).toBeVisible();
+    expect(container.querySelector(".proof-history-controls")).toHaveClass("is-compact-filter");
+    expect(container.querySelector(".proof-history-entry")).toHaveClass("is-editorial-proof");
     expect(screen.getByRole("img", { name: "Ryuk avatar" })).toBeVisible();
     expect(screen.getByText("Ryuk")).toBeVisible();
     expect(screen.getByText("@ryuk_builds")).toBeVisible();

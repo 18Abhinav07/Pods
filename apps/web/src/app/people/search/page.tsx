@@ -48,7 +48,7 @@ export default async function PeopleSearchPage({
         </section>
       ) : results.length > 0 ? (
         <section className="public-profile-list people-search-results" aria-label="People matching your search">
-          {results.map((person) => <PublicProfileCard key={person.handle} profile={person} />)}
+          {results.map((person) => <PublicProfileCard key={person.handle} profile={person} variant="search" />)}
         </section>
       ) : (
         <section className="search-guidance">

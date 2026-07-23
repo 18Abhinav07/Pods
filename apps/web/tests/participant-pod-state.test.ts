@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  presentCreatorPodState,
   presentPodRelationship,
   relationshipForViewer
 } from "../src/lib/participant-pod-state";
@@ -77,6 +78,39 @@ describe("participant Pod relationship presentation", () => {
       statusLabel: "Application not accepted",
       actionLabel: "View outcome",
       href: "/applications?pod=pod-1"
+    });
+  });
+
+  it("routes final review and completed Pods to their permanent room record", () => {
+    expect(presentCreatorPodState({
+      podId: "pod-1",
+      state: "final_review"
+    })).toMatchObject({
+      statusLabel: "Final review",
+      actionLabel: "Open archived room",
+      href: "/pods/pod-1/room"
+    });
+    expect(presentCreatorPodState({
+      podId: "pod-1",
+      state: "completed"
+    })).toMatchObject({
+      statusLabel: "Completed",
+      actionLabel: "View Pod archive",
+      href: "/pods/pod-1/room"
+    });
+    expect(presentPodRelationship({
+      podId: "pod-1",
+      podState: "completed",
+      relationship: {
+        kind: "member",
+        state: "active",
+        depositIntentId: "intent-1"
+      }
+    })).toMatchObject({
+      statusLabel: "Completed",
+      actionLabel: "View Pod archive",
+      href: "/pods/pod-1/room",
+      todayPriority: null
     });
   });
 });

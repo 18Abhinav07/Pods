@@ -26,7 +26,7 @@ export async function POST(
       return NextResponse.json({ intent: participantDepositIntent(existing) });
     }
     const configuration = readFundingConfiguration();
-    const policy = alphaFundingPolicy(process.env);
+    alphaFundingPolicy(process.env);
     const intent = await podsRepository.createDepositIntent({
       podId,
       userId: session.userId,
@@ -34,9 +34,7 @@ export async function POST(
       treasuryAddress: configuration.treasuryAddress,
       network: configuration.network,
       reference: `pods-${randomBytes(12).toString("hex")}`,
-      now: new Date(),
-      maximumDepositLuna: policy.maximumDepositLuna,
-      maximumTreasuryExposureLuna: policy.maximumTreasuryExposureLuna
+      now: new Date()
     });
     return NextResponse.json({ intent: participantDepositIntent(intent) }, { status: 201 });
   } catch (error) {

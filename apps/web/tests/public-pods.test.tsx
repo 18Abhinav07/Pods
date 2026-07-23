@@ -1,12 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { PublicPodCard } from "../src/components/public-pod-card";
 
 describe("PublicPodCard", () => {
-  it("reveals the frozen public enrollment terms on demand without exposing a wallet", async () => {
-    const user = userEvent.setup();
+  it("opens the Pod from one clean card target without exposing a wallet", () => {
     render(
       <PublicPodCard
         pod={{
@@ -25,21 +23,23 @@ describe("PublicPodCard", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Build Pods in Public" })).toBeVisible();
+    expect(screen.getByRole("article")).toHaveClass("is-compact-row");
+    expect(screen.getByRole("img", { name: "Build & Ship activity cover" })).toHaveAttribute(
+      "data-template-art",
+      "build"
+    );
     expect(document.querySelector("details")).toBeNull();
-    expect(screen.getByLabelText("Show Pod details")).toBeVisible();
-    expect(screen.getByText("1.5 NIM upfront")).not.toBeVisible();
-    await user.click(screen.getByLabelText("Show Pod details"));
-    expect(screen.getByText("1.5 NIM upfront")).toBeVisible();
-    expect(screen.getByText("3 occurrences")).toBeVisible();
-    expect(screen.getByLabelText("Hide Pod details")).toBeVisible();
+    expect(screen.queryByLabelText("Show Pod details")).not.toBeInTheDocument();
+    expect(screen.queryByText("1.5 NIM upfront")).not.toBeInTheDocument();
     expect(screen.queryByText("Open to apply")).not.toBeInTheDocument();
-    const apply = screen.getByRole("link", { name: "Review and apply to Build Pods in Public" });
+    const apply = screen.getByRole("link", { name: "Open Build Pods in Public" });
     expect(apply).toHaveAttribute(
       "href",
       "/pods/pod-public"
     );
-    expect(apply).toHaveClass("discover-apply-orb");
-    expect(apply).not.toHaveTextContent("Apply");
+    expect(apply).toHaveClass("adaptive-card-hit-area");
+    expect(document.querySelector(".discover-apply-orb")).toBeNull();
+    expect(screen.getByText("Build & Ship")).toHaveClass("adaptive-pod-type");
     expect(screen.queryByText(/NQ[A-Z0-9 ]{20,}/)).not.toBeInTheDocument();
   });
 
@@ -63,7 +63,7 @@ describe("PublicPodCard", () => {
     );
 
     expect(screen.getByText("Creator")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Manage enrollment" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open My public Pod" })).toHaveAttribute(
       "href",
       "/pods/pod-owned/admin"
     );
@@ -90,7 +90,7 @@ describe("PublicPodCard", () => {
     );
 
     expect(screen.getByText("Application pending")).toBeVisible();
-    expect(screen.getByRole("link", { name: "View application" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open Read Together" })).toHaveAttribute(
       "href",
       "/applications?pod=pod-applied"
     );
@@ -117,7 +117,7 @@ describe("PublicPodCard", () => {
     );
 
     expect(screen.getByText("Funding needs attention")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Retry funding" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open Pods MVP C1" })).toHaveAttribute(
       "href",
       "/pods/pod-funding/fund"
     );

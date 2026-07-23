@@ -1,4 +1,5 @@
 import type { PodsRepository } from "@pods/db";
+import type { PodState } from "@pods/domain";
 
 import { presentPodRelationship } from "./participant-pod-state";
 
@@ -35,6 +36,7 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
   for (const row of rows) {
     const current = presentPodRelationship({
       podId: row.pod.id,
+      podState: row.pod.state as Exclude<PodState, "draft">,
       relationship: {
         kind: "member",
         state: row.membership.state,

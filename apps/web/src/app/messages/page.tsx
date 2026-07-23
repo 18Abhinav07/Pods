@@ -29,7 +29,7 @@ export default async function MessagesPage({
     <main className="app-shell messages-shell">
       <AppHeader profile={profileForSession(session)} title="Messages" />
       <p className="route-lede entrance entrance-hero">Private conversations and requests.</p>
-      <nav className="message-segments" aria-label="Message sections">
+      <nav className="message-segments is-compact-switch" aria-label="Message sections">
         <Link aria-current={active === "people" ? "page" : undefined} href="/messages">People</Link>
         <Link aria-current={active === "requests" ? "page" : undefined} href="/messages?view=requests">Requests</Link>
       </nav>

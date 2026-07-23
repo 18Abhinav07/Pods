@@ -11,8 +11,6 @@ describe("public alpha capabilities route", () => {
     vi.stubEnv("PODS_POD_CHAT_ENABLED", "false");
     vi.stubEnv("PODS_DEPOSIT_MODE", "allowlist_refund_only");
     vi.stubEnv("PODS_ALPHA_REFUND_ENABLED", "true");
-    vi.stubEnv("PODS_MAX_DEPOSIT_LUNA", "100000");
-    vi.stubEnv("PODS_MAX_TREASURY_EXPOSURE_LUNA", "1000000");
     vi.stubEnv("TREASURY_PRIVATE_KEY", "must-never-leak");
   });
 

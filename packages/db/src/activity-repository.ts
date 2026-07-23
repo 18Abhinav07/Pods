@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 
 import {
+  isPublicVisitorContract,
   nextSubmissionState,
   occurrenceWindowState,
   reviewDeadline,
   validateBuildEvidence,
   validateBuildTask
 } from "@pods/domain";
-import { and, asc, desc, eq, ilike, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, lte, max, ne, or, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
 import {
@@ -107,10 +108,111 @@ export function createActivityMethods(database: PodsDatabase) {
           advancedOccurrences += 1;
         }
 
+        const endingPods = await transaction
+          .select({
+            id: pods.id,
+            lastClosesAt: max(occurrences.closesAt)
+          })
+          .from(pods)
+          .innerJoin(occurrences, eq(occurrences.podId, pods.id))
+          .where(eq(pods.state, "active"))
+          .groupBy(pods.id)
+          .having(lte(max(occurrences.closesAt), now));
+        const endingPodIds = endingPods.map(({ id }) => id);
+        if (endingPodIds.length > 0) {
+          await transaction
+            .update(pods)
+            .set({ state: "final_review", updatedAt: now })
+            .where(
+              and(
+                inArray(pods.id, endingPodIds),
+                eq(pods.state, "active")
+              )
+            );
+          const archived = await transaction
+            .update(conversations)
+            .set({ roomState: "archived", archivedAt: now, updatedAt: now })
+            .where(
+              and(
+                inArray(conversations.podId, endingPodIds),
+                eq(conversations.kind, "pod")
+              )
+            )
+            .returning({ id: conversations.id, podId: conversations.podId });
+          if (archived.length > 0) {
+            await transaction.insert(realtimeEvents).values(
+              archived.map((conversation) => ({
+                conversationId: conversation.id,
+                recipientUserId: null,
+                kind: "pod.final_review",
+                payload: { podId: conversation.podId },
+                createdAt: now
+              }))
+            );
+          }
+        }
+
+        const finalReviewPods = await transaction
+          .select({ id: pods.id })
+          .from(pods)
+          .where(eq(pods.state, "final_review"))
+          .for("update");
+        const completedPodIds: string[] = [];
+        for (const candidate of finalReviewPods) {
+          const [pending] = await transaction
+            .select({ id: submissions.id })
+            .from(submissions)
+            .innerJoin(
+              occurrences,
+              eq(submissions.occurrenceId, occurrences.id)
+            )
+            .where(
+              and(
+                eq(occurrences.podId, candidate.id),
+                inArray(submissions.state, ["submitted", "reviewing"])
+              )
+            )
+            .limit(1);
+          if (!pending) completedPodIds.push(candidate.id);
+        }
+        if (completedPodIds.length > 0) {
+          await transaction
+            .update(pods)
+            .set({ state: "completed", completedAt: now, updatedAt: now })
+            .where(
+              and(
+                inArray(pods.id, completedPodIds),
+                eq(pods.state, "final_review")
+              )
+            );
+          const completedConversations = await transaction
+            .select({ id: conversations.id, podId: conversations.podId })
+            .from(conversations)
+            .where(
+              and(
+                inArray(conversations.podId, completedPodIds),
+                eq(conversations.kind, "pod")
+              )
+            );
+          if (completedConversations.length > 0) {
+            await transaction.insert(realtimeEvents).values(
+              completedConversations.map((conversation) => ({
+                conversationId: conversation.id,
+                recipientUserId: null,
+                kind: "pod.completed",
+                payload: { podId: conversation.podId },
+                createdAt: now
+              }))
+            );
+          }
+        }
+
         return {
           activatedPods: duePodIds.length,
           activatedMemberships,
-          advancedOccurrences
+          advancedOccurrences,
+          finalReviewPods: endingPodIds.length,
+          completedPods: completedPodIds.length
         };
       });
     },
@@ -327,7 +429,9 @@ export function createActivityMethods(database: PodsDatabase) {
           evidenceContentType: evidence?.contentType ?? null,
           evidenceByteSize: evidence?.byteSize ?? null,
           proofShareMode:
-            input.proofShareMode === "pod_shared" || input.proofShareMode === "reviewer_only"
+            input.proofShareMode === "public" && isPublicVisitorContract(pod!.contractData!)
+              ? "public"
+              : input.proofShareMode === "pod_shared" || input.proofShareMode === "reviewer_only"
               ? input.proofShareMode
               : existing?.proofShareMode ?? "reviewer_only",
           updatedAt: input.now
@@ -453,6 +557,26 @@ export function createActivityMethods(database: PodsDatabase) {
           .where(and(eq(submissions.id, input.submissionId), eq(submissions.state, "draft")))
           .returning();
         if (!updated) throw new Error("Evidence could not be submitted");
+        const [projection] = await transaction
+          .select({
+            messageId: activityMessages.messageId,
+            conversationId: messages.conversationId
+          })
+          .from(activityMessages)
+          .innerJoin(messages, eq(activityMessages.messageId, messages.id))
+          .where(eq(activityMessages.commitmentId, owned.commitment.id));
+        if (projection) {
+          await transaction.insert(realtimeEvents).values({
+            conversationId: projection.conversationId,
+            recipientUserId: null,
+            kind: "submission.submitted",
+            payload: {
+              messageId: projection.messageId,
+              submissionId: updated.id
+            },
+            createdAt: input.now
+          });
+        }
         return updated;
       });
     },
@@ -531,6 +655,26 @@ export function createActivityMethods(database: PodsDatabase) {
           )
           .returning();
         if (!approved) throw new Error("Submission could not be approved");
+        const [projection] = await transaction
+          .select({
+            messageId: activityMessages.messageId,
+            conversationId: messages.conversationId
+          })
+          .from(activityMessages)
+          .innerJoin(messages, eq(activityMessages.messageId, messages.id))
+          .where(eq(activityMessages.commitmentId, submission.commitmentId));
+        if (projection) {
+          await transaction.insert(realtimeEvents).values({
+            conversationId: projection.conversationId,
+            recipientUserId: null,
+            kind: "submission.approved",
+            payload: {
+              messageId: projection.messageId,
+              submissionId: approved.id
+            },
+            createdAt: input.now
+          });
+        }
         return approved;
       });
     },

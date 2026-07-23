@@ -1,16 +1,25 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { getOptionalProfileSession, requireSession } = vi.hoisted(() => ({
+const { getCurrentSession, getOptionalProfileSession, requireSession } = vi.hoisted(() => ({
+  getCurrentSession: vi.fn(),
   getOptionalProfileSession: vi.fn(),
   requireSession: vi.fn()
 }));
 
-vi.mock("../src/lib/session", () => ({ getOptionalProfileSession, requireSession }));
+vi.mock("../src/lib/session", () => ({
+  getCurrentSession,
+  getOptionalProfileSession,
+  requireSession
+}));
 
-import { alphaAwarePageSession } from "../src/lib/alpha-access-server";
+import {
+  alphaAwarePageSession,
+  publicPodPageSession
+} from "../src/lib/alpha-access-server";
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  getCurrentSession.mockReset();
   getOptionalProfileSession.mockReset();
   requireSession.mockReset();
 });
@@ -28,6 +37,17 @@ describe("alphaAwarePageSession", () => {
 
     await expect(alphaAwarePageSession("/discover")).resolves.toEqual(session);
     expect(getOptionalProfileSession).toHaveBeenCalledOnce();
+    expect(requireSession).not.toHaveBeenCalled();
+  });
+
+  it("never enforces alpha access or profile onboarding for a public Pod read", async () => {
+    vi.stubEnv("APP_ENV", "alpha");
+    getCurrentSession.mockResolvedValue(null);
+
+    await expect(publicPodPageSession()).resolves.toBeNull();
+
+    expect(getCurrentSession).toHaveBeenCalledOnce();
+    expect(getOptionalProfileSession).not.toHaveBeenCalled();
     expect(requireSession).not.toHaveBeenCalled();
   });
 });

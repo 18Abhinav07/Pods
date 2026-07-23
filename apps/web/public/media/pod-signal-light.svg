@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
+  <rect width="1200" height="800" fill="#ECEDE5"/>
+  <circle cx="972" cy="78" r="360" fill="#DCE4CF"/>
+  <circle cx="172" cy="722" r="280" stroke="#20241F" stroke-opacity=".12" stroke-width="3"/>
+  <path fill="#20241F" fill-rule="evenodd" clip-rule="evenodd" d="M600 220c57 0 100 43 100 100 0 43-34 77-77 77h-23V220Zm180 180c0 57-43 100-100 100-43 0-77-34-77-77v-23h177ZM600 580c-57 0-100-43-100-100 0-43 34-77 77-77h23v177ZM420 400c0-57 43-100 100-100 43 0 77 34 77 77v23H420Zm180-28a28 28 0 1 1 0 56 28 28 0 0 1 0-56Z"/>
+  <path d="M786 400h210" stroke="#20241F" stroke-opacity=".18" stroke-width="3"/>
+  <path d="M204 400h210" stroke="#20241F" stroke-opacity=".18" stroke-width="3"/>
+</svg>

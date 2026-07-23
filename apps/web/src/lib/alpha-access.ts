@@ -43,14 +43,6 @@ export function alphaDepositsEnabled(environment: Environment) {
   }
 }
 
-function positiveCap(environment: Environment, name: string, fallback: number) {
-  const value = Number(environment[name] ?? fallback);
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error(`${name} must be a positive safe integer`);
-  }
-  return value;
-}
-
 export function alphaFundingPolicy(environment: Environment) {
   if (environment.NIMIQ_NETWORK !== "testnet") {
     throw new Error("The Phase 4 funding contract requires Nimiq Testnet");
@@ -61,23 +53,11 @@ export function alphaFundingPolicy(environment: Environment) {
       throw new Error("Alpha deposits must use the refund-only mode");
     }
     return {
-      settlementMode: "full_refund_alpha" as const,
-      maximumDepositLuna: capabilities.maximumDepositLuna,
-      maximumTreasuryExposureLuna: capabilities.maximumTreasuryExposureLuna
+      settlementMode: "full_refund_alpha" as const
     };
   }
   return {
-    settlementMode: "full_refund_alpha" as const,
-    maximumDepositLuna: positiveCap(
-      environment,
-      "PODS_MAX_DEPOSIT_LUNA",
-      1_000_000
-    ),
-    maximumTreasuryExposureLuna: positiveCap(
-      environment,
-      "PODS_MAX_TREASURY_EXPOSURE_LUNA",
-      5_000_000
-    )
+    settlementMode: "full_refund_alpha" as const
   };
 }
 
@@ -88,4 +68,8 @@ export function alphaRequiresAuthenticatedBrowsing(environment: Environment) {
   } catch {
     return true;
   }
+}
+
+export function publicVisitorRoomsEnabled(environment: Environment) {
+  return environment.PODS_PUBLIC_VISITOR_ROOMS_ENABLED === "true";
 }

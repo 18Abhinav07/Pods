@@ -57,7 +57,7 @@ export default async function PodActivityPage({
       <AppHeader profile={profileForSession(session)} title="Proofs" />
       <Link className="pod-reference-back" href={`/pods/${podId}/room`}>Back to room</Link>
 
-      <section className="proof-history-controls" aria-label="Proof filters">
+      <section className="proof-history-controls is-compact-filter" aria-label="Proof filters">
         <nav aria-label="Proof scope">
           <Link aria-current={!mine ? "page" : undefined} href={pageHref(podId, { query, mine: false, page: 1 })}>All proofs</Link>
           <Link aria-current={mine ? "page" : undefined} href={pageHref(podId, { query, mine: true, page: 1 })}>My proofs</Link>
@@ -79,7 +79,7 @@ export default async function PodActivityPage({
       {feed.items.length > 0 ? (
         <section className="proof-history-list" aria-label="Submitted proofs">
           {feed.items.map(({ submission, commitment, occurrence, participant, isViewer, sharedEvidenceAvailable }) => (
-            <article className="proof-history-entry" key={submission.id}>
+            <article className="proof-history-entry is-editorial-proof" key={submission.id}>
               <header>
                 <Link className="proof-participant" href={`/u/${participant.handle}`}>
                   <ProfileAvatar avatar={participant.avatar} displayName={participant.displayName} size="small" />

@@ -31,19 +31,13 @@ export default async function ProfilePage() {
         />
       </header>
 
-      <section className="private-profile-cover entrance entrance-hero">
+      <section className="private-profile-cover is-compact-identity entrance entrance-hero">
         <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} size="large" priority />
         <div className="private-profile-copy">
           <span>@{profile.handle}</span>
           <h1>{profile.displayName}</h1>
           <p>{profile.bio || "Add a short introduction from settings."}</p>
         </div>
-      </section>
-
-      <section className="profile-signal-strip entrance entrance-status" aria-label="Profile preferences">
-        <div><strong>{profile.visibility === "public" ? "Public" : "Private"}</strong><span>Profile</span></div>
-        <div><strong>{profile.dmPolicy === "requests" ? "Requests" : profile.dmPolicy === "friends" ? "Friends" : "Off"}</strong><span>Messages</span></div>
-        <div><strong>{profile.activityStatusVisible ? "On" : "Off"}</strong><span>Activity</span></div>
       </section>
 
       <section className="profile-people entrance entrance-status" aria-labelledby="profile-people-title">

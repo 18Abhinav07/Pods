@@ -8,7 +8,7 @@ import type {
   PublishedPodContract,
   TemplateId
 } from "@pods/domain";
-import { serializePublishedContract } from "@pods/domain";
+import { isPublicVisitorContract, serializePublishedContract } from "@pods/domain";
 import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
@@ -18,6 +18,8 @@ import { createActivityMethods } from "./activity-repository";
 import { createFundingMethods } from "./funding-repository";
 import { createInboxMethods } from "./inbox-repository";
 import { createProfileMethods } from "./profile-repository";
+import { createPublicRoomMethods } from "./public-room-repository";
+import { createPublicSafetyMethods } from "./public-safety-repository";
 import { createSocialMethods } from "./social-repository";
 import { createMessagingMethods } from "./messaging-repository";
 import { createClockMethods } from "./clock-repository";
@@ -25,7 +27,7 @@ import { createCutoffMethods } from "./cutoff-repository";
 import { createTransferMethods } from "./transfer-repository";
 import { createWaitingRoomMethods } from "./waiting-room-repository";
 import * as schema from "./schema";
-import { occurrences, pods, sessions, users, walletChallenges } from "./schema";
+import { conversations, occurrences, pods, sessions, users, walletChallenges } from "./schema";
 import type { PodDraftData } from "./schema";
 
 type DraftStep = keyof PodDraftData;
@@ -69,6 +71,8 @@ export function createPodsRepository(connectionString: string) {
     ...createFundingMethods(database),
     ...createInboxMethods(database),
     ...createProfileMethods(database),
+    ...createPublicRoomMethods(database),
+    ...createPublicSafetyMethods(database),
     ...createSocialMethods(database),
     ...createMessagingMethods(database),
     ...createCutoffMethods(database),
@@ -186,7 +190,11 @@ export function createPodsRepository(connectionString: string) {
           draftData: {},
           contractData: null,
           contractHash: null,
+          creatorConsentContractHash: null,
+          creatorConsentAt: null,
+          publicRoomSuspendedAt: null,
           publishedAt: null,
+          completedAt: null,
           createdAt: now,
           updatedAt: now
         })
@@ -242,6 +250,7 @@ export function createPodsRepository(connectionString: string) {
       podId: string;
       contract: PublishedPodContract;
       occurrences: FrozenOccurrence[];
+      creatorConsentAccepted?: boolean;
     }) {
       return database.transaction(async (transaction) => {
         const [pod] = await transaction
@@ -257,6 +266,10 @@ export function createPodsRepository(connectionString: string) {
         const contractHash = createHash("sha256")
           .update(serializePublishedContract(input.contract))
           .digest("hex");
+        const visitorContract = isPublicVisitorContract(input.contract);
+        if (visitorContract && input.creatorConsentAccepted !== true) {
+          throw new Error("Creator consent is required for a public visitor room");
+        }
         await transaction.insert(occurrences).values(
           input.occurrences.map((occurrence) => ({
             id: randomUUID(),
@@ -271,12 +284,34 @@ export function createPodsRepository(connectionString: string) {
           }))
         );
         const publishedAt = new Date();
+        if (visitorContract) {
+          await transaction
+            .insert(conversations)
+            .values({
+              id: randomUUID(),
+              kind: "pod",
+              podId: input.podId,
+              directPairKey: null,
+              firstUserId: null,
+              secondUserId: null,
+              requestSenderUserId: null,
+              directState: null,
+              roomState: "open",
+              lastSequence: 0,
+              archivedAt: null,
+              createdAt: publishedAt,
+              updatedAt: publishedAt
+            })
+            .onConflictDoNothing({ target: conversations.podId });
+        }
         const [published] = await transaction
           .update(pods)
           .set({
             state: "enrollment_open",
             contractData: structuredClone(input.contract),
             contractHash,
+            creatorConsentContractHash: visitorContract ? contractHash : null,
+            creatorConsentAt: visitorContract ? publishedAt : null,
             publishedAt,
             updatedAt: publishedAt
           })

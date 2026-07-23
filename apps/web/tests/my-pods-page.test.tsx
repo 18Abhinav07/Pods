@@ -17,6 +17,12 @@ vi.mock("../src/lib/server-db", () => ({
       templateId: "build",
       contractData: { activity: { name: "Ship together" } },
       draftData: {}
+    }, {
+      id: "pod-completed",
+      state: "completed",
+      templateId: "reading",
+      contractData: { activity: { name: "Reading archive" } },
+      draftData: {}
     }]),
     listMembershipsForUser: vi.fn(async () => [])
   }
@@ -31,6 +37,9 @@ describe("MyPodsPage creator routing", () => {
     expect(screen.getByRole("link", { name: /Ship together/i }))
       .toHaveAttribute("href", "/pods/pod-locked/room");
     expect(screen.getByText("Roster locked")).toBeVisible();
+    expect(screen.getByRole("link", { name: /Reading archive/i }))
+      .toHaveAttribute("href", "/pods/pod-completed/room");
+    expect(screen.getByText("Completed")).toBeVisible();
     expect(screen.getByRole("link", { name: "Create a Pod" }))
       .toHaveAttribute("href", "/pods/create/template");
   });

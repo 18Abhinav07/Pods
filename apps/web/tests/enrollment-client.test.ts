@@ -33,4 +33,33 @@ describe("submitPublicApplication", () => {
       "Application already exists"
     );
   });
+
+  it("binds visitor disclosure consent to the frozen contract fingerprint", async () => {
+    const fetcher = vi.fn(async () =>
+      new Response(JSON.stringify({ application: { id: "application-2", state: "applied" } }), {
+        status: 201,
+        headers: { "content-type": "application/json" }
+      })
+    );
+
+    await submitPublicApplication(
+      "pod-2",
+      ["A public build log"],
+      {
+        acceptedContractHash: "contract-fingerprint",
+        visitorDisclosureAccepted: true
+      },
+      fetcher
+    );
+
+    expect(fetcher).toHaveBeenCalledWith("/api/pods/pod-2/applications", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        answers: ["A public build log"],
+        acceptedContractHash: "contract-fingerprint",
+        visitorDisclosureAccepted: true
+      })
+    });
+  });
 });

@@ -1,10 +1,11 @@
-import type { MembershipState } from "@pods/domain";
+import type { MembershipState, PodState } from "@pods/domain";
 
 import { presentPodRelationship } from "./participant-pod-state";
 
 export type TodayParticipant = {
   podId: string;
   state: MembershipState;
+  podState?: Exclude<PodState, "draft"> | undefined;
   depositIntentId: string | null;
 };
 
@@ -37,6 +38,7 @@ export function chooseTodayEnrollmentAction(input: {
       candidate,
       priority: presentPodRelationship({
         podId: candidate.podId,
+        podState: candidate.podState,
         relationship: {
           kind: "member",
           state: candidate.state,
@@ -52,6 +54,7 @@ export function chooseTodayEnrollmentAction(input: {
   const financialParticipant = participant
     ? presentPodRelationship({
         podId: participant.podId,
+        podState: participant.podState,
         relationship: {
           kind: "member",
           state: participant.state,

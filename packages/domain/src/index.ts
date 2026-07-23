@@ -4,12 +4,16 @@ export type TemplateId = "fitness" | "reading" | "study" | "build" | "create";
 export type EvidenceMode = "repeating_criterion" | "per_occurrence_commitment";
 export type SettlementMode = "proportional" | "full_refund_alpha";
 export type PodVisibility = "public" | "private";
+export type RoomAudience = "members_only" | "public_read_only";
+export type PodViewerMode = "member" | "visitor";
 export type PodState =
   | "draft"
   | "enrollment_open"
   | "cutoff_evaluating"
   | "locked_scheduled"
   | "active"
+  | "final_review"
+  | "completed"
   | "cancelled_refunding"
   | "cancelled";
 
@@ -79,6 +83,7 @@ export type CommunityStepInput =
       minParticipants: number;
       maxParticipants: number;
       applicationQuestions: string[];
+      roomAudience?: RoomAudience;
     }
   | {
       visibility: "private";
@@ -106,13 +111,11 @@ export interface FrozenOccurrence {
   commitmentDeadlineAt: string | null;
 }
 
-export interface PublishedPodContract {
-  version: 1;
+interface PublishedPodContractBase {
   templateId: TemplateId;
   evidenceMode: EvidenceMode;
   settlementMode: SettlementMode;
   activity: ActivityStepInput;
-  community: CommunityStepInput;
   commitment: {
     lunaPerOccurrence: number;
     occurrenceCount: number;
@@ -123,6 +126,34 @@ export interface PublishedPodContract {
     targetReviewHours: 12;
     timeoutProtectionHours: 24;
   };
+}
+
+export interface PublishedPodContractV1 extends PublishedPodContractBase {
+  version: 1;
+  community: CommunityStepInput;
+}
+
+export interface PublishedPodContractV2 extends PublishedPodContractBase {
+  version: 2;
+  community: Extract<CommunityStepInput, { visibility: "public" }> & {
+    roomAudience: RoomAudience;
+  };
+}
+
+export type PublishedPodContract = PublishedPodContractV1 | PublishedPodContractV2;
+
+export function publishedRoomAudience(contract: PublishedPodContract): RoomAudience {
+  return contract.version === 2 ? contract.community.roomAudience : "members_only";
+}
+
+export function isPublicVisitorContract(
+  contract: PublishedPodContract
+): contract is PublishedPodContractV2 {
+  return (
+    contract.version === 2 &&
+    contract.community.visibility === "public" &&
+    contract.community.roomAudience === "public_read_only"
+  );
 }
 
 export interface ValidationResult {
@@ -246,8 +277,20 @@ export function validateCommunityStep(input: CommunityStepInput): ValidationResu
     if (!Array.isArray(input.applicationQuestions)) {
       errors.push("Application questions must be a list");
     }
-  } else if (!positiveNumber(input.inviteExpiryHours)) {
-    errors.push("Private invitation expiry must be a positive number of hours");
+    if (
+      input.roomAudience !== undefined &&
+      input.roomAudience !== "members_only" &&
+      input.roomAudience !== "public_read_only"
+    ) {
+      errors.push("Choose a supported visitor-room audience");
+    }
+  } else {
+    if (!positiveNumber(input.inviteExpiryHours)) {
+      errors.push("Private invitation expiry must be a positive number of hours");
+    }
+    if ("roomAudience" in input) {
+      errors.push("Private Pods cannot expose a visitor room");
+    }
   }
   return { success: errors.length === 0, errors };
 }
@@ -360,26 +403,46 @@ export function buildPublishedContract(
     return { success: false, errors: ["Total commitment is too large"] };
   }
 
+  const sharedContract = {
+    templateId: draft.templateId,
+    evidenceMode: template.mode,
+    settlementMode: options.settlementMode ?? "full_refund_alpha",
+    activity: structuredClone(draft.activity),
+    commitment: {
+      lunaPerOccurrence,
+      occurrenceCount: occurrences.length,
+      totalLuna
+    },
+    verification: {
+      verifier: "pods_team" as const,
+      targetReviewHours: 12 as const,
+      timeoutProtectionHours: 24 as const
+    }
+  };
+  let contract: PublishedPodContract;
+  if (
+    draft.community.visibility === "public" &&
+    draft.community.roomAudience !== undefined
+  ) {
+    contract = {
+        ...sharedContract,
+        version: 2,
+        community: {
+          ...structuredClone(draft.community),
+          roomAudience: draft.community.roomAudience
+        }
+      };
+  } else {
+    contract = {
+        ...sharedContract,
+        version: 1,
+        community: structuredClone(draft.community)
+      };
+  }
+
   return {
     success: true,
-    contract: {
-      version: 1,
-      templateId: draft.templateId,
-      evidenceMode: template.mode,
-      settlementMode: options.settlementMode ?? "full_refund_alpha",
-      activity: structuredClone(draft.activity),
-      community: structuredClone(draft.community),
-      commitment: {
-        lunaPerOccurrence,
-        occurrenceCount: occurrences.length,
-        totalLuna
-      },
-      verification: {
-        verifier: "pods_team",
-        targetReviewHours: 12,
-        timeoutProtectionHours: 24
-      }
-    },
+    contract,
     occurrences
   };
 }

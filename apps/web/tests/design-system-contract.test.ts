@@ -15,13 +15,14 @@ describe("Pods mobile design system", () => {
     );
   });
 
-  it("defines the approved warm shell and activity themes without legacy blue", () => {
+  it("defines one neutral authenticated shell with restrained activity accents", () => {
     const css = designCss().toLowerCase();
     expect(css).toContain("--color-ink: #20241f");
     expect(css).toContain("--color-paper: #faf9f4");
-    expect(css).toContain("--activity-build: #d9ed72");
+    expect(css).toContain("--activity-neutral: #dce4cf");
     expect(css).toContain("--activity-fitness: #fa7448");
     expect(css).toContain("--activity-reading: #aeb8f0");
+    expect(css).toMatch(/\.theme-momentum,[\s\S]*\.theme-build\s*\{[\s\S]*--theme-accent:\s*var\(--activity-neutral\)/);
     expect(css).not.toContain("#3b5ccc");
     expect(css).not.toContain("#5267cc");
   });
@@ -54,25 +55,25 @@ describe("Pods mobile design system", () => {
     expect(css).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*transition-duration:\s*0\.01ms\s*!important/);
   });
 
-  it("treats Pod rooms as compact mobile conversations instead of dashboard cards", () => {
+  it("treats every Pod room as grouped mobile conversation instead of a card feed", () => {
     const css = designCss();
-    expect(css).toMatch(/\.room-context-hero[\s\S]*min-height:\s*112px/);
-    expect(css).toMatch(/\.pod-tabs[\s\S]*border-bottom:\s*1px solid var\(--color-line\)/);
-    expect(css).toMatch(/\.room-entry-member_message[\s\S]*max-width:\s*86%/);
-    expect(css).toMatch(/\.room-entry-actions\s*>\s*button[\s\S]*min-height:\s*44px/);
-    expect(css).toMatch(/\.reaction-tray\s+button[\s\S]*width:\s*44px/);
+    expect(css).toMatch(/\.room-message-cluster[\s\S]*grid-template-columns:\s*32px\s+minmax\(0,\s*1fr\)/);
+    expect(css).toMatch(/\.room-entry-member_message[\s\S]*width:\s*fit-content[\s\S]*max-width:\s*84%/);
+    expect(css).toMatch(/\.room-entry-member_message\.is-viewer[\s\S]*align-self:\s*flex-end/);
+    expect(css).toMatch(/\.room-entry-member_message\.is-consecutive[\s\S]*margin-top:/);
+    expect(css).toMatch(/\.room-entry-member_message\.is-group-end[\s\S]*margin-bottom:/);
     expect(css).toMatch(/\.room-activity-main[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+96px/);
     expect(css).toMatch(/\.room-proof-image[\s\S]*width:\s*96px[\s\S]*height:\s*96px/);
     expect(css).toMatch(/\.room-activity-card h3[\s\S]*font-size:\s*18px/);
   });
 
-  it("uses the fixed lime send state and compact quoted replies", () => {
+  it("uses a restrained green send state and inset quoted replies without stripe decoration", () => {
     const css = designCss();
-    expect(css).toMatch(/\.composer-send\.is-ready\s*\{[\s\S]*color:\s*var\(--activity-build-deep\)[\s\S]*background:\s*var\(--activity-build\)/);
-    expect(css).toMatch(/\.message-reply-preview\s*\{[\s\S]*border-left:\s*3px solid var\(--activity-build\)/);
+    expect(css).toMatch(/\.composer-send\.is-ready\s*\{[\s\S]*color:\s*var\(--color-surface\)[\s\S]*background:\s*var\(--color-success\)/);
+    expect(css).toMatch(/\.message-reply-preview\s*\{[\s\S]*border:\s*1px solid/);
+    expect(css).not.toMatch(/\.message-reply-preview\s*\{[\s\S]*border-left:\s*3px/);
     expect(css).toMatch(/\.room-entry\.is-reply-target\s*\{[\s\S]*background:/);
-    expect(css).not.toMatch(/\.room-entry\.is-viewer\s+\.message-reply-preview\s*\{/);
-    expect(css).toMatch(/\.pod-room-panel\.is-direct\s+\.room-entry-member_message\.is-viewer\s+\.message-reply-preview\s*\{/);
+    expect(css).toMatch(/\.room-entry-member_message\.is-viewer\s+\.message-reply-preview\s*\{/);
   });
 
   it("anchors a restrained compact navigation directly to the safe area", () => {
@@ -84,6 +85,18 @@ describe("Pods mobile design system", () => {
     expect(activeRules.at(-1)?.[1]).toContain("background: transparent");
   });
 
+  it("anchors both Pod and direct-message composers to the full bottom edge", () => {
+    const css = designCss();
+    const composerRules = [...css.matchAll(/\.room-composer,\s*\n\.pod-room-panel\.is-direct \.room-composer\s*\{([^}]*)\}/g)];
+    const finalRule = composerRules.at(-1)?.[1] ?? "";
+
+    expect(finalRule).toContain("right: 0");
+    expect(finalRule).toContain("bottom: 0");
+    expect(finalRule).toContain("left: 0");
+    expect(finalRule).toContain("margin: 0 auto");
+    expect(finalRule).toContain("transform: none");
+  });
+
   it("removes legacy glass and link styling from first-run and empty states", () => {
     const css = designCss();
     expect(css).toMatch(/\.onboarding-step\s*\{[\s\S]*background:\s*transparent/);
@@ -93,13 +106,13 @@ describe("Pods mobile design system", () => {
     expect(css).toMatch(/\.empty-state\s+\.primary-action[\s\S]*background:\s*var\(--color-ink\)/);
   });
 
-  it("converges financial and activity routes on the adaptive palette", () => {
+  it("keeps financial routes authoritative without decorative authenticated-page orbits", () => {
     const css = designCss();
-    expect(css).toMatch(/\.commit-nim-action[\s\S]*background:\s*var\(--activity-build\)/);
+    expect(css).toMatch(/\.commit-nim-action[\s\S]*background:\s*var\(--color-success\)/);
     expect(css).toMatch(/\.funding-total,[\s\S]*\.funding-state-card,[\s\S]*\.refund-state[\s\S]*background:\s*var\(--color-ink\)/);
     expect(css).toMatch(/\.funding-stage-rail\s+\.is-current\s*>\s*span[\s\S]*background:\s*var\(--color-ink\)/);
     expect(css).toMatch(/\.active-occurrence-card,[\s\S]*\.commitment-studio-visual[\s\S]*background:\s*var\(--theme-deep,\s*var\(--color-ink\)\)/);
-    expect(css).toMatch(/\.public-profile-orbit\s+i[\s\S]*border-color:\s*var\(--activity-build\)/);
+    expect(css).toMatch(/\.public-profile-orbit,[\s\S]*\.message-orbit,[\s\S]*\.funding-orbit[\s\S]*display:\s*none/);
   });
 
   it("renders the creation templates as readable media cards", () => {
@@ -110,11 +123,35 @@ describe("Pods mobile design system", () => {
     expect(css).toMatch(/\.adaptive-template-copy\s+strong[\s\S]*font-size:\s*16px/);
   });
 
-  it("uses circular abstract identity and an intentional settings sheet", () => {
+  it("uses compact human identity and an intentional settings sheet", () => {
     const css = designCss();
     expect(css).toMatch(/\.profile-avatar[\s\S]*border-radius:\s*50%/);
     expect(css).toMatch(/\.profile-avatar-glyph[\s\S]*border-radius:\s*50%/);
     expect(css).toMatch(/\.profile-settings-sheet[\s\S]*position:\s*fixed/);
-    expect(css).toMatch(/\.public-profile-cover[\s\S]*min-height:\s*420px/);
+    expect(css).toMatch(/\.private-profile-cover[\s\S]*min-height:\s*0/);
+    expect(css).toMatch(/\.private-profile-cover[\s\S]*grid-template-columns:\s*88px\s+minmax\(0,\s*1fr\)/);
+    expect(css).toMatch(/\.public-profile-cover[\s\S]*min-height:\s*0/);
+  });
+
+  it("renders Discover as safe-gutter compact rows rather than full-bleed posters", () => {
+    const css = designCss();
+    expect(css).toMatch(/\.discover-stage-filter[\s\S]*border-bottom:\s*1px solid var\(--color-line\)/);
+    expect(css).toMatch(/\.discover-stage-filter a[\s\S]*text-decoration:\s*none/);
+    expect(css).toMatch(/\.discover-stage-filter a\[aria-current="page"\][\s\S]*color:\s*var\(--color-ink\)/);
+    expect(css).toMatch(/\.template-filter-shell[\s\S]*padding-inline:\s*var\(--page-gutter\)/);
+    expect(css).toMatch(/\.adaptive-pod-card[\s\S]*grid-template-columns:\s*76px\s+minmax\(0,\s*1fr\)/);
+    expect(css).toMatch(/\.adaptive-pod-media[\s\S]*min-height:\s*76px[\s\S]*border-radius:\s*20px/);
+    expect(css).toMatch(/\.adaptive-card-hit-area[\s\S]*position:\s*absolute[\s\S]*inset:\s*0/);
+    expect(css).toMatch(/\.adaptive-pod-type[\s\S]*position:\s*absolute[\s\S]*right:\s*0[\s\S]*bottom:\s*8px/);
+    expect(css).not.toMatch(/\.discover-apply-orb/);
+  });
+
+  it("renders the public visitor room as a full-height editorial conversation", () => {
+    const css = designCss();
+    expect(css).toMatch(/\.public-room-shell[\s\S]*min-height:\s*100svh/);
+    expect(css).toMatch(/\.public-room-cover[\s\S]*position:\s*relative[\s\S]*aspect-ratio:\s*16\s*\/\s*10/);
+    expect(css).toMatch(/\.public-room-stream[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column/);
+    expect(css).toMatch(/\.public-room-entry\.is-member_message[\s\S]*max-width:\s*84%/);
+    expect(css).toMatch(/\.visitor-composer-boundary[\s\S]*position:\s*sticky[\s\S]*bottom:\s*0/);
   });
 });

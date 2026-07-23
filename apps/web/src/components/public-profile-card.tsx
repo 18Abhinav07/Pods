@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ProfileAvatar } from "./profile-avatar";
 
 export function PublicProfileCard({
-  profile
+  profile,
+  variant = "default"
 }: {
   profile: {
     handle: string;
@@ -13,16 +14,21 @@ export function PublicProfileCard({
     avatar: ProfileAvatarType;
     activityStatusVisible: boolean;
   };
+  variant?: "default" | "search";
 }) {
   return (
-    <Link className="public-profile-card" href={`/u/${profile.handle}`}>
+    <Link className={`public-profile-card${variant === "search" ? " is-search-result" : ""}`} href={`/u/${profile.handle}`}>
       <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} />
       <span>
         <strong>{profile.displayName}</strong>
         <small>@{profile.handle}</small>
-        <p>{profile.bio || "Moving with intention on Pods."}</p>
+        {variant === "default" ? <p>{profile.bio || "Moving with intention on Pods."}</p> : null}
       </span>
-      <i aria-hidden="true">View</i>
+      {variant === "search" ? (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="m9 5 7 7-7 7" />
+        </svg>
+      ) : <i aria-hidden="true">View</i>}
     </Link>
   );
 }

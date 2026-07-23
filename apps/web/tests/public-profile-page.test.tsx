@@ -26,13 +26,15 @@ vi.mock("../src/lib/server-db", () => ({
 import PublicProfilePage from "../src/app/u/[handle]/page";
 
 describe("PublicProfilePage", () => {
-  it("uses the profile photo as a top-card backdrop with unboxed stats", async () => {
+  it("uses an image-led searched profile with identity, stats, and actions in one hierarchy", async () => {
     const { container } = render(await PublicProfilePage({ params: Promise.resolve({ handle: "ryuk_builds" }) }));
 
-    expect(container.querySelector(".public-profile-cover")).toBeInTheDocument();
+    expect(container.querySelector(".public-profile-cover")).toHaveClass("is-profile-showcase");
     expect(screen.getByRole("img", { name: "Ryuk avatar" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Ryuk" })).toBeVisible();
     expect(screen.getByText("17")).toBeVisible();
     expect(container.querySelectorAll(".public-profile-stats article")).toHaveLength(0);
+    expect(container.querySelector(".public-profile-cover .public-profile-stats")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Find people" })).toHaveAttribute("href", "/people/search");
   });
 });

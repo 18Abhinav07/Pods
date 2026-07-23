@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { PodState } from "@pods/domain";
 
 import { AppHeader } from "../../components/app-header";
 import { PrimaryNav } from "../../components/primary-nav";
@@ -22,7 +23,7 @@ export default async function TodayPage() {
   const pendingReview = creatorApplications.find(({ application, pod }) => application.state === "applied" && pod.state === "enrollment_open");
   const recruit = ownedPods.find((pod) => pod.state === "enrollment_open" && pod.contractData?.community.visibility === "public");
   const creatorFunding = ownedPods.find((pod) =>
-    ["cutoff_evaluating", "locked_scheduled", "active", "cancelled_refunding", "cancelled"].includes(pod.state)
+    ["cutoff_evaluating", "locked_scheduled", "active", "final_review", "completed", "cancelled_refunding", "cancelled"].includes(pod.state)
   );
   const activityActions = activities.map(({ pod, occurrence, commitment, submission }) => ({
     podId: pod.id,
@@ -41,6 +42,7 @@ export default async function TodayPage() {
     activities: activityActions,
     participants: memberships.map(({ membership, pod }) => ({
       podId: pod.id,
+      podState: pod.state as Exclude<PodState, "draft">,
       state: membership.state,
       depositIntentId: membership.depositIntentId
     })),
@@ -54,6 +56,7 @@ export default async function TodayPage() {
   const participantPresentation = action.kind === "participant"
     ? presentPodRelationship({
         podId: action.podId,
+        podState: action.podState,
         relationship: {
           kind: "member",
           state: action.state,
@@ -64,7 +67,7 @@ export default async function TodayPage() {
   const creatorPresentation = action.kind === "creator_funding" && creatorFunding
     ? presentCreatorPodState({
         podId: creatorFunding.id,
-        state: creatorFunding.state as "cutoff_evaluating" | "locked_scheduled" | "active" | "cancelled_refunding" | "cancelled"
+        state: creatorFunding.state as Exclude<PodState, "draft">
       })
     : null;
   const activeRecord = action.kind === "activity"
@@ -151,6 +154,7 @@ export default async function TodayPage() {
             {otherPods.map(({ membership, pod }, visualIndex) => {
               const presentation = presentPodRelationship({
                 podId: pod.id,
+                podState: pod.state as Exclude<PodState, "draft">,
                 relationship: { kind: "member", state: membership.state, depositIntentId: membership.depositIntentId }
               });
               const otherMedia = mediaForTemplate(pod.templateId, visualIndex);

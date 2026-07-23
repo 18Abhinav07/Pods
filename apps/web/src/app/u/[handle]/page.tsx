@@ -22,7 +22,7 @@ export default async function PublicProfilePage({
   if (presence.kind === "private") {
     return (
       <main className="foundation-shell public-profile-shell">
-        <header className="app-topbar"><Link className="wordmark" href="/discover?view=people"><span className="pod-mark" aria-hidden="true" />pods</Link></header>
+        <header className="app-topbar"><Link className="wordmark" href="/discover"><span className="pod-mark" aria-hidden="true" />pods</Link></header>
         <section className="private-public-profile">
           <span aria-hidden="true">P</span>
           <p className="eyebrow">Private profile</p>
@@ -37,28 +37,31 @@ export default async function PublicProfilePage({
   const profile = presence.profile;
   return (
     <main className="foundation-shell public-profile-shell">
-      <header className="public-profile-header"><Link className="wordmark" href="/discover?view=people"><span className="pod-mark" aria-hidden="true" />pods</Link><span>@{profile.handle}</span></header>
-      <section className="public-profile-cover">
-        <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} size="cover" priority />
-        <div className="public-profile-cover-shade" />
+      <header className="public-profile-header"><Link className="wordmark" href="/discover"><span className="pod-mark" aria-hidden="true" />pods</Link><span>@{profile.handle}</span></header>
+      <section className="public-profile-cover is-profile-showcase">
+        <div className="public-profile-portrait">
+          <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} size="cover" priority />
+        </div>
         <div className="public-profile-cover-copy">
-          <span>Public profile</span>
+          <span>@{profile.handle}</span>
           <h1>{profile.displayName}</h1>
           <p>{profile.bio || "Moving with intention on Pods."}</p>
         </div>
+        <div className="public-profile-showcase-footer">
+          <dl className="public-profile-stats">
+            <div><dt>Followers</dt><dd>{presence.counts.followers}</dd></div>
+            <div><dt>Following</dt><dd>{presence.counts.following}</dd></div>
+            <div><dt>Activity</dt><dd>{profile.activityStatusVisible ? "On" : "Off"}</dd></div>
+          </dl>
+          {!presence.relationship.self ? session ? <SocialProfileActions handle={profile.handle} initial={{ following: presence.relationship.following, friend: presence.relationship.friend, request: presence.relationship.request, messageRequestsAllowed: presence.messageRequestsAllowed }} /> : <Link className="primary-action public-profile-connect" href={`/connect?returnTo=${encodeURIComponent(`/u/${profile.handle}`)}`}>Connect</Link> : null}
+        </div>
       </section>
-      <dl className="public-profile-stats">
-        <div><dt>Followers</dt><dd>{presence.counts.followers}</dd></div>
-        <div><dt>Following</dt><dd>{presence.counts.following}</dd></div>
-        <div><dt>Activity</dt><dd>{profile.activityStatusVisible ? "On" : "Off"}</dd></div>
-      </dl>
-      {!presence.relationship.self ? session ? <SocialProfileActions handle={profile.handle} initial={{ following: presence.relationship.following, friend: presence.relationship.friend, request: presence.relationship.request, messageRequestsAllowed: presence.messageRequestsAllowed }} /> : <Link className="primary-action full-action" href={`/connect?returnTo=${encodeURIComponent(`/u/${profile.handle}`)}`}>Connect to follow</Link> : null}
       <section className="public-profile-activity-empty">
         <span>Activity</span>
         <h2>No public milestones yet.</h2>
         <p>Completed public Pods and earned streaks will appear here.</p>
       </section>
-      <Link className="public-profile-explore" href="/discover?view=people">Explore people</Link>
+      <Link aria-label="Find people" className="public-profile-explore" href="/people/search">Find people</Link>
     </main>
   );
 }

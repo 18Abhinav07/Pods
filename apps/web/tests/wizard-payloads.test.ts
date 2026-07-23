@@ -50,12 +50,14 @@ describe("creator wizard payloads", () => {
     publicForm.set("minParticipants", "3");
     publicForm.set("maxParticipants", "8");
     publicForm.set("applicationQuestions", "What will you ship?\nLink your current work.");
+    publicForm.set("roomAudience", "public_read_only");
 
     expect(buildCommunityPayload(publicForm)).toEqual({
       visibility: "public",
       minParticipants: 3,
       maxParticipants: 8,
-      applicationQuestions: ["What will you ship?", "Link your current work."]
+      applicationQuestions: ["What will you ship?", "Link your current work."],
+      roomAudience: "public_read_only"
     });
 
     const privateForm = new FormData();
@@ -68,6 +70,18 @@ describe("creator wizard payloads", () => {
       minParticipants: 2,
       maxParticipants: 5,
       inviteExpiryHours: 168
+    });
+  });
+
+  it("defaults an omitted public visitor choice to members only", () => {
+    const form = new FormData();
+    form.set("visibility", "public");
+    form.set("minParticipants", "3");
+    form.set("maxParticipants", "8");
+
+    expect(buildCommunityPayload(form)).toMatchObject({
+      visibility: "public",
+      roomAudience: "members_only"
     });
   });
 });

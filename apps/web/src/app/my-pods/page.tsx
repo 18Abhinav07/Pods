@@ -1,4 +1,4 @@
-import { templateContracts } from "@pods/domain";
+import { templateContracts, type PodState } from "@pods/domain";
 import Link from "next/link";
 
 import { MyPodsList, type MyPodListItem } from "../../components/my-pods-list";
@@ -19,7 +19,7 @@ function ownerItem(pod: Awaited<ReturnType<typeof podsRepository.listPodsForOwne
     ? null
     : presentCreatorPodState({
         podId: pod.id,
-        state: pod.state as "enrollment_open" | "cutoff_evaluating" | "locked_scheduled" | "active" | "cancelled_refunding" | "cancelled"
+        state: pod.state as Exclude<PodState, "draft">
       });
   return {
     id: pod.id,
@@ -44,6 +44,7 @@ export default async function MyPodsPage() {
     const template = templateContracts.find((item) => item.id === pod.templateId);
     const presentation = presentPodRelationship({
       podId: pod.id,
+      podState: pod.state as Exclude<PodState, "draft">,
       relationship: {
         kind: "member",
         state: membership.state,

@@ -38,25 +38,25 @@ export default async function ParticipantSubmissionPage({
         <h1>{submission.state === "approved" ? "Work approved." : "Review in progress."}</h1>
         <p className="screen-copy">{pod.contractData?.activity.name}</p>
       </section>
-      <section className="submission-detail-card">
+      <section className="submission-detail-card is-editorial-submission">
         <div><span>Locked task</span><strong>{commitment.task}</strong></div>
         <div><span>Result</span><p>{submission.resultSummary}</p></div>
-        <a className="secondary-action full-action" href={submission.artifactUrl} rel="noreferrer" target="_blank">Open public artifact</a>
+        <a className="submission-artifact-link" href={submission.artifactUrl} rel="noreferrer" target="_blank">Open public artifact <span aria-hidden="true">↗</span></a>
         {submission.evidenceObjectKey ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img alt="Your optional evidence" src={`/api/pods/${podId}/submissions/${submission.id}/evidence`} />
         ) : null}
       </section>
-      <section className="review-timing-card">
+      <section className="review-timing-card is-review-timeline" aria-label="Review timeline">
         <div><span>Submitted</span><strong>{moment(submission.submittedAt)}</strong></div>
         <div><span>Review target</span><strong>{moment(submission.reviewTargetAt)}</strong></div>
         <div><span>Hard protection time</span><strong>{moment(submission.reviewHardDeadlineAt)}</strong></div>
       </section>
-      <aside className={`pod-relationship-banner is-${submission.state === "approved" ? "success" : "pending"}`}>
+      <aside className={`pod-relationship-banner submission-protection-note is-${submission.state === "approved" ? "success" : "pending"}`}>
         <strong>{submission.state === "approved" ? "Bonus-eligible occurrence" : "Principal remains protected while review is open"}</strong>
         <p>{submission.state === "approved" ? "A Pods reviewer manually approved the evidence against your frozen task." : "The 12-hour response time is a target. The exact hard deadline remains visible above."}</p>
       </aside>
-      <Link className="primary-action full-action" href={`/pods/${podId}/today`}>Return to Pod room</Link>
+      <Link className="primary-action full-action" href={`/pods/${podId}/room`}>Return to Pod room</Link>
     </main>
   );
 }

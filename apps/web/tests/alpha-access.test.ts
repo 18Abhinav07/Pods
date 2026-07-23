@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   alphaDepositsEnabled,
   alphaFundingPolicy,
+  publicVisitorRoomsEnabled,
   walletHasAlphaAccess
 } from "../src/lib/alpha-access";
 
@@ -45,18 +46,22 @@ describe("alpha access enforcement", () => {
     ).toBe(false);
   });
 
-  it("projects an immutable refund-only contract and server caps", () => {
+  it("keeps public visitor rooms fail closed unless explicitly enabled", () => {
+    expect(publicVisitorRoomsEnabled({})).toBe(false);
+    expect(publicVisitorRoomsEnabled({ PODS_PUBLIC_VISITOR_ROOMS_ENABLED: "false" }))
+      .toBe(false);
+    expect(publicVisitorRoomsEnabled({ PODS_PUBLIC_VISITOR_ROOMS_ENABLED: "true" }))
+      .toBe(true);
+  });
+
+  it("projects the immutable refund-only contract without deposit caps", () => {
     expect(alphaFundingPolicy({
       APP_ENV: "alpha",
       NIMIQ_NETWORK: "testnet",
       PODS_DEPOSIT_MODE: "allowlist_refund_only",
-      PODS_ALPHA_REFUND_ENABLED: "true",
-      PODS_MAX_DEPOSIT_LUNA: "50000",
-      PODS_MAX_TREASURY_EXPOSURE_LUNA: "200000"
+      PODS_ALPHA_REFUND_ENABLED: "true"
     })).toEqual({
-      settlementMode: "full_refund_alpha",
-      maximumDepositLuna: 50_000,
-      maximumTreasuryExposureLuna: 200_000
+      settlementMode: "full_refund_alpha"
     });
   });
 });

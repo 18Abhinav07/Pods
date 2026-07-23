@@ -11,7 +11,14 @@ describe("activity presentation", () => {
   });
 
   it("varies hero art between Pods that share one template", () => {
-    expect(mediaForTemplate("build", 0).hero)
-      .not.toBe(mediaForTemplate("build", 1).hero);
+    expect(mediaForTemplate("fitness", 0).hero)
+      .not.toBe(mediaForTemplate("fitness", 1).hero);
+  });
+
+  it("uses the landing-page laptop artwork for Build and Ship", () => {
+    const build = mediaForTemplate("build", 0);
+    expect(build.hero).toBe("/media/build-workspace.jpg");
+    expect(build.proof).toBe("/media/build-proof.jpg");
+    expect(build.hero).not.toContain("pod-signal");
   });
 });

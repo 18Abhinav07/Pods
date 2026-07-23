@@ -12,12 +12,22 @@ async function errorMessage(response: Response, fallback: string) {
 export async function submitPublicApplication(
   podId: string,
   answers: string[],
-  fetcher: Fetcher = fetch
+  consentOrFetcher:
+    | Fetcher
+    | {
+        acceptedContractHash: string;
+        visitorDisclosureAccepted: true;
+      } = fetch,
+  explicitFetcher: Fetcher = fetch
 ) {
+  const consent =
+    typeof consentOrFetcher === "function" ? null : consentOrFetcher;
+  const fetcher =
+    typeof consentOrFetcher === "function" ? consentOrFetcher : explicitFetcher;
   const response = await fetcher(`/api/pods/${podId}/applications`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ answers })
+    body: JSON.stringify({ answers, ...(consent ?? {}) })
   });
   if (!response.ok) throw new Error(await errorMessage(response, "Application could not be sent"));
   const data = (await response.json()) as { application: { id: string; state: string } };

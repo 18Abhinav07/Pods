@@ -92,6 +92,28 @@ export function presentCreatorPodState(input: {
       todayDetail: "Track every participant-safe return until the financial state is final."
     };
   }
+  if (input.state === "final_review") {
+    return {
+      statusLabel: "Final review",
+      statusDetail: "The room is archived while final decisions complete",
+      actionLabel: "Open archived room",
+      href: `/pods/${input.podId}/room`,
+      todayEyebrow: "Final review",
+      todayTitle: "The activity record is in final review.",
+      todayDetail: "Open the archived room to follow the remaining review outcomes."
+    };
+  }
+  if (input.state === "completed") {
+    return {
+      statusLabel: "Completed",
+      statusDetail: "The public activity record is archived",
+      actionLabel: "View Pod archive",
+      href: `/pods/${input.podId}/room`,
+      todayEyebrow: "Pod completed",
+      todayTitle: "This activity is complete.",
+      todayDetail: "The room, public proof record, and frozen contract remain available."
+    };
+  }
   return {
     statusLabel: "Cancelled",
     statusDetail: "Financial obligations resolved",
@@ -286,6 +308,7 @@ function memberHref(input: {
 
 export function presentPodRelationship(input: {
   podId: string;
+  podState?: Exclude<PodState, "draft"> | undefined;
   relationship: PodRelationship;
 }): PodRelationshipPresentation {
   if (input.relationship.kind === "visitor") {
@@ -303,6 +326,22 @@ export function presentPodRelationship(input: {
   }
 
   if (input.relationship.kind === "creator") {
+    if (input.podState) {
+      const presentation = presentCreatorPodState({
+        podId: input.podId,
+        state: input.podState
+      });
+      return {
+        ...presentation,
+        tone:
+          input.podState === "completed" || input.podState === "cancelled"
+            ? "closed"
+            : input.podState === "final_review" || input.podState === "cutoff_evaluating"
+              ? "pending"
+              : "secured",
+        todayPriority: null
+      };
+    }
     return {
       statusLabel: "Creator",
       statusDetail: "Enrollment open",
@@ -313,6 +352,40 @@ export function presentPodRelationship(input: {
       todayEyebrow: "Creator controls",
       todayTitle: "Your public Pod is ready to grow.",
       todayDetail: "Review applications and share the frozen public contract."
+    };
+  }
+
+  if (
+    (input.relationship.state === "roster_locked" || input.relationship.state === "active") &&
+    input.podState === "final_review"
+  ) {
+    return {
+      statusLabel: "Final review",
+      statusDetail: "The room is archived while final decisions complete",
+      actionLabel: "Open archived room",
+      href: `/pods/${input.podId}/room`,
+      tone: "pending",
+      todayPriority: null,
+      todayEyebrow: "Final review",
+      todayTitle: "The activity record is in final review.",
+      todayDetail: "Open the archived room to follow the remaining review outcomes."
+    };
+  }
+
+  if (
+    (input.relationship.state === "roster_locked" || input.relationship.state === "active") &&
+    input.podState === "completed"
+  ) {
+    return {
+      statusLabel: "Completed",
+      statusDetail: "The public activity record is archived",
+      actionLabel: "View Pod archive",
+      href: `/pods/${input.podId}/room`,
+      tone: "closed",
+      todayPriority: null,
+      todayEyebrow: "Pod completed",
+      todayTitle: "This activity is complete.",
+      todayDetail: "The room, public proof record, and frozen contract remain available."
     };
   }
 

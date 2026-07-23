@@ -25,6 +25,9 @@ import type {
   ProfileAvatar,
   ProfileVisibility,
   ProofShareMode,
+  PublicModerationAction,
+  PublicReportState,
+  PublicReportTargetKind,
   ReactionCode,
   ReportReason,
   RoomState
@@ -178,6 +181,102 @@ export const userReports = pgTable(
   (table) => [index("user_reports_reported_created_idx").on(table.reportedUserId, table.createdAt)]
 );
 
+export const publicContentReports = pgTable(
+  "public_content_reports",
+  {
+    id: uuid("id").primaryKey(),
+    reporterUserId: uuid("reporter_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    targetKind: text("target_kind").$type<PublicReportTargetKind>().notNull(),
+    targetId: uuid("target_id").notNull(),
+    reason: text("reason").$type<ReportReason>().notNull(),
+    details: text("details").notNull(),
+    state: text("state").$type<PublicReportState>().notNull(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    index("public_content_reports_state_created_idx").on(table.state, table.createdAt),
+    index("public_content_reports_pod_created_idx").on(table.podId, table.createdAt),
+    index("public_content_reports_reporter_created_idx").on(
+      table.reporterUserId,
+      table.createdAt
+    )
+  ]
+);
+
+export const publicContentSuppressions = pgTable(
+  "public_content_suppressions",
+  {
+    id: uuid("id").primaryKey(),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    targetKind: text("target_kind").$type<PublicReportTargetKind>().notNull(),
+    targetId: uuid("target_id").notNull(),
+    reason: text("reason").notNull(),
+    actionedBy: text("actioned_by").notNull(),
+    restoredAt: timestamp("restored_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("public_content_suppressions_target_unique").on(
+      table.podId,
+      table.targetKind,
+      table.targetId
+    ),
+    index("public_content_suppressions_active_idx").on(table.podId, table.restoredAt)
+  ]
+);
+
+export const publicModerationActions = pgTable(
+  "public_moderation_actions",
+  {
+    id: uuid("id").primaryKey(),
+    reportId: uuid("report_id").references(() => publicContentReports.id, {
+      onDelete: "set null"
+    }),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    targetKind: text("target_kind").$type<PublicReportTargetKind>(),
+    targetId: uuid("target_id"),
+    action: text("action").$type<PublicModerationAction>().notNull(),
+    actor: text("actor").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    index("public_moderation_actions_pod_created_idx").on(table.podId, table.createdAt),
+    index("public_moderation_actions_report_created_idx").on(
+      table.reportId,
+      table.createdAt
+    )
+  ]
+);
+
+export const publicRateLimitBuckets = pgTable(
+  "public_rate_limit_buckets",
+  {
+    id: text("id").primaryKey(),
+    bucketKey: text("bucket_key").notNull(),
+    action: text("action").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true, mode: "date" }).notNull(),
+    count: integer("count").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    index("public_rate_limit_buckets_expiry_idx").on(table.expiresAt),
+    index("public_rate_limit_buckets_key_action_idx").on(table.bucketKey, table.action)
+  ]
+);
+
 export const notifications = pgTable(
   "notifications",
   {
@@ -234,7 +333,17 @@ export const pods = pgTable(
     draftData: jsonb("draft_data").$type<PodDraftData>().notNull(),
     contractData: jsonb("contract_data").$type<PublishedPodContract>(),
     contractHash: text("contract_hash"),
+    creatorConsentContractHash: text("creator_consent_contract_hash"),
+    creatorConsentAt: timestamp("creator_consent_at", {
+      withTimezone: true,
+      mode: "date"
+    }),
+    publicRoomSuspendedAt: timestamp("public_room_suspended_at", {
+      withTimezone: true,
+      mode: "date"
+    }),
     publishedAt: timestamp("published_at", { withTimezone: true, mode: "date" }),
+    completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
   },
@@ -366,6 +475,11 @@ export const applications = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     answers: jsonb("answers").$type<ApplicationAnswer[]>().notNull(),
+    acceptedContractHash: text("accepted_contract_hash"),
+    visitorDisclosureAcceptedAt: timestamp("visitor_disclosure_accepted_at", {
+      withTimezone: true,
+      mode: "date"
+    }),
     state: text("state").$type<ApplicationStatus>().notNull(),
     decidedAt: timestamp("decided_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
@@ -426,6 +540,7 @@ export const memberships = pgTable(
       onDelete: "set null"
     }),
     depositIntentId: uuid("deposit_intent_id"),
+    acceptedContractHash: text("accepted_contract_hash"),
     acceptedAt: timestamp("accepted_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()

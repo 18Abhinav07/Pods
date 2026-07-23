@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { PodState } from "@pods/domain";
 
 import { PrimaryNav } from "../../components/primary-nav";
 import { presentPodRelationship } from "../../lib/participant-pod-state";
@@ -42,6 +43,7 @@ export default async function ApplicationsPage({
             const membership = membershipByApplication.get(application.id);
             const presentation = presentPodRelationship({
               podId: pod.id,
+              podState: pod.state as Exclude<PodState, "draft">,
               relationship: {
                 kind: "member",
                 state: membership?.state ?? application.state,

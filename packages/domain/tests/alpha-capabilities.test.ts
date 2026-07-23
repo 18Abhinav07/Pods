@@ -28,8 +28,6 @@ describe("alpha capability configuration", () => {
       settlement: false,
       alphaRefund: false,
       depositMode: "off",
-      maximumDepositLuna: 0,
-      maximumTreasuryExposureLuna: 0,
       realtimeTransport: "poll"
     });
   });
@@ -49,13 +47,22 @@ describe("alpha capability configuration", () => {
     ).toThrow("Public deposits require settlement to be enabled");
   });
 
-  it("requires the full refund path and positive caps for allowlisted deposits", () => {
+  it("requires the full refund path for allowlisted deposits", () => {
     expect(() =>
       parseAlphaCapabilities({
         ...alphaEnvironment,
         PODS_DEPOSIT_MODE: "allowlist_refund_only"
       })
-    ).toThrow("Allowlisted alpha deposits require the full refund path and positive caps");
+    ).toThrow("Allowlisted alpha deposits require the full refund path");
+
+    expect(parseAlphaCapabilities({
+      ...alphaEnvironment,
+      PODS_DEPOSIT_MODE: "allowlist_refund_only",
+      PODS_ALPHA_REFUND_ENABLED: "true"
+    })).toMatchObject({
+      depositMode: "allowlist_refund_only",
+      alphaRefund: true
+    });
   });
 
   it("requires safety controls before non-friend message requests", () => {

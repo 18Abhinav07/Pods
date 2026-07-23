@@ -31,7 +31,17 @@ export default async function ApplyPage({ params }: { params: Promise<{ podId: s
         <strong>No place is reserved yet</strong>
         <p>Applying does not reserve a place. A place is secured only after acceptance, funding finality, and roster lock.</p>
       </aside>
-      <ApplicationForm podId={podId} questions={contract.community.applicationQuestions} />
+      <ApplicationForm
+        podId={podId}
+        questions={contract.community.applicationQuestions}
+        visitorConsent={
+          contract.version === 2 &&
+          contract.community.roomAudience === "public_read_only" &&
+          pod.contractHash
+            ? { contractHash: pod.contractHash }
+            : null
+        }
+      />
     </main>
   );
 }

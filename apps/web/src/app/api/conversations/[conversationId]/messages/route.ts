@@ -20,12 +20,17 @@ export async function GET(
   const url = new URL(request.url);
   const afterSequence = Number.parseInt(url.searchParams.get("after") ?? "0", 10);
   const limit = Number.parseInt(url.searchParams.get("limit") ?? "50", 10);
+  const cursorValue = url.searchParams.get("cursor");
+  const changeCursor = cursorValue === null ? null : Number.parseInt(cursorValue, 10);
   const aroundMessageId = url.searchParams.get("around")?.trim() || null;
   try {
     const result = await podsRepository.listConversationMessages({
       conversationId,
       userId: session.userId,
       afterSequence: Number.isFinite(afterSequence) ? afterSequence : 0,
+      ...(changeCursor !== null && Number.isFinite(changeCursor)
+        ? { changeCursor }
+        : {}),
       aroundMessageId,
       limit: Number.isFinite(limit) ? limit : 50
     });

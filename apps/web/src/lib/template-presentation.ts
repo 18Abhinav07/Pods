@@ -28,5 +28,5 @@ export function mediaForTemplate(templateId: TemplateId, seed?: string | number)
   if (templateId === "create") {
     return varyMedia({ hero: "/media/build-proof.jpg", proof: "/media/build.jpg" }, seed);
   }
-  return varyMedia({ hero: "/media/build.jpg", proof: "/media/build-proof.jpg" }, seed);
+  return { hero: "/media/build-workspace.jpg", proof: "/media/build-proof.jpg" };
 }

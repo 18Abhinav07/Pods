@@ -61,6 +61,7 @@ describe("FundingCommitment", () => {
       )
     ).toBeInTheDocument();
     expect(screen.getByText(/idempotent worker after roster lock/i)).toBeInTheDocument();
+    expect(screen.queryByText(/server caps/i)).not.toBeInTheDocument();
     expect(screen.getByText("Full return queued")).toBeInTheDocument();
     expect(screen.getByText("Disabled in this contract")).toBeInTheDocument();
     expect(screen.queryByRole("row", { name: /Rejected/i })).not.toBeInTheDocument();
@@ -69,6 +70,17 @@ describe("FundingCommitment", () => {
     expect(button).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     expect(button).toBeEnabled();
+  });
+
+  it("discloses the public visitor room before wallet confirmation", () => {
+    render(<FundingCommitment {...props} publicVisitorRoom />);
+
+    expect(screen.getByText("Public visitor room")).toBeVisible();
+    expect(
+      screen.getByText(
+        "After roster lock, visitors can read the public room and explicitly public proof records. They cannot message, react, join activity, see reviewer-only evidence, or see financial details."
+      )
+    ).toBeVisible();
   });
 
   it("records only wallet progress and the returned hash before routing to status", async () => {

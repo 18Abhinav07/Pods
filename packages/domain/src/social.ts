@@ -38,11 +38,22 @@ export type MessageKind =
   | "activity"
   | "announcement"
   | "system";
-export type ProofShareMode = "reviewer_only" | "pod_shared";
+export type ProofShareMode = "reviewer_only" | "pod_shared" | "public";
 export type AttachmentKind = "image" | "gif" | "pdf" | "link";
 export const friendRequestStates = ["pending", "accepted", "declined", "cancelled"] as const;
 export type FriendRequestState = (typeof friendRequestStates)[number];
 export type ReportReason = "spam" | "harassment" | "unsafe_content" | "other";
+export const publicReportTargetKinds = ["message", "submission"] as const;
+export type PublicReportTargetKind = (typeof publicReportTargetKinds)[number];
+export type PublicReportState = "pending" | "resolved" | "dismissed";
+export const publicModerationActions = [
+  "suppress_content",
+  "restore_content",
+  "dismiss_report",
+  "suspend_room",
+  "restore_room"
+] as const;
+export type PublicModerationAction = (typeof publicModerationActions)[number];
 
 export type MessageInput = {
   clientMessageId: string;
@@ -163,6 +174,38 @@ export function validateReportInput(input: Record<string, unknown>):
   return errors.length > 0
     ? { success: false, errors }
     : { success: true, value: { reason: reason as ReportReason, details } };
+}
+
+export function validatePublicContentReportInput(input: Record<string, unknown>):
+  | {
+      success: true;
+      value: {
+        targetKind: PublicReportTargetKind;
+        targetId: string;
+        reason: ReportReason;
+        details: string;
+      };
+    }
+  | { success: false; errors: string[] } {
+  const report = validateReportInput(input);
+  const targetKind = typeof input.targetKind === "string" ? input.targetKind : "";
+  const targetId = typeof input.targetId === "string" ? input.targetId : "";
+  const errors = report.success ? [] : [...report.errors];
+  if (!publicReportTargetKinds.includes(targetKind as PublicReportTargetKind)) {
+    errors.push("Choose content to report");
+  }
+  if (!uuidPattern.test(targetId)) {
+    errors.push("Reported content identity is invalid");
+  }
+  if (errors.length > 0 || !report.success) return { success: false, errors };
+  return {
+    success: true,
+    value: {
+      targetKind: targetKind as PublicReportTargetKind,
+      targetId,
+      ...report.value
+    }
+  };
 }
 
 function validAvatar(value: unknown): value is ProfileAvatar {

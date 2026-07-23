@@ -4,6 +4,7 @@ import {
   buildPublishedContract,
   materializeOccurrences,
   parseNimToLuna,
+  publishedRoomAudience,
   serializePublishedContract,
   templateContracts,
   validateActivityStep,
@@ -77,6 +78,19 @@ describe("community and commitment rules", () => {
       maxParticipants: 5,
       inviteExpiryHours: 168
     }).success).toBe(true);
+  });
+
+  it("rejects visitor rooms for private Pods", () => {
+    const result = validateCommunityStep({
+      visibility: "private",
+      minParticipants: 2,
+      maxParticipants: 5,
+      inviteExpiryHours: 168,
+      roomAudience: "public_read_only"
+    } as never);
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain("Private Pods cannot expose a visitor room");
   });
 
   it("parses NIM into exact integer Luna without floating point drift", () => {
@@ -155,6 +169,62 @@ describe("occurrence materialization", () => {
     expect(result.occurrences).toHaveLength(6);
     expect(serializePublishedContract(result.contract))
       .toBe(serializePublishedContract(structuredClone(result.contract)));
+  });
+
+  it("freezes an explicit public visitor choice into a version two contract", () => {
+    const result = buildPublishedContract({
+      templateId: "build",
+      activity: {
+        ...sharedActivity,
+        config: {
+          projectTheme: "Pods",
+          allowedDeliverables: ["pull_request"],
+          commitmentCutoff: "09:00"
+        }
+      },
+      community: {
+        visibility: "public",
+        minParticipants: 3,
+        maxParticipants: 8,
+        applicationQuestions: ["What will you ship?"],
+        roomAudience: "public_read_only"
+      },
+      commitment: { nimPerOccurrence: "0.1" }
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.contract.version).toBe(2);
+    expect(publishedRoomAudience(result.contract)).toBe("public_read_only");
+    expect(serializePublishedContract(result.contract)).toContain(
+      '"roomAudience":"public_read_only"'
+    );
+  });
+
+  it("keeps legacy contracts version one and resolves them fail closed", () => {
+    const result = buildPublishedContract({
+      templateId: "build",
+      activity: {
+        ...sharedActivity,
+        config: {
+          projectTheme: "Pods",
+          allowedDeliverables: ["pull_request"],
+          commitmentCutoff: "09:00"
+        }
+      },
+      community: {
+        visibility: "public",
+        minParticipants: 3,
+        maxParticipants: 8,
+        applicationQuestions: []
+      },
+      commitment: { nimPerOccurrence: "0.1" }
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.contract.version).toBe(1);
+    expect(publishedRoomAudience(result.contract)).toBe("members_only");
   });
 
   it("freezes the alpha refund mode into the contract fingerprint", () => {

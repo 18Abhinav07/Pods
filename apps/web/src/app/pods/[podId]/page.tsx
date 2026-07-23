@@ -1,13 +1,15 @@
-import { templateContracts } from "@pods/domain";
+import { templateContracts, type PodState } from "@pods/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TemplateSymbol } from "../../../components/template-symbol";
-import { alphaAwarePageSession } from "../../../lib/alpha-access-server";
+import { publicVisitorRoomsEnabled } from "../../../lib/alpha-access";
+import { publicPodPageSession } from "../../../lib/alpha-access-server";
 import {
   presentPodRelationship,
   relationshipForViewer
 } from "../../../lib/participant-pod-state";
+import { isUuidRouteParam } from "../../../lib/route-params";
 import { podsRepository } from "../../../lib/server-db";
 
 function nim(luna: number) {
@@ -20,11 +22,13 @@ export default async function PublicPodPage({
   params: Promise<{ podId: string }>;
 }) {
   const { podId } = await params;
+  if (!isUuidRouteParam(podId)) notFound();
   const [pod, session] = await Promise.all([
-    podsRepository.getPublicPod(podId, new Date()),
-    alphaAwarePageSession(`/pods/${podId}`)
+    podsRepository.getPublicPodSurface(podId, new Date()),
+    publicPodPageSession()
   ]);
   if (!pod?.contractData || pod.contractData.community.visibility !== "public") notFound();
+  if (pod.stage !== "open" && !publicVisitorRoomsEnabled(process.env)) notFound();
   const membership = session
     ? await podsRepository.getMembershipForUser(session.userId, pod.id)
     : null;
@@ -33,7 +37,11 @@ export default async function PublicPodPage({
     viewerUserId: session?.userId ?? null,
     membership
   });
-  const presentation = presentPodRelationship({ podId: pod.id, relationship });
+  const presentation = presentPodRelationship({
+    podId: pod.id,
+    podState: pod.state as Exclude<PodState, "draft">,
+    relationship
+  });
   const contract = pod.contractData;
   const template = templateContracts.find((item) => item.id === contract.templateId);
 
@@ -55,23 +63,45 @@ export default async function PublicPodPage({
         <div><span>Community</span><strong>{contract.community.minParticipants} to {contract.community.maxParticipants} people</strong><small>Creator reviews applications</small></div>
         <div><span>Evidence authority</span><strong>Pods team review</strong><small>Not peer-voted or creator-controlled</small></div>
       </section>
-      {relationship.kind === "visitor" ? (
+      {pod.stage === "open" && relationship.kind === "visitor" ? (
         <aside className="reservation-disclosure entrance entrance-templates">
           <strong>Application before commitment</strong>
           <p>Applying does not reserve a place. A place is secured only after acceptance, funding finality, and roster lock.</p>
         </aside>
-      ) : (
+      ) : pod.stage === "open" ? (
         <aside className={`pod-relationship-banner is-${presentation.tone} entrance entrance-templates`}>
           <strong>{presentation.statusLabel}</strong>
           <p>{presentation.statusDetail}</p>
         </aside>
+      ) : (
+        <aside className="pod-relationship-banner is-neutral entrance entrance-templates">
+          <strong>{pod.stage === "recent" ? "Completed public archive" : pod.stage === "cancelled" ? "Pod cancelled" : "Roster locked"}</strong>
+          <p>{pod.visitorRoomAvailable ? "The participant roster is closed. You can follow the public room without joining." : "This Pod is no longer accepting applications."}</p>
+        </aside>
       )}
-      <Link
-        className="primary-action full-action"
-        href={relationship.kind === "visitor" ? `/pods/${pod.id}/apply` : presentation.href}
-      >
-        {relationship.kind === "visitor" ? "Apply to join" : presentation.actionLabel}
-      </Link>
+      {pod.stage === "open" ? (
+        <Link
+          className="primary-action full-action"
+          href={relationship.kind === "visitor" ? `/pods/${pod.id}/apply` : presentation.href}
+        >
+          {relationship.kind === "visitor" ? "Apply to join" : presentation.actionLabel}
+        </Link>
+      ) : pod.visitorRoomAvailable ? (
+        <Link className="primary-action full-action" href={`/pods/${pod.id}/room`}>
+          {relationship.kind === "creator" || relationship.kind === "member" ? "Open Pod room" : "Watch public room"}
+        </Link>
+      ) : (
+        <Link className="secondary-action full-action" href="/discover">Browse public Pods</Link>
+      )}
     </main>
   );
 }
+
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+    nosnippet: true
+  }
+};

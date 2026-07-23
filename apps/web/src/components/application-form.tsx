@@ -5,7 +5,15 @@ import { useState } from "react";
 
 import { submitPublicApplication } from "../lib/enrollment-client";
 
-export function ApplicationForm({ podId, questions }: { podId: string; questions: string[] }) {
+export function ApplicationForm({
+  podId,
+  questions,
+  visitorConsent
+}: {
+  podId: string;
+  questions: string[];
+  visitorConsent: { contractHash: string } | null;
+}) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -18,7 +26,13 @@ export function ApplicationForm({ podId, questions }: { podId: string; questions
     try {
       await submitPublicApplication(
         podId,
-        questions.map((_, index) => String(formData.get(`answer-${index}`) ?? ""))
+        questions.map((_, index) => String(formData.get(`answer-${index}`) ?? "")),
+        visitorConsent
+          ? {
+              acceptedContractHash: visitorConsent.contractHash,
+              visitorDisclosureAccepted: true
+            }
+          : fetch
       );
       router.push(`/applications?sent=1&pod=${podId}`);
       router.refresh();
@@ -54,6 +68,12 @@ export function ApplicationForm({ podId, questions }: { podId: string; questions
         <input name="understandsReservation" required type="checkbox" />
         <span>I understand that applying or being accepted does not reserve a place.</span>
       </label>
+      {visitorConsent ? (
+        <label className="consent-row">
+          <input name="acceptsVisitorRoom" required type="checkbox" />
+          <span>I accept this frozen contract and understand that, after roster lock, visitors can read the Pod room, public proof records, and public supporting images. They cannot participate or see private evidence, reviewer details, or financial data.</span>
+        </label>
+      ) : null}
       {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
       <button className="primary-action full-action" disabled={submitting} type="submit">
         {submitting ? "Sending application" : "Send application"}

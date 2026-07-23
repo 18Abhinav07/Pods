@@ -11,7 +11,9 @@ describe("runOccurrenceCycle", () => {
       runOccurrenceTransitions: vi.fn(async () => ({
         activatedPods: 1,
         activatedMemberships: 3,
-        advancedOccurrences: 1
+        advancedOccurrences: 1,
+        finalReviewPods: 1,
+        completedPods: 0
       }))
     };
 
@@ -22,7 +24,9 @@ describe("runOccurrenceCycle", () => {
     expect(result).toEqual({
       activatedPods: 1,
       activatedMemberships: 3,
-      advancedOccurrences: 1
+      advancedOccurrences: 1,
+      finalReviewPods: 1,
+      completedPods: 0
     });
   });
 });

@@ -29,6 +29,10 @@ export default async function FundingHandoffPage({ params }: { params: Promise<{
           templateName={template?.name ?? "Activity Pod"}
           totalLuna={contract.commitment.totalLuna}
           settlementMode={contract.settlementMode ?? "proportional"}
+          publicVisitorRoom={
+            contract.version === 2 &&
+            contract.community.roomAudience === "public_read_only"
+          }
         />
       ) : (
         <section className="neutral-empty entrance entrance-status">

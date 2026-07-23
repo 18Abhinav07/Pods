@@ -69,7 +69,8 @@ The first Build Pods cohort uses a new immutable `full_refund_alpha` contract:
 - Every accepted commitment is returned in full through an idempotent worker path.
 - The mode is disclosed before wallet confirmation and throughout the Pod.
 - The contract cannot be converted into proportional settlement after publication.
-- Deposit and treasury exposure are capped server-side.
+- Deposit attribution, finality, participant-ledger credit, and refunds remain
+  server-authoritative.
 
 Public proportional funding remains disabled until review exceptions, settlement,
 payout reconciliation, and physical two-wallet payout tests pass.

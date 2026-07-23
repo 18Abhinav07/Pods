@@ -28,13 +28,16 @@ describe("Build and Ship occurrence", () => {
   });
 
   it("makes the frozen task lock the only primary action before commitment", () => {
-    render(<ActivityOccurrence {...base} commitment={null} submission={null} />);
+    const { container } = render(<ActivityOccurrence {...base} commitment={null} submission={null} />);
 
     expect(screen.getByText("A polished accountability product")).toBeInTheDocument();
     expect(screen.getByText("Apr 5 · 11:59 PM")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lock this task" })).toBeInTheDocument();
     expect(screen.getByText("Once locked, this task cannot be changed for this occurrence."))
       .toBeInTheDocument();
+    expect(container.querySelector(".activity-contract-card")).toHaveClass("is-guided-flow");
+    expect(container.querySelector(".commitment-studio-visual")).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Commitment progress" })).toBeInTheDocument();
   });
 
   it("states the full-return alpha consequence without implying principal is at risk", () => {
@@ -104,9 +107,37 @@ describe("Build and Ship occurrence", () => {
 
     expect(screen.getByRole("radio", { name: /Pods reviewer only/i })).toBeChecked();
     expect(screen.getByRole("radio", { name: /Share with Pod/i })).toBeInTheDocument();
+    expect(container.querySelector(".activity-evidence-card")).toHaveClass("is-guided-flow");
+    expect(screen.getByRole("navigation", { name: "Proof progress" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Add evidence" }));
     expect(screen.getByRole("button", { name: /Camera/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Image/i })).toBeInTheDocument();
     expect(container.querySelectorAll("input.proof-file-input")).toHaveLength(2);
+  });
+
+  it("offers public image sharing only for a visitor-enabled frozen contract", () => {
+    const commitment = {
+      id: "commitment-1",
+      task: "Ship the participant activity screen and its tests.",
+      deliverableType: "pull_request" as const,
+      lockedAt: "2027-04-05T08:00:00.000Z"
+    };
+    const first = render(
+      <ActivityOccurrence {...base} commitment={commitment} submission={null} />
+    );
+    expect(screen.queryByRole("radio", { name: /Share publicly/i }))
+      .not.toBeInTheDocument();
+    first.unmount();
+
+    render(
+      <ActivityOccurrence
+        {...base}
+        commitment={commitment}
+        publicVisitorSharingEnabled
+        submission={null}
+      />
+    );
+    expect(screen.getByRole("radio", { name: /Share publicly/i }))
+      .toBeInTheDocument();
   });
 });

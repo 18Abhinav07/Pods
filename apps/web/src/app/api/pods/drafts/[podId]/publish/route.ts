@@ -39,7 +39,8 @@ export async function POST(
       creatorUserId: session.userId,
       podId,
       contract: result.contract,
-      occurrences: result.occurrences
+      occurrences: result.occurrences,
+      creatorConsentAccepted: body.acceptedFrozenContract === true
     });
     return NextResponse.json({ pod: published });
   } catch (error) {

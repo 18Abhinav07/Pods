@@ -1,6 +1,11 @@
 "use client";
 
-import type { BuildDeliverableType, SettlementMode, SubmissionState } from "@pods/domain";
+import type {
+  BuildDeliverableType,
+  ProofShareMode,
+  SettlementMode,
+  SubmissionState
+} from "@pods/domain";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,7 +26,7 @@ type SubmissionView = {
   resultSummary: string;
   artifactUrl: string;
   evidenceObjectKey: string | null;
-  proofShareMode: "reviewer_only" | "pod_shared";
+  proofShareMode: ProofShareMode;
 };
 
 type Props = {
@@ -39,6 +44,7 @@ type Props = {
   timeZone: string;
   commitment: CommitmentView | null;
   submission: SubmissionView | null;
+  publicVisitorSharingEnabled?: boolean;
 };
 
 function deliverableLabel(value: BuildDeliverableType) {
@@ -80,7 +86,7 @@ export function ActivityOccurrence(props: Props) {
   const [uploadComplete, setUploadComplete] = useState(
     Boolean(props.submission?.evidenceObjectKey)
   );
-  const [proofShareMode, setProofShareMode] = useState<"reviewer_only" | "pod_shared">(
+  const [proofShareMode, setProofShareMode] = useState<ProofShareMode>(
     props.submission?.proofShareMode ?? "reviewer_only"
   );
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -276,12 +282,16 @@ export function ActivityOccurrence(props: Props) {
       {!commitment ? (
         <motion.form
           animate={{ opacity: 1, y: 0 }}
-          className="activity-contract-card"
+          className="activity-contract-card is-guided-flow"
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           onSubmit={lock}
         >
-          <div className="commitment-studio-visual" aria-hidden="true"><i /><i /><i /><strong>{props.occurrenceOrdinal.toString().padStart(2, "0")}</strong></div>
-          <div className="activity-card-heading"><span>Commit before building</span><h2>Make the finish line visible.</h2><p>One concrete promise becomes your shared activity card.</p></div>
+          <nav aria-label="Commitment progress" className="guided-flow-progress">
+            <span aria-current="step"><i>1</i>Define</span>
+            <span><i>2</i>Choose proof</span>
+            <span><i>3</i>Lock</span>
+          </nav>
+          <div className="activity-card-heading"><span>Today&apos;s commitment</span><h2>What will be finished?</h2><p>Write one outcome another person can verify.</p></div>
           <label htmlFor="occurrence-task">Today&apos;s task</label>
           <textarea
             id="occurrence-task"
@@ -315,11 +325,16 @@ export function ActivityOccurrence(props: Props) {
       ) : (
         <motion.form
           animate={{ opacity: 1, y: 0 }}
-          className="activity-evidence-card"
+          className="activity-evidence-card is-guided-flow"
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           onSubmit={submitForReview}
           ref={evidenceForm}
         >
+          <nav aria-label="Proof progress" className="guided-flow-progress">
+            <span aria-current="step"><i>1</i>Result</span>
+            <span><i>2</i>Evidence</span>
+            <span><i>3</i>Submit</span>
+          </nav>
           <div className="locked-task-panel"><span>Locked task · occurrence {props.occurrenceOrdinal}</span><strong>{commitment.task}</strong><small>{deliverableLabel(commitment.deliverableType)}</small></div>
           <label htmlFor="result-summary">Result summary</label>
           <textarea
@@ -343,7 +358,12 @@ export function ActivityOccurrence(props: Props) {
           />
           <div className="proof-add-studio">
             <div className="proof-add-heading"><div><span>Evidence</span><strong>Choose what the room can see</strong></div><button aria-expanded={addMenuOpen} aria-label="Add evidence" onClick={() => setAddMenuOpen((open) => !open)} type="button">{addMenuOpen ? "Close" : "+ Add"}</button></div>
-            <fieldset className="proof-privacy-choice"><legend>Supporting image visibility</legend><label className={proofShareMode === "reviewer_only" ? "is-selected" : ""}><input checked={proofShareMode === "reviewer_only"} name="proof-share" onChange={() => { setProofShareMode("reviewer_only"); setDraftState("idle"); }} type="radio" /><span><strong>Pods reviewer only</strong>Private evidence for the decision</span></label><label className={proofShareMode === "pod_shared" ? "is-selected" : ""}><input checked={proofShareMode === "pod_shared"} name="proof-share" onChange={() => { setProofShareMode("pod_shared"); setDraftState("idle"); }} type="radio" /><span><strong>Share with Pod</strong>Visible inside this locked room</span></label></fieldset>
+            <fieldset className="proof-privacy-choice">
+              <legend>Supporting image visibility</legend>
+              <label className={proofShareMode === "reviewer_only" ? "is-selected" : ""}><input checked={proofShareMode === "reviewer_only"} name="proof-share" onChange={() => { setProofShareMode("reviewer_only"); setDraftState("idle"); }} type="radio" /><span><strong>Pods reviewer only</strong>Private evidence for the decision</span></label>
+              <label className={proofShareMode === "pod_shared" ? "is-selected" : ""}><input checked={proofShareMode === "pod_shared"} name="proof-share" onChange={() => { setProofShareMode("pod_shared"); setDraftState("idle"); }} type="radio" /><span><strong>Share with Pod</strong>Visible to the creator and locked roster</span></label>
+              {props.publicVisitorSharingEnabled ? <label className={proofShareMode === "public" ? "is-selected" : ""}><input checked={proofShareMode === "public"} name="proof-share" onChange={() => { setProofShareMode("public"); setDraftState("idle"); }} type="radio" /><span><strong>Share publicly</strong>Visible to anyone who opens this public Pod room</span></label> : null}
+            </fieldset>
             {addMenuOpen ? <div className="proof-action-sheet">
               <button onClick={() => cameraInput.current?.click()} type="button"><i>CAM</i><span>Camera<strong>Capture now</strong></span></button>
               <button onClick={() => imageInput.current?.click()} type="button"><i>IMG</i><span>Image<strong>Choose a file</strong></span></button>

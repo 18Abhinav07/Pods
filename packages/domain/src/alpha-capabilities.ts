@@ -18,8 +18,6 @@ export type AlphaCapabilities = {
   settlement: boolean;
   alphaRefund: boolean;
   depositMode: AlphaDepositMode;
-  maximumDepositLuna: number;
-  maximumTreasuryExposureLuna: number;
   realtimeTransport: RealtimeTransport;
 };
 
@@ -46,15 +44,6 @@ function enabled(environment: Environment, name: string) {
   return value === "true";
 }
 
-function nonNegativeInteger(environment: Environment, name: string) {
-  const raw = environment[name] ?? "0";
-  const value = Number(raw);
-  if (!Number.isSafeInteger(value) || value < 0) {
-    throw new Error(`${name} must be a non-negative safe integer`);
-  }
-  return value;
-}
-
 export function parseAlphaCapabilities(environment: Environment): AlphaCapabilities {
   const network = environment.NIMIQ_NETWORK;
   if (environment.APP_ENV === "alpha" && network !== "testnet") {
@@ -76,25 +65,11 @@ export function parseAlphaCapabilities(environment: Environment): AlphaCapabilit
     ["off", "allowlist_refund_only", "public"] as const,
     "off"
   );
-  const maximumDepositLuna = nonNegativeInteger(
-    environment,
-    "PODS_MAX_DEPOSIT_LUNA"
-  );
-  const maximumTreasuryExposureLuna = nonNegativeInteger(
-    environment,
-    "PODS_MAX_TREASURY_EXPOSURE_LUNA"
-  );
-
   if (depositMode === "public" && !settlement) {
     throw new Error("Public deposits require settlement to be enabled");
   }
-  if (
-    depositMode === "allowlist_refund_only" &&
-    (!alphaRefund || maximumDepositLuna <= 0 || maximumTreasuryExposureLuna <= 0)
-  ) {
-    throw new Error(
-      "Allowlisted alpha deposits require the full refund path and positive caps"
-    );
+  if (depositMode === "allowlist_refund_only" && !alphaRefund) {
+    throw new Error("Allowlisted alpha deposits require the full refund path");
   }
   if (directMessageRequests && (!directMessages || !moderation || !rateLimits)) {
     throw new Error("Message requests require DMs, moderation, and rate limits");
@@ -121,8 +96,6 @@ export function parseAlphaCapabilities(environment: Environment): AlphaCapabilit
     settlement,
     alphaRefund,
     depositMode,
-    maximumDepositLuna,
-    maximumTreasuryExposureLuna,
     realtimeTransport: oneOf(
       environment,
       "REALTIME_TRANSPORT",

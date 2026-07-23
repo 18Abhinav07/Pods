@@ -7,7 +7,7 @@ import {
   type MessageReplyPreview,
   type ReactionCode
 } from "@pods/domain";
-import { and, asc, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, max, or, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
 import {
@@ -534,12 +534,25 @@ export function createMessagingMethods(database: PodsDatabase) {
       conversationId: string;
       userId: string;
       afterSequence: number;
+      changeCursor?: number;
       aroundMessageId?: string | null;
       limit: number;
     }) {
       const access = await requireConversationAccess(database, input.conversationId, input.userId);
       const limit = Math.min(Math.max(input.limit, 1), 100);
       let afterSequence = Math.max(input.afterSequence, -1);
+      const [cursorRow] = await database
+        .select({ cursor: max(realtimeEvents.id) })
+        .from(realtimeEvents)
+        .where(eq(realtimeEvents.conversationId, input.conversationId));
+      const changeCursor = cursorRow?.cursor ?? 0;
+      if (
+        !input.aroundMessageId &&
+        input.changeCursor !== undefined &&
+        changeCursor > Math.max(input.changeCursor, 0)
+      ) {
+        afterSequence = -1;
+      }
       if (input.aroundMessageId) {
         const [target] = await database
           .select({ sequence: messages.sequence })
@@ -633,6 +646,7 @@ export function createMessagingMethods(database: PodsDatabase) {
           kind: access.conversation.kind,
           roomState: access.conversation.roomState,
           lastSequence: access.conversation.lastSequence,
+          changeCursor,
           peerReadSequence: peerRead?.sequence ?? 0
         },
         messages: rows.map(({ message, profile }) => {
@@ -740,7 +754,14 @@ export function createMessagingMethods(database: PodsDatabase) {
         .from(messages)
         .where(eq(messages.id, input.messageId));
       if (!message) throw new Error("Message not found");
-      await requireConversationAccess(database, message.conversationId, input.userId);
+      const access = await requireConversationAccess(
+        database,
+        message.conversationId,
+        input.userId
+      );
+      if (access.conversation.roomState === "archived") {
+        throw new Error("This room is archived and read only");
+      }
       const [reaction] = await database
         .insert(messageReactions)
         .values({
@@ -939,6 +960,15 @@ export function createMessagingMethods(database: PodsDatabase) {
       if (!access.isCreator || access.conversation.kind !== "pod") {
         throw new Error("Only the Pod creator can change room access");
       }
+      if (input.roomState === "open" && access.conversation.podId) {
+        const [pod] = await database
+          .select({ state: pods.state })
+          .from(pods)
+          .where(eq(pods.id, access.conversation.podId));
+        if (pod?.state === "final_review" || pod?.state === "completed") {
+          throw new Error("Completed Pod rooms are permanent archives");
+        }
+      }
       const [updated] = await database
         .update(conversations)
         .set({
@@ -984,7 +1014,7 @@ export function createMessagingMethods(database: PodsDatabase) {
         .where(
           and(
             eq(pods.creatorUserId, userId),
-            inArray(pods.state, ["locked_scheduled", "active"])
+            inArray(pods.state, ["locked_scheduled", "active", "final_review", "completed"])
           )
         );
       const podIds = [...new Set([

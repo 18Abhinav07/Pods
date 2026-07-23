@@ -12,9 +12,20 @@ export const metadata: Metadata = {
   applicationName: "pods",
   title: "pods | Earned Momentum",
   description: "NIM-backed group activity accountability inside Nimiq Pay.",
+  manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/brand/pods-mark.svg", type: "image/svg+xml" }],
-    shortcut: "/brand/pods-mark.svg"
+    icon: [
+      { url: "/brand/pods-mark.svg", type: "image/svg+xml" },
+      { url: "/brand/pods-icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/brand/pods-icon-512.png", type: "image/png", sizes: "512x512" }
+    ],
+    shortcut: "/brand/pods-icon-192.png",
+    apple: [{ url: "/brand/pods-apple-touch-icon.png", sizes: "180x180" }]
+  },
+  appleWebApp: {
+    capable: true,
+    title: "pods",
+    statusBarStyle: "default"
   }
 };
 

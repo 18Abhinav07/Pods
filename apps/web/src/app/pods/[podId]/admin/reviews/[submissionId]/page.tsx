@@ -1,4 +1,4 @@
-import type { BuildDeliverableType } from "@pods/domain";
+import type { BuildDeliverableType, SubmissionState } from "@pods/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -15,6 +15,17 @@ function deliverableLabel(value: BuildDeliverableType) {
     commit: "GitHub commit",
     issue: "GitHub issue",
     live_artifact: "Live artifact"
+  };
+  return labels[value];
+}
+
+function submissionStatusLabel(value: SubmissionState) {
+  const labels: Record<SubmissionState, string> = {
+    draft: "Draft",
+    reviewing: "Under review",
+    approved: "Approved",
+    rejected: "Not verified",
+    timeout_protected: "Protected after review timeout"
   };
   return labels[value];
 }
@@ -113,7 +124,7 @@ export default async function CreatorReviewWorkspacePage({
       {terminal ? (
         <section className="creator-review-recorded">
           <span>Decision recorded</span>
-          <strong>{submission.state}</strong>
+          <strong>{submissionStatusLabel(submission.state)}</strong>
           <p>This proof already has one final result.</p>
         </section>
       ) : (

@@ -2333,20 +2333,6 @@ button.secondary-action {
   font-size: 0.72rem;
 }
 
-@media (max-width: 480px) {
-  .review-timing-card {
-    grid-template-columns: 1fr;
-  }
-
-  .creator-review-queue-row {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .creator-review-queue-row time {
-    grid-column: 2;
-  }
-}
-
 .proof-file-input {
   position: absolute !important;
   width: 1px !important;
@@ -4061,4 +4047,30 @@ button.secondary-action {
 .composer-row textarea:focus-visible {
   border-color: color-mix(in srgb, var(--theme-action, #5e64a3) 48%, transparent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-action, #5e64a3) 13%, transparent);
+}
+
+@media (max-width: 480px) {
+  .review-timing-card {
+    grid-template-columns: 1fr;
+  }
+
+  .creator-review-queue-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .creator-review-queue-copy {
+    min-width: 0;
+  }
+
+  .creator-review-queue-copy > span {
+    overflow-wrap: anywhere;
+  }
+
+  .creator-review-queue-row time {
+    grid-column: 2;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
 }

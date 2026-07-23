@@ -24,9 +24,29 @@ describe("Phase 3C narrow mobile contract", () => {
     }
   );
 
-  it("stacks creator review timing on common phone widths", () => {
-    expect(css).toMatch(
-      /@media \(max-width:\s*480px\)\s*\{\s*\.review-timing-card\s*\{[^}]*grid-template-columns:\s*1fr/
+  it("keeps the final creator review phone overrides after their base rules", () => {
+    const responsiveIndex = css.lastIndexOf("@media (max-width: 480px)");
+    const timingBaseIndex = css.indexOf(
+      ".occurrence-context-grid,\n.active-pod-metrics,\n.review-timing-card {"
+    );
+    const queueBaseIndex = css.indexOf(
+      ".review-queue-row {\n  display: grid;"
+    );
+    const responsive = css.slice(responsiveIndex);
+
+    expect(responsiveIndex).toBeGreaterThan(timingBaseIndex);
+    expect(responsiveIndex).toBeGreaterThan(queueBaseIndex);
+    expect(responsive).toMatch(
+      /\.review-timing-card\s*\{[^}]*grid-template-columns:\s*1fr/
+    );
+    expect(responsive).toMatch(
+      /\.creator-review-queue-row\s*\{[^}]*grid-template-columns:\s*auto minmax\(0,\s*1fr\)/
+    );
+    expect(responsive).toMatch(
+      /\.creator-review-queue-copy\s*\{[^}]*min-width:\s*0/
+    );
+    expect(responsive).toMatch(
+      /\.creator-review-queue-row time\s*\{[^}]*grid-column:\s*2[^}]*white-space:\s*normal/
     );
   });
 });

@@ -211,9 +211,13 @@ describe("creator proof review pages", () => {
     });
   });
 
-  it.each(["approved", "rejected", "timeout_protected"])(
-    "renders the terminal %s result without another action",
-    async (state) => {
+  it.each([
+    ["approved", "Approved"],
+    ["rejected", "Not verified"],
+    ["timeout_protected", "Protected after review timeout"]
+  ])(
+    "renders the terminal %s result with a human label and no action",
+    async (state, label) => {
       repository.getReviewSubmissionForCreator.mockResolvedValue({
         ...workspaceRecord,
         submission: { ...workspaceRecord.submission, state }
@@ -224,7 +228,8 @@ describe("creator proof review pages", () => {
       }));
 
       expect(screen.getByText("Decision recorded")).toBeVisible();
-      expect(screen.getByText(state, { exact: true })).toBeVisible();
+      expect(screen.getByText(label, { exact: true })).toBeVisible();
+      expect(screen.queryByText(state, { exact: true })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Approve proof" }))
         .not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Reject proof" }))

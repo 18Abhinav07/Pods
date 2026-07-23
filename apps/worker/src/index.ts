@@ -12,6 +12,7 @@ import { NimiqTransferSigner } from "./preflight/nimiq-signer.js";
 import { treasuryConfigurationPath } from "./preflight/paths.js";
 import { readTreasuryConfiguration } from "./preflight/treasury-config.js";
 import { runOccurrenceCycle } from "./activity/run-occurrence-cycle.js";
+import { runReviewTimeoutCycle } from "./activity/run-review-timeout-cycle.js";
 import {
   startWorkerHealthServer,
   type WorkerHealthState
@@ -148,6 +149,14 @@ export async function startFundingWorker() {
       cycleFailed = true;
       console.error(
         `[occurrence-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+      );
+    }
+    try {
+      await runReviewTimeoutCycle({ repository });
+    } catch (error) {
+      cycleFailed = true;
+      console.error(
+        `[review-timeout-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
       );
     }
     const refundsEnabled =

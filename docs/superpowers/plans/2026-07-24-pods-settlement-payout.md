@@ -10,7 +10,7 @@ tags: [implementation-plan, settlement, payouts, treasury, phase-5]
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 Related: [[HANDOFF]] |
-[[docs/superpowers/specs/2026-07-23-pods-creator-review-mvp-design]]
+[[docs/superpowers/specs/2026-07-24-pods-testnet-settlement-amendment]]
 
 **Goal:** Add deterministic per-occurrence settlement and idempotent real Testnet NIM payouts without changing any existing `full_refund_alpha` Pod contract.
 
@@ -36,6 +36,19 @@ Related: [[HANDOFF]] |
 - Network fees come from the operator reserve and never reduce participant principal.
 - No direct database timestamp edits are permitted. Time advances only through the audited Clock command.
 
+## Task 0: Close creator-entry and aggregate-safety gaps
+
+**Files:**
+- Modify: `packages/db/src/enrollment-repository.ts`
+- Modify: `packages/db/tests/phase2-enrollment.integration.test.ts`
+- Modify: `packages/domain/src/index.ts`
+- Modify: `packages/domain/tests/pod-contract.test.ts`
+
+- [ ] Write failing tests proving a creator cannot accept either a generic or targeted private invitation to their own Pod.
+- [ ] Derive the Pod creator from the server-side invitation relation and reject both acceptance paths before membership mutation.
+- [ ] Write a failing contract test for an unsafe aggregate pool.
+- [ ] Reject publication when `totalLuna * maxParticipants` is not a safe integer.
+
 ## Task 1: Pure settlement calculator
 
 **Files:**
@@ -59,11 +72,13 @@ Related: [[HANDOFF]] |
 - Create: `packages/db/tests/phase5-settlement.integration.test.ts`
 
 - [ ] Write a failing integration test that seeds a proportional Pod with two roster members and terminal outcomes.
-- [ ] Assert one settlement run, one row per occurrence-member outcome, one entitlement per funded member, one payout leg per entitlement, and exact ledger conservation.
-- [ ] Add `settlement_runs`, `settlement_occurrences`, `settlement_outcomes`, and `settlement_entitlements`.
+- [ ] Assert one settlement run, one row per occurrence-member outcome, one entitlement per funded member, one payout leg per positive entitlement, an explicit `no_transfer` state for zero-Luna entitlements, and exact ledger conservation.
+- [ ] Add `settlement_runs`, `settlement_occurrences`, `settlement_outcomes`, and `settlement_entitlements`, including the terminal `no_transfer` entitlement state.
 - [ ] Expand transfer type to `refund | payout` and expand ledger movements for principal allocation, protection, forfeiture, bonus, restoration, payout entitlement, payout broadcast, and payout confirmation.
 - [ ] Implement `finalizePodSettlement(podId, now)` as one serialized transaction.
 - [ ] Treat absent and draft submissions as `missed`; reject settlement while any submission remains `reviewing`.
+- [ ] Hard-fail if the creator appears in the roster or if the exact applied deposit and accepted contract boundaries do not match.
+- [ ] Snapshot contract hash, calculator version, deterministic input digest, occurrence ordinal, source submission ID, and finalized deposit ID.
 - [ ] Make repeat finalization return the same immutable result without duplicate ledger rows or transfer legs.
 - [ ] Generate and inspect the additive Drizzle migration.
 - [ ] Run the focused integration test against the local Postgres service.
@@ -88,15 +103,22 @@ Related: [[HANDOFF]] |
 
 **Files:**
 - Modify: `packages/db/src/transfer-repository.ts`
+- Modify: `packages/db/src/schema.ts`
+- Modify: `apps/worker/src/preflight/transfer-service.ts`
+- Modify: `apps/worker/src/preflight/nimiq-signer.ts`
 - Create: `apps/worker/src/settlement/payout-service.ts`
 - Modify: `apps/worker/src/index.ts`
 - Create: `apps/worker/tests/payout-service.test.ts`
 - Modify: `apps/worker/tests/refund-service.test.ts`
 
-- [ ] Write failing tests for prepare-before-broadcast, hash equality, confirmation, unknown broadcast, unknown chain recheck, execution failure, mismatch isolation, and no blind rebroadcast.
+- [ ] Reproduce the identical-recipient, amount, and block-height hash collision.
+- [ ] Write a failing signer test proving distinct opaque payout references create distinct verified hashes without changing recipient or amount.
+- [ ] Write failing tests for prepare-before-broadcast, hash equality, confirmation, unknown broadcast, unknown chain recheck, execution failure, mismatch isolation, attempt expiry, and no blind rebroadcast.
+- [ ] Persist immutable transfer attempts and append-only transfer events under each logical payout leg.
 - [ ] Add payout-specific repository methods with the same guarded transitions already proven for refunds.
 - [ ] Persist signed bytes, transaction hash, and validity height before broadcast.
-- [ ] Record payout broadcast and confirmation ledger movements idempotently.
+- [ ] Record broadcast as an append-only transfer event and record the balanced payout ledger movement only at confirmation.
+- [ ] Use an opaque deterministic per-attempt data reference so identical payouts cannot share a transaction hash.
 - [ ] Mark a settlement `settled` and its Pod `completed` only after every payout leg is confirmed or explicitly resolved.
 - [ ] Keep refund and payout queries type-scoped so neither worker can mutate the other transfer kind.
 
@@ -147,7 +169,7 @@ Related: [[HANDOFF]] |
 
 - [ ] Write failing tests for unknown, retryable-failed, mismatched, late, and manual-review filters.
 - [ ] Require an authenticated operations session.
-- [ ] Require a fresh chain lookup before a retryable transfer can return to `queued`.
+- [ ] Require a fresh chain lookup and an expired or failed immutable attempt before a replacement attempt can be created.
 - [ ] Never expose private keys, raw signed bytes, wallet addresses, evidence object keys, or ledger account codes to participant DTOs.
 - [ ] Record every operations transition in immutable audit data.
 

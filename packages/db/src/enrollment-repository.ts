@@ -412,6 +412,9 @@ export function createEnrollmentMethods(database: PodsDatabase) {
           if (!pod || pod.contractData?.community.visibility !== "private" || !isEnrollmentOpen(pod, firstOccurrence?.opensAt ?? null, input.now)) {
             throw new Error("Invitation is unavailable");
           }
+          if (pod.creatorUserId === input.userId) {
+            throw new Error("Creators cannot join their own Pod");
+          }
           const [membership] = await transaction.insert(memberships).values({
             id: randomUUID(),
             podId: pod.id,
@@ -538,6 +541,9 @@ export function createEnrollmentMethods(database: PodsDatabase) {
             !isEnrollmentOpen(pod, firstOccurrence?.opensAt ?? null, input.now)
           ) {
             throw new Error("Invitation is unavailable");
+          }
+          if (pod.creatorUserId === input.userId) {
+            throw new Error("Creators cannot join their own Pod");
           }
 
           const [membership] = await transaction

@@ -287,6 +287,63 @@ describe("public enrollment", () => {
 });
 
 describe("private invitations", () => {
+  it("rejects a creator accepting their own generic private invitation", async () => {
+    const owner = await createUser();
+    const pod = await publishPod(owner.userId, "private");
+    const tokenHash = hashToken(invitationToken("g"));
+    const now = new Date("2026-08-01T00:00:00.000Z");
+    await repository.createInvitation({
+      creatorUserId: owner.userId,
+      podId: pod.id,
+      tokenHash,
+      now
+    });
+
+    await expect(
+      repository.acceptInvitation({
+        tokenHash,
+        userId: owner.userId,
+        now: new Date("2026-08-01T00:01:00.000Z")
+      })
+    ).rejects.toThrow("Creators cannot join their own Pod");
+    expect(await repository.getMembershipForUser(owner.userId, pod.id)).toBeNull();
+  });
+
+  it("rejects a creator accepting a targeted private invitation", async () => {
+    const owner = await createUser();
+    const pod = await publishPod(owner.userId, "private");
+    const invitationId = randomUUID();
+    const now = new Date("2026-08-01T00:00:00.000Z");
+    const pool = new Pool({ connectionString: databaseUrl });
+    try {
+      await pool.query(
+        `INSERT INTO invitations (
+           id, pod_id, created_by_user_id, token_hash, expires_at, target_user_id,
+           created_at
+         ) VALUES ($1, $2, $3, $4, $5, $3, $6)`,
+        [
+          invitationId,
+          pod.id,
+          owner.userId,
+          hashToken(invitationToken("s")),
+          new Date("2026-08-03T00:00:00.000Z"),
+          now
+        ]
+      );
+    } finally {
+      await pool.end();
+    }
+
+    await expect(
+      repository.acceptTargetedInvitation({
+        invitationId,
+        userId: owner.userId,
+        now: new Date("2026-08-01T00:01:00.000Z")
+      })
+    ).rejects.toThrow("Creators cannot join their own Pod");
+    expect(await repository.getMembershipForUser(owner.userId, pod.id)).toBeNull();
+  });
+
   it("delivers a revocable private invitation directly to a friend", async () => {
     const owner = await createUser();
     const friend = await createUser();

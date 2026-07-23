@@ -276,4 +276,30 @@ describe("occurrence materialization", () => {
     expect(serializePublishedContract(alpha.contract))
       .not.toBe(serializePublishedContract(proportional.contract));
   });
+
+  it("rejects a contract whose maximum aggregate pool is not a safe integer", () => {
+    const result = buildPublishedContract({
+      templateId: "build",
+      activity: {
+        ...sharedActivity,
+        config: {
+          projectTheme: "Pods",
+          allowedDeliverables: ["pull_request"],
+          commitmentCutoff: "09:00"
+        }
+      },
+      community: {
+        visibility: "private",
+        minParticipants: 2,
+        maxParticipants: 2,
+        inviteExpiryHours: 72
+      },
+      commitment: { nimPerOccurrence: "15000000000" }
+    });
+
+    expect(result).toEqual({
+      success: false,
+      errors: ["Maximum Pod pool is too large"]
+    });
+  });
 });

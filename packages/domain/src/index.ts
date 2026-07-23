@@ -171,7 +171,7 @@ function nonEmptyString(value: unknown): value is string {
 }
 
 function positiveNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value > 0;
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
 
 function validTime(value: unknown): value is string {
@@ -402,6 +402,11 @@ export function buildPublishedContract(
   const totalLuna = lunaPerOccurrence * occurrences.length;
   if (!Number.isSafeInteger(totalLuna)) {
     return { success: false, errors: ["Total commitment is too large"] };
+  }
+  const maximumPoolLuna =
+    BigInt(totalLuna) * BigInt(draft.community.maxParticipants);
+  if (maximumPoolLuna > BigInt(Number.MAX_SAFE_INTEGER)) {
+    return { success: false, errors: ["Maximum Pod pool is too large"] };
   }
 
   const sharedContract = {

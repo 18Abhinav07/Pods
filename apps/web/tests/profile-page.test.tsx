@@ -2,8 +2,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { push, refresh } = vi.hoisted(() => ({
+const { push, replace, refresh } = vi.hoisted(() => ({
   push: vi.fn(),
+  replace: vi.fn(),
   refresh: vi.fn()
 }));
 
@@ -29,7 +30,7 @@ const { listFollowingProfiles, listFriends } = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push, refresh })
+  useRouter: () => ({ push, replace, refresh })
 }));
 
 vi.mock("../src/lib/session", () => ({
@@ -56,6 +57,7 @@ import ProfilePage from "../src/app/profile/page";
 
 afterEach(() => {
   push.mockReset();
+  replace.mockReset();
   refresh.mockReset();
   vi.unstubAllGlobals();
 });
@@ -121,6 +123,44 @@ describe("ProfilePage", () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith("/api/auth/logout", { method: "POST" });
       expect(push).toHaveBeenCalledWith("/connect?returnTo=%2Ftoday");
+      expect(refresh).toHaveBeenCalled();
+    });
+  });
+
+  it("shows progress while saving an edit and closes the sheet after success", async () => {
+    let resolveSave!: (response: Response) => void;
+    const saveResponse = new Promise<Response>((resolve) => {
+      resolveSave = resolve;
+    });
+    const fetchMock = vi.fn<typeof fetch>(() => saveResponse);
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(await ProfilePage());
+
+    await user.click(screen.getByRole("button", { name: "Open profile settings" }));
+    await user.click(screen.getByRole("button", { name: "Edit profile" }));
+    await user.click(screen.getByRole("button", { name: "Continue to your story" }));
+    await user.click(screen.getByRole("button", { name: "Continue to privacy" }));
+
+    const saveButton = screen.getByRole("button", { name: "Save profile" });
+    await user.click(saveButton);
+
+    expect(screen.getByRole("button", { name: "Saving profile" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Saving profile" })).toHaveAttribute(
+      "aria-busy",
+      "true"
+    );
+    expect(screen.getByTestId("profile-save-spinner")).toBeVisible();
+
+    resolveSave(
+      new Response(JSON.stringify({ profile: { handle: "pods_builder" } }), {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      })
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Profile settings" })).not.toBeInTheDocument();
       expect(refresh).toHaveBeenCalled();
     });
   });

@@ -3,8 +3,8 @@ import { access } from "node:fs/promises";
 import {
   createTreasuryConfiguration,
   readTreasuryConfiguration
-} from "./treasury-config";
-import { treasuryConfigurationPath } from "./paths";
+} from "./treasury-config.js";
+import { treasuryConfigurationPath } from "./paths.js";
 
 const exists = await fileExists(treasuryConfigurationPath);
 const configuration = exists

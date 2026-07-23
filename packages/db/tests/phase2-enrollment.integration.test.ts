@@ -126,6 +126,15 @@ describe("public enrollment", () => {
     const owner = await createUser();
     const applicant = await createUser();
     const stranger = await createUser();
+    await repository.saveProfile(applicant.userId, {
+      handle: `applicant_${applicant.userId.slice(0, 6)}`,
+      displayName: "Visible Applicant",
+      bio: "Shows up for every build occurrence.",
+      avatar: { kind: "preset", preset: "moss" },
+      visibility: "private",
+      dmPolicy: "friends",
+      activityStatusVisible: true
+    });
     const pod = await publishPod(owner.userId, "public");
     const answers = [
       { question: "What will you ship?", answer: "A tested enrollment flow" },
@@ -140,6 +149,21 @@ describe("public enrollment", () => {
       now
     });
     expect(application).toMatchObject({ state: "applied", answers });
+    expect(
+      await repository.listApplicationsForCreator({
+        creatorUserId: owner.userId,
+        podId: pod.id
+      })
+    ).toEqual([
+      expect.objectContaining({
+        application: expect.objectContaining({ id: application.id }),
+        applicantProfile: expect.objectContaining({
+          displayName: "Visible Applicant",
+          bio: "Shows up for every build occurrence.",
+          avatar: { kind: "preset", preset: "moss" }
+        })
+      })
+    ]);
     expect(await repository.getMembershipForUser(applicant.userId, pod.id)).toMatchObject({
       state: "applied",
       admissionSource: "public_application"

@@ -1,6 +1,6 @@
-import { NimiqRpcClient } from "./nimiq-rpc";
-import { treasuryConfigurationPath } from "./paths";
-import { readTreasuryConfiguration } from "./treasury-config";
+import { NimiqRpcClient } from "./nimiq-rpc.js";
+import { treasuryConfigurationPath } from "./paths.js";
+import { readTreasuryConfiguration } from "./treasury-config.js";
 
 const configuration = await readTreasuryConfiguration(treasuryConfigurationPath);
 const rpc = new NimiqRpcClient(configuration.rpcUrl);

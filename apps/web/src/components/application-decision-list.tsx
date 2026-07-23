@@ -1,15 +1,25 @@
 "use client";
 
-import type { ApplicationAnswer, ApplicationDecision } from "@pods/domain";
+import type {
+  ApplicationAnswer,
+  ApplicationDecision,
+  ProfileAvatar as ProfileAvatarType
+} from "@pods/domain";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { decidePodApplication } from "../lib/creator-enrollment-client";
+import { ProfileAvatar } from "./profile-avatar";
 
 export type CreatorApplicationItem = {
   id: string;
-  applicantLabel: string;
+  applicant: {
+    handle: string;
+    displayName: string;
+    bio: string;
+    avatar: ProfileAvatarType;
+  };
   answers: ApplicationAnswer[];
 };
 
@@ -54,7 +64,20 @@ export function ApplicationDecisionList({
             key={application.id}
             layout
           >
-            <div className="decision-card-head"><span>Applicant</span><strong>{application.applicantLabel}</strong></div>
+            <div className="decision-applicant">
+              <ProfileAvatar
+                avatar={application.applicant.avatar}
+                displayName={application.applicant.displayName}
+              />
+              <span>
+                <small>Applicant</small>
+                <strong>{application.applicant.displayName}</strong>
+                <i>@{application.applicant.handle}</i>
+              </span>
+            </div>
+            <p className="decision-applicant-bio">
+              {application.applicant.bio || "No introduction added yet."}
+            </p>
             <dl>
               {application.answers.map(({ question, answer }) => (
                 <div key={question}><dt>{question}</dt><dd>{answer}</dd></div>

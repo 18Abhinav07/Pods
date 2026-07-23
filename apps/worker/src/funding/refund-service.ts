@@ -4,7 +4,7 @@ import type {
   TransferRpc,
   TransferSigner,
   TransactionLookup
-} from "../preflight/transfer-service";
+} from "../preflight/transfer-service.js";
 
 export interface RefundTransferLeg {
   id: string;

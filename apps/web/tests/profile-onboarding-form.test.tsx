@@ -95,4 +95,28 @@ describe("ProfileOnboardingForm", () => {
     expect(await screen.findByText("Profile handle is already taken")).toBeVisible();
     expect(screen.getByLabelText("Handle")).toBeVisible();
   });
+
+  it("uses a save action when editing an existing profile", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProfileOnboardingForm
+        initialProfile={{
+          handle: "pods_builder",
+          displayName: "Pods Builder",
+          bio: "Building in public.",
+          avatar: { kind: "preset", preset: "ember" },
+          visibility: "public",
+          dmPolicy: "requests",
+          activityStatusVisible: true
+        }}
+        returnTo="/profile"
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Continue to your story" }));
+    await user.click(screen.getByRole("button", { name: "Continue to privacy" }));
+
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Enter Pods" })).not.toBeInTheDocument();
+  });
 });

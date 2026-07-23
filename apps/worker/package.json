@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node --import tsx --input-type=module --eval \"await import('./src/index.ts')\"",
     "dev": "node --watch --import tsx src/index.ts",
-    "start": "node dist/index.js",
+    "start": "node --import tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clock:advance": "node --import tsx src/clock/command.ts",

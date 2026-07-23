@@ -1,11 +1,11 @@
-import { FileTransferRepository } from "./file-transfer-repository";
-import { NimiqRpcClient } from "./nimiq-rpc";
+import { FileTransferRepository } from "./file-transfer-repository.js";
+import { NimiqRpcClient } from "./nimiq-rpc.js";
 import {
   transferLedgerDirectory,
   treasuryConfigurationPath
-} from "./paths";
-import { readTreasuryConfiguration } from "./treasury-config";
-import { reconcileUnknownTransfer } from "./transfer-service";
+} from "./paths.js";
+import { readTreasuryConfiguration } from "./treasury-config.js";
+import { reconcileUnknownTransfer } from "./transfer-service.js";
 
 const hash = process.argv[2];
 if (!hash) {

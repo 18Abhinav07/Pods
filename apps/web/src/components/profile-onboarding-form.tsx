@@ -19,12 +19,15 @@ type FieldErrors = Partial<Record<keyof ProfileInput, string>>;
 
 export function ProfileOnboardingForm({
   returnTo,
-  initialProfile
+  initialProfile,
+  onSaved
 }: {
   returnTo: string;
   initialProfile?: ProfileInput;
+  onSaved?: () => void;
 }) {
   const router = useRouter();
+  const isEditing = Boolean(initialProfile);
   const [step, setStep] = useState(0);
   const [handle, setHandle] = useState(initialProfile?.handle ?? "");
   const [displayName, setDisplayName] = useState(initialProfile?.displayName ?? "");
@@ -93,6 +96,7 @@ export function ProfileOnboardingForm({
       }
       router.replace(returnTo);
       router.refresh();
+      onSaved?.();
     } catch {
       setErrors({ bio: "Profile could not be saved. Check your connection and try again." });
     } finally {
@@ -101,7 +105,10 @@ export function ProfileOnboardingForm({
   }
 
   return (
-    <section className="profile-onboarding" aria-label="Create your Pods profile">
+    <section
+      className="profile-onboarding"
+      aria-label={isEditing ? "Edit your Pods profile" : "Create your Pods profile"}
+    >
       <div className="onboarding-progress" aria-label={`Step ${step + 1} of ${stepLabels.length}`}>
         {stepLabels.map((label, index) => (
           <span aria-hidden="true" className={index === step ? "is-current" : index < step ? "is-complete" : ""} key={label} />
@@ -204,7 +211,22 @@ export function ProfileOnboardingForm({
           <div className="privacy-note">Your wallet address, deposits, private Pod names, and reviewer evidence never enter your social profile.</div>
           <div className="split-actions">
             <button className="secondary-action" onClick={() => setStep(1)} type="button">Back</button>
-            <button className="primary-action" disabled={submitting} onClick={submit} type="button">{submitting ? "Saving profile" : "Enter Pods"}</button>
+            <button
+              aria-busy={submitting}
+              className="primary-action profile-save-action"
+              disabled={submitting}
+              onClick={submit}
+              type="button"
+            >
+              {submitting ? (
+                <i
+                  aria-hidden="true"
+                  className="profile-save-spinner"
+                  data-testid="profile-save-spinner"
+                />
+              ) : null}
+              <span>{submitting ? "Saving profile" : isEditing ? "Save profile" : "Enter Pods"}</span>
+            </button>
           </div>
         </div>
       ) : null}

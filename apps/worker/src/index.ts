@@ -3,19 +3,19 @@ import { pathToFileURL } from "node:url";
 import { createPodsRepository } from "@pods/db";
 import { parseAlphaCapabilities } from "@pods/domain";
 
-import { NimiqDepositRpc } from "./funding/nimiq-deposit-rpc";
-import { runDepositCycle } from "./funding/run-deposit-cycle";
-import { runCutoffCycle } from "./funding/run-cutoff-cycle";
-import { runRefundCycle } from "./funding/refund-service";
-import { NimiqRpcClient } from "./preflight/nimiq-rpc";
-import { NimiqTransferSigner } from "./preflight/nimiq-signer";
-import { treasuryConfigurationPath } from "./preflight/paths";
-import { readTreasuryConfiguration } from "./preflight/treasury-config";
-import { runOccurrenceCycle } from "./activity/run-occurrence-cycle";
+import { NimiqDepositRpc } from "./funding/nimiq-deposit-rpc.js";
+import { runDepositCycle } from "./funding/run-deposit-cycle.js";
+import { runCutoffCycle } from "./funding/run-cutoff-cycle.js";
+import { runRefundCycle } from "./funding/refund-service.js";
+import { NimiqRpcClient } from "./preflight/nimiq-rpc.js";
+import { NimiqTransferSigner } from "./preflight/nimiq-signer.js";
+import { treasuryConfigurationPath } from "./preflight/paths.js";
+import { readTreasuryConfiguration } from "./preflight/treasury-config.js";
+import { runOccurrenceCycle } from "./activity/run-occurrence-cycle.js";
 import {
   startWorkerHealthServer,
   type WorkerHealthState
-} from "./health/server";
+} from "./health/server.js";
 
 export const workerName = "pods-worker";
 

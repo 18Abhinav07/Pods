@@ -1,16 +1,16 @@
-import { FileTransferRepository } from "./file-transfer-repository";
-import { NimiqRpcClient } from "./nimiq-rpc";
-import { NimiqTransferSigner } from "./nimiq-signer";
+import { FileTransferRepository } from "./file-transfer-repository.js";
+import { NimiqRpcClient } from "./nimiq-rpc.js";
+import { NimiqTransferSigner } from "./nimiq-signer.js";
 import {
   transferLedgerDirectory,
   treasuryConfigurationPath
-} from "./paths";
-import { readTreasuryConfiguration } from "./treasury-config";
+} from "./paths.js";
+import { readTreasuryConfiguration } from "./treasury-config.js";
 import {
   broadcastPersistedTransfer,
   prepareTransfer,
   type TransferRpc
-} from "./transfer-service";
+} from "./transfer-service.js";
 
 class SimulatedUnknownBroadcastError extends Error {
   constructor(readonly acceptedHash: string) {

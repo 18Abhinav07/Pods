@@ -20,9 +20,9 @@ export default async function AdminApplicationsPage({ params }: { params: Promis
       <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href={`/pods/${podId}/admin`}><span className="pod-mark" aria-hidden="true" />pods</Link><span className="phase-pill">Review queue</span></header>
       <section className="today-hero entrance entrance-hero"><p className="eyebrow">Creator review</p><h1>{pending.length} decision{pending.length === 1 ? "" : "s"} waiting.</h1><p className="screen-copy">Review answers against the frozen community purpose. Wallet addresses are never shown.</p></section>
       <ApplicationDecisionList
-        applications={pending.map(({ application }) => ({
+        applications={pending.map(({ application, applicantProfile }) => ({
           id: application.id,
-          applicantLabel: `Builder ${application.applicantUserId.slice(0, 6).toUpperCase()}`,
+          applicant: applicantProfile,
           answers: application.answers
         }))}
         podId={podId}

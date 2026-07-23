@@ -1,4 +1,4 @@
-import type { DepositBlock, DepositTransaction } from "./deposit-reconciler";
+import type { DepositBlock, DepositTransaction } from "./deposit-reconciler.js";
 
 interface JsonRpcSuccess<T> {
   jsonrpc: "2.0";

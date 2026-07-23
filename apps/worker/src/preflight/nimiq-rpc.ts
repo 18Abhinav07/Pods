@@ -1,4 +1,4 @@
-import type { TransactionLookup, TransferRpc } from "./transfer-service";
+import type { TransactionLookup, TransferRpc } from "./transfer-service.js";
 
 interface JsonRpcSuccess<T> {
   jsonrpc: "2.0";

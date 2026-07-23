@@ -6,7 +6,7 @@ import type {
   PersistedTransferState,
   PreparedTransfer,
   TransferRepository
-} from "./transfer-service";
+} from "./transfer-service.js";
 
 interface StoredTransferFile {
   recipient: string;

@@ -243,9 +243,19 @@ export function createEnrollmentMethods(database: PodsDatabase) {
 
     async listApplicationsForCreator(input: { creatorUserId: string; podId?: string }) {
       return database
-        .select({ application: applications, pod: pods })
+        .select({
+          application: applications,
+          pod: pods,
+          applicantProfile: {
+            handle: profiles.handle,
+            displayName: profiles.displayName,
+            bio: profiles.bio,
+            avatar: profiles.avatar
+          }
+        })
         .from(applications)
         .innerJoin(pods, eq(applications.podId, pods.id))
+        .innerJoin(profiles, eq(applications.applicantUserId, profiles.userId))
         .where(
           input.podId
             ? and(

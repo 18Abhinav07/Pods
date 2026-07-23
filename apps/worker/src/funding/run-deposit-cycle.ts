@@ -7,8 +7,8 @@ import type {
 import {
   validateObservedDeposit,
   type DepositTransaction
-} from "./deposit-reconciler";
-import type { DepositRpc } from "./nimiq-deposit-rpc";
+} from "./deposit-reconciler.js";
+import type { DepositRpc } from "./nimiq-deposit-rpc.js";
 
 interface OpenDepositIntent {
   id: string;

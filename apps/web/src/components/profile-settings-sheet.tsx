@@ -124,7 +124,11 @@ export function ProfileSettingsSheet({
 
             {view === "edit" ? (
               <div className="profile-settings-edit">
-                <ProfileOnboardingForm initialProfile={profile} returnTo="/profile" />
+                <ProfileOnboardingForm
+                  initialProfile={profile}
+                  onSaved={close}
+                  returnTo="/profile"
+                />
               </div>
             ) : null}
 

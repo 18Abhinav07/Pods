@@ -10,6 +10,9 @@ import { savePodDraftStep } from "../lib/wizard-client";
 export function CommunityForm({ podId, initial }: { podId: string; initial: CommunityStepInput }) {
   const router = useRouter();
   const [visibility, setVisibility] = useState(initial.visibility);
+  const [roomAudience, setRoomAudience] = useState(
+    initial.visibility === "public" ? initial.roomAudience ?? "members_only" : "members_only"
+  );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -35,24 +38,34 @@ export function CommunityForm({ podId, initial }: { podId: string; initial: Comm
     {visibility === "public" ? <>
       <label className="field-block"><span>Application questions</span><textarea name="applicationQuestions" rows={3} defaultValue={initial.visibility === "public" ? initial.applicationQuestions.join("\n") : "What will you commit to?"} /><small>One question per line. Applicants see these before acceptance.</small></label>
       <fieldset className="field-block visitor-audience-choice">
-        <legend>After the roster locks</legend>
-        <label>
+        <legend>Who can read the Pod after the roster locks?</legend>
+        <label className={`visitor-audience-row ${roomAudience === "members_only" ? "is-selected" : ""}`}>
+          <span className="visitor-audience-copy">
+            <strong>Members only</strong>
+            <small>Only locked members can read the room and public proof record.</small>
+          </span>
           <input
-            defaultChecked={initial.visibility !== "public" || initial.roomAudience !== "public_read_only"}
+            aria-label="Members only"
+            checked={roomAudience === "members_only"}
             name="roomAudience"
+            onChange={() => setRoomAudience("members_only")}
             type="radio"
             value="members_only"
           />
-          <span><strong>Members only</strong>The room, proof record, and progress stay inside the roster.</span>
         </label>
-        <label>
+        <label className={`visitor-audience-row ${roomAudience === "public_read_only" ? "is-selected" : ""}`}>
+          <span className="visitor-audience-copy">
+            <strong>Let visitors follow along</strong>
+            <small>Anyone with the link can read the room and Pod-shared proofs. Visitors cannot react, reply, submit, or see private review and funding details.</small>
+          </span>
           <input
-            defaultChecked={initial.visibility === "public" && initial.roomAudience === "public_read_only"}
+            aria-label="Let visitors follow along"
+            checked={roomAudience === "public_read_only"}
             name="roomAudience"
+            onChange={() => setRoomAudience("public_read_only")}
             type="radio"
             value="public_read_only"
           />
-          <span><strong>Let visitors follow along</strong>Anyone with the Pod link can read the room and public proof layer after roster lock. Visitors cannot react, reply, submit, or see financial and reviewer-only details.</span>
         </label>
       </fieldset>
     </> : <label className="field-block"><span>Invitation expiry</span><select name="inviteExpiryHours" defaultValue={initial.visibility === "private" ? initial.inviteExpiryHours : 168}><option value="24">24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="336">14 days</option></select></label>}

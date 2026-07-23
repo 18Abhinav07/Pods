@@ -2706,6 +2706,121 @@ body {
 .profile-settings-edit { padding: 0 18px 34px; }
 .profile-settings-edit .profile-onboarding { padding: 0; }
 .profile-settings-edit .onboarding-step { padding-inline: 2px; box-shadow: none; }
+.profile-save-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+.profile-save-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: profile-save-spin 700ms linear infinite;
+}
+@keyframes profile-save-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Creator audience selection: one quiet row, one clear decision */
+.visitor-audience-choice {
+  overflow: hidden;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+}
+.visitor-audience-choice > legend {
+  width: 100%;
+  padding: 18px 0 10px;
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.visitor-audience-row {
+  display: grid;
+  min-height: 76px;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 2px;
+  border-top: 1px solid var(--color-line);
+  cursor: pointer;
+}
+.visitor-audience-copy {
+  display: grid;
+  gap: 5px;
+}
+.visitor-audience-copy strong {
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.2;
+}
+.visitor-audience-copy small {
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.field-block .visitor-audience-row > input {
+  width: 20px;
+  min-height: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--color-muted);
+  border-radius: 50%;
+  accent-color: var(--color-ink);
+  cursor: pointer;
+}
+.visitor-audience-row.is-selected .visitor-audience-copy strong {
+  color: var(--color-success);
+}
+
+/* Applicant review: identity before decision */
+.decision-card {
+  border-color: var(--color-line);
+  background: var(--color-surface);
+  box-shadow: none;
+}
+.decision-applicant {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+}
+.decision-applicant > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.decision-applicant small {
+  color: var(--color-muted);
+  font: 700 9px/1.2 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.decision-applicant strong {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: 18px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.decision-applicant i {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.decision-applicant-bio {
+  margin: 13px 0 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
 .profile-settings-wallet { display: grid; gap: 14px; padding: 28px 22px 40px; }
 .profile-settings-wallet > span { color: var(--color-muted); font-size: 12px; }
 .profile-settings-wallet code {

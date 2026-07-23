@@ -9,7 +9,7 @@ import type {
   SignedTransfer,
   TransferDraft,
   TransferSigner
-} from "./transfer-service";
+} from "./transfer-service.js";
 
 const TESTNET_NETWORK_ID = 5;
 

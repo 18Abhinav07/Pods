@@ -46,3 +46,29 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 
 - The physical Nimiq Pay walkthrough of an active V2 public room remains
   pending. No production or local record was bypass-seeded to fake this proof.
+
+## Phase 4 Funding Release
+
+### Completed
+
+- Polished profile saving, Pod audience selection, and creator application
+  identity.
+- Corrected the production worker module runtime and added a regression check.
+- Installed the explicitly authorized Testnet treasury signer only on the
+  dedicated Railway worker.
+- Enabled the public web funding surface in `allowlist_refund_only` mode.
+- Deployed web and worker from commit `e93c55f`.
+
+### Verification
+
+- Full `pnpm check`: PASS.
+- Web deployment `b0d2e841-d0a5-43db-9f2a-ca63224c918d`: `SUCCESS`.
+- Worker deployment `de570b13-dd66-4e8c-939b-f7fc177f333c`: `SUCCESS`.
+- Live health, capabilities, and Discover probes: PASS.
+- Web and worker startup/cycle error logs: clean.
+
+### Remaining
+
+- Run one real two-wallet funding journey in Nimiq Pay. This cannot be replaced
+  by automated browser proof because each transaction requires the user's
+  wallet confirmation.

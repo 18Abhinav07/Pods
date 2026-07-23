@@ -57,6 +57,29 @@ describe("ParticipantSubmissionPage", () => {
     expect(screen.getByText("Principal remains protected while review is open")).toBeVisible();
   });
 
+  it("labels an unsent submission draft without implying creator review", async () => {
+    getSubmissionForOwner.mockResolvedValue({
+      ...submissionResult,
+      submission: {
+        ...submissionResult.submission,
+        state: "draft",
+        submittedAt: null,
+        reviewTargetAt: null,
+        reviewHardDeadlineAt: null
+      }
+    });
+
+    render(await ParticipantSubmissionPage({
+      params: Promise.resolve({ podId: "pod-1", submissionId: "submission-1" })
+    }));
+
+    expect(screen.getByRole("heading", { name: "Proof draft" })).toBeVisible();
+    expect(screen.getByText(
+      "This proof has not been sent to the Pod creator yet."
+    )).toBeVisible();
+    expect(screen.queryByText("Creator review in progress")).not.toBeInTheDocument();
+  });
+
   it("shows the owner's private rejection decision without an appeal control", async () => {
     const privateNote = "The artifact does not complete the locked commitment.";
     getSubmissionForOwner.mockResolvedValue({

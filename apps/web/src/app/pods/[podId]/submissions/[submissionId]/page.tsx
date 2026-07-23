@@ -1,32 +1,35 @@
+import type { SubmissionState } from "@pods/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { podsRepository } from "../../../../../lib/server-db";
 import { requireSession } from "../../../../../lib/session";
 
-function submissionPresentation(state: string) {
-  if (state === "approved") {
-    return {
-      heading: "Work approved",
-      detail: "The Pod creator approved this proof. It counts toward your progress and streak."
-    };
-  }
-  if (state === "rejected") {
-    return {
-      heading: "Not verified",
-      detail: "The Pod creator did not verify this proof against the locked commitment."
-    };
-  }
-  if (state === "timeout_protected") {
-    return {
-      heading: "Protected after review timeout",
-      detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
-    };
-  }
-  return {
+const submissionPresentations = {
+  draft: {
+    heading: "Proof draft",
+    detail: "This proof has not been sent to the Pod creator yet."
+  },
+  reviewing: {
     heading: "Creator review in progress",
     detail: "The Pod creator is checking your proof against the locked commitment."
-  };
+  },
+  approved: {
+    heading: "Work approved",
+    detail: "The Pod creator approved this proof. It counts toward your progress and streak."
+  },
+  rejected: {
+    heading: "Not verified",
+    detail: "The Pod creator did not verify this proof against the locked commitment."
+  },
+  timeout_protected: {
+    heading: "Protected after review timeout",
+    detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
+  }
+} satisfies Record<SubmissionState, { heading: string; detail: string }>;
+
+function submissionPresentation(state: SubmissionState) {
+  return submissionPresentations[state];
 }
 
 function moment(value: Date | null) {

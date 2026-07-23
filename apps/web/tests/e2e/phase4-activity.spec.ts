@@ -53,6 +53,15 @@ async function authenticate(context: BrowserContext) {
     }
   });
   expect(verifyResponse.ok()).toBe(true);
+  await repository.saveProfile(await userIdForWallet(walletAddress), {
+    handle: `phase4_${randomUUID().replaceAll("-", "").slice(0, 12)}`,
+    displayName: "Phase 4 builder",
+    bio: "",
+    avatar: { kind: "preset", preset: "indigo" },
+    visibility: "public",
+    dmPolicy: "requests",
+    activityStatusVisible: true
+  });
   return walletAddress;
 }
 
@@ -186,7 +195,7 @@ test("Build and Ship runs from task lock through creator approval", async ({ bro
     await memberPage.getByLabel("Today's task").fill(
       "Ship the participant activity screen with private evidence and reviewer states."
     );
-    await memberPage.getByLabel("Visible deliverable").selectOption("pull_request");
+    await memberPage.getByRole("radio", { name: "GitHub pull request" }).check();
     await memberPage.getByRole("button", { name: "Lock this task" }).click();
     await expect(memberPage.getByText("Locked task")).toBeVisible();
 
@@ -196,12 +205,11 @@ test("Build and Ship runs from task lock through creator approval", async ({ bro
     await memberPage.getByLabel("Public artifact URL").fill(
       "https://github.com/18Abhinav07/Pods/pull/42"
     );
-    await memberPage.getByRole("button", { name: "Save evidence draft" }).click();
-    await expect(memberPage.getByText("Draft saved privately")).toBeVisible();
+    await expect(memberPage.getByText("Draft saved automatically")).toBeVisible();
     const evidenceImage = await sharp({
       create: { width: 640, height: 480, channels: 3, background: "#3b5ccc" }
     }).png().toBuffer();
-    await memberPage.getByLabel("Optional supporting image").setInputFiles({
+    await memberPage.getByLabel("Choose evidence image").setInputFiles({
       name: "build-proof.png",
       mimeType: "image/png",
       buffer: evidenceImage
@@ -269,7 +277,7 @@ test("Build and Ship runs from task lock through creator approval", async ({ bro
     await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/room`);
     await expect(
       memberPage.getByRole("region", { name: "Current Pod activity" })
-        .getByText("Proof submitted")
+        .getByText("Approved")
     ).toBeVisible();
   } finally {
     await memberContext.close();

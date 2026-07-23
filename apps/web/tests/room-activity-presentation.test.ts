@@ -47,7 +47,7 @@ describe("presentRoomActivitySchedule", () => {
     expect(presentRoomActivitySchedule({ podId: "pod-1", now, rows })).toMatchObject({
       mode: "view",
       label: "View submission",
-      stateLabel: "Proof submitted",
+      stateLabel: "Approved",
       progressLabel: "Occurrence 1 of 2 complete",
       targetAt: "2027-04-07T00:00:00.000Z",
       targetLabel: "until next occurrence"

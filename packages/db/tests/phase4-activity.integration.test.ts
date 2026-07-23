@@ -41,6 +41,14 @@ const contract: PublishedPodContract = {
   commitment: { lunaPerOccurrence: 10_000, occurrenceCount: 1, totalLuna: 10_000 },
   verification: { verifier: "creator", targetReviewHours: 12, timeoutProtectionHours: 24 }
 };
+const legacyReviewerContract: PublishedPodContract = {
+  ...contract,
+  verification: {
+    verifier: "pods_team",
+    targetReviewHours: 12,
+    timeoutProtectionHours: 24
+  }
+};
 
 beforeAll(async () => {
   await runPodsMigrations(databaseUrl);
@@ -77,7 +85,7 @@ async function createUser() {
   return session;
 }
 
-async function createLockedFixture() {
+async function createLockedFixture(publishedContract: PublishedPodContract = contract) {
   const owner = await createUser();
   const member = await createUser();
   const podId = randomUUID();
@@ -88,7 +96,12 @@ async function createLockedFixture() {
     await pool.query(
       `INSERT INTO pods (id, creator_user_id, state, template_id, draft_data, contract_data, contract_hash, published_at, created_at, updated_at)
        VALUES ($1, $2, 'locked_scheduled', 'build', '{}', $3::jsonb, 'phase4-contract', $4, $4, $4)`,
-      [podId, owner.userId, JSON.stringify(contract), new Date("2027-04-01T00:00:00.000Z")]
+      [
+        podId,
+        owner.userId,
+        JSON.stringify(publishedContract),
+        new Date("2027-04-01T00:00:00.000Z")
+      ]
     );
     await pool.query(
       `INSERT INTO memberships (id, pod_id, user_id, admission_source, state, accepted_at, created_at, updated_at)
@@ -112,8 +125,11 @@ async function createLockedFixture() {
   return { owner, member, podId, membershipId, occurrenceId };
 }
 
-async function createReviewingFixture(proofShareMode: "reviewer_only" | "pod_shared" = "reviewer_only") {
-  const fixture = await createLockedFixture();
+async function createReviewingFixture(
+  proofShareMode: "reviewer_only" | "pod_shared" = "reviewer_only",
+  publishedContract: PublishedPodContract = contract
+) {
+  const fixture = await createLockedFixture(publishedContract);
   await repository.runOccurrenceTransitions(new Date("2027-04-05T08:00:00.000Z"));
   const commitment = await repository.lockOccurrenceCommitment({
     userId: fixture.member.userId,
@@ -301,6 +317,11 @@ describe("Phase 4 Build and Ship persistence", () => {
       now: new Date("2027-04-05T10:00:00.000Z")
     });
     expect(draft).toMatchObject({ commitmentId: commitment.id, state: "draft" });
+    expect(await repository.getReviewSubmissionForCreator({
+      creatorUserId: fixture.owner.userId,
+      podId: fixture.podId,
+      submissionId: draft.id
+    })).toBeNull();
 
     const submitted = await repository.submitOccurrenceEvidence({
       userId: fixture.member.userId,
@@ -493,6 +514,55 @@ describe("Phase 4 Build and Ship persistence", () => {
           submissionId: draft.id
         }
       }]
+    });
+  });
+
+  it("denies creator review authority for a legacy Pods-team verifier contract", async () => {
+    const fixture = await createReviewingFixture(
+      "reviewer_only",
+      legacyReviewerContract
+    );
+    const pool = new Pool({ connectionString: databaseUrl });
+    try {
+      await pool.query(
+        "UPDATE submissions SET review_hard_deadline_at = $2 WHERE id = $1",
+        [fixture.submission.id, new Date("2027-04-07T11:00:00.000Z")]
+      );
+    } finally {
+      await pool.end();
+    }
+
+    expect(await repository.listPendingReviewsForCreator({
+      creatorUserId: fixture.owner.userId,
+      podId: fixture.podId
+    })).toBeNull();
+    expect(await repository.getReviewSubmissionForCreator({
+      creatorUserId: fixture.owner.userId,
+      podId: fixture.podId,
+      submissionId: fixture.submission.id
+    })).toBeNull();
+    expect(await repository.getCreatorSubmissionEvidence({
+      creatorUserId: fixture.owner.userId,
+      podId: fixture.podId,
+      submissionId: fixture.submission.id
+    })).toBeNull();
+    expect(await repository.decideSubmissionAsCreator({
+      creatorUserId: fixture.owner.userId,
+      podId: fixture.podId,
+      submissionId: fixture.submission.id,
+      decision: { decision: "approve" },
+      now: new Date("2027-04-05T12:00:00.000Z")
+    })).toBeNull();
+    expect(await repository.getSubmissionForOwner({
+      userId: fixture.member.userId,
+      submissionId: fixture.submission.id
+    })).toMatchObject({
+      submission: { state: "reviewing" },
+      reviewDecision: null
+    });
+    expect(await inspectReviewRecords(fixture.submission.id)).toMatchObject({
+      decisions: [],
+      events: []
     });
   });
 
@@ -840,6 +910,70 @@ describe("Phase 4 Build and Ship persistence", () => {
       "approved",
       "timeout_protected"
     ]);
+  });
+
+  it("breaks an approved streak as soon as the current occurrence is rejected", async () => {
+    const fixture = await createLockedFixture();
+    const currentOccurrenceId = randomUUID();
+    const commitmentIds = [randomUUID(), randomUUID()];
+    const submissionIds = [randomUUID(), randomUUID()];
+    const pool = new Pool({ connectionString: databaseUrl });
+    try {
+      await pool.query(
+        `INSERT INTO occurrences
+          (id, pod_id, ordinal, local_date, opens_at, closes_at, commitment_deadline_at, state)
+         VALUES
+          ($1, $2, 2, '2027-04-06', '2027-04-06T00:00:00.000Z',
+           '2027-04-06T23:59:59.999Z', '2027-04-06T09:00:00.000Z', 'evidence_open')`,
+        [currentOccurrenceId, fixture.podId]
+      );
+      await pool.query(
+        `INSERT INTO occurrence_commitments
+          (id, occurrence_id, membership_id, task, deliverable_type, locked_at)
+         VALUES
+          ($1, $3, $5, 'Approved prior occurrence commitment.', 'pull_request',
+           '2027-04-05T08:00:00.000Z'),
+          ($2, $4, $5, 'Rejected current occurrence commitment.', 'pull_request',
+           '2027-04-06T08:00:00.000Z')`,
+        [
+          ...commitmentIds,
+          fixture.occurrenceId,
+          currentOccurrenceId,
+          fixture.membershipId
+        ]
+      );
+      await pool.query(
+        `INSERT INTO submissions
+          (id, occurrence_id, membership_id, commitment_id, state, result_summary,
+           artifact_url, proof_share_mode, submitted_at, reviewed_at, approved_at,
+           created_at, updated_at)
+         VALUES
+          ($1, $3, $5, $6, 'approved', 'Approved prior proof for streak coverage.',
+           'https://github.com/18Abhinav07/Pods/pull/51', 'reviewer_only',
+           '2027-04-05T10:00:00.000Z', '2027-04-05T12:00:00.000Z',
+           '2027-04-05T12:00:00.000Z', '2027-04-05T10:00:00.000Z',
+           '2027-04-05T12:00:00.000Z'),
+          ($2, $4, $5, $7, 'rejected', 'Rejected current proof for streak coverage.',
+           'https://github.com/18Abhinav07/Pods/pull/52', 'reviewer_only',
+           '2027-04-06T10:00:00.000Z', '2027-04-06T11:00:00.000Z', NULL,
+           '2027-04-06T10:00:00.000Z', '2027-04-06T11:00:00.000Z')`,
+        [
+          ...submissionIds,
+          fixture.occurrenceId,
+          currentOccurrenceId,
+          fixture.membershipId,
+          ...commitmentIds
+        ]
+      );
+    } finally {
+      await pool.end();
+    }
+
+    expect(await repository.getActivityStreak({
+      membershipId: fixture.membershipId,
+      podId: fixture.podId,
+      now: new Date("2027-04-06T12:00:00.000Z")
+    })).toBe(0);
   });
 
   it("does not attach a late image to an otherwise editable draft", async () => {

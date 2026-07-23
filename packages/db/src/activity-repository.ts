@@ -586,7 +586,7 @@ export function createActivityMethods(database: PodsDatabase) {
       podId: string;
     }) {
       const [owned] = await database
-        .select({ id: pods.id })
+        .select({ pod: pods })
         .from(pods)
         .where(
           and(
@@ -594,7 +594,12 @@ export function createActivityMethods(database: PodsDatabase) {
             eq(pods.creatorUserId, input.creatorUserId)
           )
         );
-      if (!owned) return null;
+      if (
+        !owned ||
+        owned.pod.contractData?.verification.verifier !== "creator"
+      ) {
+        return null;
+      }
       return database
         .select({
           submission: submissions,
@@ -649,10 +654,14 @@ export function createActivityMethods(database: PodsDatabase) {
           and(
             eq(pods.id, input.podId),
             eq(pods.creatorUserId, input.creatorUserId),
-            eq(submissions.id, input.submissionId)
+            eq(submissions.id, input.submissionId),
+            ne(submissions.state, "draft")
           )
         );
-      return result ?? null;
+      if (result?.pod.contractData?.verification.verifier !== "creator") {
+        return null;
+      }
+      return result;
     },
 
     async getCreatorSubmissionEvidence(input: {
@@ -660,6 +669,18 @@ export function createActivityMethods(database: PodsDatabase) {
       podId: string;
       submissionId: string;
     }) {
+      const [owned] = await database
+        .select({ contractData: pods.contractData })
+        .from(pods)
+        .where(
+          and(
+            eq(pods.id, input.podId),
+            eq(pods.creatorUserId, input.creatorUserId)
+          )
+        );
+      if (owned?.contractData?.verification.verifier !== "creator") {
+        return null;
+      }
       const [result] = await database
         .select({
           objectKey: submissions.evidenceObjectKey,
@@ -694,7 +715,10 @@ export function createActivityMethods(database: PodsDatabase) {
     }) {
       return database.transaction(async (transaction) => {
         const [owned] = await transaction
-          .select({ submission: submissions })
+          .select({
+            submission: submissions,
+            contractData: pods.contractData
+          })
           .from(submissions)
           .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
           .innerJoin(pods, eq(occurrences.podId, pods.id))
@@ -706,7 +730,12 @@ export function createActivityMethods(database: PodsDatabase) {
             )
           )
           .for("update", { of: submissions });
-        if (!owned) return null;
+        if (
+          !owned ||
+          owned.contractData?.verification.verifier !== "creator"
+        ) {
+          return null;
+        }
         if (
           owned.submission.state === "approved" ||
           owned.submission.state === "rejected" ||
@@ -1186,7 +1215,8 @@ export function createActivityMethods(database: PodsDatabase) {
         ({ occurrence, submission }) =>
           occurrence.closesAt.getTime() <= input.now.getTime() ||
           submission?.state === "approved" ||
-          submission?.state === "timeout_protected"
+          submission?.state === "timeout_protected" ||
+          submission?.state === "rejected"
       );
       let streak = 0;
       for (let index = decided.length - 1; index >= 0; index -= 1) {

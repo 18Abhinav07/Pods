@@ -27,11 +27,21 @@ export function CreatorReviewForm({
   const [status, setStatus] = useState<DecisionStatus>("idle");
   const statusRef = useRef<DecisionStatus>("idle");
   const rejectionReasonRef = useRef<HTMLTextAreaElement>(null);
+  const navigationTimerRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(
+    null
+  );
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (rejectionOpen) rejectionReasonRef.current?.focus();
   }, [rejectionOpen]);
+
+  useEffect(() => () => {
+    if (navigationTimerRef.current !== null) {
+      globalThis.clearTimeout(navigationTimerRef.current);
+      navigationTimerRef.current = null;
+    }
+  }, []);
 
   function moveToStatus(nextStatus: DecisionStatus) {
     statusRef.current = nextStatus;
@@ -63,11 +73,11 @@ export function CreatorReviewForm({
         throw new Error(body.error ?? "Review decision could not be recorded");
       }
       moveToStatus("saved");
-      await new Promise((resolve) => {
-        globalThis.setTimeout(resolve, SAVED_NAVIGATION_DELAY_MS);
-      });
-      router.replace(`/pods/${podId}/admin/reviews`);
-      router.refresh();
+      navigationTimerRef.current = globalThis.setTimeout(() => {
+        navigationTimerRef.current = null;
+        router.replace(`/pods/${podId}/admin/reviews`);
+        router.refresh();
+      }, SAVED_NAVIGATION_DELAY_MS);
     } catch (cause) {
       moveToStatus("idle");
       setError(

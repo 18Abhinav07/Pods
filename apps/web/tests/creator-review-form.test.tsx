@@ -74,6 +74,33 @@ describe("CreatorReviewForm", () => {
     expect(refresh).toHaveBeenCalled();
   });
 
+  it("cancels delayed navigation when the review form unmounts", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ submission: { state: "approved" } }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      })
+    );
+    const { unmount } = render(
+      <CreatorReviewForm podId={podId} submissionId={submissionId} />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Approve proof" }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Decision saved");
+
+    unmount();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(400);
+    });
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
   it("reveals, announces, and focuses a required rejection reason", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ submission: { state: "rejected" } }), {

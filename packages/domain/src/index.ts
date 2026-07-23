@@ -22,6 +22,7 @@ export * from "./funding";
 export * from "./activity";
 export * from "./alpha-capabilities";
 export * from "./social";
+export * from "./settlement";
 
 export const templateContracts = [
   {

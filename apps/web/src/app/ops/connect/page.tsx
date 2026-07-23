@@ -8,7 +8,7 @@ export default async function OpsConnectPage({
   searchParams: Promise<{ returnTo?: string }>;
 }) {
   const requested = (await searchParams).returnTo;
-  const returnTo = requested?.startsWith("/ops/") ? requested : "/ops/reviews";
+  const returnTo = requested?.startsWith("/ops/") ? requested : "/ops/public-safety";
   return (
     <main className="app-shell ops-shell">
       <header className="app-topbar">

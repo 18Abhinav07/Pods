@@ -103,7 +103,7 @@ async function seedLockedBuildPod(input: {
       applicationQuestions: []
     },
     commitment: { lunaPerOccurrence: 10_000, occurrenceCount: 1, totalLuna: 10_000 },
-    verification: { verifier: "pods_team", targetReviewHours: 12, timeoutProtectionHours: 24 }
+    verification: { verifier: "creator", targetReviewHours: 12, timeoutProtectionHours: 24 }
   };
   const pool = databasePool();
   try {
@@ -149,13 +149,11 @@ test.afterAll(async () => {
   await repository.close();
 });
 
-test("Build and Ship runs from task lock through private evidence and manual approval", async ({ browser, context }) => {
+test("Build and Ship runs from task lock through private evidence submission", async ({ browser, context }) => {
   const creatorWallet = await authenticate(context);
   const memberContext = await browser.newContext();
   const peerContext = await browser.newContext();
-  const opsContext = await browser.newContext();
   const memberPage = await memberContext.newPage();
-  const opsPage = await opsContext.newPage();
   try {
     const memberWallet = await authenticate(memberContext);
     const peerWallet = await authenticate(peerContext);
@@ -212,33 +210,8 @@ test("Build and Ship runs from task lock through private evidence and manual app
     await memberPage.getByRole("button", { name: "Submit for Pods review" }).click();
     await expect(memberPage.getByRole("heading", { name: "Your evidence is under review." })).toBeVisible();
 
-    const opsLogin = await opsContext.request.post(`${baseUrl}/api/ops/session`, {
-      data: { accessToken: "pods-playwright-reviewer", returnTo: "/ops/reviews" }
-    });
-    expect(opsLogin.ok()).toBe(true);
-    await opsPage.goto(`${baseUrl}/ops/reviews`);
-    await expect(opsPage.getByText("Ship the participant activity screen", { exact: false })).toBeVisible();
-    await opsPage.getByRole("link", { name: /Ship the participant activity screen/ }).click();
-    await expect(opsPage.getByText("A polished accountability product for Nimiq builders")).toBeVisible();
-    await expect(opsPage.getByAltText("Optional participant evidence")).toBeVisible();
-    await opsPage.getByLabel("Review note").fill(
-      "The public pull request visibly completes the participant activity task."
-    );
-    await opsPage.getByRole("button", { name: "Approve occurrence" }).click();
-    await expect(opsPage.getByText("Queue clear")).toBeVisible();
-
-    await memberPage.reload();
-    await expect(memberPage.getByRole("heading", { name: "Occurrence completed." })).toBeVisible();
-    await memberPage.goto(`${baseUrl}/today`);
-    await expect(memberPage.getByRole("heading", { name: "Your visible work counted." })).toBeVisible();
-    await memberPage.goto(`${baseUrl}/inbox`);
-    await expect(memberPage.getByText("Occurrence approved")).toBeVisible();
-    await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/feed`);
-    await expect(memberPage.getByText("manually approved", { exact: false })).toBeVisible();
-    await expect(memberPage.locator("main")).not.toContainText(memberWallet);
   } finally {
     await memberContext.close();
     await peerContext.close();
-    await opsContext.close();
   }
 });

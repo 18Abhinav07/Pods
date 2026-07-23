@@ -9,7 +9,7 @@ import {
 function safeOpsReturnTarget(value: unknown) {
   return typeof value === "string" && value.startsWith("/ops/") && !value.startsWith("//")
     ? value
-    : "/ops/reviews";
+    : "/ops/public-safety";
 }
 
 export async function POST(request: Request) {

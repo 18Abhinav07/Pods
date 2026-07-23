@@ -20,7 +20,6 @@ export default async function PublicSafetyPage() {
           pods
         </Link>
         <nav aria-label="Operations">
-          <Link href="/ops/reviews">Reviews</Link>
           <Link aria-current="page" href="/ops/public-safety">Public safety</Link>
         </nav>
       </header>

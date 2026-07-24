@@ -1,4 +1,4 @@
-import type { BuildDeliverableType, SubmissionState } from "@pods/domain";
+import type { SubmissionState } from "@pods/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,17 +9,7 @@ import { formatZonedMoment } from "../../../../../../lib/format-moment";
 import { isUuidRouteParam } from "../../../../../../lib/route-params";
 import { podsRepository } from "../../../../../../lib/server-db";
 import { requireSession } from "../../../../../../lib/session";
-
-function deliverableLabel(value: BuildDeliverableType | null) {
-  if (!value) return "Activity evidence";
-  const labels: Record<BuildDeliverableType, string> = {
-    pull_request: "GitHub pull request",
-    commit: "GitHub commit",
-    issue: "GitHub issue",
-    live_artifact: "Live artifact"
-  };
-  return labels[value];
-}
+import { presentTemplateEvidence } from "../../../../../../lib/template-evidence-presentation";
 
 function submissionStatusLabel(value: SubmissionState) {
   const labels: Record<SubmissionState, string> = {
@@ -69,6 +59,19 @@ export default async function CreatorReviewWorkspacePage({
       })
     : "Not available";
   const terminal = submission.state !== "reviewing";
+  const evidence = presentTemplateEvidence({
+    templateId: contract.templateId,
+    frozenConfig: contract.activity.config,
+    commitment: {
+      task: commitment.task,
+      deliverableType: commitment.deliverableType
+    },
+    templateEvidence: submission.templateEvidence,
+    legacySubmission: {
+      resultSummary: submission.resultSummary,
+      artifactUrl: submission.artifactUrl
+    }
+  });
 
   return (
     <main className="app-shell admin-shell creator-review-shell">
@@ -95,26 +98,49 @@ export default async function CreatorReviewWorkspacePage({
       </section>
 
       <section className="review-contract-card">
+        <header>
+          <span>{evidence.templateName}</span>
+          <strong>Frozen Pod rule</strong>
+        </header>
+        {evidence.frozenCriterion.map((item) => (
+          <div key={`criterion-${item.label}`}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+          </div>
+        ))}
+      </section>
+
+      <section className="review-contract-card">
+        <header>
+          <span>Participant report</span>
+          <strong>Evidence for this occurrence</strong>
+        </header>
+        {evidence.evidenceRows.map((item) => (
+          <div key={`evidence-${item.label}`}>
+            <span>{item.label}</span>
+            <p>{item.value}</p>
+          </div>
+        ))}
         <div>
-          <span>Locked task</span>
-          <strong>{commitment.task}</strong>
+          <span>Image evidence</span>
+          <strong>
+            {submission.evidenceObjectKey
+              ? "Attached for creator review"
+              : evidence.imageRequired
+                ? "Required image unavailable"
+                : "Optional for this activity"}
+          </strong>
         </div>
-        <div>
-          <span>Deliverable type</span>
-          <strong>{deliverableLabel(commitment.deliverableType)}</strong>
-        </div>
-        <div>
-          <span>Result summary</span>
-          <p>{submission.resultSummary}</p>
-        </div>
-        <a
-          className="submission-artifact-link"
-          href={submission.artifactUrl}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Open public artifact <span aria-hidden="true">↗</span>
-        </a>
+        {evidence.artifact ? (
+          <a
+            className="submission-artifact-link"
+            href={evidence.artifact.href}
+            rel="noreferrer"
+            target="_blank"
+          >
+            {evidence.artifact.label} <span aria-hidden="true">↗</span>
+          </a>
+        ) : null}
       </section>
 
       {submission.evidenceObjectKey ? (

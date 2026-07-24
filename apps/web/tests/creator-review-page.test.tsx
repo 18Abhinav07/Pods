@@ -62,9 +62,13 @@ const workspaceRecord = {
     id: podId,
     creatorUserId: "secret-creator-user-id",
     contractData: {
+      templateId: "build",
       activity: {
         name: "Pods in Pods",
-        timeZone: "Asia/Kolkata"
+        timeZone: "Asia/Kolkata",
+        config: {
+          projectTheme: "Build Pods in public"
+        }
       }
     }
   },
@@ -168,6 +172,8 @@ describe("creator proof review pages", () => {
     expect(screen.getByText("@pods-builder")).toBeVisible();
     expect(screen.getByText("Ship the creator review flow")).toBeVisible();
     expect(screen.getByText("GitHub pull request")).toBeVisible();
+    expect(screen.getByText("Frozen Pod rule")).toBeVisible();
+    expect(screen.getByText("Build Pods in public")).toBeVisible();
     expect(screen.getByText(
       "Shipped the creator proof queue and final decision workspace."
     )).toBeVisible();
@@ -198,6 +204,54 @@ describe("creator proof review pages", () => {
     expect(html).not.toContain("secret-membership-id");
     expect(html).not.toContain("secret-user-id");
     expect(html).not.toContain("NQ00 SECRET WALLET");
+  });
+
+  it("renders exact Reading evidence beside its frozen target", async () => {
+    repository.getReviewSubmissionForCreator.mockResolvedValue({
+      ...workspaceRecord,
+      commitment: {
+        task: "Read 20 pages of the selected book",
+        deliverableType: null
+      },
+      submission: {
+        ...workspaceRecord.submission,
+        templateEvidence: {
+          kind: "reading",
+          title: "The Design of Everyday Things",
+          amountCompleted: 12,
+          unit: "pages",
+          note: "Finished the chapter on discoverability."
+        }
+      },
+      pod: {
+        ...workspaceRecord.pod,
+        contractData: {
+          ...workspaceRecord.pod.contractData,
+          templateId: "reading",
+          activity: {
+            ...workspaceRecord.pod.contractData.activity,
+            config: {
+              bookOrTheme: "The Design of Everyday Things",
+              targetAmount: 20,
+              targetType: "pages"
+            }
+          }
+        }
+      }
+    });
+
+    render(await CreatorReviewWorkspacePage({
+      params: Promise.resolve({ podId, submissionId })
+    }));
+
+    expect(screen.getByText("Reading", { exact: true })).toBeVisible();
+    expect(screen.getByText("20 pages")).toBeVisible();
+    expect(screen.getByText("12 pages")).toBeVisible();
+    expect(screen.getByText("Finished the chapter on discoverability."))
+      .toBeVisible();
+    expect(screen.getByText("Attached for creator review")).toBeVisible();
+    expect(screen.queryByRole("link", { name: /artifact/i }))
+      .not.toBeInTheDocument();
   });
 
   it("validates both workspace ids before repository access", async () => {

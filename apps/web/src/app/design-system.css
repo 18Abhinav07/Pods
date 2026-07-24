@@ -5137,6 +5137,145 @@ body {
   to { opacity: 1; transform: scale(1.015); }
 }
 
+.transfer-ops-shell .app-topbar nav {
+  display: flex;
+  gap: 14px;
+}
+
+.transfer-ops-shell .app-topbar nav a {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.transfer-ops-shell .app-topbar nav a[aria-current="page"] {
+  color: var(--color-ink);
+}
+
+.transfer-ops-filters {
+  display: flex;
+  gap: 8px;
+  padding: 0 0 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.transfer-ops-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.transfer-ops-filters a {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 11px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+  background: var(--color-paper);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.transfer-ops-filters a[aria-current="page"] {
+  border-color: var(--color-ink);
+  color: var(--color-paper);
+  background: var(--color-ink);
+}
+
+.transfer-ops-queue {
+  display: grid;
+  gap: 24px;
+}
+
+.transfer-ops-queue > article {
+  display: grid;
+  gap: 12px;
+  padding: 20px 0 28px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.transfer-ops-queue > article > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--color-muted);
+  font: 700 10px/1.3 var(--font-mono);
+  text-transform: uppercase;
+}
+
+.transfer-ops-queue h2,
+.transfer-ops-queue p {
+  margin: 0;
+}
+
+.transfer-ops-queue h2 {
+  font-size: 24px;
+}
+
+.transfer-ops-queue > article > p {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.transfer-ops-queue dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.transfer-ops-queue dl > div {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 9px;
+}
+
+.transfer-ops-queue dt {
+  color: var(--color-muted);
+  font-size: 10px;
+}
+
+.transfer-ops-queue dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font: 700 10px/1.45 var(--font-mono);
+}
+
+.payout-retry-controls {
+  display: grid;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.payout-retry-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.payout-retry-controls textarea {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  resize: vertical;
+}
+
+.transfer-ops-lock {
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 /* Public safety operations stay dense, reversible, and visibly separate from finance */
 .public-safety-shell .app-topbar nav {
   display: flex;

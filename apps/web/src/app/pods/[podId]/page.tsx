@@ -40,6 +40,7 @@ export default async function PublicPodPage({
   const presentation = presentPodRelationship({
     podId: pod.id,
     podState: pod.state as Exclude<PodState, "draft">,
+    settlementMode: pod.contractData.settlementMode,
     relationship
   });
   const contract = pod.contractData;

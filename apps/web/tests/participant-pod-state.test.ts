@@ -113,4 +113,28 @@ describe("participant Pod relationship presentation", () => {
       todayPriority: null
     });
   });
+
+  it("routes proportional final review and completion to the canonical settlement", () => {
+    expect(presentCreatorPodState({
+      podId: "pod-1",
+      state: "final_review",
+      settlementMode: "proportional"
+    })).toMatchObject({
+      actionLabel: "View settlement",
+      href: "/pods/pod-1/settlement"
+    });
+    expect(presentPodRelationship({
+      podId: "pod-1",
+      podState: "completed",
+      settlementMode: "proportional",
+      relationship: {
+        kind: "member",
+        state: "active",
+        depositIntentId: "intent-1"
+      }
+    })).toMatchObject({
+      actionLabel: "View settlement",
+      href: "/pods/pod-1/settlement"
+    });
+  });
 });

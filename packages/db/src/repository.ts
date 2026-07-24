@@ -20,6 +20,7 @@ import { createInboxMethods } from "./inbox-repository";
 import { createProfileMethods } from "./profile-repository";
 import { createPublicRoomMethods } from "./public-room-repository";
 import { createPublicSafetyMethods } from "./public-safety-repository";
+import { createSettlementMethods } from "./settlement-repository";
 import { createSocialMethods } from "./social-repository";
 import { createMessagingMethods } from "./messaging-repository";
 import { createClockMethods } from "./clock-repository";
@@ -73,6 +74,7 @@ export function createPodsRepository(connectionString: string) {
     ...createProfileMethods(database),
     ...createPublicRoomMethods(database),
     ...createPublicSafetyMethods(database),
+    ...createSettlementMethods(database),
     ...createSocialMethods(database),
     ...createMessagingMethods(database),
     ...createCutoffMethods(database),

@@ -4,6 +4,7 @@ export interface TransferDraft {
   recipient: string;
   valueLuna: bigint;
   network: TransferNetwork;
+  dataReference?: string;
 }
 
 export interface SignedTransfer {

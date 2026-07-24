@@ -13,6 +13,8 @@ import { treasuryConfigurationPath } from "./preflight/paths.js";
 import { readTreasuryConfiguration } from "./preflight/treasury-config.js";
 import { runOccurrenceCycle } from "./activity/run-occurrence-cycle.js";
 import { runReviewTimeoutCycle } from "./activity/run-review-timeout-cycle.js";
+import { runSettlementCycle } from "./settlement/run-settlement-cycle.js";
+import { runPayoutCycle } from "./settlement/payout-service.js";
 import {
   startWorkerHealthServer,
   type WorkerHealthState
@@ -158,6 +160,38 @@ export async function startFundingWorker() {
       console.error(
         `[review-timeout-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
       );
+    }
+    if (configuration.capabilities.settlement) {
+      try {
+        await runSettlementCycle({
+          repository,
+          onError(podId, error) {
+            cycleFailed = true;
+            console.error(`[settlement-cycle:${podId}] ${error.message}`);
+          }
+        });
+      } catch (error) {
+        cycleFailed = true;
+        console.error(
+          `[settlement-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+        );
+      }
+      try {
+        await runPayoutCycle({
+          repository,
+          signer,
+          rpc: transferRpc,
+          onError(error, leg) {
+            cycleFailed = true;
+            console.error(`[payout-cycle:${leg.id}] ${error.message}`);
+          }
+        });
+      } catch (error) {
+        cycleFailed = true;
+        console.error(
+          `[payout-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+        );
+      }
     }
     const refundsEnabled =
       !configuration.alphaMode || configuration.capabilities.alphaRefund;

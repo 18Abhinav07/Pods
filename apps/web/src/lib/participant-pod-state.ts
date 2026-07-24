@@ -1,4 +1,8 @@
-import type { MembershipState, PodState } from "@pods/domain";
+import type {
+  MembershipState,
+  PodState,
+  SettlementMode
+} from "@pods/domain";
 
 export type PodRelationship =
   | { kind: "visitor" }
@@ -36,6 +40,7 @@ export type CreatorPodPresentation = {
 export function presentCreatorPodState(input: {
   podId: string;
   state: Exclude<PodState, "draft">;
+  settlementMode?: SettlementMode;
 }): CreatorPodPresentation {
   if (input.state === "enrollment_open") {
     return {
@@ -93,22 +98,32 @@ export function presentCreatorPodState(input: {
     };
   }
   if (input.state === "final_review") {
+    const proportional = input.settlementMode === "proportional";
     return {
       statusLabel: "Final review",
-      statusDetail: "The room is archived while final decisions complete",
-      actionLabel: "Open archived room",
-      href: `/pods/${input.podId}/room`,
+      statusDetail: proportional
+        ? "Frozen outcomes are ready for settlement"
+        : "The room is archived while final decisions complete",
+      actionLabel: proportional ? "View settlement" : "Open archived room",
+      href: proportional
+        ? `/pods/${input.podId}/settlement`
+        : `/pods/${input.podId}/room`,
       todayEyebrow: "Final review",
       todayTitle: "The activity record is in final review.",
       todayDetail: "Open the archived room to follow the remaining review outcomes."
     };
   }
   if (input.state === "completed") {
+    const proportional = input.settlementMode === "proportional";
     return {
       statusLabel: "Completed",
-      statusDetail: "The public activity record is archived",
-      actionLabel: "View Pod archive",
-      href: `/pods/${input.podId}/room`,
+      statusDetail: proportional
+        ? "Settlement and Testnet transfers are complete"
+        : "The public activity record is archived",
+      actionLabel: proportional ? "View settlement" : "View Pod archive",
+      href: proportional
+        ? `/pods/${input.podId}/settlement`
+        : `/pods/${input.podId}/room`,
       todayEyebrow: "Pod completed",
       todayTitle: "This activity is complete.",
       todayDetail: "The room, public proof record, and frozen contract remain available."
@@ -309,6 +324,7 @@ function memberHref(input: {
 export function presentPodRelationship(input: {
   podId: string;
   podState?: Exclude<PodState, "draft"> | undefined;
+  settlementMode?: SettlementMode;
   relationship: PodRelationship;
 }): PodRelationshipPresentation {
   if (input.relationship.kind === "visitor") {
@@ -329,7 +345,10 @@ export function presentPodRelationship(input: {
     if (input.podState) {
       const presentation = presentCreatorPodState({
         podId: input.podId,
-        state: input.podState
+        state: input.podState,
+        ...(input.settlementMode
+          ? { settlementMode: input.settlementMode }
+          : {})
       });
       return {
         ...presentation,
@@ -359,11 +378,16 @@ export function presentPodRelationship(input: {
     (input.relationship.state === "roster_locked" || input.relationship.state === "active") &&
     input.podState === "final_review"
   ) {
+    const proportional = input.settlementMode === "proportional";
     return {
       statusLabel: "Final review",
-      statusDetail: "The room is archived while final decisions complete",
-      actionLabel: "Open archived room",
-      href: `/pods/${input.podId}/room`,
+      statusDetail: proportional
+        ? "Frozen outcomes are being settled"
+        : "The room is archived while final decisions complete",
+      actionLabel: proportional ? "View settlement" : "Open archived room",
+      href: proportional
+        ? `/pods/${input.podId}/settlement`
+        : `/pods/${input.podId}/room`,
       tone: "pending",
       todayPriority: null,
       todayEyebrow: "Final review",
@@ -376,11 +400,16 @@ export function presentPodRelationship(input: {
     (input.relationship.state === "roster_locked" || input.relationship.state === "active") &&
     input.podState === "completed"
   ) {
+    const proportional = input.settlementMode === "proportional";
     return {
       statusLabel: "Completed",
-      statusDetail: "The public activity record is archived",
-      actionLabel: "View Pod archive",
-      href: `/pods/${input.podId}/room`,
+      statusDetail: proportional
+        ? "Settlement and Testnet transfer are complete"
+        : "The public activity record is archived",
+      actionLabel: proportional ? "View settlement" : "View Pod archive",
+      href: proportional
+        ? `/pods/${input.podId}/settlement`
+        : `/pods/${input.podId}/room`,
       tone: "closed",
       todayPriority: null,
       todayEyebrow: "Pod completed",

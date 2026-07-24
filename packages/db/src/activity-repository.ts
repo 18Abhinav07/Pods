@@ -154,12 +154,15 @@ export function createActivityMethods(database: PodsDatabase) {
         }
 
         const finalReviewPods = await transaction
-          .select({ id: pods.id })
+          .select({ id: pods.id, contractData: pods.contractData })
           .from(pods)
           .where(eq(pods.state, "final_review"))
           .for("update");
         const completedPodIds: string[] = [];
         for (const candidate of finalReviewPods) {
+          if (candidate.contractData?.settlementMode !== "full_refund_alpha") {
+            continue;
+          }
           const [pending] = await transaction
             .select({ id: submissions.id })
             .from(submissions)

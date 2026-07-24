@@ -65,11 +65,23 @@ function nullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
 }
 
-export async function createDepositIntent(podId: string, fetcher: Fetcher = fetch) {
+export async function createDepositIntent(
+  podId: string,
+  acceptance: {
+    contractHash: string;
+    settlementDisclosureAccepted: boolean;
+  },
+  fetcher: Fetcher = fetch
+) {
   return readResponse(
     await fetcher(`/api/pods/${podId}/deposit-intents`, {
       method: "POST",
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        acceptedContractHash: acceptance.contractHash,
+        settlementDisclosureAccepted:
+          acceptance.settlementDisclosureAccepted
+      })
     })
   );
 }

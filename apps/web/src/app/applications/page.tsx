@@ -44,6 +44,9 @@ export default async function ApplicationsPage({
             const presentation = presentPodRelationship({
               podId: pod.id,
               podState: pod.state as Exclude<PodState, "draft">,
+              ...(pod.contractData?.settlementMode
+                ? { settlementMode: pod.contractData.settlementMode }
+                : {}),
               relationship: {
                 kind: "member",
                 state: membership?.state ?? application.state,

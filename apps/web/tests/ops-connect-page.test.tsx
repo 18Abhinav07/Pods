@@ -10,14 +10,14 @@ vi.mock("../src/components/ops-connect-form", () => ({
 import OpsConnectPage from "../src/app/ops/connect/page";
 
 describe("ops connect page", () => {
-  it("describes the remaining public-safety authority", async () => {
+  it("describes the combined internal operations authority", async () => {
     render(await OpsConnectPage({
       searchParams: Promise.resolve({})
     }));
 
-    expect(screen.getByRole("heading", { name: "Public safety." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Internal controls." })).toBeVisible();
     expect(screen.getByText(
-      "Handle public visitor reports without changing Pod membership, proof decisions, or money."
+      "Review public safety reports and recover Testnet payouts without changing frozen Pod outcomes."
     )).toBeVisible();
   });
 
@@ -31,5 +31,10 @@ describe("ops connect page", () => {
       searchParams: Promise.resolve({ returnTo: "/ops/public-safety" })
     }));
     expect(screen.getByTestId("return-target")).toHaveTextContent("/ops/public-safety");
+
+    rerender(await OpsConnectPage({
+      searchParams: Promise.resolve({ returnTo: "/ops/transfers" })
+    }));
+    expect(screen.getByTestId("return-target")).toHaveTextContent("/ops/transfers");
   });
 });

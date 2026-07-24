@@ -21,6 +21,7 @@ export default async function PublicSafetyPage() {
         </Link>
         <nav aria-label="Operations">
           <Link aria-current="page" href="/ops/public-safety">Public safety</Link>
+          <Link href="/ops/transfers">Transfers</Link>
         </nav>
       </header>
       <section className="today-hero entrance entrance-hero">

@@ -8,6 +8,17 @@ export type SettlementOccurrenceState =
   | "closed"
   | "closed_no_bonus_recipient";
 
+export type SettlementRunState =
+  | "executing"
+  | "settled"
+  | "manual_review";
+
+export type SettlementEntitlementState =
+  | "transfer_queued"
+  | "no_transfer_required"
+  | "transfer_confirmed"
+  | "manual_review";
+
 export interface SettlementMemberInput {
   membershipId: string;
   depositLuna: number;

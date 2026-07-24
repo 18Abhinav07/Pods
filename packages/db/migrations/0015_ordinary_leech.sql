@@ -1,0 +1,1 @@
+ALTER TABLE "transfer_events" ADD CONSTRAINT "transfer_events_transfer_attempt_id_transfer_attempts_id_fk" FOREIGN KEY ("transfer_attempt_id") REFERENCES "public"."transfer_attempts"("id") ON DELETE restrict ON UPDATE no action;

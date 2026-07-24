@@ -39,14 +39,30 @@ export class NimiqTransferSigner implements TransferSigner {
     }
 
     const validityStartHeight = await this.getBlockNumber();
-    const transaction = TransactionBuilder.newBasic(
-      this.keyPair.toAddress(),
-      Address.fromString(draft.recipient),
-      draft.valueLuna,
-      0n,
-      validityStartHeight,
-      TESTNET_NETWORK_ID
-    );
+    const data = draft.dataReference
+      ? new TextEncoder().encode(draft.dataReference)
+      : undefined;
+    if (data && data.length > 64) {
+      throw new Error("Transfer data reference must not exceed 64 UTF-8 bytes");
+    }
+    const transaction = data
+      ? TransactionBuilder.newBasicWithData(
+          this.keyPair.toAddress(),
+          Address.fromString(draft.recipient),
+          data,
+          draft.valueLuna,
+          0n,
+          validityStartHeight,
+          TESTNET_NETWORK_ID
+        )
+      : TransactionBuilder.newBasic(
+          this.keyPair.toAddress(),
+          Address.fromString(draft.recipient),
+          draft.valueLuna,
+          0n,
+          validityStartHeight,
+          TESTNET_NETWORK_ID
+        );
     transaction.sign(this.keyPair, undefined);
     transaction.verify(TESTNET_NETWORK_ID);
 

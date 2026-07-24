@@ -19,7 +19,10 @@ function ownerItem(pod: Awaited<ReturnType<typeof podsRepository.listPodsForOwne
     ? null
     : presentCreatorPodState({
         podId: pod.id,
-        state: pod.state as Exclude<PodState, "draft">
+        state: pod.state as Exclude<PodState, "draft">,
+        ...(pod.contractData?.settlementMode
+          ? { settlementMode: pod.contractData.settlementMode }
+          : {})
       });
   return {
     id: pod.id,
@@ -45,6 +48,9 @@ export default async function MyPodsPage() {
     const presentation = presentPodRelationship({
       podId: pod.id,
       podState: pod.state as Exclude<PodState, "draft">,
+      ...(pod.contractData?.settlementMode
+        ? { settlementMode: pod.contractData.settlementMode }
+        : {}),
       relationship: {
         kind: "member",
         state: membership.state,

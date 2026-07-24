@@ -43,7 +43,27 @@ export type DepositExceptionCode =
 export type LedgerMovementType =
   | "deposit_credit"
   | "refund_entitlement"
-  | "refund_confirmed";
+  | "refund_confirmed"
+  | "principal_allocation"
+  | "principal_protection"
+  | "provisional_forfeiture"
+  | "bonus_entitlement"
+  | "zero_recipient_restoration"
+  | "payout_confirmed";
+
+export type TransferLegType = "refund" | "payout";
+
+export type TransferAttemptState =
+  | "prepared"
+  | "broadcast"
+  | "unknown"
+  | "retryable_failed"
+  | "mismatched"
+  | "late"
+  | "confirmed"
+  | "manual_review";
+
+export type TransferEventActor = "worker" | "operations";
 
 export type TransferLegState =
   | "queued"

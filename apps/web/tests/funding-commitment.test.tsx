@@ -29,6 +29,7 @@ vi.mock("../src/lib/nimiq-wallet-client", () => ({
 
 const props = {
   podId: "pod-1",
+  contractHash: "contract-hash-1",
   activityName: "Ship Pods in public",
   templateName: "Build & Ship",
   occurrenceCount: 5,
@@ -108,7 +109,10 @@ describe("FundingCommitment", () => {
     await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
 
-    expect(createDepositIntent).toHaveBeenCalledWith("pod-1");
+    expect(createDepositIntent).toHaveBeenCalledWith("pod-1", {
+      contractHash: "contract-hash-1",
+      settlementDisclosureAccepted: true
+    });
     expect(recordDepositWalletAttempt).toHaveBeenCalledWith("intent-1", "open");
     expect(sendNimCommitment).toHaveBeenCalledWith({
       recipient: "NQ41 ENPQ 41CH URE0 BQ41 N6XJ RUFN JPE7 4U0A",

@@ -47,13 +47,10 @@ export function alphaFundingPolicy(environment: Environment) {
   if (environment.NIMIQ_NETWORK !== "testnet") {
     throw new Error("The Phase 4 funding contract requires Nimiq Testnet");
   }
-  if (environment.APP_ENV === "alpha") {
-    const capabilities = parseAlphaCapabilities(environment);
-    if (capabilities.depositMode !== "allowlist_refund_only") {
-      throw new Error("Alpha deposits must use the refund-only mode");
-    }
+  const capabilities = parseAlphaCapabilities(environment);
+  if (capabilities.depositMode === "public") {
     return {
-      settlementMode: "full_refund_alpha" as const
+      settlementMode: "proportional" as const
     };
   }
   return {

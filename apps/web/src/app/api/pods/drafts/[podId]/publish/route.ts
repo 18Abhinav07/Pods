@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 
 import { podsRepository } from "../../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../../lib/session";
+import { alphaFundingPolicy } from "../../../../../../lib/alpha-access";
 
 export async function POST(
   request: Request,
@@ -29,7 +30,7 @@ export async function POST(
     activity,
     community,
     commitment
-  });
+  }, alphaFundingPolicy(process.env));
   if (!result.success) return NextResponse.json({ errors: result.errors }, { status: 400 });
   const timing = validatePublicationTiming(result.occurrences, new Date());
   if (!timing.success) return NextResponse.json({ errors: timing.errors }, { status: 400 });

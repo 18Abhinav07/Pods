@@ -11,7 +11,7 @@ export default async function FundingHandoffPage({ params }: { params: Promise<{
   const { podId } = await params;
   const session = await requireSession(`/pods/${podId}/fund`);
   const pod = await podsRepository.getPodForAcceptedMember(session.userId, podId);
-  if (!pod?.contractData || pod.state !== "enrollment_open") notFound();
+  if (!pod?.contractData || !pod.contractHash || pod.state !== "enrollment_open") notFound();
   const contract = pod.contractData;
   const template = templateContracts.find((item) => item.id === contract.templateId);
   const depositsEnabled = alphaDepositsEnabled(process.env);
@@ -23,6 +23,7 @@ export default async function FundingHandoffPage({ params }: { params: Promise<{
       {depositsEnabled ? (
         <FundingCommitment
           activityName={contract.activity.name}
+          contractHash={pod.contractHash}
           lunaPerOccurrence={contract.commitment.lunaPerOccurrence}
           occurrenceCount={contract.commitment.occurrenceCount}
           podId={pod.id}

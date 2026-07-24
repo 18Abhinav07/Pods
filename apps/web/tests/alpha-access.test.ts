@@ -64,4 +64,24 @@ describe("alpha access enforcement", () => {
       settlementMode: "full_refund_alpha"
     });
   });
+
+  it("projects proportional settlement only for settlement-enabled public deposits", () => {
+    expect(alphaFundingPolicy({
+      APP_ENV: "alpha",
+      NIMIQ_NETWORK: "testnet",
+      PODS_DEPOSIT_MODE: "public",
+      PODS_SETTLEMENT_ENABLED: "true"
+    })).toEqual({
+      settlementMode: "proportional"
+    });
+
+    expect(() =>
+      alphaFundingPolicy({
+        APP_ENV: "alpha",
+        NIMIQ_NETWORK: "testnet",
+        PODS_DEPOSIT_MODE: "public",
+        PODS_SETTLEMENT_ENABLED: "false"
+      })
+    ).toThrow("Public deposits require settlement to be enabled");
+  });
 });

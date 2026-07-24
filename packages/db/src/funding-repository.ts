@@ -41,6 +41,8 @@ export function createFundingMethods(database: PodsDatabase) {
       treasuryAddress: string;
       network: FundingNetwork;
       reference: string;
+      acceptedContractHash?: string;
+      settlementDisclosureAccepted?: boolean;
       now: Date;
     }) {
       return database.transaction(async (transaction) => {
@@ -63,6 +65,16 @@ export function createFundingMethods(database: PodsDatabase) {
           .for("update");
         if (!pod?.contractData || pod.state !== "enrollment_open") {
           throw new Error("Pod is not accepting deposits");
+        }
+        const proportional = pod.contractData.settlementMode === "proportional";
+        if (
+          proportional &&
+          (
+            input.acceptedContractHash !== pod.contractHash ||
+            input.settlementDisclosureAccepted !== true
+          )
+        ) {
+          throw new Error("Accept the current frozen Pod contract before funding");
         }
         if (
           isPublicVisitorContract(pod.contractData) &&
@@ -122,6 +134,9 @@ export function createFundingMethods(database: PodsDatabase) {
           .set({
             depositIntentId: intent.id,
             state: "deposit_pending",
+            acceptedContractHash: proportional
+              ? pod.contractHash
+              : membership.acceptedContractHash,
             updatedAt: input.now
           })
           .where(and(eq(memberships.id, membership.id), eq(memberships.state, membership.state)))

@@ -12,8 +12,15 @@ import type {
   LedgerMovementType,
   MembershipState,
   PublishedPodContract,
+  SettlementEntitlementState,
+  SettlementOccurrenceState,
+  SettlementOutcomeState,
+  SettlementRunState,
   SubmissionState,
   TemplateId,
+  TransferAttemptState,
+  TransferEventActor,
+  TransferLegType,
   TransferLegState
 } from "@pods/domain";
 import type {
@@ -767,6 +774,141 @@ export const ledgerEntries = pgTable(
   ]
 );
 
+export const settlementRuns = pgTable(
+  "settlement_runs",
+  {
+    id: uuid("id").primaryKey(),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    contractHash: text("contract_hash").notNull(),
+    calculatorVersion: integer("calculator_version").notNull(),
+    inputDigest: text("input_digest").notNull(),
+    state: text("state").$type<SettlementRunState>().notNull(),
+    totalDepositLuna: bigint("total_deposit_luna", { mode: "number" }).notNull(),
+    totalPayoutLuna: bigint("total_payout_luna", { mode: "number" }).notNull(),
+    finalizedAt: timestamp("finalized_at", { withTimezone: true, mode: "date" }).notNull(),
+    settledAt: timestamp("settled_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("settlement_runs_pod_unique").on(table.podId),
+    index("settlement_runs_state_updated_idx").on(table.state, table.updatedAt)
+  ]
+);
+
+export const settlementOccurrences = pgTable(
+  "settlement_occurrences",
+  {
+    id: uuid("id").primaryKey(),
+    settlementRunId: uuid("settlement_run_id")
+      .notNull()
+      .references(() => settlementRuns.id, { onDelete: "cascade" }),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    occurrenceId: uuid("occurrence_id")
+      .notNull()
+      .references(() => occurrences.id, { onDelete: "restrict" }),
+    ordinal: integer("ordinal").notNull(),
+    state: text("state").$type<SettlementOccurrenceState>().notNull(),
+    forfeiturePoolLuna: bigint("forfeiture_pool_luna", { mode: "number" }).notNull(),
+    bonusRecipientCount: integer("bonus_recipient_count").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("settlement_occurrences_run_occurrence_unique").on(
+      table.settlementRunId,
+      table.occurrenceId
+    ),
+    index("settlement_occurrences_pod_ordinal_idx").on(table.podId, table.ordinal)
+  ]
+);
+
+export const settlementOutcomes = pgTable(
+  "settlement_outcomes",
+  {
+    id: uuid("id").primaryKey(),
+    settlementRunId: uuid("settlement_run_id")
+      .notNull()
+      .references(() => settlementRuns.id, { onDelete: "cascade" }),
+    settlementOccurrenceId: uuid("settlement_occurrence_id")
+      .notNull()
+      .references(() => settlementOccurrences.id, { onDelete: "cascade" }),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    occurrenceId: uuid("occurrence_id")
+      .notNull()
+      .references(() => occurrences.id, { onDelete: "restrict" }),
+    membershipId: uuid("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "restrict" }),
+    depositIntentId: uuid("deposit_intent_id")
+      .notNull()
+      .references(() => depositIntents.id, { onDelete: "restrict" }),
+    sourceSubmissionId: uuid("source_submission_id"),
+    state: text("state").$type<SettlementOutcomeState>().notNull(),
+    principalLuna: bigint("principal_luna", { mode: "number" }).notNull(),
+    provisionalForfeitureLuna: bigint("provisional_forfeiture_luna", {
+      mode: "number"
+    }).notNull(),
+    restorationLuna: bigint("restoration_luna", { mode: "number" }).notNull(),
+    bonusLuna: bigint("bonus_luna", { mode: "number" }).notNull(),
+    payoutLuna: bigint("payout_luna", { mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("settlement_outcomes_run_occurrence_membership_unique").on(
+      table.settlementRunId,
+      table.occurrenceId,
+      table.membershipId
+    ),
+    index("settlement_outcomes_membership_idx").on(
+      table.membershipId,
+      table.createdAt
+    )
+  ]
+);
+
+export const settlementEntitlements = pgTable(
+  "settlement_entitlements",
+  {
+    id: uuid("id").primaryKey(),
+    settlementRunId: uuid("settlement_run_id")
+      .notNull()
+      .references(() => settlementRuns.id, { onDelete: "cascade" }),
+    podId: uuid("pod_id")
+      .notNull()
+      .references(() => pods.id, { onDelete: "cascade" }),
+    membershipId: uuid("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "restrict" }),
+    depositIntentId: uuid("deposit_intent_id")
+      .notNull()
+      .references(() => depositIntents.id, { onDelete: "restrict" }),
+    state: text("state").$type<SettlementEntitlementState>().notNull(),
+    depositLuna: bigint("deposit_luna", { mode: "number" }).notNull(),
+    principalLuna: bigint("principal_luna", { mode: "number" }).notNull(),
+    provisionalForfeitureLuna: bigint("provisional_forfeiture_luna", {
+      mode: "number"
+    }).notNull(),
+    restorationLuna: bigint("restoration_luna", { mode: "number" }).notNull(),
+    bonusLuna: bigint("bonus_luna", { mode: "number" }).notNull(),
+    payoutLuna: bigint("payout_luna", { mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("settlement_entitlements_run_membership_unique").on(
+      table.settlementRunId,
+      table.membershipId
+    ),
+    index("settlement_entitlements_pod_state_idx").on(table.podId, table.state)
+  ]
+);
+
 export const clockEvents = pgTable(
   "clock_events",
   {
@@ -797,7 +939,11 @@ export const transferLegs = pgTable(
     depositIntentId: uuid("deposit_intent_id")
       .notNull()
       .references(() => depositIntents.id, { onDelete: "restrict" }),
-    type: text("type").$type<"refund">().notNull(),
+    settlementEntitlementId: uuid("settlement_entitlement_id").references(
+      () => settlementEntitlements.id,
+      { onDelete: "restrict" }
+    ),
+    type: text("type").$type<TransferLegType>().notNull(),
     recipientWallet: text("recipient_wallet").notNull(),
     amountLuna: bigint("amount_luna", { mode: "number" }).notNull(),
     network: text("network").$type<FundingNetwork>().notNull(),
@@ -816,7 +962,63 @@ export const transferLegs = pgTable(
   (table) => [
     uniqueIndex("transfer_legs_idempotency_unique").on(table.idempotencyKey),
     uniqueIndex("transfer_legs_transaction_hash_unique").on(table.transactionHash),
+    uniqueIndex("transfer_legs_settlement_entitlement_unique").on(
+      table.settlementEntitlementId
+    ),
     index("transfer_legs_pod_state_idx").on(table.podId, table.state),
     index("transfer_legs_membership_idx").on(table.membershipId, table.createdAt)
+  ]
+);
+
+export const transferAttempts = pgTable(
+  "transfer_attempts",
+  {
+    id: uuid("id").primaryKey(),
+    transferLegId: uuid("transfer_leg_id")
+      .notNull()
+      .references(() => transferLegs.id, { onDelete: "cascade" }),
+    sequence: integer("sequence").notNull(),
+    state: text("state").$type<TransferAttemptState>().notNull(),
+    dataReference: text("data_reference").notNull(),
+    rawTransactionHex: text("raw_transaction_hex").notNull(),
+    transactionHash: text("transaction_hash").notNull(),
+    validityStartHeight: integer("validity_start_height").notNull(),
+    preparedAt: timestamp("prepared_at", { withTimezone: true, mode: "date" }).notNull(),
+    broadcastAt: timestamp("broadcast_at", { withTimezone: true, mode: "date" }),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true, mode: "date" }),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true, mode: "date" }),
+    errorCode: text("error_code"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("transfer_attempts_leg_sequence_unique").on(
+      table.transferLegId,
+      table.sequence
+    ),
+    uniqueIndex("transfer_attempts_transaction_hash_unique").on(table.transactionHash),
+    index("transfer_attempts_state_updated_idx").on(table.state, table.updatedAt)
+  ]
+);
+
+export const transferEvents = pgTable(
+  "transfer_events",
+  {
+    id: uuid("id").primaryKey(),
+    transferLegId: uuid("transfer_leg_id")
+      .notNull()
+      .references(() => transferLegs.id, { onDelete: "cascade" }),
+    transferAttemptId: uuid("transfer_attempt_id").references(
+      () => transferAttempts.id,
+      { onDelete: "restrict" }
+    ),
+    actor: text("actor").$type<TransferEventActor>().notNull(),
+    fromState: text("from_state"),
+    toState: text("to_state").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    index("transfer_events_leg_created_idx").on(table.transferLegId, table.createdAt)
   ]
 );

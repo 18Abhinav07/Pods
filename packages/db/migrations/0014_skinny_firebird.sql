@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "transfer_legs_settlement_entitlement_unique" ON "transfer_legs" USING btree ("settlement_entitlement_id");

@@ -41,7 +41,10 @@ async function createUser() {
   return { ...session, walletAddress };
 }
 
-async function publishPublicPod(creatorUserId: string) {
+async function publishPublicPod(
+  creatorUserId: string,
+  settlementMode: "full_refund_alpha" | "proportional" = "full_refund_alpha"
+) {
   const draft = await repository.createDraft(creatorUserId, "build");
   const activity = {
     name: `Phase 3 Funding ${randomUUID()}`,
@@ -71,7 +74,7 @@ async function publishPublicPod(creatorUserId: string) {
     activity,
     community,
     commitment
-  });
+  }, { settlementMode });
   if (!frozen.success) throw new Error(frozen.errors.join(", "));
   return repository.publishDraft({
     creatorUserId,
@@ -100,10 +103,12 @@ async function acceptMember(podId: string, creatorUserId: string, userId: string
   return membership;
 }
 
-async function createAcceptedFixture() {
+async function createAcceptedFixture(
+  settlementMode: "full_refund_alpha" | "proportional" = "full_refund_alpha"
+) {
   const creator = await createUser();
   const member = await createUser();
-  const pod = await publishPublicPod(creator.userId);
+  const pod = await publishPublicPod(creator.userId, settlementMode);
   const membership = await acceptMember(pod.id, creator.userId, member.userId);
   return { creator, member, pod, membership };
 }
@@ -121,6 +126,39 @@ function intentInput(fixture: Awaited<ReturnType<typeof createAcceptedFixture>>,
 }
 
 describe("Phase 3 deposit persistence", () => {
+  it("requires the current contract hash and settlement disclosure before proportional funding", async () => {
+    const fixture = await createAcceptedFixture("proportional");
+    const input = intentInput(fixture, "pods-proportional-contract");
+
+    await expect(repository.createDepositIntent(input)).rejects.toThrow(
+      "Accept the current frozen Pod contract before funding"
+    );
+    await expect(
+      repository.createDepositIntent({
+        ...input,
+        acceptedContractHash: "stale-contract-hash",
+        settlementDisclosureAccepted: true
+      })
+    ).rejects.toThrow("Accept the current frozen Pod contract before funding");
+
+    const intent = await repository.createDepositIntent({
+      ...input,
+      acceptedContractHash: fixture.pod.contractHash!,
+      settlementDisclosureAccepted: true
+    });
+
+    expect(intent.state).toBe("intent_created");
+    expect(
+      await repository.getMembershipForUser(
+        fixture.member.userId,
+        fixture.pod.id
+      )
+    ).toMatchObject({
+      acceptedContractHash: fixture.pod.contractHash,
+      state: "deposit_pending"
+    });
+  });
+
   it("creates one exact open intent for an accepted membership", async () => {
     const fixture = await createAcceptedFixture();
     const input = intentInput(fixture, "pods-00112233445566778899aabb");

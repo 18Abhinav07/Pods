@@ -8,7 +8,7 @@ import { podsRepository } from "../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../lib/session";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ podId: string }> }
 ) {
   const session = await getCurrentSession();
@@ -21,6 +21,10 @@ export async function POST(
   }
   const { podId } = await params;
   try {
+    const body = (await request.json().catch(() => ({}))) as {
+      acceptedContractHash?: unknown;
+      settlementDisclosureAccepted?: unknown;
+    };
     const existing = await podsRepository.getOpenDepositIntentForUser(session.userId, podId);
     if (existing) {
       return NextResponse.json({ intent: participantDepositIntent(existing) });
@@ -34,6 +38,11 @@ export async function POST(
       treasuryAddress: configuration.treasuryAddress,
       network: configuration.network,
       reference: `pods-${randomBytes(12).toString("hex")}`,
+      ...(typeof body.acceptedContractHash === "string"
+        ? { acceptedContractHash: body.acceptedContractHash }
+        : {}),
+      settlementDisclosureAccepted:
+        body.settlementDisclosureAccepted === true,
       now: new Date()
     });
     return NextResponse.json({ intent: participantDepositIntent(intent) }, { status: 201 });

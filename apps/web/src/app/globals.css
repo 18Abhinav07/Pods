@@ -4078,3 +4078,212 @@ button.secondary-action {
     white-space: normal;
   }
 }
+
+/* Phase 5 settlement receipt */
+.settlement-shell {
+  min-height: 100svh;
+  padding-bottom: calc(36px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 82% 8%, rgba(208, 246, 99, 0.2), transparent 28%),
+    linear-gradient(180deg, #f7f8f0 0%, #f1f2e9 100%);
+}
+
+.settlement-hero {
+  padding: 42px 2px 28px;
+}
+
+.settlement-hero h1 {
+  max-width: 12ch;
+  margin: 8px 0 12px;
+  font-family: var(--font-display, "Instrument Serif", serif);
+  font-size: clamp(2.7rem, 11vw, 4.6rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
+}
+
+.settlement-hero > p:last-child {
+  max-width: 34rem;
+  margin: 0;
+  color: rgba(19, 25, 20, 0.63);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.settlement-summary,
+.settlement-pending {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(20, 28, 22, 0.1);
+  border-radius: 28px;
+  background: rgba(255, 255, 252, 0.82);
+  box-shadow: 0 24px 80px rgba(35, 44, 27, 0.09);
+  backdrop-filter: blur(18px);
+}
+
+.settlement-summary::before,
+.settlement-pending::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  content: "";
+}
+
+.settlement-balance {
+  padding: 26px 24px 24px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(210, 246, 100, 0.38), transparent 45%),
+    #182018;
+  color: #f8faee;
+}
+
+.settlement-balance > span,
+.settlement-transfer > span {
+  display: block;
+  margin-bottom: 9px;
+  color: rgba(248, 250, 238, 0.58);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.settlement-balance > strong {
+  display: block;
+  font-size: clamp(2.35rem, 10vw, 4rem);
+  font-weight: 650;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+}
+
+.settlement-balance > p {
+  margin: 12px 0 0;
+  color: rgba(248, 250, 238, 0.62);
+  font-size: 0.82rem;
+}
+
+.settlement-balance-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.settlement-balance-parts p {
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(248, 250, 238, 0.75);
+  font-size: 0.72rem;
+}
+
+.settlement-outcomes {
+  margin: 0;
+  padding: 8px 24px;
+  list-style: none;
+}
+
+.settlement-outcomes li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 14px;
+  padding: 17px 0;
+  border-bottom: 1px solid rgba(20, 28, 22, 0.08);
+}
+
+.settlement-outcomes li > span {
+  color: rgba(19, 25, 20, 0.48);
+  font-size: 0.76rem;
+}
+
+.settlement-outcomes li > strong {
+  grid-row: 2;
+  font-size: 0.92rem;
+}
+
+.settlement-outcomes li > small {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.settlement-transfer,
+.settlement-facts {
+  margin: 0 16px 16px;
+  padding: 18px;
+  border-radius: 20px;
+  background: #eef0e5;
+}
+
+.settlement-transfer > span {
+  color: rgba(19, 25, 20, 0.45);
+}
+
+.settlement-transfer > strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.settlement-transfer code {
+  display: block;
+  overflow: hidden;
+  margin-top: 10px;
+  color: rgba(19, 25, 20, 0.52);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settlement-facts {
+  display: grid;
+  gap: 0;
+}
+
+.settlement-facts p {
+  margin: 0;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(20, 28, 22, 0.08);
+  color: rgba(19, 25, 20, 0.7);
+  font-size: 0.84rem;
+}
+
+.settlement-facts p:last-child {
+  border-bottom: 0;
+}
+
+.settlement-pending {
+  padding: 28px 24px 24px;
+}
+
+.settlement-pending > span {
+  color: rgba(19, 25, 20, 0.48);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.settlement-pending h2 {
+  max-width: 15ch;
+  margin: 10px 0 12px;
+  font-size: 1.65rem;
+  letter-spacing: -0.04em;
+}
+
+.settlement-pending > p {
+  margin: 0 0 22px;
+  color: rgba(19, 25, 20, 0.58);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.settlement-finalize p {
+  margin: 10px 0 0;
+  color: #a02a2a;
+  font-size: 0.78rem;
+}

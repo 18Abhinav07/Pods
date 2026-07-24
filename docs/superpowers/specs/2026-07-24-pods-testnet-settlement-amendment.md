@@ -67,7 +67,8 @@ Settlement derives members only from:
 - the exact finalized amount in the frozen contract;
 - an existing `deposit_credit` ledger entry for that intent.
 
-The repository hard-fails and routes the Pod to operations review if:
+The repository hard-fails finalization and leaves the Pod in `final_review` for
+operations investigation if:
 
 - the creator appears in the roster;
 - a member, occurrence, finalized deposit, or outcome is duplicated, missing,
@@ -118,9 +119,9 @@ Settlement records balanced liability reclassification under deterministic
 idempotency keys:
 
 1. Existing deposit credit:
-   `treasury_asset:testnet -> participant_deposit_liability:<membership>`.
+   `treasury_asset:testnet -> participant_liability:<membership>`.
 2. Per-occurrence allocation:
-   `participant_deposit_liability:<membership> -> occurrence_liability:<occurrence>:<membership>`.
+   `participant_liability:<membership> -> occurrence_liability:<occurrence>:<membership>`.
 3. Protected or restored principal:
    `occurrence_liability:<occurrence>:<membership> -> payout_liability:<settlement>:<membership>`.
 4. Forfeiture:
@@ -159,9 +160,9 @@ Each positive payout leg owns immutable attempts.
 
 - Signed bytes, hash, validity start height, data reference, and preparation
   time are persisted before broadcast.
-- The payout data reference is an opaque deterministic digest of the payout leg
-  and attempt number. It prevents identical recipient and amount payouts from
-  producing the same transaction hash.
+- The payout data reference is a deterministic, participant-opaque reference
+  derived from the payout leg ID and attempt number. It prevents identical
+  recipient and amount payouts from producing the same transaction hash.
 - Unknown attempts are chain-checked and never blindly rebroadcast.
 - An absent transaction becomes `late` only after a fresh lookup still finds
   nothing and the current height is more than 7,200 blocks beyond the validity
@@ -169,8 +170,9 @@ Each positive payout leg owns immutable attempts.
   integration limit used for this Testnet MVP.
 - A replacement attempt can be created only after the prior attempt is
   terminal and independently proven absent or failed.
-- A successful transaction is confirmed only after matching hash, recipient,
-  amount, network, successful execution, and macro-block finality.
+- A successful transaction is confirmed only after the chain hash matches the
+  immutable signed attempt, which commits the recipient, amount, network, and
+  data reference, plus successful execution and macro-block finality.
 
 `unknown`, `retryable_failed`, `mismatched`, `late`, and `manual_review` are not
 successful payout resolutions.

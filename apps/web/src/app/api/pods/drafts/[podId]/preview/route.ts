@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { podsRepository } from "../../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../../lib/session";
+import { alphaFundingPolicy } from "../../../../../../lib/alpha-access";
 
 export async function GET(
   _request: Request,
@@ -22,7 +23,7 @@ export async function GET(
     activity,
     community,
     commitment
-  });
+  }, alphaFundingPolicy(process.env));
   if (!result.success) return NextResponse.json({ errors: result.errors }, { status: 400 });
   return NextResponse.json(result);
 }

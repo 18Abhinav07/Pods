@@ -1,85 +1,92 @@
 ---
 project: pods
-last-updated: 2026-07-24 01:39
+last-updated: 2026-07-24 06:00
 last-agent: codex
 mode: HACKATHON
 ---
 
+# Pods Handoff
+
+Related: [[validation/phase-5-results]] |
+[[docs/superpowers/plans/2026-07-24-pods-settlement-payout]] |
+[[docs/superpowers/specs/2026-07-24-pods-testnet-settlement-amendment]]
+
 ## State
 
-Creator-scoped proof review is implemented through the automated local gate.
-The Pod creator can approve or reject a submitted proof, the participant alone
-sees the private rejection reason, and a review that reaches its audited
-24-hour hard deadline becomes timeout-protected. The creator remains outside
-membership, deposits, ledger entitlements, refunds, and payouts.
+Phase 5 deterministic settlement and Testnet payout execution are implemented
+on the isolated `add/phase-settlement-payout` branch. The protected Phase 4
+baseline remains unchanged.
 
-The creator-review implementation is local only. It has not been pushed or
-deployed because the physical two-wallet Nimiq Pay gate is still pending.
+Existing `full_refund_alpha` contracts preserve their original full-return
+behavior. Newly published public-deposit contracts use proportional settlement
+only when the settlement capability is enabled.
 
-## Verified Automated Gate
+No push or Railway deployment has been performed.
 
-- Mobile Safari: approval, rejection/privacy, and timeout scenarios, 3 of 3.
-- Android Chromium: approval, rejection/privacy, and timeout scenarios, 3 of 3.
-- Full repository check:
-  - copy and ESLint passed
-  - all workspace typechecks passed
-  - 6 root tests passed
-  - 49 domain tests passed
-  - 3 UI tests passed
-  - 51 worker tests passed
-  - 350 web tests passed
-  - 67 integration tests passed
-  - web and worker production builds passed
-- Independent quality review approved after both findings were repaired.
+## Implemented
 
-## In Progress
+- Integer-Luna settlement calculator with conservation and deterministic
+  remainder assignment.
+- Immutable settlement runs, occurrence outcomes, member entitlements, ledger
+  reclassification, payout legs, payout attempts, and transfer events.
+- Approved, rejected, timeout-protected, missed, and zero-recipient-restoration
+  behavior.
+- Positive-only payout legs and terminal `no_transfer_required` zero
+  entitlements.
+- Persist-before-broadcast signing with a unique per-attempt data reference.
+- Hash-first chain reconciliation, execution and macro-block finality checks,
+  unknown isolation, expiry, and operations-authorized retry.
+- Creator-review trust disclosure and exact contract-hash consent before
+  proportional funding.
+- Participant settlement, creator conservation, readiness-only finalization,
+  transfer status, and operations recovery screens.
+- Safe completion event delivery through the Pod conversation.
 
-- Plan:
-  `docs/superpowers/plans/2026-07-23-pods-creator-review-mvp.md`
-- Tasks 1 through 6 are complete.
-- Task 7 steps 1 through 3 are complete.
-- LAN web: `http://192.168.29.244:3411`
-- Web readiness: ready for configuration, database, and evidence storage.
-- Worker readiness: ready with a healthy completed cycle.
-- Resume at Task 7 step 4: run the physical Nimiq Pay walkthrough with one
-  creator wallet and two participant wallets.
+## Verified gates
 
-## Physical Gate Still Required
+- Full `pnpm check`: PASS.
+- Copy and lint: PASS.
+- All workspace typechecks: PASS.
+- 491 root, package, worker, and web tests: PASS.
+- 83 PostgreSQL integration tests: PASS.
+- Web and worker production builds: PASS.
+- Mobile Safari settlement journey: PASS.
+- Android Chromium settlement journey: PASS.
+- Protected local Testnet treasury non-broadcast dry run: PASS.
+  - signer address matched configured treasury;
+  - validity start height `6816989`;
+  - two same-value drafts produced distinct hashes;
+  - broadcasts `0`.
 
-The minimum roster is two funded participants, while the creator is not a
-member. The complete gate therefore requires three Testnet wallet identities.
+Full evidence: `validation/phase-5-results.md`.
 
-1. Both participants apply, are accepted, fund, and reach roster lock.
-2. One participant locks the current occurrence commitment and submits proof.
-3. Creator sees the review action on Today and opens the creator review queue.
-4. Creator approves one proof and the participant sees the approved state.
-5. Creator rejects a second proof and only its owner sees the private reason.
-6. The other member and a public visitor see the safe status without private
-   evidence or the rejection reason.
-7. Advance time only through the audited Clock command and verify timeout
-   protection plus rejection of a late creator decision.
-8. Confirm the creator is never asked to fund and receives no member financial
-   entitlement.
+## Physical gate pending
 
-## Open Boundary
+Run one creator and two participant wallets through a proportional Testnet Pod:
 
-- Physical WebView behavior is not yet approved.
-- No push or Railway deployment is authorized before that approval.
-- Alpha settlement remains full-refund only. Reward settlement is not part of
-  this creator-review slice.
+1. Both participants fund and enter the locked roster.
+2. One occurrence is approved and one is rejected or missed.
+3. Finalize the conserved settlement.
+4. Run the worker and confirm the real low-value Testnet payout legs.
+5. Verify participant hashes and terminal settlement states after WebView
+   closure and reopen.
+6. Verify exact ledger conservation and zero creator entitlement.
 
-## Git State
+Do not mark Phase 5 physically approved before this matrix passes.
+
+## Runtime
 
 - Worktree: `/private/tmp/pods-phase-04a`
-- Branch: `phase/04a-social-alpha-foundation`
-- Current checkpoint commit:
-  `test: verify creator review mvp flow`
-- The Task 7 automated gate, room-state vocabulary repair, and empty read-body
-  handling are committed locally but have not been pushed.
+- Branch: `add/phase-settlement-payout`
+- LAN server: `http://192.168.29.244:3411`
+- Current LAN process uses explicit local-test access so disposable browser
+  wallets can authenticate.
+- Local Postgres migrations include `0013`, `0014`, and `0015`.
 
-## Next 3 Tasks
+## Next tasks
 
-1. Complete the three-wallet Nimiq Pay physical gate.
-2. Record its PASS or concrete failure in the plan and handoff.
-3. Receive explicit approval before push or
-   deployment.
+1. Complete the independent implementation reviews and repair any concrete
+   blocker.
+2. Commit the automated-green branch locally without pushing.
+3. Run and record the physical Nimiq Pay payout gate.
+4. Request explicit authorization before any push or deployment.

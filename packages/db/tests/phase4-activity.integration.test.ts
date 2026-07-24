@@ -194,6 +194,41 @@ async function inspectReviewRecords(submissionId: string) {
 }
 
 describe("Phase 4 Build and Ship persistence", () => {
+  it("keeps proportional Pods in final review until immutable settlement exists", async () => {
+    const fixture = await createLockedFixture(contract);
+    await repository.runOccurrenceTransitions(
+      new Date("2027-04-05T08:00:00.000Z")
+    );
+
+    const result = await repository.runOccurrenceTransitions(
+      new Date("2027-04-06T00:00:00.000Z")
+    );
+
+    expect(result.completedPods).toBe(0);
+    expect(
+      await repository.getPodForOwner(fixture.owner.userId, fixture.podId)
+    ).toMatchObject({ state: "final_review", completedAt: null });
+  });
+
+  it("retains automatic completion for immutable full-return alpha Pods", async () => {
+    const fixture = await createLockedFixture({
+      ...contract,
+      settlementMode: "full_refund_alpha"
+    });
+    await repository.runOccurrenceTransitions(
+      new Date("2027-04-05T08:00:00.000Z")
+    );
+
+    const result = await repository.runOccurrenceTransitions(
+      new Date("2027-04-06T00:00:00.000Z")
+    );
+
+    expect(result.completedPods).toBe(1);
+    expect(
+      await repository.getPodForOwner(fixture.owner.userId, fixture.podId)
+    ).toMatchObject({ state: "completed" });
+  });
+
   it("activates the Pod and roster when the first occurrence opens", async () => {
     const fixture = await createLockedFixture();
     const result = await repository.runOccurrenceTransitions(

@@ -34,10 +34,17 @@ describe("funding client", () => {
   it("creates a server-derived Pod deposit intent without sending money fields", async () => {
     const fetcher = vi.fn(async () => response({ intent }, 201));
 
-    await expect(createDepositIntent("pod-1", fetcher)).resolves.toEqual(intent);
+    await expect(createDepositIntent("pod-1", {
+      contractHash: "contract-hash-1",
+      settlementDisclosureAccepted: true
+    }, fetcher)).resolves.toEqual(intent);
     expect(fetcher).toHaveBeenCalledWith("/api/pods/pod-1/deposit-intents", {
       method: "POST",
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        acceptedContractHash: "contract-hash-1",
+        settlementDisclosureAccepted: true
+      })
     });
   });
 
@@ -91,7 +98,10 @@ describe("funding client", () => {
   it("rejects an incomplete server response instead of inventing transaction values", async () => {
     const fetcher = vi.fn(async () => response({ intent: { id: "intent-1" } }, 201));
 
-    await expect(createDepositIntent("pod-1", fetcher)).rejects.toThrow(
+    await expect(createDepositIntent("pod-1", {
+      contractHash: "contract-hash-1",
+      settlementDisclosureAccepted: true
+    }, fetcher)).rejects.toThrow(
       "Deposit intent response is incomplete"
     );
   });

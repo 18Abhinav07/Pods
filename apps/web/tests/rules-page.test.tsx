@@ -7,6 +7,7 @@ const pod = {
   contractHash: "a".repeat(64),
   contractData: {
     templateId: "build",
+    settlementMode: "proportional",
     activity: {
       name: "Ship together",
       purpose: "Complete one visible build commitment each occurrence.",
@@ -45,7 +46,7 @@ describe("RulesPage", () => {
       .toHaveAttribute("href", "/pods/pod-1/room");
     expect(screen.getByText("Creator review")).toBeVisible();
     expect(screen.getByText(
-      "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
+      "The Pod creator reviews member proofs. Approval and rejection can change how member stakes are redistributed. The creator does not fund this Pod or receive member funds. This Testnet MVP has no appeal or peer vote. Fund only if you trust the creator and accept these frozen rules."
     )).toBeVisible();
     expect(screen.queryByText("Review funding handoff")).not.toBeInTheDocument();
   });

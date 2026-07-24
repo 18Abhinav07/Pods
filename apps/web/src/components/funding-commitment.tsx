@@ -20,13 +20,13 @@ function nim(luna: number) {
 const outcomes = [
   ["Approved", "Slice returned", "Eligible", "Extends"],
   ["Timeout-protected", "Slice returned", "Not eligible", "Extends"],
-  ["Grace", "Slice returned", "Not eligible", "Preserved"],
   ["Rejected", "Provisionally forfeited", "Not eligible", "Breaks"],
   ["Missed", "Provisionally forfeited", "Not eligible", "Breaks"]
 ] as const;
 
 export function FundingCommitment(props: {
   podId: string;
+  contractHash: string;
   activityName: string;
   templateName: string;
   occurrenceCount: number;
@@ -47,7 +47,10 @@ export function FundingCommitment(props: {
     setError("");
     setWorking(true);
     try {
-      const intent = await createDepositIntent(props.podId);
+      const intent = await createDepositIntent(props.podId, {
+        contractHash: props.contractHash,
+        settlementDisclosureAccepted: true
+      });
       if (intent.state !== "intent_created") {
         router.push(`/pods/${props.podId}/fund/status?intent=${intent.id}`);
         router.refresh();
@@ -144,7 +147,9 @@ export function FundingCommitment(props: {
         ) : null}
         <div className="trust-disclosure">
           <span aria-hidden="true">01</span>
-          <p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p>
+          <p>{isAlphaRefund
+            ? "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
+            : "The Pod creator reviews member proofs. Approval and rejection can change how member stakes are redistributed. The creator does not fund this Pod or receive member funds. This Testnet MVP has no appeal or peer vote. Fund only if you trust the creator and accept these frozen rules."}</p>
         </div>
         <div className="trust-disclosure is-protection">
           <span aria-hidden="true">{isAlphaRefund ? "100%" : "24h"}</span>
@@ -168,7 +173,7 @@ export function FundingCommitment(props: {
         />
         <span>{isAlphaRefund
           ? "I accept the immutable full-return Testnet contract, creator review, custodial treasury, and maximum commitment shown above."
-          : "I accept the frozen terms, creator review, custodial treasury, and maximum commitment shown above."}</span>
+          : "I accept this contract hash, creator review, no-appeal rule, custodial treasury, and maximum commitment shown above."}</span>
       </label>
       {error ? <div className="inline-error funding-error" role="alert"><span>{error}</span></div> : null}
       <button

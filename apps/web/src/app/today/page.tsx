@@ -70,6 +70,12 @@ export default async function TodayPage() {
     ? presentPodRelationship({
         podId: action.podId,
         podState: action.podState,
+        ...(participantRecord?.pod.contractData?.settlementMode
+          ? {
+              settlementMode:
+                participantRecord.pod.contractData.settlementMode
+            }
+          : {}),
         relationship: {
           kind: "member",
           state: action.state,
@@ -80,7 +86,10 @@ export default async function TodayPage() {
   const creatorPresentation = action.kind === "creator_funding" && creatorFunding
     ? presentCreatorPodState({
         podId: creatorFunding.id,
-        state: creatorFunding.state as Exclude<PodState, "draft">
+        state: creatorFunding.state as Exclude<PodState, "draft">,
+        ...(creatorFunding.contractData?.settlementMode
+          ? { settlementMode: creatorFunding.contractData.settlementMode }
+          : {})
       })
     : null;
   const activeRecord = action.kind === "activity"
@@ -182,6 +191,9 @@ export default async function TodayPage() {
               const presentation = presentPodRelationship({
                 podId: pod.id,
                 podState: pod.state as Exclude<PodState, "draft">,
+                ...(pod.contractData?.settlementMode
+                  ? { settlementMode: pod.contractData.settlementMode }
+                  : {}),
                 relationship: { kind: "member", state: membership.state, depositIntentId: membership.depositIntentId }
               });
               const otherMedia = mediaForTemplate(pod.templateId, visualIndex);

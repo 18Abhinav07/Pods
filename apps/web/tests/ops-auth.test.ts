@@ -47,9 +47,10 @@ describe("reviewer authentication", () => {
       .toMatchObject({ httpOnly: true, sameSite: "strict", path: "/" });
   });
 
-  it("allows only the live public-safety page as an ops return target", async () => {
+  it("allows only the two live operations pages as return targets", async () => {
     for (const [requested, expected] of [
       ["/ops/public-safety", "/ops/public-safety"],
+      ["/ops/transfers", "/ops/transfers"],
       ["/ops/reviews", "/ops/public-safety"],
       ["/ops/unknown", "/ops/public-safety"],
       ["/ops/public-safety/archive", "/ops/public-safety"],

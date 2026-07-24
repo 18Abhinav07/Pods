@@ -27,6 +27,7 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
   const memberPresentation = membership ? presentPodRelationship({
     podId: pod.id,
     podState: pod.state as Exclude<PodState, "draft">,
+    settlementMode: pod.contractData.settlementMode,
     relationship: {
       kind: "member",
       state: membership.state,
@@ -36,7 +37,8 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
   const creatorPresentation = owned
     ? presentCreatorPodState({
         podId: pod.id,
-        state: pod.state as Exclude<PodState, "draft">
+        state: pod.state as Exclude<PodState, "draft">,
+        settlementMode: pod.contractData.settlementMode
       })
     : null;
   const nextHref = owned
@@ -54,7 +56,7 @@ export default async function RulesPage({ params }: { params: Promise<{ podId: s
       <section><span>Schedule</span><strong>{contract.commitment.occurrenceCount} frozen occurrences</strong><p>{contract.activity.startDate} to {contract.activity.endDate}, {contract.activity.timeZone}</p></section>
       <section><span>Community</span><strong>{contract.community.visibility === "public" ? "Public application community" : "Private invitation community"}</strong><p>{contract.community.minParticipants} minimum, {contract.community.maxParticipants} maximum</p></section>
       <section><span>Commitment</span><strong>{nim(contract.commitment.totalLuna)} Testnet NIM upfront</strong><p>{contract.settlementMode === "full_refund_alpha" ? "Full return after roster lock. This contract cannot switch to proportional redistribution." : `${nim(contract.commitment.lunaPerOccurrence)} NIM per occurrence`}</p></section>
-      <section><span>Evidence authority</span><strong>Creator review</strong><p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p></section>
+      <section><span>Evidence authority</span><strong>Creator review</strong><p>{contract.settlementMode === "full_refund_alpha" ? "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds." : "The Pod creator reviews member proofs. Approval and rejection can change how member stakes are redistributed. The creator does not fund this Pod or receive member funds. This Testnet MVP has no appeal or peer vote. Fund only if you trust the creator and accept these frozen rules."}</p></section>
       <section><span>{contract.settlementMode === "full_refund_alpha" ? "Return policy" : "Timeout protection"}</span><strong>{contract.settlementMode === "full_refund_alpha" ? "100% full-return alpha" : "24-hour hard protection"}</strong><p>{contract.settlementMode === "full_refund_alpha" ? "Activity review affects the participant record, never the return amount." : "Principal protected, no bonus, streak extended."}</p></section>
     </div>
     <Link className="primary-action full-action" href={nextHref}>{nextLabel}</Link>

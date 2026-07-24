@@ -18,8 +18,8 @@ export default async function OpsConnectPage({
       </header>
       <section className="today-hero entrance entrance-hero">
         <p className="eyebrow">Pods operations</p>
-        <h1>Public safety.</h1>
-        <p className="screen-copy">Handle public visitor reports without changing Pod membership, proof decisions, or money.</p>
+        <h1>Internal controls.</h1>
+        <p className="screen-copy">Review public safety reports and recover Testnet payouts without changing frozen Pod outcomes.</p>
       </section>
       <OpsConnectForm returnTo={returnTo} />
     </main>

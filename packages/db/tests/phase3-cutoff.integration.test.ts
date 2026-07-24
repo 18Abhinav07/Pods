@@ -135,6 +135,11 @@ async function fundMember(input: {
   finalizedAt?: Date;
 }) {
   const accepted = await acceptMember(input.podId, input.creatorUserId);
+  const pod = await repository.getPodForOwner(
+    input.creatorUserId,
+    input.podId
+  );
+  if (!pod?.contractHash) throw new Error("Published Pod contract is missing");
   const random = randomUUID().replaceAll("-", "");
   const transactionHash = createHash("sha256").update(random).digest("hex");
   const intent = await repository.createDepositIntent({
@@ -144,6 +149,8 @@ async function fundMember(input: {
     treasuryAddress,
     network: "testnet",
     reference: `pods-${random.slice(0, 24)}`,
+    acceptedContractHash: pod.contractHash,
+    settlementDisclosureAccepted: true,
     now: new Date("2027-03-01T01:00:00.000Z")
   });
   await repository.recordDepositWalletAttempt({

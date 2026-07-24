@@ -17,11 +17,12 @@ Phase 5 deterministic settlement and Testnet payout execution are implemented
 on the isolated `add/phase-settlement-payout` branch. The protected Phase 4
 baseline remains unchanged.
 
+The automated-green implementation is committed locally at `33e54ba`. No push
+or Railway deployment has been performed.
+
 Existing `full_refund_alpha` contracts preserve their original full-return
 behavior. Newly published public-deposit contracts use proportional settlement
 only when the settlement capability is enabled.
-
-No push or Railway deployment has been performed.
 
 ## Implemented
 
@@ -85,8 +86,7 @@ Do not mark Phase 5 physically approved before this matrix passes.
 
 ## Next tasks
 
-1. Complete the independent implementation reviews and repair any concrete
-   blocker.
-2. Commit the automated-green branch locally without pushing.
-3. Run and record the physical Nimiq Pay payout gate.
+1. Run and record the physical Nimiq Pay payout gate.
+2. Repair and reverify any device-only defect exposed by that walkthrough.
+3. Ask Abhinav for Phase 5 approval after the physical matrix passes.
 4. Request explicit authorization before any push or deployment.

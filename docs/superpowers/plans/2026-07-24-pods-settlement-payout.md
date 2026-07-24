@@ -188,7 +188,7 @@ Related: [[HANDOFF]] |
 - [x] Dry-run wallet-only payout behavior against the validated signer/RPC contract without broadcasting from automated tests.
 - [ ] Physical Nimiq Pay gate: creator plus two participant wallets, one approved outcome, one rejected or missed outcome, deterministic bonus, two confirmed Testnet payouts, exact treasury conservation, and refresh-safe hashes.
 - [x] Record automated, browser, dry-run, and physical evidence separately.
-- [ ] Commit the branch only after the automated gate is green. Do not push or deploy without explicit authorization.
+- [x] Commit the branch only after the automated gate is green. Do not push or deploy without explicit authorization.
 
 ## Following branches
 

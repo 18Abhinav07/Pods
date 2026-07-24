@@ -44,7 +44,7 @@ describe("PodAdminPage lifecycle state", () => {
 
     expect(screen.getByText("Roster locked")).toBeVisible();
     expect(screen.getByRole("link", { name: "Open Pod room" }))
-      .toHaveAttribute("href", "/pods/pod-1/today");
+      .toHaveAttribute("href", "/pods/pod-1/room");
     expect(screen.queryByText("Share and recruit")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open public preview" })).not.toBeInTheDocument();
   });
@@ -72,7 +72,9 @@ describe("PodAdminPage lifecycle state", () => {
 
       render(await PodAdminPage({ params: Promise.resolve({ podId: "pod-1" }) }));
 
-      expect(screen.getByText("Creator command center")).toBeVisible();
+      expect(screen.getByText(
+        state === "active" ? "Creator review active" : "Final review"
+      )).toBeVisible();
       expect(screen.getByRole("link", { name: "Review 2 proofs" }))
         .toHaveAttribute("href", "/pods/pod-1/admin/reviews");
       expect(screen.getByRole("link", { name: "Open Pod room" }))
@@ -110,11 +112,88 @@ describe("PodAdminPage lifecycle state", () => {
 
     render(await PodAdminPage({ params: Promise.resolve({ podId: "pod-1" }) }));
 
-    expect(screen.getByText("Creator command center")).toBeVisible();
+    expect(screen.getByText("Legacy Pods Team review")).toBeVisible();
+    expect(screen.getByText(
+      "This legacy Pod uses Pods Team review. Creator review actions are unavailable."
+    )).toBeVisible();
     expect(screen.queryByRole("link", { name: /Review \d+ proofs?/ }))
       .not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open Pod room" }))
       .toHaveAttribute("href", "/pods/pod-1/room");
     expect(repository.listPendingReviewsForCreator).not.toHaveBeenCalled();
   });
+
+  it("renders completion as an archive without any cancelled or review state", async () => {
+    requireEnrollmentOwner.mockResolvedValue({
+      session: { userId: "creator-1" },
+      pod: {
+        id: "pod-1",
+        state: "completed",
+        contractHash: "a".repeat(64),
+        contractData: {
+          activity: { name: "Ship together" },
+          community: { visibility: "public" },
+          verification: { verifier: "creator" }
+        }
+      }
+    });
+
+    render(await PodAdminPage({ params: Promise.resolve({ podId: "pod-1" }) }));
+
+    expect(screen.getByText("Pod completed")).toBeVisible();
+    expect(screen.getByRole("link", { name: "View Pod archive" }))
+      .toHaveAttribute("href", "/pods/pod-1/room");
+    expect(screen.queryByText(/cancelled/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Review \d+ proofs?/ }))
+      .not.toBeInTheDocument();
+    expect(repository.listPendingReviewsForCreator).not.toHaveBeenCalled();
+  });
+
+  it("presents a draft explicitly instead of falling through to cancellation", async () => {
+    requireEnrollmentOwner.mockResolvedValue({
+      session: { userId: "creator-1" },
+      pod: {
+        id: "pod-1",
+        state: "draft",
+        contractHash: "a".repeat(64),
+        contractData: {
+          activity: { name: "Ship together" },
+          community: { visibility: "public" },
+          verification: { verifier: "creator" }
+        }
+      }
+    });
+
+    render(await PodAdminPage({ params: Promise.resolve({ podId: "pod-1" }) }));
+
+    expect(screen.getByText("Pod draft")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Continue Pod setup" }))
+      .toHaveAttribute("href", "/my-pods");
+    expect(screen.queryByText(/cancelled/i)).not.toBeInTheDocument();
+  });
+
+  it.each(["cancelled_refunding", "cancelled"] as const)(
+    "does not load or render creator review actions for %s",
+    async (state) => {
+      requireEnrollmentOwner.mockResolvedValue({
+        session: { userId: "creator-1" },
+        pod: {
+          id: "pod-1",
+          state,
+          contractHash: "a".repeat(64),
+          contractData: {
+            activity: { name: "Ship together" },
+            community: { visibility: "public" },
+            verification: { verifier: "creator" }
+          }
+        }
+      });
+
+      render(await PodAdminPage({ params: Promise.resolve({ podId: "pod-1" }) }));
+
+      expect(screen.queryByRole("link", { name: /Review \d+ proofs?/ }))
+        .not.toBeInTheDocument();
+      expect(repository.listPendingReviewsForCreator).not.toHaveBeenCalled();
+    }
+  );
 });

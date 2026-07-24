@@ -3,6 +3,13 @@ import type {
   PodState,
   SettlementMode
 } from "@pods/domain";
+import {
+  presentCreatorPodState,
+  type CreatorPodPresentation
+} from "./creator-pod-state";
+
+export { presentCreatorPodState };
+export type { CreatorPodPresentation };
 
 export type PodRelationship =
   | { kind: "visitor" }
@@ -26,119 +33,6 @@ export type PodRelationshipPresentation = {
   todayTitle: string;
   todayDetail: string;
 };
-
-export type CreatorPodPresentation = {
-  statusLabel: string;
-  statusDetail: string;
-  actionLabel: string;
-  href: string;
-  todayEyebrow: string;
-  todayTitle: string;
-  todayDetail: string;
-};
-
-export function presentCreatorPodState(input: {
-  podId: string;
-  state: Exclude<PodState, "draft">;
-  settlementMode?: SettlementMode;
-}): CreatorPodPresentation {
-  if (input.state === "enrollment_open") {
-    return {
-      statusLabel: "Enrollment open",
-      statusDetail: "Applications and invitations are active",
-      actionLabel: "Manage enrollment",
-      href: `/pods/${input.podId}/admin`,
-      todayEyebrow: "Enrollment open",
-      todayTitle: "Your public Pod is ready to grow.",
-      todayDetail: "Review applications or share the frozen public contract."
-    };
-  }
-  if (input.state === "locked_scheduled") {
-    return {
-      statusLabel: "Roster locked",
-      statusDetail: "Activity scheduled",
-      actionLabel: "Open Pod room",
-      href: `/pods/${input.podId}/room`,
-      todayEyebrow: "Roster locked",
-      todayTitle: "Your Pod is ready for the activity.",
-      todayDetail: "Enrollment is complete. Open the Pod room for the frozen schedule."
-    };
-  }
-  if (input.state === "active") {
-    return {
-      statusLabel: "Activity live",
-      statusDetail: "Occurrence commitments and evidence are active",
-      actionLabel: "Open Pod room",
-      href: `/pods/${input.podId}/room`,
-      todayEyebrow: "Activity live",
-      todayTitle: "Your Pod is building now.",
-      todayDetail: "Open the Pod room to follow approved group progress."
-    };
-  }
-  if (input.state === "cutoff_evaluating") {
-    return {
-      statusLabel: "Cutoff evaluating",
-      statusDetail: "Roster snapshot in progress",
-      actionLabel: "Open funding overview",
-      href: `/pods/${input.podId}/admin/funding`,
-      todayEyebrow: "Roster evaluating",
-      todayTitle: "The enrollment cutoff is resolving.",
-      todayDetail: "Review the participant-safe funding stages while the roster snapshot completes."
-    };
-  }
-  if (input.state === "cancelled_refunding") {
-    return {
-      statusLabel: "Returns in progress",
-      statusDetail: "Participant commitments are being returned",
-      actionLabel: "Track participant returns",
-      href: `/pods/${input.podId}/admin/funding`,
-      todayEyebrow: "Returns in progress",
-      todayTitle: "This Pod is returning commitments.",
-      todayDetail: "Track every participant-safe return until the financial state is final."
-    };
-  }
-  if (input.state === "final_review") {
-    const proportional = input.settlementMode === "proportional";
-    return {
-      statusLabel: "Final review",
-      statusDetail: proportional
-        ? "Frozen outcomes are ready for settlement"
-        : "The room is archived while final decisions complete",
-      actionLabel: proportional ? "View settlement" : "Open archived room",
-      href: proportional
-        ? `/pods/${input.podId}/settlement`
-        : `/pods/${input.podId}/room`,
-      todayEyebrow: "Final review",
-      todayTitle: "The activity record is in final review.",
-      todayDetail: "Open the archived room to follow the remaining review outcomes."
-    };
-  }
-  if (input.state === "completed") {
-    const proportional = input.settlementMode === "proportional";
-    return {
-      statusLabel: "Completed",
-      statusDetail: proportional
-        ? "Settlement and Testnet transfers are complete"
-        : "The public activity record is archived",
-      actionLabel: proportional ? "View settlement" : "View Pod archive",
-      href: proportional
-        ? `/pods/${input.podId}/settlement`
-        : `/pods/${input.podId}/room`,
-      todayEyebrow: "Pod completed",
-      todayTitle: "This activity is complete.",
-      todayDetail: "The room, public proof record, and frozen contract remain available."
-    };
-  }
-  return {
-    statusLabel: "Cancelled",
-    statusDetail: "Financial obligations resolved",
-    actionLabel: "View financial history",
-    href: `/pods/${input.podId}/admin/funding`,
-    todayEyebrow: "Pod cancelled",
-    todayTitle: "This Pod is closed.",
-    todayDetail: "The frozen contract and resolved financial history remain available."
-  };
-}
 
 export function relationshipForViewer(input: {
   creatorUserId: string;

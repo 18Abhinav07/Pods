@@ -1,7 +1,9 @@
 import Link from "next/link";
+import type { PodState } from "@pods/domain";
 
 import { CancelPodControl } from "../../../../components/cancel-pod-control";
 import { InvitationManager } from "../../../../components/invitation-manager";
+import { presentCreatorPodState } from "../../../../lib/creator-pod-state";
 import { requireEnrollmentOwner } from "../../../../lib/enrollment-guards";
 import { podsRepository } from "../../../../lib/server-db";
 
@@ -10,17 +12,29 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   const { session, pod } = await requireEnrollmentOwner(podId, `/pods/${podId}/admin`);
   const contract = pod.contractData;
   if (!contract) return null;
-  if (pod.state === "active" || pod.state === "final_review") {
-    const creatorReviews = contract.verification.verifier === "creator";
-    const reviewRecords = creatorReviews
-      ? await podsRepository.listPendingReviewsForCreator({
-          creatorUserId: session.userId,
-          podId
-        })
-      : null;
-    const pendingReviews = reviewRecords?.filter(
-      ({ submission }) => submission.state === "reviewing"
-    ).length ?? 0;
+  const creatorReviews =
+    contract.verification.verifier === "creator" &&
+    (pod.state === "active" || pod.state === "final_review");
+  const reviewRecords = creatorReviews
+    ? await podsRepository.listPendingReviewsForCreator({
+        creatorUserId: session.userId,
+        podId
+      })
+    : null;
+  const pendingReviews = reviewRecords?.filter(
+    ({ submission }) => submission.state === "reviewing"
+  ).length ?? 0;
+  const statePresentation = presentCreatorPodState({
+    podId: pod.id,
+    state: pod.state as PodState,
+    verifier: contract.verification.verifier,
+    pendingReviewCount: pendingReviews,
+    ...(contract.settlementMode
+      ? { settlementMode: contract.settlementMode }
+      : {})
+  });
+
+  if (pod.state !== "enrollment_open") {
     return (
       <main className="app-shell admin-shell">
         <header className="app-topbar entrance entrance-topbar">
@@ -28,61 +42,21 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
           <span className="phase-pill">Creator controls</span>
         </header>
         <section className="today-hero entrance entrance-hero">
-          <p className="eyebrow">Creator command center</p>
+          <p className="eyebrow">{statePresentation.admin.eyebrow}</p>
           <h1>{contract.activity.name}</h1>
-          <p className="screen-copy">Follow the activity, review member proofs, and keep the frozen Pod contract visible.</p>
+          <p className="screen-copy">{statePresentation.admin.detail}</p>
         </section>
         <section className="active-pod-actions creator-command-actions">
-          {creatorReviews ? <Link className="primary-action full-action" href={`/pods/${pod.id}/admin/reviews`}>Review {pendingReviews} proof{pendingReviews === 1 ? "" : "s"}</Link> : null}
-          <Link className="secondary-action full-action" href={`/pods/${pod.id}/room`}>Open Pod room</Link>
-          <Link className="secondary-action full-action" href={`/pods/${pod.id}/activity`}>View activity</Link>
-          <Link className="secondary-action full-action" href={`/pods/${pod.id}/admin/funding`}>View participant funding stages</Link>
-          <Link className="secondary-action full-action" href={`/pods/${pod.id}/rules`}>Review frozen rules</Link>
+          {statePresentation.admin.actions.map((action) => (
+            <Link
+              className={`${action.emphasis === "primary" ? "primary" : "secondary"}-action full-action`}
+              href={action.href}
+              key={action.kind}
+            >
+              {action.label}
+            </Link>
+          ))}
         </section>
-      </main>
-    );
-  }
-  if (pod.state !== "enrollment_open") {
-    const stateCopy = pod.state === "locked_scheduled"
-      ? {
-          eyebrow: "Roster locked",
-          detail: "Enrollment is complete. The Pod room is now the source of truth for the activity schedule.",
-          primaryLabel: "Open Pod room",
-          primaryHref: `/pods/${pod.id}/today`
-        }
-      : pod.state === "cutoff_evaluating"
-        ? {
-            eyebrow: "Roster evaluating",
-            detail: "Enrollment is closed while the audited cutoff resolves funded places and returns.",
-            primaryLabel: "Open funding overview",
-            primaryHref: `/pods/${pod.id}/admin/funding`
-          }
-        : pod.state === "cancelled_refunding"
-          ? {
-              eyebrow: "Returns in progress",
-              detail: "The Pod did not lock. Participant commitments are being returned through the transfer engine.",
-              primaryLabel: "Track participant returns",
-              primaryHref: `/pods/${pod.id}/admin/funding`
-            }
-          : {
-              eyebrow: "Pod cancelled",
-              detail: "Enrollment is closed and all recorded return obligations are resolved.",
-              primaryLabel: "View financial history",
-              primaryHref: `/pods/${pod.id}/admin/funding`
-            };
-    return (
-      <main className="app-shell admin-shell">
-        <header className="app-topbar entrance entrance-topbar">
-          <Link className="wordmark" href="/my-pods"><span className="pod-mark" aria-hidden="true" />pods</Link>
-          <span className="phase-pill">Creator controls</span>
-        </header>
-        <section className="today-hero entrance entrance-hero">
-          <p className="eyebrow">{stateCopy.eyebrow}</p>
-          <h1>{contract.activity.name}</h1>
-          <p className="screen-copy">{stateCopy.detail}</p>
-        </section>
-        <Link className="primary-action full-action" href={stateCopy.primaryHref}>{stateCopy.primaryLabel}</Link>
-        <Link className="secondary-action full-action" href={`/pods/${pod.id}/rules`}>Review frozen rules</Link>
       </main>
     );
   }
@@ -103,8 +77,8 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
         <span className="phase-pill">Creator controls</span>
       </header>
       <section className="today-hero entrance entrance-hero">
-        <p className="eyebrow">Enrollment command center</p><h1>{contract.activity.name}</h1>
-        <p className="screen-copy">Manage who enters. Frozen rules, evidence decisions, and future financial outcomes remain outside creator control.</p>
+        <p className="eyebrow">{statePresentation.admin.eyebrow}</p><h1>{contract.activity.name}</h1>
+        <p className="screen-copy">{statePresentation.admin.detail}</p>
       </section>
       <Link className="secondary-action full-action admin-funding-link" href={`/pods/${pod.id}/admin/funding`}>View participant funding stages</Link>
       {contract.community.visibility === "public" ? (

@@ -1,92 +1,59 @@
 ---
 project: pods
-last-updated: 2026-07-24 06:00
+last-updated: 2026-07-24 15:20
 last-agent: codex
 mode: HACKATHON
 ---
 
 # Pods Handoff
 
-Related: [[validation/phase-5-results]] |
-[[docs/superpowers/plans/2026-07-24-pods-settlement-payout]] |
-[[docs/superpowers/specs/2026-07-24-pods-testnet-settlement-amendment]]
+Related: [[README]] | [[sessions/2026-07-24-codex-hackathon]] |
+[[docs/superpowers/specs/2026-07-23-pods-creator-review-mvp-design]]
 
 ## State
 
-Phase 5 deterministic settlement and Testnet payout execution are implemented
-on the isolated `add/phase-settlement-payout` branch. The protected Phase 4
-baseline remains unchanged.
+Phase 4 template commitments, proof submission, creator review, and canonical
+participant status are deployed. The live legacy Testnet Pod now uses its
+creator as the effective reviewer through an additive audited override.
 
-The automated-green implementation is committed locally at `33e54ba`. No push
-or Railway deployment has been performed.
+## In Progress (resume here)
 
-Existing `full_refund_alpha` contracts preserve their original full-return
-behavior. Newly published public-deposit contracts use proportional settlement
-only when the settlement capability is enabled.
+- Task: complete the physical Nimiq Pay creator-review gate.
+- Production: `https://pods-nimiq-activity.up.railway.app`.
+- Pod: `82663fcc-0f27-4b38-8432-d4c5986a0e70`.
+- Creator route: `/pods/82663fcc-0f27-4b38-8432-d4c5986a0e70/admin/reviews`.
+- Participant submission remains `reviewing` and inside its hard deadline.
 
-## Implemented
+## Open Errors / Blockers
 
-- Integer-Luna settlement calculator with conservation and deterministic
-  remainder assignment.
-- Immutable settlement runs, occurrence outcomes, member entitlements, ledger
-  reclassification, payout legs, payout attempts, and transfer events.
-- Approved, rejected, timeout-protected, missed, and zero-recipient-restoration
-  behavior.
-- Positive-only payout legs and terminal `no_transfer_required` zero
-  entitlements.
-- Persist-before-broadcast signing with a unique per-attempt data reference.
-- Hash-first chain reconciliation, execution and macro-block finality checks,
-  unknown isolation, expiry, and operations-authorized retry.
-- Creator-review trust disclosure and exact contract-hash consent before
-  proportional funding.
-- Participant settlement, creator conservation, readiness-only finalization,
-  transfer status, and operations recovery screens.
-- Safe completion event delivery through the Pod conversation.
+- No automated or deployment blocker.
+- Physical Nimiq Pay proof is pending for creator evidence inspection,
+  approve/reject action, and participant-side projection after refresh.
+- Proportional settlement remains disabled for the existing
+  `full_refund_alpha` contract.
 
-## Verified gates
+## Git State
 
-- Full `pnpm check`: PASS.
-- Copy and lint: PASS.
-- All workspace typechecks: PASS.
-- 491 root, package, worker, and web tests: PASS.
-- 83 PostgreSQL integration tests: PASS.
-- Web and worker production builds: PASS.
-- Mobile Safari settlement journey: PASS.
-- Android Chromium settlement journey: PASS.
-- Protected local Testnet treasury non-broadcast dry run: PASS.
-  - signer address matched configured treasury;
-  - validity start height `6816989`;
-  - two same-value drafts produced distinct hashes;
-  - broadcasts `0`.
+- Branch: `fix/phase4-activity-experience`.
+- Implementation commit: `6a82312 feat: safely amend legacy testnet verifier`.
+- Full `pnpm check`: PASS with 587 non-integration and 90 integration tests.
+- Exact Phase 4 Android browser journeys: 3 of 3 PASS.
 
-Full evidence: `validation/phase-5-results.md`.
+## Runtime State
 
-## Physical gate pending
+- Web deployment `8ccf3524-de14-481d-a4dc-1cfb2825ba32`: `SUCCESS`.
+- Final Worker deployment `2059aba2-58e1-45c7-94ff-7c29c107606a`: `SUCCESS`.
+- Amendment flag: `false` in the running Worker.
+- Railway SSH keys: none registered.
+- Frozen contract hash and creator consent hash remain
+  `044c980e87384587a380b15721b8e4efa8c3ff8c812e21d7e0caca3d2ec5c0b3`.
+- Creator membership, creator financial state, creator decisions, and
+  settlement runs remain zero.
 
-Run one creator and two participant wallets through a proportional Testnet Pod:
+## Next 3 Tasks
 
-1. Both participants fund and enter the locked roster.
-2. One occurrence is approved and one is rejected or missed.
-3. Finalize the conserved settlement.
-4. Run the worker and confirm the real low-value Testnet payout legs.
-5. Verify participant hashes and terminal settlement states after WebView
-   closure and reopen.
-6. Verify exact ledger conservation and zero creator entitlement.
-
-Do not mark Phase 5 physically approved before this matrix passes.
-
-## Runtime
-
-- Worktree: `/private/tmp/pods-phase-04a`
-- Branch: `add/phase-settlement-payout`
-- LAN server: `http://192.168.29.244:3411`
-- Current LAN process uses explicit local-test access so disposable browser
-  wallets can authenticate.
-- Local Postgres migrations include `0013`, `0014`, and `0015`.
-
-## Next tasks
-
-1. Run and record the physical Nimiq Pay payout gate.
-2. Repair and reverify any device-only defect exposed by that walkthrough.
-3. Ask Abhinav for Phase 5 approval after the physical matrix passes.
-4. Request explicit authorization before any push or deployment.
+1. Open the creator review route in Nimiq Pay and inspect the participant's
+   image, artifact URL, commitment, and result summary.
+2. Approve or reject once, then verify Today, Room, submission detail, and
+   Updates show one canonical outcome without exposing reviewer-only evidence.
+3. Record the physical PASS or exact correction before opening the next phase.

@@ -2,12 +2,17 @@ import { randomUUID } from "node:crypto";
 
 import {
   isPublicVisitorContract,
+  legacySubmissionProjection,
   nextSubmissionState,
   occurrenceWindowState,
   reviewDeadline,
+  validateCreateGoal,
   validateCreatorReviewDecision,
-  validateBuildEvidence,
-  validateBuildTask
+  validateBuildTask,
+  validateTemplateEvidenceDraft,
+  validateTemplateEvidenceSubmission,
+  type CommitmentDetails,
+  type TemplateEvidence
 } from "@pods/domain";
 import { and, asc, desc, eq, ilike, inArray, lte, max, ne, or, sql } from "drizzle-orm";
 
@@ -32,11 +37,37 @@ type EvidenceObject = {
   byteSize: number;
 };
 
-function frozenBuildConfiguration(pod: typeof pods.$inferSelect) {
-  if (pod.templateId !== "build" || pod.contractData?.templateId !== "build") {
-    throw new Error("This activity flow supports Build and Ship Pods only");
+function frozenTemplateConfiguration(pod: typeof pods.$inferSelect) {
+  if (!pod.contractData || pod.templateId !== pod.contractData.templateId) {
+    throw new Error("Frozen Pod template is unavailable");
   }
   return pod.contractData.activity.config;
+}
+
+function repeatingCriterion(pod: typeof pods.$inferSelect): string {
+  const configuration = frozenTemplateConfiguration(pod);
+  if (pod.templateId === "fitness") {
+    return `${String(configuration.activityType)}: ${String(configuration.measurableMinimum)}`;
+  }
+  if (pod.templateId === "reading") {
+    return `${String(configuration.targetAmount)} ${String(configuration.targetType)} of ${String(configuration.bookOrTheme)}`;
+  }
+  if (pod.templateId === "study") {
+    if (
+      configuration.minimumKind === "minutes" &&
+      typeof configuration.minimumMinutes === "number"
+    ) {
+      return `${String(configuration.subject)}: ${configuration.minimumMinutes} focused minutes`;
+    }
+    if (
+      configuration.minimumKind === "output" &&
+      typeof configuration.minimumOutput === "string"
+    ) {
+      return `${String(configuration.subject)}: ${configuration.minimumOutput}`;
+    }
+    return `${String(configuration.subject)}: ${String(configuration.minimumExpectation)}`;
+  }
+  throw new Error("This Pod requires a participant-locked commitment");
 }
 
 function requireParticipantWindow(input: {
@@ -225,8 +256,9 @@ export function createActivityMethods(database: PodsDatabase) {
       userId: string;
       podId: string;
       occurrenceId: string;
-      task: unknown;
-      deliverableType: unknown;
+      task?: unknown;
+      deliverableType?: unknown;
+      goal?: unknown;
       now: Date;
     }) {
       return database.transaction(async (transaction) => {
@@ -245,7 +277,10 @@ export function createActivityMethods(database: PodsDatabase) {
           .from(occurrences)
           .where(eq(occurrences.id, input.occurrenceId));
         requireParticipantWindow({ pod, membership, occurrence, now: input.now });
-        const configuration = frozenBuildConfiguration(pod!);
+        const configuration = frozenTemplateConfiguration(pod!);
+        if (pod!.templateId !== "build" && pod!.templateId !== "create") {
+          throw new Error("Repeating activities do not use a commitment lock");
+        }
         if (
           input.now.getTime() < occurrence!.opensAt.getTime() ||
           !occurrence!.commitmentDeadlineAt ||
@@ -265,20 +300,44 @@ export function createActivityMethods(database: PodsDatabase) {
           .for("update");
         if (existing) throw new Error("This occurrence commitment is already locked");
 
-        const validation = validateBuildTask({
-          task: input.task,
-          deliverableType: input.deliverableType,
-          allowedDeliverables: configuration.allowedDeliverables
-        });
-        if (!validation.success) throw new Error(validation.errors[0]);
+        const buildValidation = pod!.templateId === "build"
+          ? validateBuildTask({
+              task: input.task,
+              deliverableType: input.deliverableType,
+              allowedDeliverables: configuration.allowedDeliverables
+            })
+          : null;
+        const createValidation = pod!.templateId === "create"
+          ? validateCreateGoal(input.goal)
+          : null;
+        if (buildValidation && !buildValidation.success) {
+          throw new Error(buildValidation.errors[0]);
+        }
+        if (createValidation && !createValidation.success) {
+          throw new Error(createValidation.errors[0]);
+        }
+        const details: CommitmentDetails = buildValidation?.success
+          ? {
+              kind: "build",
+              task: buildValidation.value.task,
+              deliverableType: buildValidation.value.deliverableType
+            }
+          : {
+              kind: "create",
+              goal: createValidation!.success ? createValidation!.value.goal : ""
+            };
+        const task = details.kind === "build" ? details.task : details.goal;
         const [commitment] = await transaction
           .insert(occurrenceCommitments)
           .values({
             id: randomUUID(),
             occurrenceId: occurrence!.id,
             membershipId: membership!.id,
-            task: validation.value.task,
-            deliverableType: validation.value.deliverableType,
+            kind: details.kind,
+            task,
+            deliverableType:
+              details.kind === "build" ? details.deliverableType : null,
+            details,
             lockedAt: input.now
           })
           .returning();
@@ -325,7 +384,7 @@ export function createActivityMethods(database: PodsDatabase) {
             sequence: advanced.sequence,
             senderUserId: input.userId,
             kind: "activity",
-            body: validation.value.task,
+            body: task,
             clientMessageId: null,
             replyToMessageId: null,
             hiddenAt: null,
@@ -358,8 +417,9 @@ export function createActivityMethods(database: PodsDatabase) {
       userId: string;
       podId: string;
       occurrenceId: string;
-      resultSummary: unknown;
-      artifactUrl: unknown;
+      resultSummary?: unknown;
+      artifactUrl?: unknown;
+      templateEvidence?: unknown;
       evidence?: EvidenceObject | null;
       proofShareMode?: unknown;
       now: Date;
@@ -380,14 +440,15 @@ export function createActivityMethods(database: PodsDatabase) {
           .from(occurrences)
           .where(eq(occurrences.id, input.occurrenceId));
         requireParticipantWindow({ pod, membership, occurrence, now: input.now });
-        frozenBuildConfiguration(pod!);
+        frozenTemplateConfiguration(pod!);
         if (
           input.now.getTime() < occurrence!.opensAt.getTime() ||
           input.now.getTime() >= occurrence!.closesAt.getTime()
         ) {
           throw new Error("The evidence window is closed");
         }
-        const [commitment] = await transaction
+
+        let [commitment] = await transaction
           .select()
           .from(occurrenceCommitments)
           .where(
@@ -396,13 +457,121 @@ export function createActivityMethods(database: PodsDatabase) {
               eq(occurrenceCommitments.membershipId, membership!.id)
             )
           );
-        if (!commitment) throw new Error("Lock this occurrence task before adding evidence");
-        const validation = validateBuildEvidence({
-          deliverableType: commitment.deliverableType,
-          resultSummary: input.resultSummary,
-          artifactUrl: input.artifactUrl
-        });
-        if (!validation.success) throw new Error(validation.errors[0]);
+
+        if (
+          !commitment &&
+          pod!.contractData!.evidenceMode === "repeating_criterion"
+        ) {
+          const criterion = repeatingCriterion(pod!);
+          const [createdCommitment] = await transaction
+            .insert(occurrenceCommitments)
+            .values({
+              id: randomUUID(),
+              occurrenceId: occurrence!.id,
+              membershipId: membership!.id,
+              kind: "repeating_criterion",
+              task: criterion,
+              deliverableType: null,
+              details: {
+                kind: "repeating_criterion",
+                criterion
+              },
+              lockedAt: input.now
+            })
+            .onConflictDoNothing({
+              target: [
+                occurrenceCommitments.occurrenceId,
+                occurrenceCommitments.membershipId
+              ]
+            })
+            .returning();
+
+          commitment = createdCommitment;
+          if (!commitment) {
+            [commitment] = await transaction
+              .select()
+              .from(occurrenceCommitments)
+              .where(
+                and(
+                  eq(occurrenceCommitments.occurrenceId, occurrence!.id),
+                  eq(occurrenceCommitments.membershipId, membership!.id)
+                )
+              );
+          } else {
+            const [createdConversation] = await transaction
+              .insert(conversations)
+              .values({
+                id: randomUUID(),
+                kind: "pod",
+                podId: input.podId,
+                directPairKey: null,
+                firstUserId: null,
+                secondUserId: null,
+                requestSenderUserId: null,
+                directState: null,
+                roomState: "open",
+                lastSequence: 0,
+                archivedAt: null,
+                createdAt: input.now,
+                updatedAt: input.now
+              })
+              .onConflictDoNothing({ target: conversations.podId })
+              .returning();
+            const conversation = createdConversation ?? (await transaction
+              .select()
+              .from(conversations)
+              .where(eq(conversations.podId, input.podId)))[0];
+            if (!conversation) throw new Error("Pod room could not be projected");
+            const [advanced] = await transaction
+              .update(conversations)
+              .set({
+                lastSequence: sql`${conversations.lastSequence} + 1`,
+                updatedAt: input.now
+              })
+              .where(eq(conversations.id, conversation.id))
+              .returning({ sequence: conversations.lastSequence });
+            if (!advanced) throw new Error("Pod room could not be advanced");
+            const [message] = await transaction
+              .insert(messages)
+              .values({
+                id: randomUUID(),
+                conversationId: conversation.id,
+                sequence: advanced.sequence,
+                senderUserId: input.userId,
+                kind: "activity",
+                body: criterion,
+                clientMessageId: null,
+                replyToMessageId: null,
+                hiddenAt: null,
+                hiddenByUserId: null,
+                editedAt: null,
+                deletedAt: null,
+                pinnedAt: null,
+                createdAt: input.now,
+                updatedAt: input.now
+              })
+              .returning();
+            if (!message) throw new Error("Activity card could not be projected");
+            await transaction.insert(activityMessages).values({
+              commitmentId: commitment.id,
+              messageId: message.id,
+              createdAt: input.now
+            });
+            await transaction.insert(realtimeEvents).values({
+              conversationId: conversation.id,
+              recipientUserId: null,
+              kind: "activity.committed",
+              payload: {
+                messageId: message.id,
+                commitmentId: commitment.id
+              },
+              createdAt: input.now
+            });
+          }
+        }
+        if (!commitment) {
+          throw new Error("Lock this occurrence commitment before adding evidence");
+        }
 
         const [existing] = await transaction
           .select()
@@ -417,6 +586,22 @@ export function createActivityMethods(database: PodsDatabase) {
         if (existing && existing.state !== "draft") {
           throw new Error("Submitted evidence is immutable");
         }
+        const rawTemplateEvidence =
+          input.templateEvidence ??
+          existing?.templateEvidence ??
+          (pod!.templateId === "build"
+            ? {
+                kind: "build",
+                resultSummary: input.resultSummary,
+                artifactUrl: input.artifactUrl
+              }
+            : null);
+        const validation = validateTemplateEvidenceDraft({
+          templateId: pod!.templateId,
+          evidence: rawTemplateEvidence
+        });
+        if (!validation.success) throw new Error(validation.errors[0]);
+        const projection = legacySubmissionProjection(validation.value);
         const evidence = input.evidence === undefined
           ? existing
             ? {
@@ -427,8 +612,9 @@ export function createActivityMethods(database: PodsDatabase) {
             : null
           : input.evidence;
         const values = {
-          resultSummary: validation.value.resultSummary,
-          artifactUrl: validation.value.artifactUrl,
+          resultSummary: projection.resultSummary,
+          artifactUrl: projection.artifactUrl,
+          templateEvidence: validation.value,
           evidenceObjectKey: evidence?.objectKey ?? null,
           evidenceContentType: evidence?.contentType ?? null,
           evidenceByteSize: evidence?.byteSize ?? null,
@@ -517,7 +703,8 @@ export function createActivityMethods(database: PodsDatabase) {
           .select({
             submission: submissions,
             occurrence: occurrences,
-            commitment: occurrenceCommitments
+            commitment: occurrenceCommitments,
+            pod: pods
           })
           .from(submissions)
           .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
@@ -526,6 +713,7 @@ export function createActivityMethods(database: PodsDatabase) {
             occurrenceCommitments,
             eq(submissions.commitmentId, occurrenceCommitments.id)
           )
+          .innerJoin(pods, eq(occurrences.podId, pods.id))
           .where(
             and(
               eq(submissions.id, input.submissionId),
@@ -539,10 +727,21 @@ export function createActivityMethods(database: PodsDatabase) {
         if (input.now.getTime() >= owned.occurrence.closesAt.getTime()) {
           throw new Error("The evidence deadline has passed");
         }
-        const validation = validateBuildEvidence({
-          deliverableType: owned.commitment.deliverableType,
-          resultSummary: owned.submission.resultSummary,
-          artifactUrl: owned.submission.artifactUrl
+        const templateEvidence: TemplateEvidence =
+          owned.submission.templateEvidence ??
+          {
+            kind: "build",
+            resultSummary: owned.submission.resultSummary,
+            artifactUrl: owned.submission.artifactUrl
+          };
+        const validation = validateTemplateEvidenceSubmission({
+          templateId: owned.pod.templateId,
+          evidence: templateEvidence,
+          frozenConfig: frozenTemplateConfiguration(owned.pod),
+          hasEvidenceImage: owned.submission.evidenceObjectKey !== null,
+          ...(owned.commitment.deliverableType
+            ? { deliverableType: owned.commitment.deliverableType }
+            : {})
         });
         if (!validation.success) throw new Error(validation.errors[0]);
         const reviewing = nextSubmissionState("draft", "submit", "participant");

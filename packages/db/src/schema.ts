@@ -4,6 +4,8 @@ import type {
   ApplicationStatus,
   ActivityStepInput,
   BuildDeliverableType,
+  CommitmentDetails,
+  CommitmentKind,
   CommitmentStepInput,
   CommunityStepInput,
   DepositExceptionCode,
@@ -18,6 +20,7 @@ import type {
   SettlementRunState,
   SubmissionState,
   TemplateId,
+  TemplateEvidence,
   TransferAttemptState,
   TransferEventActor,
   TransferLegType,
@@ -393,8 +396,10 @@ export const occurrenceCommitments = pgTable(
     membershipId: uuid("membership_id")
       .notNull()
       .references(() => memberships.id, { onDelete: "cascade" }),
+    kind: text("kind").$type<CommitmentKind>().notNull().default("build"),
     task: text("task").notNull(),
-    deliverableType: text("deliverable_type").$type<BuildDeliverableType>().notNull(),
+    deliverableType: text("deliverable_type").$type<BuildDeliverableType>(),
+    details: jsonb("details").$type<CommitmentDetails>(),
     lockedAt: timestamp("locked_at", { withTimezone: true, mode: "date" }).notNull()
   },
   (table) => [
@@ -422,6 +427,7 @@ export const submissions = pgTable(
     state: text("state").$type<SubmissionState>().notNull(),
     resultSummary: text("result_summary").notNull(),
     artifactUrl: text("artifact_url").notNull(),
+    templateEvidence: jsonb("template_evidence").$type<TemplateEvidence>(),
     evidenceObjectKey: text("evidence_object_key"),
     evidenceContentType: text("evidence_content_type"),
     evidenceByteSize: integer("evidence_byte_size"),

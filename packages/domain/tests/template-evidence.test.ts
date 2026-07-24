@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   legacySubmissionProjection,
+  validateCreateGoal,
   validateTemplateEvidenceDraft,
   validateTemplateEvidenceSubmission,
   type CommitmentDetails,
@@ -368,6 +369,18 @@ describe("final template evidence", () => {
 });
 
 describe("template compatibility projections", () => {
+  it("normalizes one concrete Practice and Create goal", () => {
+    expect(validateCreateGoal("  Complete one finished character color study.  "))
+      .toEqual({
+        success: true,
+        value: { goal: "Complete one finished character color study." }
+      });
+    expect(validateCreateGoal("Sketch")).toEqual({
+      success: false,
+      errors: ["Describe a concrete output goal in 12 to 240 characters"]
+    });
+  });
+
   it("keeps commitment kinds and details closed", () => {
     const kinds: Record<CommitmentKind, true> = {
       build: true,

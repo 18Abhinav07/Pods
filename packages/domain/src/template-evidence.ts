@@ -252,6 +252,19 @@ export function validateTemplateEvidenceSubmission(input: {
     : { success: true, value: evidence };
 }
 
+export function validateCreateGoal(
+  value: unknown
+): ValidationResult<{ goal: string }> {
+  const goal = normalizedText(value);
+  if (goal.length < 12 || goal.length > 240) {
+    return {
+      success: false,
+      errors: ["Describe a concrete output goal in 12 to 240 characters"]
+    };
+  }
+  return { success: true, value: { goal } };
+}
+
 /**
  * Produces legacy display columns only. Callers must still apply the proof
  * audience policy before returning either field outside the owner or reviewer

@@ -3,7 +3,7 @@ created: 2026-07-24
 project: pods
 ecosystem: nimiq
 tags: [validation, phase-5, settlement, payout, testnet]
-status: automated-browser-dry-run-pass-physical-pending
+status: deployed-broadcast-off-physical-pending
 ---
 
 # Phase 5 Settlement and Payout Gate
@@ -14,13 +14,61 @@ Related: [[HANDOFF]] |
 
 ## Current verdict
 
-`AUTOMATED, MOBILE BROWSER, AND NON-BROADCAST DRY RUN PASS`
+`AUTOMATED, MOBILE BROWSER, NON-BROADCAST DRY RUN, AND STAGED DEPLOYMENT PASS`
 
 `PHYSICAL NIMIQ PAY PAYOUT PENDING`
 
 The deterministic settlement, immutable payout attempts, operations recovery,
 and participant and creator settlement surfaces are implemented. No Mainnet
 behavior is authorized. No automated test broadcast a treasury transaction.
+
+## Testnet release hardening and staged deployment
+
+Release candidate `upgrade/testnet-rewards` at
+`1c4ae201e607e1b3e631074f274144d921be279f` adds:
+
+- independent fail-closed controls for new deposit intake, proportional
+  publication, settlement calculation, payout broadcast, legacy refunds, and
+  the financial incident pause;
+- reconciliation-only worker behavior while new signing and broadcast are
+  disabled;
+- an explicit saved-draft creator state while publication is paused;
+- exact web and worker runtime identity using a full release commit;
+- database readiness tied to both the latest Drizzle migration timestamp and
+  its SHA-256 hash;
+- a visible `Testnet beta` marker on the public, connected, creation, and Pod
+  room shells.
+
+The hardened full gate passed:
+
+- Root tests: 6 PASS.
+- Domain tests: 86 PASS.
+- UI tests: 3 PASS.
+- Database unit tests: 10 PASS.
+- Worker tests: 70 PASS.
+- Web tests: 448 PASS.
+- PostgreSQL integration tests: 91 PASS.
+- Lint, copy, all workspace typechecks, worker build, and Next.js production
+  build: PASS.
+- Independent post-fix review: PASS with no remaining safety, authorization,
+  lifecycle, readiness, or secret-leakage finding.
+
+The clean release candidate was pushed to GitHub and deployed with payout
+broadcast still disabled:
+
+- Web deployment `bce1a1fe-454e-4265-a153-be8b51600c24`: `SUCCESS`.
+- Worker deployment `d17e7e7b-34d7-41e8-8085-82d7c78e7c62`: `SUCCESS`.
+- Live web readiness: configuration, database, evidence storage, and schema
+  all `ready`.
+- Live runtime: `testnet`, `nimiq-testnet`, commit `1c4ae201e607`, schema
+  `0017_robust_loners`.
+- Live 390 px browser inspection: PASS with no console warnings.
+
+Before and after deployment, production contained one unchanged active
+`full_refund_alpha` Pod, two confirmed refund legs, zero settlement runs, and
+zero payout legs. New proportional publication and settlement processing are
+enabled for the physical gate. New payout signing and broadcast remain
+disabled until the settlement snapshot is inspected.
 
 ## Implemented boundary
 

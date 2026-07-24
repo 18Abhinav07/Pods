@@ -1,62 +1,70 @@
 ---
 project: pods
-last-updated: 2026-07-24 17:40
+last-updated: 2026-07-24
 last-agent: codex
 mode: HACKATHON
 ---
 
 # Pods Handoff
 
-Related: [[README]] | [[sessions/2026-07-24-codex-hackathon]] |
-[[docs/superpowers/specs/2026-07-23-pods-creator-review-mvp-design]]
+Related: [[README]] |
+[[docs/superpowers/plans/2026-07-24-pods-settlement-payout]] |
+[[validation/phase-5-results]]
 
 ## State
 
-Phase 4 community Testnet alpha is release-ready. The deployed creator,
-participant, proof, room, privacy, and timeout journeys passed automated,
-production-readiness, and physical Nimiq Pay verification.
+The first sequential upgrade, Testnet rewards, is deployed as a staged release
+candidate. Proportional publication and settlement processing are enabled.
+Payout signing and broadcast remain fail-closed until the physical two-wallet
+settlement snapshot is inspected.
 
 ## In Progress (resume here)
 
-- Task: publish the community launch post and open a fresh public
-  `Pods in Pods` cohort.
+- Task: complete the physical proportional settlement and payout gate.
 - Production: `https://pods-nimiq-activity.up.railway.app`.
-- Launch asset:
-  `/Users/18abhinav07/.codex/generated_images/019f7647-a0c6-73c3-bde8-f6cdc4600925/call_7ixDaH4oMm9TLknGJ2Bj553F.png`.
+- Payout broadcast: explicitly disabled on web and worker.
+- Required device actors: one creator and two participant wallets.
 
 ## Open Errors / Blockers
 
-- None for the small, clearly labelled Nimiq Testnet community alpha.
-- Proportional settlement remains disabled for the existing
-  `full_refund_alpha` contract.
+- Physical Nimiq Pay payout confirmation is still pending.
+- Do not advertise redistributed Testnet rewards until that gate passes.
+- No Mainnet configuration or transaction is authorized.
 
 ## Git State
 
-- Branch: `fix/phase4-activity-experience`.
-- Clean release commit: `faf2d55 polish Phase 4 activity release`.
-- `origin/main` and the release branch both point to `faf2d55`.
-- Full `pnpm check`: PASS with 587 non-integration and 90 integration tests.
-- Focused release UI tests: 73 PASS.
-- Android approve, reject-with-privacy, and timeout journeys: PASS.
+- Main remains at `6e6bb80da410abcacc12a81d936c0b3cce42a1de`.
+- Upgrade branch: `upgrade/testnet-rewards`.
+- Deployed code commit: `1c4ae201e607e1b3e631074f274144d921be279f`.
+- The release candidate branch is pushed and matched its remote before
+  deployment.
+- Full `pnpm check`: PASS with 623 non-integration tests and 91 integration
+  tests.
+- Independent hardening re-review: PASS.
+- The legacy root worktree on `phase/04-activity` is intentionally preserved
+  because it contains unrelated user changes.
 
 ## Runtime State
 
-- Web deployment `5d8e292b-a230-45e1-be0d-89bff0da04cc`: `SUCCESS`.
-- Final Worker deployment `2059aba2-58e1-45c7-94ff-7c29c107606a`: `SUCCESS`.
-- Production landing returns HTTP 200. Configuration, database, and evidence
-  storage readiness checks return `ready`.
-- Abhinav confirmed the Nimiq Pay creator-participant journey works correctly.
-- Amendment flag: `false` in the running Worker.
-- Railway SSH keys: none registered.
-- Frozen contract hash and creator consent hash remain
-  `044c980e87384587a380b15721b8e4efa8c3ff8c812e21d7e0caca3d2ec5c0b3`.
-- Creator membership, creator financial state, creator decisions, and
-  settlement runs remain zero.
+- Web deployment `bce1a1fe-454e-4265-a153-be8b51600c24`: `SUCCESS`.
+- Worker deployment `d17e7e7b-34d7-41e8-8085-82d7c78e7c62`: `SUCCESS`.
+- Both services are running and not stopped.
+- Live readiness reports configuration, database, evidence storage, and exact
+  schema identity as `ready`.
+- Live runtime reports Testnet commit `1c4ae201e607` and schema
+  `0017_robust_loners`.
+- Production data remained unchanged across deployment: one active
+  `full_refund_alpha` Pod, two confirmed refund legs, zero settlement runs,
+  and zero payout legs.
+- Controls on web and worker: public Testnet intake on, proportional
+  publication on, settlement processing on, payout broadcast off, incident
+  pause off, and legacy refunds on.
 
 ## Next 3 Tasks
 
-1. Create the public `Pods in Pods` Pod with visitors enabled and publish the
-   approved community post.
-2. Monitor the first small Testnet cohort and record only reproducible issues.
-3. Complete the physical proportional-settlement and payout gate before
-   advertising redistributed rewards.
+1. Create a small proportional Testnet Pod with one creator and two funded
+   participants, then reach terminal occurrence outcomes.
+2. Inspect the immutable settlement and conservation result while payout
+   broadcast is still off.
+3. Enable payout broadcast only after that inspection, confirm both terminal
+   transfer outcomes in Nimiq Pay, then merge the approved upgrade into main.

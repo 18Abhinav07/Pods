@@ -3184,10 +3184,131 @@ button.secondary-action {
 
 .activity-contract-card > label,
 .activity-evidence-card > label,
+.template-editor-fields > label,
 .optional-evidence-upload > label {
   color: #494a60;
   font-size: 0.68rem;
   font-weight: 800;
+}
+
+.template-editor-fields {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.template-editor-fields > label span {
+  margin-left: 0.3rem;
+  color: #918c83;
+  font-size: 0.58rem;
+  font-weight: 650;
+}
+
+.template-requirement {
+  position: relative;
+  display: grid;
+  gap: 0.3rem;
+  padding: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(31, 35, 72, 0.08);
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 252, 0.76);
+}
+
+.template-requirement::after {
+  position: absolute;
+  right: -1.4rem;
+  bottom: -1.6rem;
+  width: 5.8rem;
+  height: 5.8rem;
+  border: 1px solid rgba(31, 35, 72, 0.08);
+  border-radius: 50%;
+  content: "";
+}
+
+.template-requirement span {
+  color: var(--action);
+  font: 800 0.56rem/1 "Fira Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.template-requirement strong {
+  max-width: 82%;
+  font-size: 1rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.template-requirement p,
+.evidence-example {
+  margin: 0;
+  color: #777168;
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+.template-fitness .template-requirement {
+  color: #f5ffe4;
+  background: linear-gradient(145deg, #17251c, #30452a);
+}
+
+.template-fitness .template-requirement span,
+.template-fitness .template-requirement p {
+  color: #d9ed72;
+}
+
+.template-reading .template-requirement,
+.template-study .template-requirement {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(255, 193, 89, 0.28), transparent 32%),
+    #fff7df;
+}
+
+.template-create .template-requirement {
+  color: #f8f6ff;
+  background:
+    radial-gradient(circle at 90% 12%, rgba(217, 237, 114, 0.2), transparent 34%),
+    linear-gradient(145deg, #25294e, #3c426f);
+}
+
+.template-create .template-requirement span,
+.template-create .template-requirement p {
+  color: #d9ed72;
+}
+
+.quantity-with-unit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #d8d6ce;
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 252, 0.9);
+}
+
+.activity-evidence-card .quantity-with-unit input {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.quantity-with-unit span {
+  padding: 0 0.85rem;
+  color: #6e6a63;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.proof-action-placeholder {
+  display: grid;
+  min-height: 84px;
+  align-content: space-between;
+  gap: 8px;
+  padding: 9px;
+  border: 1px dashed rgba(31, 35, 72, 0.1);
+  border-radius: 14px;
+  color: #918c83;
+  background: rgba(255, 255, 255, 0.48);
 }
 
 .activity-contract-card textarea,

@@ -54,23 +54,9 @@ export function CreateEditor({
         rows={5}
         value={evidence.reflection}
       />
-      <label htmlFor="create-artifact-url">
-        Published artifact link <span>Optional with an image</span>
-      </label>
-      <input
-        id="create-artifact-url"
-        onChange={(event) => onChange({
-          ...evidence,
-          artifactUrl: event.target.value || null
-        })}
-        placeholder="https://example.com/my-artifact"
-        type="url"
-        value={evidence.artifactUrl ?? ""}
-      />
       <p className="evidence-example">
-        Add an artifact image or a safe published link that demonstrates the locked goal.
+        Next, add an artifact image or safe published link that demonstrates the locked goal.
       </p>
     </div>
   );
 }
-

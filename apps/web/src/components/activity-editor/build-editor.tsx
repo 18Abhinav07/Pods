@@ -92,22 +92,9 @@ export function BuildEditor({
         rows={5}
         value={evidence.resultSummary}
       />
-      <label htmlFor="artifact-url">Public artifact URL</label>
-      <input
-        id="artifact-url"
-        onChange={(event) => onChange({
-          ...evidence,
-          artifactUrl: event.target.value
-        })}
-        placeholder="https://github.com/owner/repo/pull/42"
-        required
-        type="url"
-        value={evidence.artifactUrl}
-      />
       <p className="evidence-example">
-        Use the GitHub commit, pull request, issue, or deployed URL that matches the locked task.
+        Next, attach the GitHub or deployed URL that matches the locked task.
       </p>
     </div>
   );
 }
-

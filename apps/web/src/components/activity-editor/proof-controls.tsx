@@ -1,138 +1,176 @@
 "use client";
 
+import {
+  Camera,
+  Check,
+  ImageSquare,
+  LinkSimple,
+  LockSimple,
+  UsersThree
+} from "@phosphor-icons/react";
 import type { ProofShareMode } from "@pods/domain";
-import { useRef, useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 
-export function ProofControls({
-  artifactAnchor,
+const acceptedImages =
+  "image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif";
+
+export function ProofAttachmentControls({
+  artifactError,
+  artifactMode = "required",
+  artifactUrl,
+  imagePreviewUrl,
   imageRequired,
+  onArtifactUrl,
   onFile,
-  onShareMode,
-  proofShareMode,
-  publicVisitorSharingEnabled,
   uploadComplete,
   uploadProgress
 }: {
-  artifactAnchor?: string;
+  artifactError?: string | null;
+  artifactMode?: "required" | "image_or_link";
+  artifactUrl?: string | null;
+  imagePreviewUrl?: string | null;
   imageRequired: boolean;
+  onArtifactUrl?: (value: string) => void;
   onFile: (file: File) => void;
-  onShareMode: (mode: ProofShareMode) => void;
-  proofShareMode: ProofShareMode;
-  publicVisitorSharingEnabled: boolean;
   uploadComplete: boolean;
   uploadProgress: number | null;
 }) {
-  const [open, setOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(Boolean(artifactUrl));
   const cameraInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
+  const linkInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!linkOpen) return;
+    const frame = window.requestAnimationFrame(() => linkInput.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [linkOpen]);
+
+  function pickFile(input: HTMLInputElement | null) {
+    input?.click();
+  }
+
+  function fileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+    if (file) onFile(file);
+  }
 
   return (
-    <div className="proof-add-studio">
-      <div className="proof-add-heading">
-        <div>
-          <span>Evidence</span>
-          <strong>{imageRequired ? "Add the required image" : "Add supporting proof"}</strong>
-        </div>
-        <button
-          aria-expanded={open}
-          aria-label="Add evidence"
-          onClick={() => setOpen((current) => !current)}
-          type="button"
-        >
-          {open ? "Close" : "+ Add"}
-        </button>
-      </div>
-      <fieldset className="proof-privacy-choice">
-        <legend>Proof visibility</legend>
-        <label className={proofShareMode === "reviewer_only" ? "is-selected" : ""}>
-          <input
-            checked={proofShareMode === "reviewer_only"}
-            name="proof-share"
-            onChange={() => onShareMode("reviewer_only")}
-            type="radio"
+    <section className="proof-attachment-studio">
+      <header className="proof-stage-heading">
+        <span>Visible evidence</span>
+        <h2>{imageRequired ? "Add the required image." : "Show the finished work."}</h2>
+        <p>
+          {imageRequired
+            ? "Capture now or choose one clear image from this occurrence."
+            : artifactMode === "image_or_link"
+              ? "Add a supporting image or a safe HTTPS link. One is required."
+              : "Add the matching public link. A supporting image is optional."}
+        </p>
+      </header>
+
+      {imagePreviewUrl ? (
+        <figure className="proof-image-preview">
+          <Image
+            alt="Selected proof preview"
+            height={960}
+            src={imagePreviewUrl}
+            unoptimized
+            width={960}
           />
-          <span>
-            <strong>Creator only</strong>
-            Private evidence for the decision
-          </span>
-        </label>
-        <label className={proofShareMode === "pod_shared" ? "is-selected" : ""}>
-          <input
-            checked={proofShareMode === "pod_shared"}
-            name="proof-share"
-            onChange={() => onShareMode("pod_shared")}
-            type="radio"
-          />
-          <span>
-            <strong>Share with Pod</strong>
-            Visible to the creator and locked roster
-          </span>
-        </label>
-        {publicVisitorSharingEnabled ? (
-          <label className={proofShareMode === "public" ? "is-selected" : ""}>
-            <input
-              checked={proofShareMode === "public"}
-              name="proof-share"
-              onChange={() => onShareMode("public")}
-              type="radio"
-            />
+          <figcaption>
             <span>
-              <strong>Share publicly</strong>
-              Visible in the public read-only Pod room
+              {uploadComplete ? <Check aria-hidden="true" weight="bold" /> : null}
+              {uploadComplete ? "Image secured" : "Image selected"}
             </span>
-          </label>
-        ) : null}
-      </fieldset>
-      {open ? (
-        <div className="proof-action-sheet">
-          <button onClick={() => cameraInput.current?.click()} type="button">
-            <i>CAM</i>
-            <span>Camera<strong>Capture now</strong></span>
+            <button onClick={() => pickFile(imageInput.current)} type="button">
+              Replace image
+            </button>
+          </figcaption>
+        </figure>
+      ) : (
+        <div className="proof-media-actions">
+          <button
+            aria-label="Open camera"
+            onClick={() => pickFile(cameraInput.current)}
+            type="button"
+          >
+            <Camera aria-hidden="true" size={23} weight="regular" />
+            <span><strong>Camera</strong>Capture proof now</span>
           </button>
-          <button onClick={() => imageInput.current?.click()} type="button">
-            <i>IMG</i>
-            <span>Image<strong>Choose a file</strong></span>
+          <button
+            aria-label="Choose image"
+            onClick={() => pickFile(imageInput.current)}
+            type="button"
+          >
+            <ImageSquare aria-hidden="true" size={23} weight="regular" />
+            <span><strong>Image</strong>Choose from device</span>
           </button>
-          {artifactAnchor ? (
-            <a href={`#${artifactAnchor}`}>
-              <i>URL</i>
-              <span>Link<strong>Published artifact</strong></span>
-            </a>
+        </div>
+      )}
+
+      {onArtifactUrl ? (
+        <div className="proof-link-control">
+          {!linkOpen ? (
+            <button
+              aria-label="Add artifact link"
+              className="proof-link-trigger"
+              onClick={() => setLinkOpen(true)}
+              type="button"
+            >
+              <LinkSimple aria-hidden="true" size={22} />
+              <span>
+                <strong>Add artifact link</strong>
+                GitHub, deployed work, or a safe HTTPS artifact
+              </span>
+            </button>
           ) : (
-            <span className="proof-action-placeholder" aria-hidden="true">
-              <i>IMG</i>
-              <span>Image<strong>Required</strong></span>
-            </span>
+            <div className="proof-link-editor">
+              <label htmlFor="proof-artifact-url">Public artifact URL</label>
+              <div>
+                <LinkSimple aria-hidden="true" size={20} />
+                <input
+                  aria-invalid={Boolean(artifactError)}
+                  id="proof-artifact-url"
+                  onChange={(event) => onArtifactUrl(event.target.value)}
+                  placeholder="https://github.com/owner/repo/pull/42"
+                  ref={linkInput}
+                  type="url"
+                  value={artifactUrl ?? ""}
+                />
+              </div>
+              {artifactError ? (
+                <p className="proof-link-error" role="alert">{artifactError}</p>
+              ) : (
+                <p>The creator opens this exact link during review.</p>
+              )}
+            </div>
           )}
         </div>
       ) : null}
+
       <input
-        accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
+        accept={acceptedImages}
         aria-label="Capture evidence photo"
         capture="environment"
         className="proof-file-input"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) onFile(file);
-        }}
+        onChange={fileChange}
         ref={cameraInput}
         type="file"
       />
       <input
-        accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
+        accept={acceptedImages}
         aria-label="Choose evidence image"
         className="proof-file-input"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) onFile(file);
-        }}
+        onChange={fileChange}
         ref={imageInput}
         type="file"
       />
-      <p className="proof-lock-note">
-        The visibility choice becomes immutable when you submit.
-      </p>
-      {uploadProgress !== null ? (
+
+      {uploadProgress !== null && !uploadComplete ? (
         <div className="upload-progress" aria-live="polite">
           <i style={{ width: `${uploadProgress}%` }} />
           <span>
@@ -144,6 +182,77 @@ export function ProofControls({
           </span>
         </div>
       ) : null}
-    </div>
+    </section>
+  );
+}
+
+export function ProofPrivacyControls({
+  onShareMode,
+  proofShareMode,
+  publicVisitorSharingEnabled
+}: {
+  onShareMode: (mode: ProofShareMode) => void;
+  proofShareMode: ProofShareMode;
+  publicVisitorSharingEnabled: boolean;
+}) {
+  const choices: Array<{
+    mode: ProofShareMode;
+    title: string;
+    detail: string;
+    icon: typeof LockSimple;
+  }> = [
+    {
+      mode: "reviewer_only",
+      title: "Creator only",
+      detail: "Private evidence for the creator's decision",
+      icon: LockSimple
+    },
+    {
+      mode: "pod_shared",
+      title: "Share with Pod",
+      detail: "Visible to the creator and locked members",
+      icon: UsersThree
+    },
+    ...(publicVisitorSharingEnabled
+      ? [{
+          mode: "public" as const,
+          title: "Share publicly",
+          detail: "Visible in this Pod's public read-only room",
+          icon: LinkSimple
+        }]
+      : [])
+  ];
+
+  return (
+    <fieldset className="proof-privacy-choice is-premium-choice">
+      <legend>Who can see this proof?</legend>
+      <p>Your choice locks when the proof is submitted.</p>
+      {choices.map((choice) => {
+        const Icon = choice.icon;
+        return (
+          <label
+            className={proofShareMode === choice.mode ? "is-selected" : ""}
+            key={choice.mode}
+          >
+            <input
+              checked={proofShareMode === choice.mode}
+              name="proof-share"
+              onChange={() => onShareMode(choice.mode)}
+              type="radio"
+            />
+            <Icon aria-hidden="true" size={22} weight="regular" />
+            <span>
+              <strong>{choice.title}</strong>
+              {choice.detail}
+            </span>
+            <i aria-hidden="true">
+              {proofShareMode === choice.mode
+                ? <Check size={13} weight="bold" />
+                : null}
+            </i>
+          </label>
+        );
+      })}
+    </fieldset>
   );
 }

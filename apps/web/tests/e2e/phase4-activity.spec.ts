@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { KeyPair, PrivateKey } from "@nimiq/core";
 import { createPodsRepository } from "@pods/db";
-import { expect, test, type BrowserContext } from "@playwright/test";
+import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import sharp from "sharp";
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3410";
@@ -28,6 +28,14 @@ function databasePool() {
   );
   const { Pool } = requireFromDatabaseWorkspace("pg") as { Pool: DatabasePoolConstructor };
   return new Pool({ connectionString: databaseUrl });
+}
+
+async function waitForFlowStage(page: Page) {
+  await expect.poll(() =>
+    page.locator(".flow-stage").evaluate((element) =>
+      window.getComputedStyle(element).opacity
+    )
+  ).toBe("1");
 }
 
 async function authenticate(context: BrowserContext) {
@@ -280,7 +288,7 @@ test.afterAll(async () => {
 test("creator approves proof through the UI without gaining member finances", async ({
   browser,
   context
-}) => {
+}, testInfo) => {
   test.setTimeout(60_000);
   const creatorWallet = await authenticate(context);
   const memberContext = await browser.newContext();
@@ -325,13 +333,42 @@ test("creator approves proof through the UI without gaining member finances", as
     await memberPage.getByLabel("Today's task").fill(
       "Ship the participant activity screen with private evidence and reviewer states."
     );
+    await waitForFlowStage(memberPage);
+    await memberPage.screenshot({
+      path: testInfo.outputPath("commitment-define-mobile.png")
+    });
+    await memberPage.getByRole("button", { name: "Choose proof type" }).click();
+    await expect(
+      memberPage.getByRole("heading", {
+        name: "Choose how the work will be verified."
+      })
+    ).toBeVisible();
+    await expect(
+      memberPage.getByText("GitHub pull request", { exact: true })
+    ).toBeInViewport({ ratio: 1 });
+    await waitForFlowStage(memberPage);
+    await memberPage.screenshot({
+      path: testInfo.outputPath("commitment-proof-type-mobile.png")
+    });
     await memberPage.getByRole("radio", { name: "GitHub pull request" }).check();
+    await memberPage.getByRole("button", { name: "Review commitment" }).click();
+    await expect(
+      memberPage.getByRole("heading", { name: "Make it official." })
+    ).toBeVisible();
+    await waitForFlowStage(memberPage);
+    await memberPage.screenshot({
+      path: testInfo.outputPath("commitment-review-mobile.png")
+    });
     await memberPage.getByRole("button", { name: "Lock this task" }).click();
-    await expect(memberPage.getByText("Locked task")).toBeVisible();
+    await expect(
+      memberPage.getByText("Locked task · occurrence 1", { exact: true })
+    ).toBeVisible();
 
     await memberPage.getByLabel("Result summary").fill(
       "Shipped the participant occurrence flow, private image handling, and manual review states."
     );
+    await memberPage.getByRole("button", { name: "Continue to evidence" }).click();
+    await memberPage.getByRole("button", { name: "Add artifact link" }).click();
     await memberPage.getByLabel("Public artifact URL").fill(
       "https://github.com/18Abhinav07/Pods/pull/42"
     );
@@ -345,7 +382,30 @@ test("creator approves proof through the UI without gaining member finances", as
       buffer: evidenceImage
     });
     await expect(memberPage.getByText("Image secured")).toBeVisible();
-    await memberPage.getByRole("button", { name: "Review and submit" }).click();
+    await expect(
+      memberPage.getByRole("heading", { name: "Show the finished work." })
+    ).toBeVisible();
+    await waitForFlowStage(memberPage);
+    await memberPage.screenshot({
+      path: testInfo.outputPath("proof-evidence-mobile.png")
+    });
+    await memberPage.getByRole("button", { name: "Continue to visibility" }).click();
+    await expect(
+      memberPage.getByRole("heading", { name: "Choose the right visibility." })
+    ).toBeVisible();
+    await waitForFlowStage(memberPage);
+    await memberPage.screenshot({
+      path: testInfo.outputPath("proof-visibility-mobile.png")
+    });
+    await memberPage.getByRole("button", { name: "Review submission" }).click();
+    await expect(
+      memberPage.getByRole("heading", { name: "Ready for creator review." })
+    ).toBeVisible();
+    await waitForFlowStage(memberPage);
+    await memberPage.screenshot({
+      path: testInfo.outputPath("proof-review-mobile.png")
+    });
+    await memberPage.getByRole("button", { name: "Submit to creator" }).click();
     await expect(memberPage.getByRole("heading", { name: "Creator review in progress" })).toBeVisible();
 
     await creatorPage.goto(`${baseUrl}/today`);

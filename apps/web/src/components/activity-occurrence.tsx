@@ -8,23 +8,23 @@ import type {
   TemplateEvidence,
   TemplateId
 } from "@pods/domain";
+import { validateTemplateEvidenceSubmission } from "@pods/domain";
+import { ArrowLeft, ArrowRight, Check } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { formatZonedMoment } from "../lib/format-moment";
-import {
-  BuildCommitmentEditor,
-  BuildEditor,
-  deliverableLabel
-} from "./activity-editor/build-editor";
-import {
-  CreateCommitmentEditor,
-  CreateEditor
-} from "./activity-editor/create-editor";
+import { BuildEditor, deliverableLabel } from "./activity-editor/build-editor";
+import { CommitmentWizard } from "./activity-editor/commitment-wizard";
+import { CreateEditor } from "./activity-editor/create-editor";
 import { FitnessEditor } from "./activity-editor/fitness-editor";
-import { ProofControls } from "./activity-editor/proof-controls";
+import { FlowProgress } from "./activity-editor/flow-progress";
+import {
+  ProofAttachmentControls,
+  ProofPrivacyControls
+} from "./activity-editor/proof-controls";
 import { ReadingEditor } from "./activity-editor/reading-editor";
 import { StudyEditor } from "./activity-editor/study-editor";
 import type {
@@ -132,7 +132,7 @@ function initialEvidence(
   };
 }
 
-function evidenceReadyForDraft(evidence: TemplateEvidence): boolean {
+function detailsReadyForDraft(evidence: TemplateEvidence): boolean {
   if (evidence.kind === "fitness") {
     return evidence.completionNote.trim().length >= 4;
   }
@@ -147,30 +147,21 @@ function evidenceReadyForDraft(evidence: TemplateEvidence): boolean {
     );
   }
   if (evidence.kind === "build") {
-    return (
-      evidence.resultSummary.trim().length >= 20 &&
-      evidence.artifactUrl.startsWith("https://")
-    );
+    return evidence.resultSummary.trim().length >= 20;
   }
   return evidence.reflection.trim().length >= 12;
 }
 
-function evidenceReadyForSubmit(
-  evidence: TemplateEvidence,
-  hasImage: boolean
-): boolean {
-  if (!evidenceReadyForDraft(evidence)) return false;
-  if (
-    evidence.kind === "fitness" ||
-    evidence.kind === "reading" ||
-    evidence.kind === "study"
-  ) {
-    return hasImage;
+function evidenceSummary(evidence: TemplateEvidence): string {
+  if (evidence.kind === "fitness") return evidence.completionNote;
+  if (evidence.kind === "reading") {
+    return `${evidence.title} · ${evidence.amountCompleted} ${evidence.unit}`;
   }
-  if (evidence.kind === "create") {
-    return hasImage || Boolean(evidence.artifactUrl?.startsWith("https://"));
+  if (evidence.kind === "study") {
+    return `${evidence.topic} · ${evidence.durationMinutes} minutes`;
   }
-  return true;
+  if (evidence.kind === "create") return evidence.reflection;
+  return evidence.resultSummary;
 }
 
 async function responseBody(response: Response) {
@@ -179,12 +170,6 @@ async function responseBody(response: Response) {
     commitment?: ActivityCommitmentView;
     submission?: ActivitySubmissionView;
   }>;
-}
-
-function evidenceAnchor(templateId: TemplateId): string | undefined {
-  if (templateId === "build") return "artifact-url";
-  if (templateId === "create") return "create-artifact-url";
-  return undefined;
 }
 
 export function ActivityOccurrence(props: Props) {
@@ -224,9 +209,21 @@ export function ActivityOccurrence(props: Props) {
   const [uploadComplete, setUploadComplete] = useState(
     Boolean(props.submission?.evidenceObjectKey)
   );
+  const [proofStep, setProofStep] = useState(0);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(() =>
+    props.submission?.evidenceObjectKey
+      ? `/api/pods/${props.podId}/submissions/${props.submission.id}/evidence`
+      : null
+  );
   const evidenceForm = useRef<HTMLFormElement>(null);
+  const objectPreviewUrl = useRef<string | null>(null);
   const draftSaveVersion = useRef(0);
+  const draftSaveQueue = useRef<Promise<ActivitySubmissionView | null>>(
+    Promise.resolve(null)
+  );
   const autoSaveTimer = useRef<number | null>(null);
+  const uploadRequest = useRef<XMLHttpRequest | null>(null);
+  const uploadVersion = useRef(0);
   const dirty =
     JSON.stringify(evidence) !== JSON.stringify(savedEvidence) ||
     proofShareMode !== savedProofShareMode;
@@ -240,6 +237,45 @@ export function ActivityOccurrence(props: Props) {
     setProofShareModeState(next);
     setDraftState("idle");
   }
+
+  function setArtifactUrl(value: string) {
+    if (evidence.kind === "build") {
+      setEvidence({ ...evidence, artifactUrl: value });
+    } else if (evidence.kind === "create") {
+      setEvidence({ ...evidence, artifactUrl: value || null });
+    }
+  }
+
+  function selectImage(file: File) {
+    if (!detailsReadyForDraft(evidence)) {
+      evidenceForm.current?.reportValidity();
+      setError("Complete the activity details before attaching an image.");
+      return;
+    }
+    const version = ++uploadVersion.current;
+    uploadRequest.current?.abort();
+    uploadRequest.current = null;
+    setError("");
+    setUploadProgress(0);
+    setUploadComplete(false);
+    if (typeof URL.createObjectURL === "function") {
+      if (objectPreviewUrl.current) URL.revokeObjectURL(objectPreviewUrl.current);
+      const nextPreview = URL.createObjectURL(file);
+      objectPreviewUrl.current = nextPreview;
+      setImagePreviewUrl(nextPreview);
+    }
+    void uploadImage(file, version);
+  }
+
+  useEffect(() => () => {
+    uploadVersion.current += 1;
+    uploadRequest.current?.abort();
+    uploadRequest.current = null;
+    if (objectPreviewUrl.current) {
+      URL.revokeObjectURL(objectPreviewUrl.current);
+      objectPreviewUrl.current = null;
+    }
+  }, []);
 
   async function lock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -278,39 +314,51 @@ export function ActivityOccurrence(props: Props) {
     }
   }
 
-  const persistDraft = useCallback(async () => {
+  const persistDraft = useCallback(() => {
     const version = ++draftSaveVersion.current;
+    const evidenceSnapshot = evidence;
+    const proofShareModeSnapshot = proofShareMode;
     setDraftState("saving");
     setError("");
-    try {
-      const response = await fetch(
-        `/api/pods/${props.podId}/occurrences/${props.occurrenceId}/draft`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ templateEvidence: evidence, proofShareMode })
-        }
-      );
-      const body = await responseBody(response);
-      if (!response.ok || !body.submission) {
-        throw new Error(body.error ?? "Evidence draft could not be saved");
-      }
-      if (version === draftSaveVersion.current) {
-        setSubmission(body.submission);
-        setSavedEvidence(evidence);
-        setSavedProofShareMode(proofShareMode);
-        setDraftState("saved");
-      }
-      return body.submission;
-    } catch (cause) {
-      if (version === draftSaveVersion.current) {
-        setDraftState("idle");
-        setError(
-          cause instanceof Error ? cause.message : "Evidence draft could not be saved"
+    const save = async (): Promise<ActivitySubmissionView | null> => {
+      try {
+        const response = await fetch(
+          `/api/pods/${props.podId}/occurrences/${props.occurrenceId}/draft`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              templateEvidence: evidenceSnapshot,
+              proofShareMode: proofShareModeSnapshot
+            })
+          }
         );
+        const body = await responseBody(response);
+        if (!response.ok || !body.submission) {
+          throw new Error(body.error ?? "Evidence draft could not be saved");
+        }
+        if (version === draftSaveVersion.current) {
+          setSubmission(body.submission);
+          setSavedEvidence(evidenceSnapshot);
+          setSavedProofShareMode(proofShareModeSnapshot);
+          setDraftState("saved");
+        }
+        return body.submission;
+      } catch (cause) {
+        if (version === draftSaveVersion.current) {
+          setDraftState("idle");
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "Evidence draft could not be saved"
+          );
+        }
+        return null;
       }
-      return null;
-    }
+    };
+    const queued = draftSaveQueue.current.then(save, save);
+    draftSaveQueue.current = queued;
+    return queued;
   }, [evidence, proofShareMode, props.occurrenceId, props.podId]);
 
   useEffect(() => {
@@ -318,7 +366,7 @@ export function ActivityOccurrence(props: Props) {
       (perOccurrence && !commitment) ||
       (submission && submission.state !== "draft") ||
       !dirty ||
-      !evidenceReadyForDraft(evidence)
+      !detailsReadyForDraft(evidence)
     ) {
       return;
     }
@@ -341,12 +389,7 @@ export function ActivityOccurrence(props: Props) {
     submission
   ]);
 
-  async function uploadImage(file: File) {
-    if (!evidenceReadyForDraft(evidence)) {
-      evidenceForm.current?.reportValidity();
-      setError("Complete the activity details before attaching an image.");
-      return;
-    }
+  async function uploadImage(file: File, version: number) {
     if (autoSaveTimer.current !== null) {
       window.clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = null;
@@ -355,10 +398,13 @@ export function ActivityOccurrence(props: Props) {
       !submission || submission.state !== "draft" || dirty
         ? await persistDraft()
         : submission;
-    if (!draft || draft.state !== "draft") return;
-    setError("");
-    setUploadProgress(0);
-    setUploadComplete(false);
+    if (
+      version !== uploadVersion.current ||
+      !draft ||
+      draft.state !== "draft"
+    ) {
+      return;
+    }
     const form = new FormData();
     form.set("submissionId", draft.id);
     form.set("image", file);
@@ -367,7 +413,9 @@ export function ActivityOccurrence(props: Props) {
       "POST",
       `/api/pods/${props.podId}/occurrences/${props.occurrenceId}/evidence`
     );
+    uploadRequest.current = request;
     request.upload.onprogress = (event) => {
+      if (version !== uploadVersion.current) return;
       if (event.lengthComputable) {
         setUploadProgress(
           Math.min(99, Math.round((event.loaded / event.total) * 100))
@@ -375,6 +423,9 @@ export function ActivityOccurrence(props: Props) {
       }
     };
     request.onload = () => {
+      if (version !== uploadVersion.current || uploadRequest.current !== request) {
+        return;
+      }
       try {
         const body = JSON.parse(request.responseText) as {
           error?: string;
@@ -390,8 +441,10 @@ export function ActivityOccurrence(props: Props) {
         setSubmission(body.submission);
         setUploadProgress(100);
         setUploadComplete(true);
+        uploadRequest.current = null;
         router.refresh();
       } catch (cause) {
+        uploadRequest.current = null;
         setUploadProgress(null);
         setUploadComplete(false);
         setError(
@@ -402,6 +455,10 @@ export function ActivityOccurrence(props: Props) {
       }
     };
     request.onerror = () => {
+      if (version !== uploadVersion.current || uploadRequest.current !== request) {
+        return;
+      }
+      uploadRequest.current = null;
       setUploadProgress(null);
       setUploadComplete(false);
       setError("Image upload was interrupted. Your saved draft is still available.");
@@ -411,13 +468,17 @@ export function ActivityOccurrence(props: Props) {
 
   async function submitForReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!evidenceReadyForSubmit(evidence, uploadComplete)) {
+    if (proofStep !== 3 || busy) return;
+    if (
+      uploadRequest.current ||
+      (uploadProgress !== null && !uploadComplete)
+    ) {
+      setError("Wait for the current image upload to finish before submitting.");
+      return;
+    }
+    if (!evidenceValidation.success) {
       evidenceForm.current?.reportValidity();
-      setError(
-        imageRequired
-          ? "Add the required evidence image before submitting."
-          : "Complete the proof requirements before submitting."
-      );
+      setError(evidenceValidation.errors[0] ?? "Complete the proof requirements.");
       return;
     }
     if (autoSaveTimer.current !== null) {
@@ -505,6 +566,43 @@ export function ActivityOccurrence(props: Props) {
       ? statusPresentation(status, perOccurrence)
       : null;
   const fullReturnAlpha = props.settlementMode === "full_refund_alpha";
+  const artifactUrl =
+    evidence.kind === "build" || evidence.kind === "create"
+      ? evidence.artifactUrl ?? ""
+      : "";
+  const evidenceValidation = validateTemplateEvidenceSubmission({
+    templateId,
+    evidence,
+    frozenConfig: configuration,
+    hasEvidenceImage: uploadComplete,
+    ...(evidence.kind === "build" && commitment?.deliverableType
+      ? { deliverableType: commitment.deliverableType }
+      : {})
+  });
+  const hasSafeArtifact =
+    evidence.kind === "build"
+      ? evidenceValidation.success
+      : artifactUrl.startsWith("https://");
+  const artifactError =
+    artifactUrl && !evidenceValidation.success
+      ? evidenceValidation.errors.find((message) =>
+          /artifact|GitHub|HTTPS|URL/.test(message)
+        ) ?? null
+      : null;
+  const attachmentReady = imageRequired
+    ? uploadComplete
+    : evidence.kind === "build"
+      ? evidenceValidation.success
+      : evidence.kind === "create"
+        ? evidenceValidation.success
+        : true;
+  const proofLabels = ["Activity", "Evidence", "Visibility", "Review"] as const;
+  const visibilityLabel =
+    proofShareMode === "reviewer_only"
+      ? "Creator only"
+      : proofShareMode === "pod_shared"
+        ? "Share with Pod"
+        : "Share publicly";
 
   return (
     <>
@@ -554,44 +652,21 @@ export function ActivityOccurrence(props: Props) {
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           onSubmit={lock}
         >
-          <nav aria-label="Commitment progress" className="guided-flow-progress">
-            <span aria-current="step"><i>1</i>Define</span>
-            <span><i>2</i>Review</span>
-            <span><i>3</i>Lock</span>
-          </nav>
-          {templateId === "create" ? (
-            <CreateCommitmentEditor goal={goal} onGoal={setGoal} />
-          ) : (
-            <BuildCommitmentEditor
-              allowedDeliverables={props.allowedDeliverables}
-              deliverableType={deliverableType}
-              onDeliverableType={setDeliverableType}
-              onTask={setTask}
-              task={task}
-            />
-          )}
-          <aside className="activity-lock-disclosure">
-            <strong>
-              Lock by{" "}
-              {props.commitmentDeadlineAt
-                ? formatZonedMoment(props.commitmentDeadlineAt, {
-                    timeZone: props.timeZone
-                  })
-                : "the commitment cutoff"}
-            </strong>
-            <p>
-              Once locked, this {templateId === "create" ? "goal" : "task"} cannot
-              be changed for this occurrence.
-            </p>
-          </aside>
+          <CommitmentWizard
+            allowedDeliverables={props.allowedDeliverables}
+            busy={busy}
+            closesAt={props.commitmentDeadlineAt}
+            deliverableType={deliverableType}
+            goal={goal}
+            onDeliverableType={setDeliverableType}
+            onGoal={setGoal}
+            onTask={setTask}
+            projectTheme={props.projectTheme}
+            task={task}
+            templateId={templateId}
+            timeZone={props.timeZone}
+          />
           {error ? <p className="form-error" role="alert">{error}</p> : null}
-          <button className="primary-action full-action" disabled={busy} type="submit">
-            {busy
-              ? "Locking commitment"
-              : templateId === "create"
-                ? "Lock this goal"
-                : "Lock this task"}
-          </button>
         </motion.form>
       ) : (
         <motion.form
@@ -601,38 +676,101 @@ export function ActivityOccurrence(props: Props) {
           onSubmit={submitForReview}
           ref={evidenceForm}
         >
-          <nav aria-label="Proof progress" className="guided-flow-progress">
-            <span aria-current="step"><i>1</i>Activity</span>
-            <span><i>2</i>Proof</span>
-            <span><i>3</i>Submit</span>
-          </nav>
-          {commitment && perOccurrence ? (
-            <div className="locked-task-panel">
-              <span>
-                Locked {templateId === "create" ? "goal" : "task"} · occurrence{" "}
-                {props.occurrenceOrdinal}
-              </span>
-              <strong>{commitment.task}</strong>
-              {templateId === "build" ? (
-                <small>{deliverableLabel(commitment.deliverableType)}</small>
-              ) : null}
-            </div>
-          ) : null}
-          {renderEvidenceEditor()}
-          <ProofControls
-            {...(evidenceAnchor(templateId)
-              ? { artifactAnchor: evidenceAnchor(templateId)! }
-              : {})}
-            imageRequired={imageRequired}
-            onFile={(file) => void uploadImage(file)}
-            onShareMode={setProofShareMode}
-            proofShareMode={proofShareMode}
-            publicVisitorSharingEnabled={Boolean(
-              props.publicVisitorSharingEnabled
-            )}
-            uploadComplete={uploadComplete}
-            uploadProgress={uploadProgress}
+          <FlowProgress
+            ariaLabel="Proof progress"
+            labels={proofLabels}
+            step={proofStep}
           />
+          <motion.section
+            animate={{ opacity: 1, x: 0 }}
+            className="flow-stage proof-flow-stage"
+            initial={reduceMotion ? false : { opacity: 0, x: 14 }}
+            key={proofStep}
+            transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {proofStep === 0 ? (
+              <>
+                {commitment && perOccurrence ? (
+                  <div className="locked-task-panel">
+                    <span>
+                      Locked {templateId === "create" ? "goal" : "task"} ·
+                      occurrence {props.occurrenceOrdinal}
+                    </span>
+                    <strong>{commitment.task}</strong>
+                    {templateId === "build" ? (
+                      <small>{deliverableLabel(commitment.deliverableType)}</small>
+                    ) : null}
+                  </div>
+                ) : null}
+                <header className="proof-stage-heading">
+                  <span>Completed activity</span>
+                  <h2>Record what happened.</h2>
+                  <p>Keep it specific enough for the creator to make a fair decision.</p>
+                </header>
+                {renderEvidenceEditor()}
+              </>
+            ) : null}
+
+            {proofStep === 1 ? (
+              <ProofAttachmentControls
+                {...(evidence.kind === "build" || evidence.kind === "create"
+                  ? {
+                      artifactUrl,
+                      onArtifactUrl: setArtifactUrl
+                    }
+                  : {})}
+                imagePreviewUrl={imagePreviewUrl}
+                imageRequired={imageRequired}
+                artifactError={artifactError}
+                artifactMode={evidence.kind === "create" ? "image_or_link" : "required"}
+                onFile={selectImage}
+                uploadComplete={uploadComplete}
+                uploadProgress={uploadProgress}
+              />
+            ) : null}
+
+            {proofStep === 2 ? (
+              <>
+                <header className="proof-stage-heading">
+                  <span>Proof audience</span>
+                  <h2>Choose the right visibility.</h2>
+                  <p>Private evidence stays between you and the creator. Shared evidence becomes part of the Pod story.</p>
+                </header>
+                <ProofPrivacyControls
+                  onShareMode={setProofShareMode}
+                  proofShareMode={proofShareMode}
+                  publicVisitorSharingEnabled={Boolean(
+                    props.publicVisitorSharingEnabled
+                  )}
+                />
+              </>
+            ) : null}
+
+            {proofStep === 3 ? (
+              <>
+                <header className="proof-stage-heading">
+                  <span>Final check</span>
+                  <h2>Ready for creator review.</h2>
+                  <p>The proof and its visibility become immutable after submission.</p>
+                </header>
+                <div className="proof-review-summary">
+                  <div><span>Activity</span><strong>{evidenceSummary(evidence)}</strong></div>
+                  <div>
+                    <span>Evidence</span>
+                    <strong>
+                      {uploadComplete && hasSafeArtifact
+                        ? "Image and public link"
+                        : uploadComplete
+                          ? "Image"
+                          : "Public link"}
+                    </strong>
+                  </div>
+                  <div><span>Visibility</span><strong>{visibilityLabel}</strong></div>
+                  <div><span>Reviewer</span><strong>Pod creator</strong></div>
+                </div>
+              </>
+            ) : null}
+          </motion.section>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
           <p
             className={`draft-saved-state is-${draftState}`}
@@ -644,17 +782,56 @@ export function ActivityOccurrence(props: Props) {
                 ? "Draft saved automatically"
                 : "Changes save automatically"}
           </p>
-          <button
-            className="primary-action full-action"
-            disabled={
-              busy ||
-              (uploadProgress !== null && !uploadComplete) ||
-              !evidenceReadyForSubmit(evidence, uploadComplete)
-            }
-            type="submit"
-          >
-            {busy ? "Submitting evidence" : "Review and submit"}
-          </button>
+          <footer className="flow-action-dock">
+            {proofStep > 0 ? (
+              <button
+                className="flow-back-action"
+                onClick={() => setProofStep((current) => Math.max(0, current - 1))}
+                type="button"
+              >
+                <ArrowLeft aria-hidden="true" size={18} />
+                Back
+              </button>
+            ) : <span />}
+            {proofStep < 3 ? (
+              <button
+                className="flow-primary-action"
+                disabled={
+                  proofStep === 0
+                    ? !detailsReadyForDraft(evidence)
+                    : proofStep === 1
+                      ? !attachmentReady ||
+                        (uploadProgress !== null && !uploadComplete)
+                      : false
+                }
+                onClick={(event) => {
+                  event.preventDefault();
+                  setProofStep((current) => Math.min(3, current + 1));
+                }}
+                type="button"
+              >
+                {proofStep === 0
+                  ? "Continue to evidence"
+                  : proofStep === 1
+                    ? "Continue to visibility"
+                    : "Review submission"}
+                <ArrowRight aria-hidden="true" size={18} />
+              </button>
+            ) : (
+              <button
+                className="flow-primary-action"
+                disabled={
+                  busy ||
+                  (uploadProgress !== null && !uploadComplete) ||
+                  !evidenceValidation.success
+                }
+                type="submit"
+              >
+                {busy ? "Submitting" : "Submit to creator"}
+                <Check aria-hidden="true" size={18} weight="bold" />
+              </button>
+            )}
+          </footer>
         </motion.form>
       )}
     </>

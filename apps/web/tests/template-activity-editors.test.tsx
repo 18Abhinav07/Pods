@@ -44,7 +44,8 @@ describe("template activity editors", () => {
     expect(screen.getByLabelText("Completion note")).toBeInTheDocument();
     expect(screen.getByText("Complete a 45 minute session")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /lock/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Review and submit" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Continue to evidence" }))
+      .toBeDisabled();
   });
 
   it("renders Reading quantity in the frozen unit with no lock step", () => {
@@ -111,7 +112,8 @@ describe("template activity editors", () => {
     );
 
     expect(screen.getByLabelText("Today's task")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lock this task" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose proof type" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Lock this task" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Result summary")).not.toBeInTheDocument();
   });
 
@@ -133,7 +135,8 @@ describe("template activity editors", () => {
     );
 
     expect(screen.getByLabelText("Output goal")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lock this goal" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review goal" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Lock this goal" })).not.toBeInTheDocument();
     expect(screen.queryByText("Visible deliverable")).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const notFound = vi.hoisted(() => vi.fn(() => {
@@ -112,14 +112,13 @@ describe("creator proof review pages", () => {
 
     expect(screen.getByLabelText("Pods Builder avatar")).toBeVisible();
     expect(screen.getByText("Pods Builder")).toBeVisible();
-    expect(screen.getByText("@pods-builder")).toBeVisible();
-    expect(screen.getByText("Occurrence 4")).toBeVisible();
+    expect(screen.getByText((content) =>
+      content.includes("@pods-builder") && content.includes("Occurrence 4")
+    )).toBeVisible();
     expect(screen.getByText(
       "Submitted Apr 5 · 4:30 PM Asia/Kolkata"
     )).toBeVisible();
-    expect(screen.getByText(
-      "Target Apr 6 · 4:30 AM Asia/Kolkata"
-    )).toBeVisible();
+    expect(screen.getByText("Review", { exact: true })).toBeVisible();
     expect(screen.getByRole("link", { name: /Review Pods Builder proof/i }))
       .toHaveAttribute("href", `/pods/${podId}/admin/reviews/${submissionId}`);
     expect(screen.queryByText("Already Decided")).not.toBeInTheDocument();
@@ -166,24 +165,31 @@ describe("creator proof review pages", () => {
       params: Promise.resolve({ podId, submissionId })
     }));
 
+    expect(container.querySelector(".creator-review-workspace")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Pods in Pods" })).toBeVisible();
     expect(screen.getByLabelText("Pods Builder avatar")).toBeVisible();
     expect(screen.getByText("Pods Builder")).toBeVisible();
     expect(screen.getByText("@pods-builder")).toBeVisible();
     expect(screen.getByText("Ship the creator review flow")).toBeVisible();
     expect(screen.getByText("GitHub pull request")).toBeVisible();
-    expect(screen.getByText("Frozen Pod rule")).toBeVisible();
+    expect(screen.getByText(/Frozen Pod rule/)).toBeVisible();
     expect(screen.getByText("Build Pods in public")).toBeVisible();
     expect(screen.getByText(
       "Shipped the creator proof queue and final decision workspace."
     )).toBeVisible();
     expect(screen.getByRole("link", { name: "Open public artifact" }))
       .toHaveAttribute("href", "https://github.com/example/pods/pull/42");
+    expect(screen.getByRole("link", { name: "Open public artifact" }))
+      .toHaveClass("artifact-action");
     expect(screen.getByRole("img", { name: "Creator-only evidence" }))
       .toHaveAttribute(
         "src",
         `/api/pods/${podId}/admin/reviews/${submissionId}/evidence`
       );
+    expect(screen.getByText("Submitted")).not.toBeVisible();
+    expect(screen.getByText("Review target")).not.toBeVisible();
+    expect(screen.getByText("Hard deadline")).not.toBeVisible();
+    fireEvent.click(screen.getByText("Review timing"));
     expect(screen.getByText("Submitted")).toBeVisible();
     expect(screen.getByText("Review target")).toBeVisible();
     expect(screen.getByText("Hard deadline")).toBeVisible();
@@ -244,7 +250,7 @@ describe("creator proof review pages", () => {
       params: Promise.resolve({ podId, submissionId })
     }));
 
-    expect(screen.getByText("Reading", { exact: true })).toBeVisible();
+    expect(screen.getByText(/Reading · Frozen Pod rule/)).toBeVisible();
     expect(screen.getByText("20 pages")).toBeVisible();
     expect(screen.getByText("12 pages")).toBeVisible();
     expect(screen.getByText("Finished the chapter on discoverability."))

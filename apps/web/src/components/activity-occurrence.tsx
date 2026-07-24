@@ -657,8 +657,8 @@ export function ActivityOccurrence(props: Props) {
                   </div>
                 ) : null}
                 <header className="proof-stage-heading">
-                  <span>Completed activity</span>
-                  <h2>Record what happened.</h2>
+                  <span>Your result</span>
+                  <h2>What did you finish?</h2>
                   <p>Keep it specific enough for the creator to make a fair decision.</p>
                 </header>
                 {renderEvidenceEditor()}
@@ -703,8 +703,8 @@ export function ActivityOccurrence(props: Props) {
             {proofStep === 3 ? (
               <>
                 <header className="proof-stage-heading">
-                  <span>Final check</span>
-                  <h2>Ready for creator review.</h2>
+                  <span>Review</span>
+                  <h2>Ready to submit?</h2>
                   <p>The proof and its visibility become immutable after submission.</p>
                 </header>
                 <div className="proof-review-summary">

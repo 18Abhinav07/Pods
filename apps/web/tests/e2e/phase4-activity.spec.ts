@@ -289,7 +289,7 @@ test("creator approves proof through the UI without gaining member finances", as
   browser,
   context
 }, testInfo) => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   const creatorWallet = await authenticate(context);
   const memberContext = await browser.newContext();
   const peerContext = await browser.newContext();
@@ -340,7 +340,7 @@ test("creator approves proof through the UI without gaining member finances", as
     await memberPage.getByRole("button", { name: "Choose proof type" }).click();
     await expect(
       memberPage.getByRole("heading", {
-        name: "Choose how the work will be verified."
+        name: "How will you show the work?"
       })
     ).toBeVisible();
     await expect(
@@ -353,7 +353,7 @@ test("creator approves proof through the UI without gaining member finances", as
     await memberPage.getByRole("radio", { name: "GitHub pull request" }).check();
     await memberPage.getByRole("button", { name: "Review commitment" }).click();
     await expect(
-      memberPage.getByRole("heading", { name: "Make it official." })
+      memberPage.getByRole("heading", { name: "Ready to commit?" })
     ).toBeVisible();
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
@@ -399,7 +399,7 @@ test("creator approves proof through the UI without gaining member finances", as
     });
     await memberPage.getByRole("button", { name: "Review submission" }).click();
     await expect(
-      memberPage.getByRole("heading", { name: "Ready for creator review." })
+      memberPage.getByRole("heading", { name: "Ready to submit?" })
     ).toBeVisible();
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
@@ -426,8 +426,12 @@ test("creator approves proof through the UI without gaining member finances", as
     await creatorPage.getByRole("link", { name: "Review proofs" }).click();
     await expect(creatorPage).toHaveURL(`${baseUrl}/pods/${fixture.podId}/admin/reviews`);
     await expect(
-      creatorPage.getByRole("heading", { name: "1 proof to review." })
+      creatorPage.getByRole("heading", { name: "One decision waiting." })
     ).toBeVisible();
+    await creatorPage.screenshot({
+      path: testInfo.outputPath("creator-review-queue-mobile.png"),
+      fullPage: true
+    });
     const firstReviewLink = creatorPage.getByRole("link", {
       name: "Review Phase 4 builder proof"
     });
@@ -453,6 +457,10 @@ test("creator approves proof through the UI without gaining member finances", as
     await expect.poll(
       () => creatorOnlyEvidence.evaluate((image: HTMLImageElement) => image.naturalWidth)
     ).toBeGreaterThan(0);
+    await creatorPage.screenshot({
+      path: testInfo.outputPath("creator-review-detail-mobile.png"),
+      fullPage: true
+    });
     await creatorPage.getByLabel("Approval note").fill(
       "The public pull request visibly completes the locked participant task."
     );
@@ -470,14 +478,18 @@ test("creator approves proof through the UI without gaining member finances", as
       "The public pull request visibly completes the locked participant task."
     )).toBeVisible();
     await memberPage.goto(`${baseUrl}/today`);
-    await expect(memberPage.getByRole("heading", { name: "Your work is counted." })).toBeVisible();
+    await expect(memberPage.getByRole("heading", { name: "Occurrence counted." })).toBeVisible();
     await memberPage.goto(
       `${baseUrl}/pods/${fixture.podId}/submissions/${firstSubmissionId}`
     );
     await expect(memberPage.getByRole("heading", { name: "Work approved" })).toBeVisible();
     await expect(memberPage.getByText(
-      "The Pod creator approved this proof. It counts toward your progress and streak."
+      "This occurrence is now part of your streak."
     )).toBeVisible();
+    await memberPage.screenshot({
+      path: testInfo.outputPath("submission-approved-mobile.png"),
+      fullPage: true
+    });
     await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/room`);
     const approvedRoomCard = memberPage.getByRole("article").filter({
       hasText: "Ship the participant activity screen with private evidence and reviewer states."
@@ -489,6 +501,26 @@ test("creator approves proof through the UI without gaining member finances", as
       "href",
       `/pods/${fixture.podId}/submissions/${firstSubmissionId}`
     );
+    await memberPage.screenshot({
+      path: testInfo.outputPath("room-approved-mobile.png"),
+      fullPage: true
+    });
+    await memberPage.getByRole("textbox", { name: "Message" })
+      .fill("Ready for the next ship.");
+    await expect(memberPage.getByRole("button", { name: "Send message" }))
+      .toHaveClass(/is-ready/);
+    await memberPage.screenshot({
+      path: testInfo.outputPath("room-composer-ready-mobile.png")
+    });
+    await memberPage.getByRole("textbox", { name: "Message" }).fill("");
+    await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/members`);
+    await expect(
+      memberPage.getByRole("heading", { name: "3 people" })
+    ).toBeVisible();
+    await memberPage.screenshot({
+      path: testInfo.outputPath("members-mobile.png"),
+      fullPage: true
+    });
     await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/activity`);
     const approvedProof = memberPage.getByRole("article").filter({
       hasText: "Ship the participant activity screen with private evidence and reviewer states."
@@ -562,7 +594,7 @@ test("creator rejection keeps the reason private from peers and public visitors"
     });
     await creatorPage.goto(`${baseUrl}/pods/${rejectedFixture.podId}/admin/reviews`);
     await expect(
-      creatorPage.getByRole("heading", { name: "1 proof to review." })
+      creatorPage.getByRole("heading", { name: "One decision waiting." })
     ).toBeVisible();
     await creatorPage.getByRole("link", { name: "Review Phase 4 builder proof" }).click();
     await expect(creatorPage.getByText(rejectedFixture.task)).toBeVisible();
@@ -693,7 +725,7 @@ test("creator review timeout protects the participant and rejects late decisions
     });
     await creatorPage.goto(`${baseUrl}/pods/${timeoutFixture.podId}/admin/reviews`);
     await expect(
-      creatorPage.getByRole("heading", { name: "1 proof to review." })
+      creatorPage.getByRole("heading", { name: "One decision waiting." })
     ).toBeVisible();
     const hardDeadlineAt = timeoutFixture.submission.reviewHardDeadlineAt;
     if (!hardDeadlineAt) throw new Error("Review hard deadline was not persisted");

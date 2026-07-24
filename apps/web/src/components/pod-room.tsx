@@ -7,7 +7,15 @@ import type {
   TemplateEvidence,
   TemplateId
 } from "@pods/domain";
-import { DotsThree, Lightning, PaperPlaneRight, Plus, UserPlus, X } from "@phosphor-icons/react";
+import {
+  ArrowUpRight,
+  DotsThree,
+  Lightning,
+  PaperPlaneRight,
+  Plus,
+  UserPlus,
+  X
+} from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -95,11 +103,24 @@ function RoomActivityEvidence({
   return (
     <div className="room-template-evidence" aria-label={`${presentation.templateName} proof`}>
       {presentation.evidenceRows.map((row) => (
-        <p key={row.label}><span>{row.label}</span>{row.value}</p>
+        <p key={row.label}>
+          <span>{row.label}</span>
+          <strong>{row.value}</strong>
+        </p>
       ))}
       {presentation.artifact ? (
-        <a href={presentation.artifact.href} rel="noreferrer" target="_blank">
-          {presentation.artifact.label}
+        <a
+          aria-label={presentation.artifact.label}
+          className="room-public-artifact"
+          href={presentation.artifact.href}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <span>
+            <small>Public link</small>
+            <strong>{presentation.artifact.label}</strong>
+          </span>
+          <ArrowUpRight aria-hidden="true" size={16} weight="bold" />
         </a>
       ) : null}
     </div>

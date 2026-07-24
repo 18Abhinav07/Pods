@@ -496,7 +496,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await page.screenshot({ path: testInfo.outputPath("pod-activity.png"), fullPage: true });
 
   await page.goto(`/pods/${podId}/members`);
-  await expect(page.getByRole("heading", { name: "The people showing up." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /\d+ people/ })).toBeVisible();
   await expect(page.getByText("Ari")).toBeVisible();
   await expect(page.getByRole("link", { name: /Ari/ })).toHaveAttribute("href", `/u/${handle}`);
   await page.waitForTimeout(450);

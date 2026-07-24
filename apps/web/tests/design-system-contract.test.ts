@@ -67,11 +67,18 @@ describe("Pods mobile design system", () => {
     expect(css).toMatch(/\.room-activity-card h3[\s\S]*font-size:\s*18px/);
   });
 
-  it("uses a restrained green send state and inset quoted replies without stripe decoration", () => {
+  it("uses the canonical Pods green for send and inset quoted replies without stripe decoration", () => {
     const css = designCss();
-    expect(css).toMatch(/\.composer-send\.is-ready\s*\{[\s\S]*color:\s*var\(--color-surface\)[\s\S]*background:\s*var\(--color-success\)/);
+    const sendRules = [...css.matchAll(/\.composer-send\.is-ready\s*\{([^}]*)\}/g)];
+    const replyRules = [...css.matchAll(/\.message-reply-preview\s*\{([^}]*)\}/g)];
+    expect(sendRules.at(-1)?.[1]).toContain(
+      "background: var(--color-success)"
+    );
+    expect(sendRules.at(-1)?.[1]).toContain(
+      "color: var(--color-surface)"
+    );
     expect(css).toMatch(/\.message-reply-preview\s*\{[\s\S]*border:\s*1px solid/);
-    expect(css).not.toMatch(/\.message-reply-preview\s*\{[\s\S]*border-left:\s*3px/);
+    expect(replyRules.every((rule) => !rule[1]?.includes("border-left: 3px"))).toBe(true);
     expect(css).toMatch(/\.room-entry\.is-reply-target\s*\{[\s\S]*background:/);
     expect(css).toMatch(/\.room-entry-member_message\.is-viewer\s+\.message-reply-preview\s*\{/);
   });

@@ -136,11 +136,11 @@ export default async function TodayPage() {
         : action.action === "reviewing"
           ? { eyebrow: "Creator review in progress", title: "Your proof is with the Pod creator.", detail: `The Pod creator is checking your proof against the ${repeatingActivity ? "frozen activity rule" : "locked commitment"}.`, cta: "View review", href: submissionHref! }
           : action.action === "approved"
-            ? { eyebrow: "Work approved", title: "Your work is counted.", detail: "The Pod creator approved this proof. It counts toward your progress and streak.", cta: "View submission", href: submissionHref! }
+            ? { eyebrow: "Review complete", title: "Occurrence counted.", detail: "This proof counts toward your progress and streak.", cta: "View submission", href: submissionHref! }
             : action.action === "rejected"
-              ? { eyebrow: "Not verified", title: "The Pod creator did not verify this proof.", detail: `Review the creator's private reason against your ${repeatingActivity ? "frozen activity rule" : "locked commitment"}. This occurrence does not count toward your progress or streak.`, cta: "View submission", href: submissionHref! }
+              ? { eyebrow: "Review complete", title: "Proof not verified.", detail: `Compare the creator's private reason with your ${repeatingActivity ? "frozen activity rule" : "locked commitment"}. This occurrence does not count toward your progress or streak.`, cta: "View submission", href: submissionHref! }
               : action.action === "timeout_protected"
-                ? { eyebrow: "Protected after review timeout", title: "Protected after review timeout.", detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak.", cta: "View submission", href: submissionHref! }
+                ? { eyebrow: "Review timeout", title: "Occurrence protected.", detail: "The creator did not decide within 24 hours, so this occurrence counts toward your progress and streak.", cta: "View submission", href: submissionHref! }
                 : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: repeatingActivity ? "Review the frozen requirement and arrive ready to record honest progress." : "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
     : null;
   const copy = action.kind === "activity" && activityCopy

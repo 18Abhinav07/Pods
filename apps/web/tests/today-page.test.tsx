@@ -119,15 +119,15 @@ describe("TodayPage wallet identity", () => {
   it.each([
     {
       state: "rejected",
-      eyebrow: "Not verified",
-      title: "The Pod creator did not verify this proof.",
-      detail: "Review the creator's private reason against your locked commitment. This occurrence does not count toward your progress or streak."
+      eyebrow: "Review complete",
+      title: "Proof not verified.",
+      detail: "Compare the creator's private reason with your locked commitment. This occurrence does not count toward your progress or streak."
     },
     {
       state: "timeout_protected",
-      eyebrow: "Protected after review timeout",
-      title: "Protected after review timeout.",
-      detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
+      eyebrow: "Review timeout",
+      title: "Occurrence protected.",
+      detail: "The creator did not decide within 24 hours, so this occurrence counts toward your progress and streak."
     }
   ])(
     "projects the participant's $state creator-review result",

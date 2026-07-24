@@ -81,9 +81,11 @@ export default async function CreatorReviewWorkspacePage({
         </Link>
         <span className="phase-pill">Proof review</span>
       </header>
-      <section className="today-hero entrance entrance-hero">
-        <p className="eyebrow">Occurrence {occurrence.ordinal}</p>
-        <h1>{contract.activity.name}</h1>
+      <section className="creator-review-hero entrance entrance-hero">
+        <div>
+          <p className="eyebrow">Occurrence {occurrence.ordinal}</p>
+          <h1>{contract.activity.name}</h1>
+        </div>
         <div className="creator-review-participant">
           <ProfileAvatar
             avatar={participant.avatar}
@@ -97,67 +99,87 @@ export default async function CreatorReviewWorkspacePage({
         </div>
       </section>
 
-      <section className="review-contract-card">
-        <header>
-          <span>{evidence.templateName}</span>
-          <strong>Frozen Pod rule</strong>
-        </header>
-        {evidence.frozenCriterion.map((item) => (
-          <div key={`criterion-${item.label}`}>
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
+      <section className="creator-review-workspace">
+        <section className="review-workspace-section">
+          <header>
+            <span>{evidence.templateName} · Frozen Pod rule</span>
+            <h2>Locked commitment</h2>
+          </header>
+          <div className="review-workspace-rows">
+            {evidence.frozenCriterion.map((item) => (
+              <div key={`criterion-${item.label}`}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
           </div>
-        ))}
-      </section>
+        </section>
 
-      <section className="review-contract-card">
-        <header>
-          <span>Participant report</span>
-          <strong>Evidence for this occurrence</strong>
-        </header>
-        {evidence.evidenceRows.map((item) => (
-          <div key={`evidence-${item.label}`}>
-            <span>{item.label}</span>
-            <p>{item.value}</p>
+        <section className="review-workspace-section">
+          <header>
+            <span>Participant report</span>
+            <h2>Submitted proof</h2>
+          </header>
+          <div className="review-workspace-rows">
+            {evidence.evidenceRows.map((item) => (
+              <div key={`evidence-${item.label}`}>
+                <span>{item.label}</span>
+                <p>{item.value}</p>
+              </div>
+            ))}
+            <div>
+              <span>Image evidence</span>
+              <strong>
+                {submission.evidenceObjectKey
+                  ? "Attached for creator review"
+                  : evidence.imageRequired
+                    ? "Required image unavailable"
+                    : "Optional for this activity"}
+              </strong>
+            </div>
           </div>
-        ))}
-        <div>
-          <span>Image evidence</span>
-          <strong>
-            {submission.evidenceObjectKey
-              ? "Attached for creator review"
-              : evidence.imageRequired
-                ? "Required image unavailable"
-                : "Optional for this activity"}
-          </strong>
-        </div>
-        {evidence.artifact ? (
-          <a
-            className="submission-artifact-link"
-            href={evidence.artifact.href}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {evidence.artifact.label} <span aria-hidden="true">↗</span>
-          </a>
+          {evidence.artifact ? (
+            <a
+              aria-label={evidence.artifact.label}
+              className="artifact-action submission-artifact-link"
+              href={evidence.artifact.href}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <span>
+                <small>Public link</small>
+                <strong>{evidence.artifact.label}</strong>
+              </span>
+              <i aria-hidden="true">↗</i>
+            </a>
+          ) : null}
+        </section>
+
+        {submission.evidenceObjectKey ? (
+          <figure className="review-evidence-figure">
+            <figcaption>
+              <span>Creator-only evidence</span>
+              <small>Private to this decision</small>
+            </figcaption>
+            <CreatorReviewEvidence
+              podId={podId}
+              submissionId={submissionId}
+            />
+          </figure>
         ) : null}
       </section>
 
-      {submission.evidenceObjectKey ? (
-        <section className="review-evidence-card">
-          <span>Creator-only evidence</span>
-          <CreatorReviewEvidence
-            podId={podId}
-            submissionId={submissionId}
-          />
+      <details className="review-timing-disclosure">
+        <summary>
+          <span>Review timing</span>
+          <strong>3 checkpoints</strong>
+        </summary>
+        <section className="review-timing-card" aria-label="Review timing">
+          <div><span>Submitted</span><strong>{moment(submission.submittedAt)}</strong></div>
+          <div><span>Review target</span><strong>{moment(submission.reviewTargetAt)}</strong></div>
+          <div><span>Hard deadline</span><strong>{moment(submission.reviewHardDeadlineAt)}</strong></div>
         </section>
-      ) : null}
-
-      <section className="review-timing-card" aria-label="Review timing">
-        <div><span>Submitted</span><strong>{moment(submission.submittedAt)}</strong></div>
-        <div><span>Review target</span><strong>{moment(submission.reviewTargetAt)}</strong></div>
-        <div><span>Hard deadline</span><strong>{moment(submission.reviewHardDeadlineAt)}</strong></div>
-      </section>
+      </details>
 
       {terminal ? (
         <section className="creator-review-recorded">

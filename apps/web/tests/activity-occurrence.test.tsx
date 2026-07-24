@@ -40,7 +40,7 @@ describe("Build and Ship occurrence", () => {
 
     expect(screen.getByText("A polished accountability product")).toBeInTheDocument();
     expect(screen.getByText("Apr 5 · 11:59 PM")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Name today's finish." }))
+    expect(screen.getByRole("heading", { name: "What will you finish today?" }))
       .toBeInTheDocument();
     expect(screen.queryByText("Visible deliverable")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Lock this task" }))
@@ -50,11 +50,11 @@ describe("Build and Ship occurrence", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Choose proof type" }));
     expect(screen.getByRole("heading", {
-      name: "Choose how the work will be verified."
+      name: "How will you show the work?"
     })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "GitHub pull request" }));
     fireEvent.click(screen.getByRole("button", { name: "Review commitment" }));
-    expect(screen.getByRole("heading", { name: "Make it official." }))
+    expect(screen.getByRole("heading", { name: "Ready to commit?" }))
       .toBeInTheDocument();
     expect(screen.getByText("Ship the complete mobile proof composer."))
       .toBeInTheDocument();

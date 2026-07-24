@@ -62,7 +62,7 @@ describe("buildInboxEvents", () => {
       }),
       expect.objectContaining({
         title: "Work approved",
-        detail: "The Pod creator approved this proof. It counts toward your progress and streak."
+        detail: "This occurrence counts toward your progress and streak."
       })
     ]));
   });

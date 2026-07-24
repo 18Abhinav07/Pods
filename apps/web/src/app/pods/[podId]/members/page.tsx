@@ -20,11 +20,15 @@ export default async function PodMembersPage({ params }: { params: Promise<{ pod
   return (
     <main className="app-shell pod-reference-shell">
       <AppHeader profile={profileForSession(session)} title="Members" />
-      <Link className="pod-reference-back" href={`/pods/${podId}/room`}>← Back to room</Link>
-      <section className="pod-reference-intro"><span>Locked roster</span><h1>The people showing up.</h1><p>Wallet addresses, evidence, and personal financial details are never shown here.</p></section>
+      <Link className="pod-reference-back" href={`/pods/${podId}/room`}>Back to room</Link>
+      <section className="pod-reference-intro">
+        <span>Locked roster</span>
+        <h1>{loaded.members.length} people</h1>
+        <p>Profiles and Pod roles only. Wallet and financial details stay private.</p>
+      </section>
       <section className="pod-member-list">
         {loaded.members.map((member) => (
-          <Link className="pod-member-card" href={`/u/${member.handle}`} key={member.handle}>
+          <Link className="pod-member-card pod-member-row" href={`/u/${member.handle}`} key={member.handle}>
             <ProfileAvatar avatar={member.avatar} displayName={member.displayName} />
             <div><strong>{member.displayName}</strong><span>@{member.handle}</span></div>
             <small>{member.role}</small>

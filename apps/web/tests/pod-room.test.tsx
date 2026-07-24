@@ -651,9 +651,10 @@ describe("Pod room", () => {
     expect(screen.getByRole("link", { name: "Open shared proof" })).toHaveAttribute("href", proofPath);
     expect(screen.getByText("Ship the responsive Pod room.").closest(".room-activity-main"))
       .toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open public artifact" })).toHaveAttribute(
-      "href",
-      "https://github.com/18Abhinav07/Pods/pull/8"
-    );
+    expect(screen.getByRole("link", { name: "Open public artifact" }))
+      .toHaveAttribute("href", "https://github.com/18Abhinav07/Pods/pull/8");
+    expect(screen.getByRole("link", { name: "Open public artifact" }))
+      .toHaveClass("room-public-artifact");
+    expect(screen.getByText("Public link")).toBeVisible();
   });
 });

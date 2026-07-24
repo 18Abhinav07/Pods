@@ -39,12 +39,17 @@ export default async function CreatorReviewQueuePage({
         </Link>
         <span className="phase-pill">Proof review</span>
       </header>
-      <section className="today-hero entrance entrance-hero">
-        <p className="eyebrow">Proofs waiting</p>
-        <h1>{pending.length} proof{pending.length === 1 ? "" : "s"} to review.</h1>
-        <p className="screen-copy">
-          Compare each result with the member&apos;s locked commitment.
-        </p>
+      <section className="creator-review-queue-hero entrance entrance-hero">
+        <span className="creator-review-count">{pending.length}</span>
+        <div>
+          <p className="eyebrow">Proofs waiting</p>
+          <h1>
+            {pending.length === 1
+              ? "One decision waiting."
+              : `${pending.length} decisions waiting.`}
+          </h1>
+          <p>Compare the submitted work with its locked commitment.</p>
+        </div>
       </section>
 
       {pending.length > 0 ? (
@@ -62,16 +67,15 @@ export default async function CreatorReviewQueuePage({
                 size="small"
               />
               <span className="creator-review-queue-copy">
-                <small>Occurrence {occurrence.ordinal}</small>
                 <strong>{participant.displayName}</strong>
-                <em>@{participant.handle}</em>
+                <small>@{participant.handle} · Occurrence {occurrence.ordinal}</small>
                 <span>
                   Submitted {reviewMoment(submission.submittedAt, timeZone)}
                 </span>
               </span>
-              <time dateTime={submission.reviewTargetAt?.toISOString()}>
-                Target {reviewMoment(submission.reviewTargetAt, timeZone)}
-              </time>
+              <span className="creator-review-row-action" aria-hidden="true">
+                Review
+              </span>
             </Link>
           ))}
         </section>

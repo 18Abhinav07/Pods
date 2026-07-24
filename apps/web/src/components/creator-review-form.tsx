@@ -100,14 +100,25 @@ export function CreatorReviewForm({
 
   return (
     <section className="creator-review-decision" aria-label="Final proof decision">
+      <header className="creator-decision-heading">
+        <span>Decision</span>
+        <h2>Does the proof match the commitment?</h2>
+        <p>
+          Approval counts this occurrence. Rejection requires a clear private
+          reason.
+        </p>
+      </header>
       <form className="review-decision-card" onSubmit={approve}>
-        <label htmlFor="creator-approval-note">Approval note</label>
+        <label htmlFor="creator-approval-note">
+          Private approval note <span>Optional</span>
+        </label>
         <textarea
+          aria-label="Approval note"
           disabled={status !== "idle"}
           id="creator-approval-note"
           maxLength={500}
           onChange={(event) => setApprovalNote(event.target.value)}
-          placeholder="Optional note for the participant"
+          placeholder="Add concise context for the participant"
           rows={3}
           value={approvalNote}
         />

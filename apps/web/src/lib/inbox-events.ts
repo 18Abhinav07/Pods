@@ -144,7 +144,7 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
       addEvent(events, {
         id: `evidence-approved-${row.submission.id}`,
         title: "Work approved",
-        detail: "The Pod creator approved this proof. It counts toward your progress and streak.",
+        detail: "This occurrence counts toward your progress and streak.",
         href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
         occurredAt: row.submission.approvedAt,
         tone: "positive"

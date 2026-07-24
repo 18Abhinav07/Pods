@@ -67,7 +67,7 @@ const submissionPresentations = {
   approved: {
     eyebrow: "Review complete",
     heading: "Work approved",
-    detail: "The Pod creator approved this proof. It counts toward your progress and streak."
+    detail: "This occurrence is now part of your streak."
   },
   rejected: {
     eyebrow: "Review complete",
@@ -108,7 +108,7 @@ export function participantSubmissionPresentation(
     return {
       eyebrow: "Review complete",
       heading: "Work approved",
-      detail: "The Pods Team approved this proof. It counts toward your progress and streak."
+      detail: "This occurrence is now part of your streak."
     };
   }
   if (state === "rejected") {

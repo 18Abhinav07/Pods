@@ -72,12 +72,17 @@ describe("ParticipantSubmissionPage", () => {
     }));
 
     expect(container.querySelector(".submission-detail-card")).toHaveClass("is-editorial-submission");
+    expect(container.querySelector(".submission-record-header")).toHaveTextContent(
+      "Submitted proof"
+    );
     expect(container.querySelector(".review-timing-card")).toHaveClass("is-review-timeline");
     expect(container.querySelectorAll(".review-timing-card > div")).toHaveLength(3);
     expect(screen.getByRole("link", { name: "Open public artifact" })).toHaveAttribute(
       "href",
       "https://github.com/18Abhinav07/Pods/pull/42"
     );
+    expect(screen.getByRole("link", { name: "Open public artifact" }))
+      .toHaveClass("artifact-action");
     expect(screen.getByRole("img", { name: "Your optional evidence" })).toHaveAttribute(
       "src",
       "/api/pods/pod-1/submissions/submission-1/evidence"
@@ -85,7 +90,7 @@ describe("ParticipantSubmissionPage", () => {
     expect(screen.getByText("Abhinav")).toBeVisible();
     expect(screen.getByText("@ryuk")).toBeVisible();
     expect(screen.getByText("Creator only")).toBeVisible();
-    expect(screen.getByText("Principal remains protected while review is open")).toBeVisible();
+    expect(screen.getByText("Principal protected while review is open")).toBeVisible();
   });
 
   it("labels an unsent submission draft without implying creator review", async () => {
@@ -124,7 +129,7 @@ describe("ParticipantSubmissionPage", () => {
     }));
 
     expect(container.querySelector(".phase-pill")).toHaveTextContent(
-      "Review in progress"
+      "Pods Team review"
     );
     expect(container.querySelector(".phase-pill")).not.toHaveTextContent(
       "Creator review in progress"
@@ -175,5 +180,23 @@ describe("ParticipantSubmissionPage", () => {
     expect(screen.getByText(
       "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
     )).toBeVisible();
+  });
+
+  it("announces an approved outcome once instead of repeating the state", async () => {
+    repositoryMocks.getSubmissionForOwner.mockResolvedValue({
+      ...submissionResult,
+      submission: {
+        ...submissionResult.submission,
+        state: "approved"
+      }
+    });
+
+    render(await ParticipantSubmissionPage({
+      params: Promise.resolve({ podId: "pod-1", submissionId: "submission-1" })
+    }));
+
+    expect(screen.getAllByText("Work approved", { exact: true })).toHaveLength(1);
+    expect(screen.getByText("Progress updated")).toBeVisible();
+    expect(screen.getByText("Review timing")).toBeVisible();
   });
 });

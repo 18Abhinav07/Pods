@@ -88,8 +88,8 @@ export function CommitmentWizard({
           {step === 0 ? (
             <>
               <header className="flow-stage-heading">
-                <span>{isCreate ? "Today's output" : "Today's finish"}</span>
-                <h2>{isCreate ? "Name today's output." : "Name today's finish."}</h2>
+                <span>Commitment</span>
+                <h2>{isCreate ? "What will you create today?" : "What will you finish today?"}</h2>
                 <p>
                   {isCreate
                     ? "Choose one concrete result you can show when the session closes."
@@ -127,7 +127,7 @@ export function CommitmentWizard({
             <>
               <header className="flow-stage-heading">
                 <span>Proof type</span>
-                <h2>Choose how the work will be verified.</h2>
+                <h2>How will you show the work?</h2>
                 <p>The final link must match this choice and the task you locked.</p>
               </header>
               <fieldset className="deliverable-choice-grid is-visual-choice">
@@ -178,8 +178,8 @@ export function CommitmentWizard({
           {step === 2 ? (
             <>
               <header className="flow-stage-heading">
-                <span>Final check</span>
-                <h2>Make it official.</h2>
+                <span>Review</span>
+                <h2>Ready to commit?</h2>
                 <p>After this moment, the promise stays fixed for the occurrence.</p>
               </header>
               <div className="commitment-review-block">

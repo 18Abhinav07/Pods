@@ -28,6 +28,44 @@ function isStatusDto(value: unknown): value is ParticipantSubmissionStatusDto {
   );
 }
 
+function outcomeTitle(state: ParticipantSubmissionStatusDto["state"]) {
+  if (state === "approved") return "Progress updated";
+  if (state === "timeout_protected") return "Protected and counted";
+  if (state === "rejected") return "This occurrence was not counted";
+  if (state === "draft") return "Not submitted yet";
+  return "Principal protected while review is open";
+}
+
+function ReviewTimeline({
+  status,
+  timeZone
+}: {
+  status: ParticipantSubmissionStatusDto;
+  timeZone: string;
+}) {
+  return (
+    <section
+      aria-label="Review timeline"
+      className="review-timing-card is-review-timeline"
+    >
+      <div>
+        <span>Submitted</span>
+        <strong>{formattedMoment(status.submittedAt, timeZone)}</strong>
+      </div>
+      <div>
+        <span>Review target</span>
+        <strong>{formattedMoment(status.reviewTargetAt, timeZone)}</strong>
+      </div>
+      <div>
+        <span>Protection time</span>
+        <strong>
+          {formattedMoment(status.reviewHardDeadlineAt, timeZone)}
+        </strong>
+      </div>
+    </section>
+  );
+}
+
 export function ParticipantSubmissionStatus({
   endpoint,
   initial,
@@ -149,25 +187,17 @@ export function ParticipantSubmissionStatus({
         </div>
       </div>
 
-      <section
-        aria-label="Review timeline"
-        className="review-timing-card is-review-timeline"
-      >
-        <div>
-          <span>Submitted</span>
-          <strong>{formattedMoment(status.submittedAt, timeZone)}</strong>
-        </div>
-        <div>
-          <span>Review target</span>
-          <strong>{formattedMoment(status.reviewTargetAt, timeZone)}</strong>
-        </div>
-        <div>
-          <span>Protection time</span>
-          <strong>
-            {formattedMoment(status.reviewHardDeadlineAt, timeZone)}
-          </strong>
-        </div>
-      </section>
+      {status.state === "reviewing" ? (
+        <ReviewTimeline status={status} timeZone={timeZone} />
+      ) : status.state === "draft" ? null : (
+        <details className="participant-review-history">
+          <summary>
+            <span>Review timing</span>
+            <strong>3 checkpoints</strong>
+          </summary>
+          <ReviewTimeline status={status} timeZone={timeZone} />
+        </details>
+      )}
 
       <aside
         className={`submission-protection-note is-${
@@ -178,11 +208,7 @@ export function ParticipantSubmissionStatus({
               : "pending"
         }`}
       >
-        <strong>
-          {status.state === "reviewing"
-            ? "Principal remains protected while review is open"
-            : presentation.heading}
-        </strong>
+        <strong>{outcomeTitle(status.state)}</strong>
         <p>{presentation.detail}</p>
       </aside>
 

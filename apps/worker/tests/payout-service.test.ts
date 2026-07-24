@@ -74,12 +74,113 @@ function payoutRepository(initial: PayoutTransferLeg[]) {
 }
 
 describe("payout service", () => {
+  it("does not prepare a queued payout while broadcasts are paused", async () => {
+    const store = payoutRepository([queuedLeg]);
+    let signs = 0;
+    let sends = 0;
+
+    await runPayoutCycle({
+      repository: store.value,
+      signer: {
+        async sign() {
+          signs += 1;
+          throw new Error("must not sign");
+        }
+      },
+      rpc: {
+        async getBlockNumber() { return 1_000; },
+        async getTransactionByHash() { return undefined; },
+        async sendRawTransaction() {
+          sends += 1;
+          return "payout-hash";
+        }
+      },
+      allowBroadcast: false
+    });
+
+    expect(signs).toBe(0);
+    expect(sends).toBe(0);
+    expect(store.events).toEqual([]);
+  });
+
+  it("checks a prepared payout without claiming or broadcasting while paused", async () => {
+    const preparedLeg: PayoutTransferLeg = {
+      ...queuedLeg,
+      state: "prepared",
+      attempt: {
+        id: "attempt-1",
+        sequence: 1,
+        state: "prepared",
+        dataReference: `pods:payout:${queuedLeg.id}:1`,
+        rawTransactionHex: "persisted-payout",
+        transactionHash: "payout-hash",
+        validityStartHeight: 1_000
+      }
+    };
+    const store = payoutRepository([preparedLeg]);
+    let sends = 0;
+
+    await runPayoutCycle({
+      repository: store.value,
+      signer: { async sign() { throw new Error("must not sign"); } },
+      rpc: {
+        async getBlockNumber() { return 1_001; },
+        async getTransactionByHash() { return undefined; },
+        async sendRawTransaction() {
+          sends += 1;
+          return "payout-hash";
+        }
+      },
+      allowBroadcast: false
+    });
+
+    expect(sends).toBe(0);
+    expect(store.events).toEqual([`checked:${queuedLeg.id}`]);
+  });
+
+  it("confirms a finalized prepared payout while new broadcasts are paused", async () => {
+    const preparedLeg: PayoutTransferLeg = {
+      ...queuedLeg,
+      state: "prepared",
+      attempt: {
+        id: "attempt-1",
+        sequence: 1,
+        state: "prepared",
+        dataReference: `pods:payout:${queuedLeg.id}:1`,
+        rawTransactionHex: "persisted-payout",
+        transactionHash: "payout-hash",
+        validityStartHeight: 1_000
+      }
+    };
+    const store = payoutRepository([preparedLeg]);
+
+    await runPayoutCycle({
+      repository: store.value,
+      signer: { async sign() { throw new Error("must not sign"); } },
+      rpc: {
+        async getBlockNumber() { return 1_001; },
+        async getTransactionByHash() {
+          return {
+            hash: "payout-hash",
+            finalized: true,
+            executionResult: true
+          };
+        },
+        async sendRawTransaction() { throw new Error("must not broadcast"); }
+      },
+      allowBroadcast: false
+    });
+
+    expect(store.events).toEqual([`confirmed:${queuedLeg.id}`]);
+  });
+
   it("persists unique signed attempt bytes before claiming and broadcasting", async () => {
     const store = payoutRepository([queuedLeg]);
     const transportEvents: string[] = [];
 
     await runPayoutCycle({
       repository: store.value,
+      allowBroadcast: true,
       signer: {
         async sign(draft) {
           expect(draft).toEqual({
@@ -141,6 +242,7 @@ describe("payout service", () => {
 
     await runPayoutCycle({
       repository: store.value,
+      allowBroadcast: true,
       signer: {
         async sign(draft) {
           expect(draft.dataReference).toBe(
@@ -184,6 +286,7 @@ describe("payout service", () => {
 
     await runPayoutCycle({
       repository: pending.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getBlockNumber() { return 8_200; },
@@ -201,6 +304,7 @@ describe("payout service", () => {
     const expired = payoutRepository([unknownLeg]);
     await runPayoutCycle({
       repository: expired.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getBlockNumber() { return 8_201; },
@@ -231,6 +335,7 @@ describe("payout service", () => {
 
     await runPayoutCycle({
       repository: store.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getBlockNumber() { return 1_001; },
@@ -270,6 +375,7 @@ describe("payout service", () => {
     const failed = payoutRepository([preparedLeg]);
     await runPayoutCycle({
       repository: failed.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getBlockNumber() { return 1_001; },
@@ -290,6 +396,7 @@ describe("payout service", () => {
     const mismatched = payoutRepository([preparedLeg]);
     await runPayoutCycle({
       repository: mismatched.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getBlockNumber() { return 1_001; },
@@ -305,6 +412,7 @@ describe("payout service", () => {
     const ambiguous = payoutRepository([preparedLeg]);
     await runPayoutCycle({
       repository: ambiguous.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getBlockNumber() { return 1_001; },

@@ -25,12 +25,21 @@ export async function POST(
   if (!activity || !community || !commitment) {
     return NextResponse.json({ error: "Complete every creation step first" }, { status: 409 });
   }
+  let fundingPolicy: ReturnType<typeof alphaFundingPolicy>;
+  try {
+    fundingPolicy = alphaFundingPolicy(process.env);
+  } catch {
+    return NextResponse.json(
+      { error: "Pod publication is paused" },
+      { status: 503 }
+    );
+  }
   const result = buildPublishedContract({
     templateId: pod.templateId,
     activity,
     community,
     commitment
-  }, alphaFundingPolicy(process.env));
+  }, fundingPolicy);
   if (!result.success) return NextResponse.json({ errors: result.errors }, { status: 400 });
   const timing = validatePublicationTiming(result.occurrences, new Date());
   if (!timing.success) return NextResponse.json({ errors: timing.errors }, { status: 400 });

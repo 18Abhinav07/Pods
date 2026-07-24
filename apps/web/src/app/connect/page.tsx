@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ConnectClient } from "../../components/connect-client";
+import { TestnetMark } from "../../components/testnet-mark";
 import { safeReturnTarget } from "../../lib/auth";
 import { podsRepository } from "../../lib/server-db";
 import { getCurrentSession } from "../../lib/session";
@@ -26,10 +27,13 @@ export default async function ConnectPage({
   return (
     <main className="app-shell connection-shell">
       <header className="app-topbar connection-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/" aria-label="Pods home">
-          <span className="pod-mark" aria-hidden="true" />
-          pods
-        </Link>
+        <div className="brand-runtime">
+          <Link className="wordmark" href="/" aria-label="Pods home">
+            <span className="pod-mark" aria-hidden="true" />
+            pods
+          </Link>
+          <TestnetMark />
+        </div>
       </header>
       <section className="connection-stage entrance entrance-hero">
         <div className="connection-art" aria-hidden="true"><i /><i /><i /></div>

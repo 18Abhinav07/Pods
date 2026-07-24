@@ -1,7 +1,14 @@
 import { pathToFileURL } from "node:url";
 
-import { createPodsRepository } from "@pods/db";
-import { parseAlphaCapabilities } from "@pods/domain";
+import {
+  createPodsRepository,
+  PODS_SCHEMA_MIGRATION_HASH,
+  PODS_SCHEMA_VERSION
+} from "@pods/db";
+import {
+  parseAlphaCapabilities,
+  parsePublicRuntimeIdentity
+} from "@pods/domain";
 
 import { NimiqDepositRpc } from "./funding/nimiq-deposit-rpc.js";
 import { runDepositCycle } from "./funding/run-deposit-cycle.js";
@@ -69,6 +76,13 @@ export async function readDepositWorkerConfiguration(
     ...environment,
     NIMIQ_NETWORK: network
   });
+  const runtime = parsePublicRuntimeIdentity(
+    {
+      ...environment,
+      NIMIQ_NETWORK: network
+    },
+    PODS_SCHEMA_VERSION
+  );
   return {
     network,
     treasuryAddress,
@@ -78,7 +92,8 @@ export async function readDepositWorkerConfiguration(
     pollIntervalMs,
     healthPort,
     alphaMode: environment.APP_ENV === "alpha",
-    capabilities
+    capabilities,
+    runtime
   } as const;
 }
 
@@ -95,12 +110,20 @@ export async function startFundingWorker() {
     await repository.close();
     throw new Error("Treasury address does not match the configured private key");
   }
-  await repository.checkHealth();
+  const databaseHealth = await repository.checkHealth();
+  if (
+    databaseHealth.schemaVersion !== configuration.runtime.schemaVersion ||
+    databaseHealth.migrationHash !== PODS_SCHEMA_MIGRATION_HASH
+  ) {
+    await repository.close();
+    throw new Error("Worker and database schema identity do not match");
+  }
 
   const healthState: WorkerHealthState = {
     ready: true,
     cycleHealthy: null,
-    lastSuccessfulCycleAt: null
+    lastSuccessfulCycleAt: null,
+    runtime: configuration.runtime
   };
   const healthServer = await startWorkerHealthServer({
     port: configuration.healthPort,
@@ -112,38 +135,34 @@ export async function startFundingWorker() {
   const run = async () => {
     if (stopping) return;
     let cycleFailed = false;
-    const fundingEnabled =
-      !configuration.alphaMode || configuration.capabilities.depositMode !== "off";
-    if (fundingEnabled) {
-      try {
-        await runDepositCycle({
-          repository,
-          rpc: depositRpc,
-          onError(error) {
-            cycleFailed = true;
-            console.error(`[deposit-cycle] ${error.message}`);
-          }
-        });
-      } catch (error) {
-        cycleFailed = true;
-        console.error(
-          `[deposit-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
-        );
-      }
-      try {
-        await runCutoffCycle({
-          repository,
-          onError(podId, error) {
-            cycleFailed = true;
-            console.error(`[cutoff-cycle:${podId}] ${error.message}`);
-          }
-        });
-      } catch (error) {
-        cycleFailed = true;
-        console.error(
-          `[cutoff-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
-        );
-      }
+    try {
+      await runDepositCycle({
+        repository,
+        rpc: depositRpc,
+        onError(error) {
+          cycleFailed = true;
+          console.error(`[deposit-cycle] ${error.message}`);
+        }
+      });
+    } catch (error) {
+      cycleFailed = true;
+      console.error(
+        `[deposit-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+      );
+    }
+    try {
+      await runCutoffCycle({
+        repository,
+        onError(podId, error) {
+          cycleFailed = true;
+          console.error(`[cutoff-cycle:${podId}] ${error.message}`);
+        }
+      });
+    } catch (error) {
+      cycleFailed = true;
+      console.error(
+        `[cutoff-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+      );
     }
     try {
       await runOccurrenceCycle({ repository });
@@ -161,7 +180,10 @@ export async function startFundingWorker() {
         `[review-timeout-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
       );
     }
-    if (configuration.capabilities.settlement) {
+    if (
+      configuration.capabilities.settlement &&
+      !configuration.capabilities.financialIncidentPaused
+    ) {
       try {
         await runSettlementCycle({
           repository,
@@ -176,42 +198,44 @@ export async function startFundingWorker() {
           `[settlement-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
         );
       }
-      try {
-        await runPayoutCycle({
-          repository,
-          signer,
-          rpc: transferRpc,
-          onError(error, leg) {
-            cycleFailed = true;
-            console.error(`[payout-cycle:${leg.id}] ${error.message}`);
-          }
-        });
-      } catch (error) {
-        cycleFailed = true;
-        console.error(
-          `[payout-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
-        );
-      }
     }
-    const refundsEnabled =
-      !configuration.alphaMode || configuration.capabilities.alphaRefund;
-    if (refundsEnabled) {
-      try {
-        await runRefundCycle({
-          repository,
-          signer,
-          rpc: transferRpc,
-          onError(error, leg) {
-            cycleFailed = true;
-            console.error(`[refund-cycle:${leg.id}] ${error.message}`);
-          }
-        });
-      } catch (error) {
-        cycleFailed = true;
-        console.error(
-          `[refund-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
-        );
-      }
+    try {
+      await runPayoutCycle({
+        repository,
+        signer,
+        rpc: transferRpc,
+        allowBroadcast:
+          configuration.capabilities.payoutBroadcast &&
+          !configuration.capabilities.financialIncidentPaused,
+        onError(error, leg) {
+          cycleFailed = true;
+          console.error(`[payout-cycle:${leg.id}] ${error.message}`);
+        }
+      });
+    } catch (error) {
+      cycleFailed = true;
+      console.error(
+        `[payout-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+      );
+    }
+    try {
+      await runRefundCycle({
+        repository,
+        signer,
+        rpc: transferRpc,
+        allowBroadcast:
+          (!configuration.alphaMode || configuration.capabilities.alphaRefund) &&
+          !configuration.capabilities.financialIncidentPaused,
+        onError(error, leg) {
+          cycleFailed = true;
+          console.error(`[refund-cycle:${leg.id}] ${error.message}`);
+        }
+      });
+    } catch (error) {
+      cycleFailed = true;
+      console.error(
+        `[refund-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+      );
     }
     healthState.cycleHealthy = !cycleFailed;
     if (!cycleFailed) healthState.lastSuccessfulCycleAt = new Date().toISOString();

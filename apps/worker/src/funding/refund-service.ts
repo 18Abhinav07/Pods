@@ -52,6 +52,7 @@ interface RefundCycleDependencies {
   repository: RefundTransferRepository;
   signer: TransferSigner;
   rpc: TransferRpc;
+  allowBroadcast: boolean;
   now?: () => Date;
   onError?: (error: Error, leg: RefundTransferLeg) => void;
 }
@@ -101,8 +102,10 @@ async function processRefund(
   original: RefundTransferLeg
 ) {
   const now = (dependencies.now ?? (() => new Date()))();
+  const allowBroadcast = dependencies.allowBroadcast;
   let leg = original;
   if (leg.state === "queued") {
+    if (!allowBroadcast) return;
     const signed = await dependencies.signer.sign({
       recipient: leg.recipientWallet,
       valueLuna: BigInt(leg.amountLuna),
@@ -127,6 +130,7 @@ async function processRefund(
   }
 
   if (leg.state !== "prepared") return;
+  if (!allowBroadcast) return;
   try {
     const returnedHash = await dependencies.rpc.sendRawTransaction(rawTransactionHex);
     if (returnedHash !== transactionHash) {

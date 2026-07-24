@@ -16,6 +16,7 @@ describe("PodRoomHeader", () => {
     );
 
     expect(screen.getByRole("heading", { name: "Pods Build Room" })).toBeVisible();
+    expect(screen.getByText("Testnet beta")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Back to My Pods" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Proofs" })).not.toBeInTheDocument();
 

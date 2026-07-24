@@ -26,6 +26,9 @@ describe("alpha capability configuration", () => {
       rateLimits: false,
       reviewExceptions: false,
       settlement: false,
+      proportionalPublishing: false,
+      payoutBroadcast: false,
+      financialIncidentPaused: false,
       alphaRefund: false,
       depositMode: "off",
       realtimeTransport: "poll"
@@ -38,13 +41,61 @@ describe("alpha capability configuration", () => {
     ).toThrow("Alpha deployments require NIMIQ_NETWORK=testnet");
   });
 
-  it("refuses public deposits until settlement is enabled", () => {
+  it("keeps intake, publication, settlement, and payout controls independent", () => {
+    expect(
+      parseAlphaCapabilities({
+        ...alphaEnvironment,
+        PODS_DEPOSIT_MODE: "public",
+        PODS_SETTLEMENT_ENABLED: "false",
+        PODS_PROPORTIONAL_PUBLISHING_ENABLED: "false",
+        PODS_PAYOUT_BROADCAST_ENABLED: "false"
+      })
+    ).toMatchObject({
+      depositMode: "public",
+      settlement: false,
+      proportionalPublishing: false,
+      payoutBroadcast: false,
+      financialIncidentPaused: false
+    });
+  });
+
+  it("keeps publication and payout fail closed when split controls are unset", () => {
+    expect(
+      parseAlphaCapabilities({
+        ...alphaEnvironment,
+        PODS_DEPOSIT_MODE: "public",
+        PODS_SETTLEMENT_ENABLED: "true"
+      })
+    ).toMatchObject({
+      proportionalPublishing: false,
+      payoutBroadcast: false
+    });
+  });
+
+  it("requires explicit publication and payout opt-in", () => {
+    expect(
+      parseAlphaCapabilities({
+        ...alphaEnvironment,
+        PODS_DEPOSIT_MODE: "public",
+        PODS_SETTLEMENT_ENABLED: "true",
+        PODS_PROPORTIONAL_PUBLISHING_ENABLED: "true",
+        PODS_PAYOUT_BROADCAST_ENABLED: "true"
+      })
+    ).toMatchObject({
+      proportionalPublishing: true,
+      payoutBroadcast: true
+    });
+  });
+
+  it("requires settlement processing before proportional publication", () => {
     expect(() =>
       parseAlphaCapabilities({
         ...alphaEnvironment,
-        PODS_DEPOSIT_MODE: "public"
+        PODS_DEPOSIT_MODE: "public",
+        PODS_SETTLEMENT_ENABLED: "false",
+        PODS_PROPORTIONAL_PUBLISHING_ENABLED: "true"
       })
-    ).toThrow("Public deposits require settlement to be enabled");
+    ).toThrow("Proportional publication requires settlement processing");
   });
 
   it("requires the full refund path for allowlisted deposits", () => {

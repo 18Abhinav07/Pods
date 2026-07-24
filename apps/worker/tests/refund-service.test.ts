@@ -75,12 +75,102 @@ function refundRepository(initial: RefundTransferLeg[]) {
 }
 
 describe("refund service", () => {
+  it("leaves queued refunds untouched while broadcasts are paused", async () => {
+    const store = refundRepository([queuedLeg]);
+    let signs = 0;
+    let chainChecks = 0;
+    let sends = 0;
+
+    await runRefundCycle({
+      repository: store.value,
+      signer: {
+        async sign() {
+          signs += 1;
+          throw new Error("must not sign");
+        }
+      },
+      rpc: {
+        async getTransactionByHash() {
+          chainChecks += 1;
+          return undefined;
+        },
+        async sendRawTransaction() {
+          sends += 1;
+          return "refund-hash";
+        }
+      },
+      allowBroadcast: false
+    });
+
+    expect(signs).toBe(0);
+    expect(chainChecks).toBe(0);
+    expect(sends).toBe(0);
+    expect(store.events).toEqual([]);
+  });
+
+  it("checks prepared refunds without broadcasting while paused", async () => {
+    const store = refundRepository([{
+      ...queuedLeg,
+      state: "prepared",
+      rawTransactionHex: "persisted-refund",
+      transactionHash: "refund-hash",
+      validityStartHeight: 120
+    }]);
+    let chainChecks = 0;
+    let sends = 0;
+
+    await runRefundCycle({
+      repository: store.value,
+      signer: { async sign() { throw new Error("must not sign"); } },
+      rpc: {
+        async getTransactionByHash() {
+          chainChecks += 1;
+          return undefined;
+        },
+        async sendRawTransaction() {
+          sends += 1;
+          return "refund-hash";
+        }
+      },
+      allowBroadcast: false
+    });
+
+    expect(chainChecks).toBe(1);
+    expect(sends).toBe(0);
+    expect(store.events).toEqual([]);
+  });
+
+  it("confirms a finalized refund while new broadcasts are paused", async () => {
+    const store = refundRepository([{
+      ...queuedLeg,
+      state: "broadcast",
+      rawTransactionHex: "persisted-refund",
+      transactionHash: "refund-hash",
+      validityStartHeight: 120
+    }]);
+
+    await runRefundCycle({
+      repository: store.value,
+      signer: { async sign() { throw new Error("must not sign"); } },
+      rpc: {
+        async getTransactionByHash() {
+          return { hash: "refund-hash", finalized: true, executionResult: true };
+        },
+        async sendRawTransaction() { throw new Error("must not broadcast"); }
+      },
+      allowBroadcast: false
+    });
+
+    expect(store.events).toEqual(["confirmed:leg-1"]);
+  });
+
   it("persists the signed refund before broadcasting its exact bytes", async () => {
     const store = refundRepository([queuedLeg]);
     const events: string[] = [];
 
     await runRefundCycle({
       repository: store.value,
+      allowBroadcast: true,
       signer: {
         async sign(draft) {
           expect(draft).toEqual({
@@ -125,6 +215,7 @@ describe("refund service", () => {
 
     await runRefundCycle({
       repository: store.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getTransactionByHash() {
@@ -154,6 +245,7 @@ describe("refund service", () => {
 
     await runRefundCycle({
       repository: store.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getTransactionByHash() { return undefined; },
@@ -181,6 +273,7 @@ describe("refund service", () => {
 
     await runRefundCycle({
       repository: store.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getTransactionByHash() { return undefined; },
@@ -202,6 +295,7 @@ describe("refund service", () => {
     }]);
     await runRefundCycle({
       repository: failed.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getTransactionByHash() {
@@ -224,6 +318,7 @@ describe("refund service", () => {
     }]);
     await runRefundCycle({
       repository: mismatch.value,
+      allowBroadcast: true,
       signer: { async sign() { throw new Error("must not sign again"); } },
       rpc: {
         async getTransactionByHash() { return undefined; },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { alphaSettlementProcessingEnabled } from "../../../../../../lib/alpha-access";
 import { podsRepository } from "../../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../../lib/session";
 
@@ -12,6 +13,12 @@ export async function POST(
     return NextResponse.json(
       { error: "Wallet session required" },
       { status: 401 }
+    );
+  }
+  if (!alphaSettlementProcessingEnabled(process.env)) {
+    return NextResponse.json(
+      { error: "Settlement processing is paused" },
+      { status: 503 }
     );
   }
   const { podId } = await params;

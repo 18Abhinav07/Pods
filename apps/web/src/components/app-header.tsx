@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ProfileAvatar } from "./profile-avatar";
+import { TestnetMark } from "./testnet-mark";
 
 export function AppHeader({
   profile,
@@ -19,14 +20,17 @@ export function AppHeader({
 }) {
   return (
     <header className="app-topbar social-topbar entrance entrance-topbar">
-      {title ? (
-        <h1 className="app-route-title"><span className="pod-mark" aria-hidden="true" />{title}</h1>
-      ) : (
-        <Link className="wordmark" href="/today" aria-label="Pods Today">
-          <span className="pod-mark" aria-hidden="true" />
-          pods
-        </Link>
-      )}
+      <div className="brand-runtime">
+        {title ? (
+          <h1 className="app-route-title"><span className="pod-mark" aria-hidden="true" />{title}</h1>
+        ) : (
+          <Link className="wordmark" href="/today" aria-label="Pods Today">
+            <span className="pod-mark" aria-hidden="true" />
+            pods
+          </Link>
+        )}
+        <TestnetMark />
+      </div>
       <div className="social-topbar-actions">
         {action}
         {showPeopleSearch ? (

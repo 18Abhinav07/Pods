@@ -71,6 +71,7 @@ interface PayoutCycleDependencies {
   repository: PayoutTransferRepository;
   signer: TransferSigner;
   rpc: PayoutRpc;
+  allowBroadcast: boolean;
   now?: () => Date;
   onError?: (error: Error, leg: PayoutTransferLeg) => void;
 }
@@ -127,9 +128,11 @@ async function processPayout(
   original: PayoutTransferLeg
 ) {
   const now = (dependencies.now ?? (() => new Date()))();
+  const allowBroadcast = dependencies.allowBroadcast;
   let leg = original;
 
   if (leg.state === "queued") {
+    if (!allowBroadcast) return;
     const sequence = (leg.attempt?.sequence ?? 0) + 1;
     const dataReference = `pods:payout:${leg.id}:${sequence}`;
     const signed = await dependencies.signer.sign({
@@ -180,6 +183,15 @@ async function processPayout(
         now
       });
     }
+    return;
+  }
+
+  if (!allowBroadcast) {
+    await dependencies.repository.markPayoutTransferChecked({
+      legId: leg.id,
+      attemptId: attempt.id,
+      now
+    });
     return;
   }
 

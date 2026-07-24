@@ -1937,6 +1937,56 @@ body {
   background: var(--color-soft);
 }
 
+.brand-runtime,
+.atlas-brand-runtime {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.testnet-mark {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  border: 1px solid rgba(32, 36, 31, 0.1);
+  border-radius: 999px;
+  color: rgba(32, 36, 31, 0.64);
+  background: rgba(248, 247, 242, 0.72);
+  font: 700 8px/1 "Fira Mono", monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.testnet-mark i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a7bd38;
+  box-shadow: 0 0 0 3px rgba(167, 189, 56, 0.13);
+}
+
+.testnet-mark-inverse {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pod-room-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.pod-room-meta .testnet-mark {
+  min-height: 16px;
+  padding: 3px 5px;
+  font-size: 7px;
+}
+
 .funding-contract-card,
 .funding-outcomes,
 .funding-receipt,

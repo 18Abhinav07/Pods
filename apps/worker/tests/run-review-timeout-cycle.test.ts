@@ -5,23 +5,40 @@ import { startFundingWorker } from "../src/index";
 
 const workerMocks = vi.hoisted(() => ({
   repository: {
-    checkHealth: vi.fn(async () => undefined),
+    checkHealth: vi.fn(async () => ({
+      schemaVersion: "0017_robust_loners",
+      migrationHash:
+        "97136dbc69adf6a53bbcb077015df750ad185f71c022dbd27253f2bd150bc4cd"
+    })),
     close: vi.fn(async () => undefined),
     getEffectiveTime: vi.fn(async (realNow: Date) => realNow),
     protectTimedOutReviews: vi.fn(async () => ({ protectedSubmissions: 0 }))
   },
+  runDepositCycle: vi.fn(async () => undefined),
+  runCutoffCycle: vi.fn(async () => undefined),
   runOccurrenceCycle: vi.fn(async () => undefined),
+  runSettlementCycle: vi.fn(async () => undefined),
+  runPayoutCycle: vi.fn(async () => undefined),
   runRefundCycle: vi.fn(async () => undefined),
   healthClose: vi.fn(async () => undefined),
   healthStateReader: undefined as undefined | (() => {
     ready: boolean;
     cycleHealthy: boolean | null;
     lastSuccessfulCycleAt: string | null;
+    runtime: {
+      deploymentFlavor: "testnet";
+      fundsNetwork: "nimiq-testnet";
+      commitSha: string;
+      schemaVersion: string;
+    };
   })
 }));
 
 vi.mock("@pods/db", () => ({
-  createPodsRepository: vi.fn(() => workerMocks.repository)
+  createPodsRepository: vi.fn(() => workerMocks.repository),
+  PODS_SCHEMA_VERSION: "0017_robust_loners",
+  PODS_SCHEMA_MIGRATION_HASH:
+    "97136dbc69adf6a53bbcb077015df750ad185f71c022dbd27253f2bd150bc4cd"
 }));
 
 vi.mock("../src/funding/nimiq-deposit-rpc.js", () => ({
@@ -29,11 +46,11 @@ vi.mock("../src/funding/nimiq-deposit-rpc.js", () => ({
 }));
 
 vi.mock("../src/funding/run-deposit-cycle.js", () => ({
-  runDepositCycle: vi.fn(async () => undefined)
+  runDepositCycle: workerMocks.runDepositCycle
 }));
 
 vi.mock("../src/funding/run-cutoff-cycle.js", () => ({
-  runCutoffCycle: vi.fn(async () => undefined)
+  runCutoffCycle: workerMocks.runCutoffCycle
 }));
 
 vi.mock("../src/funding/refund-service.js", () => ({
@@ -52,6 +69,14 @@ vi.mock("../src/preflight/nimiq-signer.js", () => ({
 
 vi.mock("../src/activity/run-occurrence-cycle.js", () => ({
   runOccurrenceCycle: workerMocks.runOccurrenceCycle
+}));
+
+vi.mock("../src/settlement/run-settlement-cycle.js", () => ({
+  runSettlementCycle: workerMocks.runSettlementCycle
+}));
+
+vi.mock("../src/settlement/payout-service.js", () => ({
+  runPayoutCycle: workerMocks.runPayoutCycle
 }));
 
 vi.mock("../src/health/server.js", () => ({
@@ -108,6 +133,7 @@ describe("runReviewTimeoutCycle", () => {
     vi.stubEnv("PODS_TREASURY_ADDRESS", "NQ00 TEST TREASURY ADDRESS");
     vi.stubEnv("PODS_TREASURY_PRIVATE_KEY_HEX", "a".repeat(64));
     vi.stubEnv("PODS_DEPOSIT_POLL_INTERVAL_MS", "5000");
+    vi.stubEnv("PODS_RELEASE_SHA", "abcdef0123456789abcdef0123456789abcdef01");
     vi.stubEnv("PODS_ALPHA_REFUND_ENABLED", "true");
     vi.stubEnv("PORT", "3412");
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -139,5 +165,72 @@ describe("runReviewTimeoutCycle", () => {
       errorLog.mockRestore();
       processOnce.mockRestore();
     }
+  });
+
+  it("reconciles existing deposits and cutoffs even when new intake is off", async () => {
+    vi.clearAllMocks();
+    vi.stubEnv("APP_ENV", "alpha");
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NIMIQ_NETWORK", "testnet");
+    vi.stubEnv("NIMIQ_RPC_URL", "https://rpc.testnet.example");
+    vi.stubEnv("DATABASE_URL", "postgresql://pods:secret@internal/pods");
+    vi.stubEnv("PODS_TREASURY_ADDRESS", "NQ00 TEST TREASURY ADDRESS");
+    vi.stubEnv("PODS_TREASURY_PRIVATE_KEY_HEX", "a".repeat(64));
+    vi.stubEnv("PODS_DEPOSIT_POLL_INTERVAL_MS", "5000");
+    vi.stubEnv("PODS_RELEASE_SHA", "abcdef0123456789abcdef0123456789abcdef01");
+    vi.stubEnv("PODS_DEPOSIT_MODE", "off");
+    vi.stubEnv("PODS_PAYOUT_BROADCAST_ENABLED", "false");
+    vi.stubEnv("PORT", "3412");
+    const processOnce = vi.spyOn(process, "once").mockImplementation(() => process);
+
+    const worker = await startFundingWorker();
+    try {
+      expect(workerMocks.runDepositCycle).toHaveBeenCalledOnce();
+      expect(workerMocks.runCutoffCycle).toHaveBeenCalledOnce();
+      expect(workerMocks.runSettlementCycle).not.toHaveBeenCalled();
+      expect(workerMocks.runPayoutCycle).toHaveBeenCalledWith(
+        expect.objectContaining({ allowBroadcast: false })
+      );
+      expect(workerMocks.runRefundCycle).toHaveBeenCalledWith(
+        expect.objectContaining({ allowBroadcast: false })
+      );
+    } finally {
+      await worker.stop();
+      processOnce.mockRestore();
+    }
+  });
+
+  it("refuses to start when the applied migration hash differs from this build", async () => {
+    vi.clearAllMocks();
+    workerMocks.repository.checkHealth.mockResolvedValueOnce({
+      schemaVersion: "0017_robust_loners",
+      migrationHash: "0".repeat(64)
+    });
+    vi.stubEnv("APP_ENV", "alpha");
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NIMIQ_NETWORK", "testnet");
+    vi.stubEnv("NIMIQ_RPC_URL", "https://rpc.testnet.example");
+    vi.stubEnv("DATABASE_URL", "postgresql://pods:secret@internal/pods");
+    vi.stubEnv("PODS_TREASURY_ADDRESS", "NQ00 TEST TREASURY ADDRESS");
+    vi.stubEnv("PODS_TREASURY_PRIVATE_KEY_HEX", "a".repeat(64));
+    vi.stubEnv("PODS_DEPOSIT_POLL_INTERVAL_MS", "5000");
+    vi.stubEnv("PODS_RELEASE_SHA", "abcdef0123456789abcdef0123456789abcdef01");
+    vi.stubEnv("PORT", "3412");
+
+    const result = await startFundingWorker().then(
+      async (worker) => {
+        await worker.stop();
+        return { status: "started" as const };
+      },
+      (error: unknown) => ({ status: "rejected" as const, error })
+    );
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.error).toEqual(
+        new Error("Worker and database schema identity do not match")
+      );
+    }
+    expect(workerMocks.repository.close).toHaveBeenCalledOnce();
   });
 });

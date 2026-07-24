@@ -2,13 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import { workerHealthResponse } from "../src/health/server";
 
+const runtime = {
+  deploymentFlavor: "testnet" as const,
+  fundsNetwork: "nimiq-testnet" as const,
+  commitSha: "abcdef012345",
+  schemaVersion: "0017_robust_loners"
+};
+
 describe("worker health response", () => {
   it("reports process liveness without depending on cycle readiness", () => {
     expect(
       workerHealthResponse("/health/live", {
         ready: false,
         cycleHealthy: null,
-        lastSuccessfulCycleAt: null
+        lastSuccessfulCycleAt: null,
+        runtime
       })
     ).toEqual({
       statusCode: 200,
@@ -21,7 +29,8 @@ describe("worker health response", () => {
       workerHealthResponse("/health/ready", {
         ready: true,
         cycleHealthy: true,
-        lastSuccessfulCycleAt: "2026-07-21T12:00:00.000Z"
+        lastSuccessfulCycleAt: "2026-07-21T12:00:00.000Z",
+        runtime
       })
     ).toEqual({
       statusCode: 200,
@@ -29,7 +38,8 @@ describe("worker health response", () => {
         service: "pods-worker",
         status: "ready",
         cycle: "healthy",
-        lastSuccessfulCycleAt: "2026-07-21T12:00:00.000Z"
+        lastSuccessfulCycleAt: "2026-07-21T12:00:00.000Z",
+        runtime
       }
     });
   });
@@ -38,7 +48,8 @@ describe("worker health response", () => {
     const response = workerHealthResponse("/health/ready", {
       ready: true,
       cycleHealthy: false,
-      lastSuccessfulCycleAt: null
+      lastSuccessfulCycleAt: null,
+      runtime
     });
 
     expect(response).toEqual({
@@ -47,7 +58,8 @@ describe("worker health response", () => {
         service: "pods-worker",
         status: "not_ready",
         cycle: "failed",
-        lastSuccessfulCycleAt: null
+        lastSuccessfulCycleAt: null,
+        runtime
       }
     });
     expect(JSON.stringify(response)).not.toContain("rpc");
@@ -59,7 +71,8 @@ describe("worker health response", () => {
       workerHealthResponse("/metrics", {
         ready: true,
         cycleHealthy: true,
-        lastSuccessfulCycleAt: null
+        lastSuccessfulCycleAt: null,
+        runtime
       })
     ).toEqual({ statusCode: 404, body: { error: "Not found" } });
   });

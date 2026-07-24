@@ -70,7 +70,8 @@ describe("alpha access enforcement", () => {
       APP_ENV: "alpha",
       NIMIQ_NETWORK: "testnet",
       PODS_DEPOSIT_MODE: "public",
-      PODS_SETTLEMENT_ENABLED: "true"
+      PODS_SETTLEMENT_ENABLED: "true",
+      PODS_PROPORTIONAL_PUBLISHING_ENABLED: "true"
     })).toEqual({
       settlementMode: "proportional"
     });
@@ -80,8 +81,21 @@ describe("alpha access enforcement", () => {
         APP_ENV: "alpha",
         NIMIQ_NETWORK: "testnet",
         PODS_DEPOSIT_MODE: "public",
-        PODS_SETTLEMENT_ENABLED: "false"
+        PODS_SETTLEMENT_ENABLED: "true",
+        PODS_PROPORTIONAL_PUBLISHING_ENABLED: "false"
       })
-    ).toThrow("Public deposits require settlement to be enabled");
+    ).toThrow("Proportional Pod publication is paused");
+  });
+
+  it("does not let an incident pause silently change a frozen contract type", () => {
+    expect(() =>
+      alphaFundingPolicy({
+        APP_ENV: "alpha",
+        NIMIQ_NETWORK: "testnet",
+        PODS_DEPOSIT_MODE: "public",
+        PODS_SETTLEMENT_ENABLED: "true",
+        PODS_FINANCIAL_INCIDENT_PAUSED: "true"
+      })
+    ).toThrow("Financial activity is paused");
   });
 });

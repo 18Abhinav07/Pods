@@ -16,7 +16,8 @@ export async function GET() {
     {
       service: "pods-web",
       status: result.ready ? "ready" : "not_ready",
-      checks: result.checks
+      checks: result.checks,
+      ...(result.ready && result.runtime ? { runtime: result.runtime } : {})
     },
     { status: result.ready ? 200 : 503 }
   );

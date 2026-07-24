@@ -16,6 +16,9 @@ export type AlphaCapabilities = {
   rateLimits: boolean;
   reviewExceptions: boolean;
   settlement: boolean;
+  proportionalPublishing: boolean;
+  payoutBroadcast: boolean;
+  financialIncidentPaused: boolean;
   alphaRefund: boolean;
   depositMode: AlphaDepositMode;
   realtimeTransport: RealtimeTransport;
@@ -65,8 +68,23 @@ export function parseAlphaCapabilities(environment: Environment): AlphaCapabilit
     ["off", "allowlist_refund_only", "public"] as const,
     "off"
   );
-  if (depositMode === "public" && !settlement) {
-    throw new Error("Public deposits require settlement to be enabled");
+  const proportionalPublishing = enabled(
+    environment,
+    "PODS_PROPORTIONAL_PUBLISHING_ENABLED"
+  );
+  const payoutBroadcast = enabled(
+    environment,
+    "PODS_PAYOUT_BROADCAST_ENABLED"
+  );
+  const financialIncidentPaused = enabled(
+    environment,
+    "PODS_FINANCIAL_INCIDENT_PAUSED"
+  );
+  if (proportionalPublishing && !settlement) {
+    throw new Error("Proportional publication requires settlement processing");
+  }
+  if (proportionalPublishing && depositMode !== "public") {
+    throw new Error("Proportional publication requires public deposit intake");
   }
   if (depositMode === "allowlist_refund_only" && !alphaRefund) {
     throw new Error("Allowlisted alpha deposits require the full refund path");
@@ -94,6 +112,9 @@ export function parseAlphaCapabilities(environment: Environment): AlphaCapabilit
     rateLimits,
     reviewExceptions: enabled(environment, "PODS_REVIEW_EXCEPTIONS_ENABLED"),
     settlement,
+    proportionalPublishing,
+    payoutBroadcast,
+    financialIncidentPaused,
     alphaRefund,
     depositMode,
     realtimeTransport: oneOf(

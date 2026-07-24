@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+import { TestnetMark } from "./testnet-mark";
+
 export function PodRoomHeader({
   isCreator,
   memberCount,
@@ -37,7 +39,13 @@ export function PodRoomHeader({
       <header className="pod-room-header">
         <span className="pod-room-identity">
           <span className="pod-room-thumbnail"><Image alt="" fill sizes="44px" src={thumbnail} /></span>
-          <span><h1>{name}</h1><small>{memberCount} {memberCount === 1 ? "member" : "members"}</small></span>
+          <span>
+            <h1>{name}</h1>
+            <small className="pod-room-meta">
+              <span>{memberCount} {memberCount === 1 ? "member" : "members"}</span>
+              <TestnetMark />
+            </small>
+          </span>
         </span>
         <span className="pod-room-utilities">
           <button aria-expanded={toolsOpen} aria-label="Open Pod tools" onClick={() => setToolsOpen(true)} type="button">

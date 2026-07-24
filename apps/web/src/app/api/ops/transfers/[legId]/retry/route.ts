@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { alphaPayoutBroadcastEnabled } from "../../../../../../lib/alpha-access";
 import { createOpsNimiqRpc } from "../../../../../../lib/ops-nimiq-rpc";
 import { hasOpsSession } from "../../../../../../lib/ops-session";
 import { isUuidRouteParam } from "../../../../../../lib/route-params";
@@ -15,6 +16,12 @@ export async function POST(
     return NextResponse.json(
       { error: "Operations session required" },
       { status: 401 }
+    );
+  }
+  if (!alphaPayoutBroadcastEnabled(process.env)) {
+    return NextResponse.json(
+      { error: "Payout broadcasts are paused" },
+      { status: 503 }
     );
   }
   const { legId } = await params;

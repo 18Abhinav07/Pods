@@ -18,9 +18,26 @@ export default async function ReviewStepPage({ searchParams }: { searchParams: P
   if (!activity) redirect(`/pods/create/activity?draft=${pod.id}`);
   if (!community) redirect(`/pods/create/community?draft=${pod.id}`);
   if (!commitment) redirect(`/pods/create/commitment?draft=${pod.id}`);
+  let fundingPolicy: ReturnType<typeof alphaFundingPolicy>;
+  try {
+    fundingPolicy = alphaFundingPolicy(process.env);
+  } catch {
+    return (
+      <CreatorShell
+        activeStep={4}
+        eyebrow="Review paused"
+        title="Publishing is paused."
+        copy="Your draft is saved. No contract has been published or changed."
+      >
+        <Link className="secondary-action full-action" href="/my-pods">
+          Return to My Pods
+        </Link>
+      </CreatorShell>
+    );
+  }
   const result = buildPublishedContract(
     { templateId: pod.templateId, activity, community, commitment },
-    alphaFundingPolicy(process.env)
+    fundingPolicy
   );
   if (!result.success) {
     return <CreatorShell activeStep={4} eyebrow="Review paused" title="One section still needs attention." copy="The server could not freeze this contract yet."><div className="review-errors">{result.errors.map((error) => <p key={error}>{error}</p>)}<Link className="secondary-action full-action" href={`/pods/create/activity?draft=${pod.id}`}>Return to activity</Link></div></CreatorShell>;

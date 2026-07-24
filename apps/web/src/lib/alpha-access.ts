@@ -37,7 +37,12 @@ export function walletHasAlphaAccess(
 export function alphaDepositsEnabled(environment: Environment) {
   if (environment.APP_ENV !== "alpha") return true;
   try {
-    return parseAlphaCapabilities(environment).depositMode !== "off";
+    const capabilities = parseAlphaCapabilities(environment);
+    return (
+      capabilities.depositMode !== "off" &&
+      (capabilities.depositMode !== "public" || capabilities.settlement) &&
+      !capabilities.financialIncidentPaused
+    );
   } catch {
     return false;
   }
@@ -48,7 +53,13 @@ export function alphaFundingPolicy(environment: Environment) {
     throw new Error("The Phase 4 funding contract requires Nimiq Testnet");
   }
   const capabilities = parseAlphaCapabilities(environment);
+  if (capabilities.financialIncidentPaused) {
+    throw new Error("Financial activity is paused");
+  }
   if (capabilities.depositMode === "public") {
+    if (!capabilities.proportionalPublishing) {
+      throw new Error("Proportional Pod publication is paused");
+    }
     return {
       settlementMode: "proportional" as const
     };
@@ -56,6 +67,35 @@ export function alphaFundingPolicy(environment: Environment) {
   return {
     settlementMode: "full_refund_alpha" as const
   };
+}
+
+export function alphaSettlementProcessingEnabled(environment: Environment) {
+  try {
+    const capabilities = parseAlphaCapabilities(environment);
+    return capabilities.settlement && !capabilities.financialIncidentPaused;
+  } catch {
+    return false;
+  }
+}
+
+export function alphaPayoutBroadcastEnabled(environment: Environment) {
+  try {
+    const capabilities = parseAlphaCapabilities(environment);
+    return (
+      capabilities.payoutBroadcast &&
+      !capabilities.financialIncidentPaused
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function alphaFinancialMutationsEnabled(environment: Environment) {
+  try {
+    return !parseAlphaCapabilities(environment).financialIncidentPaused;
+  } catch {
+    return false;
+  }
 }
 
 export function alphaRequiresAuthenticatedBrowsing(environment: Environment) {

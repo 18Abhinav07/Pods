@@ -11,6 +11,7 @@ import {
   FundingRailPreview,
   PodRoomPreview
 } from "./landing-previews";
+import { TestnetMark } from "./testnet-mark";
 
 const rituals = [
   {
@@ -59,9 +60,12 @@ export function HomePage() {
   return (
     <main className="activity-atlas-page">
       <header className="atlas-header">
-        <div aria-label="Pods" className="atlas-brand">
-          <span aria-hidden="true" className="pod-mark" />
-          pods
+        <div className="atlas-brand-runtime">
+          <div aria-label="Pods" className="atlas-brand">
+            <span aria-hidden="true" className="pod-mark" />
+            pods
+          </div>
+          <TestnetMark />
         </div>
         <LandingActions />
       </header>
@@ -212,6 +216,7 @@ export function HomePage() {
             <span className="pod-mark" />
           </div>
           <p>Small commitments become visible momentum.</p>
+          <TestnetMark inverse />
           <small>pods · a Nimiq Pay Mini App</small>
         </div>
         <strong className="atlas-footer-wordmark">pods</strong>

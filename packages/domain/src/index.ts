@@ -22,6 +22,7 @@ export * from "./funding";
 export * from "./activity";
 export * from "./template-evidence";
 export * from "./alpha-capabilities";
+export * from "./runtime-identity";
 export * from "./social";
 export * from "./settlement";
 

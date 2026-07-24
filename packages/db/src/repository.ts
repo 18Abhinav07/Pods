@@ -28,6 +28,7 @@ import { createCutoffMethods } from "./cutoff-repository";
 import { createTransferMethods } from "./transfer-repository";
 import { createWaitingRoomMethods } from "./waiting-room-repository";
 import { createVerifierOverrideMethods } from "./verifier-override-repository";
+import { schemaIdentityForMigration } from "./schema-version";
 import * as schema from "./schema";
 import { conversations, occurrences, pods, sessions, users, walletChallenges } from "./schema";
 import type { PodDraftData } from "./schema";
@@ -84,7 +85,16 @@ export function createPodsRepository(connectionString: string) {
     ...createVerifierOverrideMethods(database),
 
     async checkHealth() {
-      await pool.query("select 1");
+      const result = await pool.query<{ created_at: string; hash: string }>(
+        `select created_at, hash
+           from drizzle.__drizzle_migrations
+          order by created_at desc
+          limit 1`
+      );
+      return schemaIdentityForMigration({
+        createdAt: result.rows[0]?.created_at,
+        hash: result.rows[0]?.hash
+      });
     },
 
     async close() {

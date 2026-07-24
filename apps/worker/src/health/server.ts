@@ -1,9 +1,12 @@
 import { createServer } from "node:http";
 
+import type { PublicRuntimeIdentity } from "@pods/domain";
+
 export type WorkerHealthState = {
   ready: boolean;
   cycleHealthy: boolean | null;
   lastSuccessfulCycleAt: string | null;
+  runtime: PublicRuntimeIdentity;
 };
 
 export function workerHealthResponse(pathname: string, state: WorkerHealthState) {
@@ -27,7 +30,8 @@ export function workerHealthResponse(pathname: string, state: WorkerHealthState)
             : state.cycleHealthy
               ? "healthy"
               : "failed",
-        lastSuccessfulCycleAt: state.lastSuccessfulCycleAt
+        lastSuccessfulCycleAt: state.lastSuccessfulCycleAt,
+        runtime: state.runtime
       }
     } as const;
   }

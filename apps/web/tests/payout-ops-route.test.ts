@@ -30,7 +30,12 @@ const transactionHash = "a".repeat(64);
 
 describe("payout transfer operations routes", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
+    vi.stubEnv("APP_ENV", "alpha");
+    vi.stubEnv("NIMIQ_NETWORK", "testnet");
+    vi.stubEnv("PODS_SETTLEMENT_ENABLED", "true");
+    vi.stubEnv("PODS_PAYOUT_BROADCAST_ENABLED", "true");
     vi.stubEnv("PODS_OPS_REVIEWER_ID", "pods-finance");
     hasOpsSession.mockResolvedValue(true);
     listPayoutTransferOperations.mockResolvedValue([]);
@@ -74,6 +79,28 @@ describe("payout transfer operations routes", () => {
 
     expect(response.status).toBe(401);
     expect(getPayoutRetryCandidate).not.toHaveBeenCalled();
+    expect(requestPayoutRetry).not.toHaveBeenCalled();
+  });
+
+  it("does not queue a replacement attempt during a financial incident", async () => {
+    vi.stubEnv("PODS_FINANCIAL_INCIDENT_PAUSED", "true");
+
+    const response = await POST(
+      new Request(`http://localhost/api/ops/transfers/${legId}/retry`, {
+        method: "POST",
+        body: JSON.stringify({
+          reason: "This must remain stopped until the incident is cleared."
+        })
+      }),
+      { params: Promise.resolve({ legId }) }
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Payout broadcasts are paused"
+    });
+    expect(getPayoutRetryCandidate).not.toHaveBeenCalled();
+    expect(getTransactionByHash).not.toHaveBeenCalled();
     expect(requestPayoutRetry).not.toHaveBeenCalled();
   });
 

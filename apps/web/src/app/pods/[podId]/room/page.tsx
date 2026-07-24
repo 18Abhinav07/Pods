@@ -120,7 +120,12 @@ async function loadPodRoom(userId: string, podId: string) {
     ? await podsRepository.listActivityScheduleForMember({ userId, podId })
     : null;
   const proofAction = schedule && schedule.length > 0
-    ? presentRoomActivitySchedule({ podId, now, rows: schedule })
+    ? presentRoomActivitySchedule({
+        podId,
+        now,
+        rows: schedule,
+        evidenceMode: waitingRoom.pod.contractData.evidenceMode
+      })
     : {
         mode: "browse" as const,
         href: `/pods/${podId}/activity`,

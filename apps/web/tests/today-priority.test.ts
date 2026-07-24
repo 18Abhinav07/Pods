@@ -1,6 +1,39 @@
 import { describe, expect, it } from "vitest";
 
-import { chooseTodayEnrollmentAction } from "../src/lib/today-priority";
+import {
+  chooseTodayEnrollmentAction,
+  deriveTodayActivityAction
+} from "../src/lib/today-priority";
+
+describe("template-aware activity action", () => {
+  const openOccurrence = {
+    opensAt: new Date("2027-04-05T00:00:00.000Z")
+  };
+
+  it("opens repeating templates directly into evidence", () => {
+    for (const templateId of ["fitness", "reading", "study"] as const) {
+      expect(deriveTodayActivityAction({
+        templateId,
+        now: new Date("2027-04-05T08:00:00.000Z"),
+        occurrence: openOccurrence,
+        commitment: null,
+        submission: null
+      })).toBe("submit_evidence");
+    }
+  });
+
+  it("keeps Build and Practice behind their immutable commitment", () => {
+    for (const templateId of ["build", "create"] as const) {
+      expect(deriveTodayActivityAction({
+        templateId,
+        now: new Date("2027-04-05T08:00:00.000Z"),
+        occurrence: openOccurrence,
+        commitment: null,
+        submission: null
+      })).toBe("lock_task");
+    }
+  });
+});
 
 describe("Phase 2 Today priority", () => {
   it("places an open occurrence before enrollment and creator work", () => {

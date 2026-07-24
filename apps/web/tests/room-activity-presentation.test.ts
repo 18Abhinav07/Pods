@@ -43,6 +43,20 @@ describe("presentRoomActivitySchedule", () => {
     });
   });
 
+  it("opens repeating criteria directly into proof even before materialization", () => {
+    expect(presentRoomActivitySchedule({
+      podId: "pod-1",
+      now,
+      rows: [base],
+      evidenceMode: "repeating_criterion"
+    })).toMatchObject({
+      mode: "add",
+      label: "Add proof",
+      stateLabel: "Proof due",
+      href: "/pods/pod-1/activity/occurrence-1"
+    });
+  });
+
   it("shows the next opening after a submitted occurrence", () => {
     const rows = [
       { ...base, commitment: { id: "commitment-1" }, submission: { state: "approved" } },

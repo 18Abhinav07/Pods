@@ -15,6 +15,25 @@ function allowedDeliverables(value: unknown): BuildDeliverableType[] {
   );
 }
 
+function templateTheme(
+  templateId: import("@pods/domain").TemplateId,
+  configuration: Record<string, unknown>
+) {
+  if (templateId === "fitness") {
+    return `${String(configuration.activityType ?? "Movement")} · ${String(configuration.measurableMinimum ?? "")}`;
+  }
+  if (templateId === "reading") {
+    return String(configuration.bookOrTheme ?? "Reading practice");
+  }
+  if (templateId === "study") {
+    return String(configuration.subject ?? "Focused study");
+  }
+  if (templateId === "create") {
+    return String(configuration.discipline ?? "Creative practice");
+  }
+  return String(configuration.projectTheme ?? "Build and ship");
+}
+
 export default async function ActivityOccurrencePage({
   params
 }: {
@@ -27,7 +46,7 @@ export default async function ActivityOccurrencePage({
     podId,
     occurrenceId
   });
-  if (!activity?.pod.contractData || !activity.occurrence.commitmentDeadlineAt) notFound();
+  if (!activity?.pod.contractData) notFound();
   const now = await podsRepository.getEffectiveTime(new Date());
   const currentStreak = await podsRepository.getActivityStreak({
     membershipId: activity.membership.id,
@@ -46,17 +65,21 @@ export default async function ActivityOccurrencePage({
         closesAt={activity.occurrence.closesAt.toISOString()}
         commitment={activity.commitment ? {
           id: activity.commitment.id,
+          kind: activity.commitment.kind,
           task: activity.commitment.task,
           deliverableType: activity.commitment.deliverableType,
+          details: activity.commitment.details,
           lockedAt: activity.commitment.lockedAt.toISOString()
         } : null}
-        commitmentDeadlineAt={activity.occurrence.commitmentDeadlineAt.toISOString()}
+        commitmentDeadlineAt={
+          activity.occurrence.commitmentDeadlineAt?.toISOString() ?? null
+        }
         currentStreak={currentStreak}
         occurrenceId={activity.occurrence.id}
         occurrenceOrdinal={activity.occurrence.ordinal}
         podId={podId}
         podName={activity.pod.contractData.activity.name}
-        projectTheme={String(configuration.projectTheme ?? "")}
+        projectTheme={templateTheme(activity.pod.templateId, configuration)}
         settlementMode={activity.pod.contractData.settlementMode ?? "proportional"}
         stakeNim={activity.pod.contractData.commitment.lunaPerOccurrence / 100_000}
         submission={activity.submission ? {
@@ -64,6 +87,7 @@ export default async function ActivityOccurrencePage({
           state: activity.submission.state,
           resultSummary: activity.submission.resultSummary,
           artifactUrl: activity.submission.artifactUrl,
+          templateEvidence: activity.submission.templateEvidence,
           evidenceObjectKey: activity.submission.evidenceObjectKey,
           proofShareMode: activity.submission.proofShareMode
         } : null}
@@ -72,6 +96,8 @@ export default async function ActivityOccurrencePage({
           activity.pod.contractData.community.roomAudience === "public_read_only"
         }
         timeZone={activity.pod.contractData.activity.timeZone}
+        templateConfig={configuration}
+        templateId={activity.pod.contractData.templateId}
       />
     </main>
   );

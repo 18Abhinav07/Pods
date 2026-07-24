@@ -1,3 +1,5 @@
+import type { EvidenceMode } from "@pods/domain";
+
 type ScheduleRow = {
   occurrence: {
     id: string;
@@ -32,11 +34,13 @@ export function roomSubmissionStateLabel(state: string) {
 export function presentRoomActivitySchedule({
   podId,
   now,
-  rows
+  rows,
+  evidenceMode = "per_occurrence_commitment"
 }: {
   podId: string;
   now: Date;
   rows: ScheduleRow[];
+  evidenceMode?: EvidenceMode;
 }): RoomActivityPresentation {
   const ordered = [...rows].sort((first, second) => first.occurrence.ordinal - second.occurrence.ordinal);
   const total = ordered.length;
@@ -54,6 +58,14 @@ export function presentRoomActivitySchedule({
       targetLabel: "remaining" as const
     };
     if (!open.commitment) {
+      if (evidenceMode === "repeating_criterion") {
+        return {
+          ...standard,
+          mode: "add",
+          label: "Add proof",
+          stateLabel: "Proof due"
+        };
+      }
       return { ...standard, mode: "lock", label: "Lock commitment", stateLabel: "Commitment open" };
     }
     if (!open.submission) {

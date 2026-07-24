@@ -1,4 +1,4 @@
-import type { MembershipState, PodState } from "@pods/domain";
+import type { MembershipState, PodState, TemplateId } from "@pods/domain";
 
 import { presentPodRelationship } from "./participant-pod-state";
 
@@ -31,6 +31,33 @@ export type TodayEnrollmentAction =
   | { kind: "creator_funding"; podId: string }
   | { kind: "recruit"; podId: string }
   | { kind: "empty" };
+
+export function deriveTodayActivityAction(input: {
+  templateId: TemplateId;
+  now: Date;
+  occurrence: { opensAt: Date };
+  commitment: { id: string } | null;
+  submission: { state: string } | null;
+}): TodayActivityAction {
+  if (input.occurrence.opensAt.getTime() > input.now.getTime()) {
+    return "upcoming";
+  }
+  const needsCommitment =
+    input.templateId === "build" || input.templateId === "create";
+  if (needsCommitment && !input.commitment) return "lock_task";
+  if (!input.submission || input.submission.state === "draft") {
+    return "submit_evidence";
+  }
+  if (
+    input.submission.state === "reviewing" ||
+    input.submission.state === "approved" ||
+    input.submission.state === "rejected" ||
+    input.submission.state === "timeout_protected"
+  ) {
+    return input.submission.state;
+  }
+  return "submit_evidence";
+}
 
 export function chooseTodayEnrollmentAction(input: {
   activities?: Array<{

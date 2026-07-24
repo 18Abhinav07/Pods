@@ -11,6 +11,7 @@ import { requireSession } from "../../lib/session";
 import { adaptiveThemeForTemplate, mediaForTemplate } from "../../lib/template-presentation";
 import {
   chooseTodayEnrollmentAction,
+  deriveTodayActivityAction,
   type TodayActivityAction
 } from "../../lib/today-priority";
 
@@ -40,15 +41,13 @@ export default async function TodayPage() {
   const activityActions = activities.map(({ pod, occurrence, commitment, submission }) => ({
     podId: pod.id,
     occurrenceId: occurrence.id,
-    action: (
-      occurrence.opensAt.getTime() > now.getTime()
-        ? "upcoming"
-        : !commitment
-          ? "lock_task"
-          : !submission || submission.state === "draft"
-            ? "submit_evidence"
-            : submission.state
-    ) as TodayActivityAction
+    action: deriveTodayActivityAction({
+      templateId: pod.templateId,
+      now,
+      occurrence,
+      commitment,
+      submission
+    }) as TodayActivityAction
   }));
   const action = chooseTodayEnrollmentAction({
     activities: activityActions,
@@ -108,20 +107,34 @@ export default async function TodayPage() {
       : action.kind === "recruit"
         ? recruit
         : null;
+  const activityTemplateId = activeRecord?.pod.templateId ?? "build";
+  const repeatingActivity = ["fitness", "reading", "study"].includes(
+    activityTemplateId
+  );
   const activityCopy = action.kind === "activity"
     ? action.action === "lock_task"
-      ? { eyebrow: "Commitment open", title: "Name the work before you build.", detail: "Lock one concrete task and its visible deliverable before the frozen cutoff.", cta: "Lock today's task", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+      ? activityTemplateId === "create"
+        ? { eyebrow: "Practice goal open", title: "Name the output before you begin.", detail: "Lock one concrete practice or creative output before the frozen cutoff.", cta: "Lock today's goal", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+        : { eyebrow: "Commitment open", title: "Name the work before you build.", detail: "Lock one concrete task and its visible deliverable before the frozen cutoff.", cta: "Lock today's task", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
       : action.action === "submit_evidence"
-        ? { eyebrow: "Proof due", title: "Turn shipped work into visible progress.", detail: "Add your result and public artifact, then send this occurrence to creator review.", cta: "Add today's proof", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+        ? activityTemplateId === "fitness"
+          ? { eyebrow: "Movement proof due", title: "Log the session you completed.", detail: "Add your completion note and movement photo, then send the occurrence to creator review.", cta: "Log today's movement", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+          : activityTemplateId === "reading"
+            ? { eyebrow: "Reading proof due", title: "Turn reading into visible progress.", detail: "Record the title and amount completed, then add your reading image.", cta: "Log today's reading", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+            : activityTemplateId === "study"
+              ? { eyebrow: "Focus proof due", title: "Record the focus session.", detail: "Add the topic, duration, takeaway, and focus image for creator review.", cta: "Log today's study", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+              : activityTemplateId === "create"
+                ? { eyebrow: "Practice proof due", title: "Show what the session produced.", detail: "Add your reflection and an artifact image or published link.", cta: "Add today's artifact", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+                : { eyebrow: "Proof due", title: "Turn shipped work into visible progress.", detail: "Add your result and public artifact, then send this occurrence to creator review.", cta: "Add today's proof", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
         : action.action === "reviewing"
-          ? { eyebrow: "Creator review in progress", title: "Your proof is with the Pod creator.", detail: "The Pod creator is checking your proof against the locked commitment.", cta: "View review", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+          ? { eyebrow: "Creator review in progress", title: "Your proof is with the Pod creator.", detail: `The Pod creator is checking your proof against the ${repeatingActivity ? "frozen activity rule" : "locked commitment"}.`, cta: "View review", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
           : action.action === "approved"
             ? { eyebrow: "Work approved", title: "Your work is counted.", detail: "The Pod creator approved this proof. It counts toward your progress and streak.", cta: "Open Pod room", href: `/pods/${action.podId}/room` }
             : action.action === "rejected"
-              ? { eyebrow: "Not verified", title: "The Pod creator did not verify this proof.", detail: "Review the creator's private reason against your locked commitment. This occurrence does not count toward your progress or streak.", cta: "View submission", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+              ? { eyebrow: "Not verified", title: "The Pod creator did not verify this proof.", detail: `Review the creator's private reason against your ${repeatingActivity ? "frozen activity rule" : "locked commitment"}. This occurrence does not count toward your progress or streak.`, cta: "View submission", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
               : action.action === "timeout_protected"
                 ? { eyebrow: "Protected after review timeout", title: "Protected after review timeout.", detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak.", cta: "View submission", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
-                : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
+                : { eyebrow: "Coming up", title: "Your next activity is scheduled.", detail: repeatingActivity ? "Review the frozen requirement and arrive ready to record honest progress." : "Review the timing and arrive ready to lock one clear commitment.", cta: "Preview next activity", href: `/pods/${action.podId}/activity/${action.occurrenceId}` }
     : null;
   const copy = action.kind === "activity" && activityCopy
     ? activityCopy

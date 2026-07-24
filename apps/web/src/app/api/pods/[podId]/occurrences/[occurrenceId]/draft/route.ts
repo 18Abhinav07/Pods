@@ -13,6 +13,7 @@ export async function POST(
   const body = (await request.json()) as {
     resultSummary?: unknown;
     artifactUrl?: unknown;
+    templateEvidence?: unknown;
     proofShareMode?: unknown;
   };
   try {
@@ -21,8 +22,12 @@ export async function POST(
       userId: session.userId,
       podId,
       occurrenceId,
-      resultSummary: body.resultSummary,
-      artifactUrl: body.artifactUrl,
+      ...(body.templateEvidence !== undefined
+        ? { templateEvidence: body.templateEvidence }
+        : {
+            resultSummary: body.resultSummary,
+            artifactUrl: body.artifactUrl
+          }),
       proofShareMode: body.proofShareMode,
       now
     });

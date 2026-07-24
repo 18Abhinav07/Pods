@@ -10,7 +10,8 @@ import { isUuidRouteParam } from "../../../../../../lib/route-params";
 import { podsRepository } from "../../../../../../lib/server-db";
 import { requireSession } from "../../../../../../lib/session";
 
-function deliverableLabel(value: BuildDeliverableType) {
+function deliverableLabel(value: BuildDeliverableType | null) {
+  if (!value) return "Activity evidence";
   const labels: Record<BuildDeliverableType, string> = {
     pull_request: "GitHub pull request",
     commit: "GitHub commit",

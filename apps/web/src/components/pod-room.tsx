@@ -40,7 +40,7 @@ export type RoomMessage = {
     commitmentId: string;
     occurrenceOrdinal: number;
     task: string;
-    deliverableType: string;
+    deliverableType: string | null;
     state: string;
     submissionId: string | null;
     resultSummary: string | null;

@@ -32,7 +32,7 @@ export type PublicVisitorMessage = {
     occurrenceOrdinal: number;
     localDate: string;
     task: string;
-    deliverableType: string;
+    deliverableType: string | null;
     state:
       | "committed"
       | "under_review"

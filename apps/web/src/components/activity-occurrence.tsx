@@ -16,7 +16,7 @@ import { formatZonedMoment } from "../lib/format-moment";
 type CommitmentView = {
   id: string;
   task: string;
-  deliverableType: BuildDeliverableType;
+  deliverableType: BuildDeliverableType | null;
   lockedAt: string;
 };
 
@@ -47,7 +47,8 @@ type Props = {
   publicVisitorSharingEnabled?: boolean;
 };
 
-function deliverableLabel(value: BuildDeliverableType) {
+function deliverableLabel(value: BuildDeliverableType | null) {
+  if (!value) return "Activity evidence";
   const labels: Record<BuildDeliverableType, string> = {
     pull_request: "GitHub pull request",
     commit: "GitHub commit",

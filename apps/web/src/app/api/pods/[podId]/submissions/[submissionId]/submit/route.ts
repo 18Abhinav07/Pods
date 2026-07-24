@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { toActivitySubmissionView } from "../../../../../../../lib/activity-submission-view";
 import { podsRepository } from "../../../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../../../lib/session";
 
@@ -24,7 +25,9 @@ export async function POST(
       submissionId,
       now
     });
-    return NextResponse.json({ submission });
+    return NextResponse.json({
+      submission: toActivitySubmissionView(submission)
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Evidence could not be submitted" },

@@ -4,14 +4,12 @@ import type {
   BuildDeliverableType,
   ProofShareMode,
   SettlementMode,
-  SubmissionState,
   TemplateEvidence,
   TemplateId
 } from "@pods/domain";
 import { validateTemplateEvidenceSubmission } from "@pods/domain";
 import { ArrowLeft, ArrowRight, Check } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
@@ -51,40 +49,6 @@ type Props = {
   submission: ActivitySubmissionView | null;
   publicVisitorSharingEnabled?: boolean;
 };
-
-function statusPresentation(
-  state: Exclude<SubmissionState, "draft">,
-  perOccurrence: boolean
-) {
-  const rule = perOccurrence ? "locked commitment" : "frozen activity rule";
-  const presentations = {
-    reviewing: {
-      eyebrow: "Creator review",
-      heading: "Creator review in progress",
-      detail: `The Pod creator is checking your proof against the ${rule}.`
-    },
-    approved: {
-      eyebrow: "The Pod creator approved",
-      heading: "Work approved",
-      detail: "The Pod creator approved this proof. It counts toward your progress and streak."
-    },
-    rejected: {
-      eyebrow: "Creator review complete",
-      heading: "Not verified",
-      detail: `The Pod creator did not verify this proof against the ${rule}.`
-    },
-    timeout_protected: {
-      eyebrow: "Review timeout protection",
-      heading: "Protected after review timeout",
-      detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
-    }
-  } satisfies Record<Exclude<SubmissionState, "draft">, {
-    eyebrow: string;
-    heading: string;
-    detail: string;
-  }>;
-  return presentations[state];
-}
 
 function initialEvidence(
   templateId: TemplateId,
@@ -207,11 +171,11 @@ export function ActivityOccurrence(props: Props) {
   );
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadComplete, setUploadComplete] = useState(
-    Boolean(props.submission?.evidenceObjectKey)
+    Boolean(props.submission?.evidenceAvailable)
   );
   const [proofStep, setProofStep] = useState(0);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(() =>
-    props.submission?.evidenceObjectKey
+    props.submission?.evidenceAvailable
       ? `/api/pods/${props.podId}/submissions/${props.submission.id}/evidence`
       : null
   );
@@ -504,7 +468,9 @@ export function ActivityOccurrence(props: Props) {
         throw new Error(body.error ?? "Evidence could not be submitted");
       }
       setSubmission(body.submission);
-      router.refresh();
+      router.replace(
+        `/pods/${props.podId}/submissions/${body.submission.id}`
+      );
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Evidence could not be submitted"
@@ -560,11 +526,6 @@ export function ActivityOccurrence(props: Props) {
     );
   }
 
-  const status = submission?.state;
-  const presentation =
-    status && status !== "draft"
-      ? statusPresentation(status, perOccurrence)
-      : null;
   const fullReturnAlpha = props.settlementMode === "full_refund_alpha";
   const artifactUrl =
     evidence.kind === "build" || evidence.kind === "create"
@@ -633,17 +594,10 @@ export function ActivityOccurrence(props: Props) {
         </p>
       ) : null}
 
-      {submission && presentation ? (
-        <section className={`submission-status-card is-${status}`}>
-          <span>{presentation.eyebrow}</span>
-          <h2>{presentation.heading}</h2>
-          <p>{presentation.detail}</p>
-          <Link
-            className="primary-action full-action"
-            href={`/pods/${props.podId}/submissions/${submission.id}`}
-          >
-            View submission
-          </Link>
+      {submission && submission.state !== "draft" ? (
+        <section className="submission-route-transition" role="status">
+          <span className="submission-route-pulse" aria-hidden="true" />
+          <p>Opening your live submission</p>
         </section>
       ) : perOccurrence && !commitment ? (
         <motion.form

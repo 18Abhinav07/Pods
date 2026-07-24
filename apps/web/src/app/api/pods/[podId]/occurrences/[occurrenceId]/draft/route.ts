@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { toActivitySubmissionView } from "../../../../../../../lib/activity-submission-view";
 import { podsRepository } from "../../../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../../../lib/session";
 
@@ -31,7 +32,10 @@ export async function POST(
       proofShareMode: body.proofShareMode,
       now
     });
-    return NextResponse.json({ submission }, { status: 201 });
+    return NextResponse.json(
+      { submission: toActivitySubmissionView(submission) },
+      { status: 201 }
+    );
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Evidence draft could not be saved" },

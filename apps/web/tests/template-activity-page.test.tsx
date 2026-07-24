@@ -6,6 +6,9 @@ const repositoryMocks = vi.hoisted(() => ({
   getActivityStreak: vi.fn(),
   getEffectiveTime: vi.fn()
 }));
+const redirect = vi.hoisted(() => vi.fn((href: string) => {
+  throw new Error(`REDIRECT:${href}`);
+}));
 
 vi.mock("../src/lib/session", () => ({
   requireSession: vi.fn(async () => ({ userId: "user-1" }))
@@ -17,7 +20,8 @@ vi.mock("next/navigation", async (importOriginal) => {
   const original = await importOriginal<typeof import("next/navigation")>();
   return {
     ...original,
-    useRouter: () => ({ refresh: vi.fn() }),
+    useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }),
+    redirect,
     notFound: vi.fn(() => {
       throw new Error("NOT_FOUND");
     })
@@ -81,5 +85,58 @@ describe("template activity server page", () => {
     expect(screen.getByLabelText("Reading title")).toBeInTheDocument();
     expect(screen.getByLabelText("Amount completed")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /lock/i })).not.toBeInTheDocument();
+  });
+
+  it("redirects a submitted occurrence to its canonical live submission route", async () => {
+    repositoryMocks.getActivityOccurrenceForMember.mockResolvedValue({
+      membership: { id: "membership-1" },
+      occurrence: {
+        id: "occurrence-1",
+        ordinal: 1,
+        opensAt: new Date("2027-05-03T00:00:00.000Z"),
+        closesAt: new Date("2027-05-03T23:59:59.999Z"),
+        commitmentDeadlineAt: null
+      },
+      pod: {
+        id: "pod-1",
+        templateId: "build",
+        contractData: {
+          version: 1,
+          templateId: "build",
+          evidenceMode: "per_occurrence_commitment",
+          settlementMode: "full_refund_alpha",
+          activity: {
+            name: "Build Pods in public",
+            purpose: "Ship one visible product improvement every occurrence.",
+            timeZone: "UTC",
+            config: {
+              projectTheme: "Pods",
+              allowedDeliverables: ["pull_request"]
+            }
+          },
+          community: { visibility: "public" },
+          commitment: { lunaPerOccurrence: 10_000 }
+        }
+      },
+      commitment: {
+        id: "commitment-1",
+        task: "Ship the canonical participant submission route.",
+        deliverableType: "pull_request",
+        lockedAt: new Date("2027-05-03T08:00:00.000Z")
+      },
+      submission: {
+        id: "submission-1",
+        state: "reviewing"
+      }
+    });
+
+    await expect(ActivityOccurrencePage({
+      params: Promise.resolve({
+        podId: "pod-1",
+        occurrenceId: "occurrence-1"
+      })
+    })).rejects.toThrow(
+      "REDIRECT:/pods/pod-1/submissions/submission-1"
+    );
   });
 });

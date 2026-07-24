@@ -153,7 +153,7 @@ describe("TodayPage wallet identity", () => {
       expect(screen.getByRole("heading", { name: title })).toBeVisible();
       expect(screen.getByText(detail)).toBeVisible();
       expect(screen.getByRole("link", { name: "View submission" }))
-        .toHaveAttribute("href", "/pods/pod-activity/activity/occurrence-1");
+        .toHaveAttribute("href", "/pods/pod-activity/submissions/submission-1");
     }
   );
 });

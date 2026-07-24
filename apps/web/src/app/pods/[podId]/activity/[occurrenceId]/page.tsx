@@ -1,8 +1,9 @@
 import type { BuildDeliverableType } from "@pods/domain";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { ActivityOccurrence } from "../../../../../components/activity-occurrence";
+import { toActivitySubmissionView } from "../../../../../lib/activity-submission-view";
 import { podsRepository } from "../../../../../lib/server-db";
 import { requireSession } from "../../../../../lib/session";
 
@@ -47,6 +48,9 @@ export default async function ActivityOccurrencePage({
     occurrenceId
   });
   if (!activity?.pod.contractData) notFound();
+  if (activity.submission && activity.submission.state !== "draft") {
+    redirect(`/pods/${podId}/submissions/${activity.submission.id}`);
+  }
   const now = await podsRepository.getEffectiveTime(new Date());
   const currentStreak = await podsRepository.getActivityStreak({
     membershipId: activity.membership.id,
@@ -82,15 +86,11 @@ export default async function ActivityOccurrencePage({
         projectTheme={templateTheme(activity.pod.templateId, configuration)}
         settlementMode={activity.pod.contractData.settlementMode ?? "proportional"}
         stakeNim={activity.pod.contractData.commitment.lunaPerOccurrence / 100_000}
-        submission={activity.submission ? {
-          id: activity.submission.id,
-          state: activity.submission.state,
-          resultSummary: activity.submission.resultSummary,
-          artifactUrl: activity.submission.artifactUrl,
-          templateEvidence: activity.submission.templateEvidence,
-          evidenceObjectKey: activity.submission.evidenceObjectKey,
-          proofShareMode: activity.submission.proofShareMode
-        } : null}
+        submission={
+          activity.submission
+            ? toActivitySubmissionView(activity.submission)
+            : null
+        }
         publicVisitorSharingEnabled={
           activity.pod.contractData.version === 2 &&
           activity.pod.contractData.community.roomAudience === "public_read_only"

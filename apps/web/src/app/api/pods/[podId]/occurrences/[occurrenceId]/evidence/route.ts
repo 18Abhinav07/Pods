@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { toActivitySubmissionView } from "../../../../../../../lib/activity-submission-view";
 import { privateEvidenceStorage } from "../../../../../../../lib/evidence-storage";
 import { podsRepository } from "../../../../../../../lib/server-db";
 import { getCurrentSession } from "../../../../../../../lib/session";
@@ -42,7 +43,9 @@ export async function POST(
         evidence: stored,
         now
       });
-      return NextResponse.json({ submission, evidence: stored });
+      return NextResponse.json({
+        submission: toActivitySubmissionView(submission)
+      });
     } catch (error) {
       await storage.deleteImage(stored.objectKey);
       throw error;

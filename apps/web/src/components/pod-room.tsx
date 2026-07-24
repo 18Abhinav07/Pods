@@ -542,6 +542,24 @@ export function PodRoom({
                           </a>
                         ) : null}
                       </div>
+                      {message.activity.submissionId &&
+                      message.sender?.isViewer ? (
+                        <Link
+                          className="room-activity-action"
+                          href={`/pods/${podId}/submissions/${message.activity.submissionId}`}
+                        >
+                          View your submission
+                        </Link>
+                      ) : message.activity.submissionId &&
+                        isCreator &&
+                        message.activity.state === "reviewing" ? (
+                          <Link
+                            className="room-activity-action"
+                            href={`/pods/${podId}/admin/reviews/${message.activity.submissionId}`}
+                          >
+                            Review proof
+                          </Link>
+                        ) : null}
                     </div>
                   ) : <MessageBody body={message.body} />}
                   {message.delivery === "sending" ? <small className="delivery-state is-sending">Sending</small> : null}

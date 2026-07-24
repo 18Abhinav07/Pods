@@ -8,7 +8,7 @@ type ScheduleRow = {
     closesAt: Date;
   };
   commitment: { id: string } | null;
-  submission: { state: string } | null;
+  submission: { id: string; state: string } | null;
 };
 
 export type RoomActivityPresentation = {
@@ -76,6 +76,7 @@ export function presentRoomActivitySchedule({
     }
     return {
       ...standard,
+      href: `/pods/${podId}/submissions/${open.submission.id}`,
       mode: "view",
       label: "View submission",
       stateLabel: roomSubmissionStateLabel(open.submission.state),

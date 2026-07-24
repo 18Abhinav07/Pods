@@ -2,7 +2,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const refresh = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+const replace = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, replace }) }));
 
 import { ActivityOccurrence } from "../src/components/activity-occurrence";
 
@@ -24,6 +25,7 @@ const base = {
 describe("Build and Ship occurrence", () => {
   beforeEach(() => {
     refresh.mockReset();
+    replace.mockReset();
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
@@ -80,7 +82,7 @@ describe("Build and Ship occurrence", () => {
       state: "draft",
       resultSummary: "Shipped the complete participant activity screen and tests.",
       artifactUrl: "https://github.com/18Abhinav07/Pods/pull/42",
-      evidenceObjectKey: null,
+      evidenceAvailable: false,
       proofShareMode: "reviewer_only"
     } as const;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -119,7 +121,9 @@ describe("Build and Ship occurrence", () => {
       "/api/pods/pod-1/submissions/submission-1/submit",
       { method: "POST" }
     ));
-    expect(await screen.findByText("Creator review in progress")).toBeInTheDocument();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith(
+      "/pods/pod-1/submissions/submission-1"
+    ));
     expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
   });
 
@@ -134,7 +138,7 @@ describe("Build and Ship occurrence", () => {
       state: "draft",
       resultSummary: "First complete result summary for the activity.",
       artifactUrl: "",
-      evidenceObjectKey: null,
+      evidenceAvailable: false,
       proofShareMode: "reviewer_only"
     } as const;
     const fetchMock = vi.spyOn(globalThis, "fetch")
@@ -195,7 +199,7 @@ describe("Build and Ship occurrence", () => {
       state: "draft",
       resultSummary: "Shipped the complete participant activity screen and tests.",
       artifactUrl: "https://github.com/18Abhinav07/Pods/pull/42",
-      evidenceObjectKey: null,
+      evidenceAvailable: false,
       proofShareMode: "reviewer_only"
     } as const;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -299,7 +303,7 @@ describe("Build and Ship occurrence", () => {
       state: "draft",
       resultSummary: "Shipped the complete participant activity screen and tests.",
       artifactUrl: "https://github.com/18Abhinav07/Pods/pull/42",
-      evidenceObjectKey: null,
+      evidenceAvailable: false,
       proofShareMode: "reviewer_only"
     } as const;
 
@@ -331,7 +335,7 @@ describe("Build and Ship occurrence", () => {
       const stale = FakeXmlHttpRequest.instances[0]!;
       stale.status = 200;
       stale.responseText = JSON.stringify({
-        submission: { ...submission, evidenceObjectKey: "first.png" }
+        submission: { ...submission, evidenceAvailable: true }
       });
       stale.onload?.();
     });
@@ -411,29 +415,13 @@ describe("Build and Ship occurrence", () => {
   });
 
   it.each([
-    [
-      "reviewing",
-      "Creator review in progress",
-      "The Pod creator is checking your proof against the locked commitment."
-    ],
-    [
-      "approved",
-      "Work approved",
-      "The Pod creator approved this proof. It counts toward your progress and streak."
-    ],
-    [
-      "rejected",
-      "Not verified",
-      "The Pod creator did not verify this proof against the locked commitment."
-    ],
-    [
-      "timeout_protected",
-      "Protected after review timeout",
-      "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
-    ]
+    "reviewing",
+    "approved",
+    "rejected",
+    "timeout_protected"
   ] as const)(
-    "renders the participant-safe %s terminal projection",
-    (state, heading, detail) => {
+    "does not duplicate the canonical %s submission detail",
+    (state) => {
       render(
         <ActivityOccurrence
           {...base}
@@ -448,14 +436,17 @@ describe("Build and Ship occurrence", () => {
             state,
             resultSummary: "Shipped the participant activity screen and its tests.",
             artifactUrl: "https://github.com/example/pods/pull/42",
-            evidenceObjectKey: null,
+            evidenceAvailable: false,
             proofShareMode: "reviewer_only"
           }}
         />
       );
 
-      expect(screen.getByRole("heading", { name: heading })).toBeVisible();
-      expect(screen.getByText(detail)).toBeVisible();
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Opening your live submission"
+      );
+      expect(screen.queryByText("Creator review in progress"))
+        .not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /appeal|dispute/i }))
         .not.toBeInTheDocument();
     }

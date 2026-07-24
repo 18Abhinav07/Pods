@@ -406,7 +406,15 @@ test("creator approves proof through the UI without gaining member finances", as
       path: testInfo.outputPath("proof-review-mobile.png")
     });
     await memberPage.getByRole("button", { name: "Submit to creator" }).click();
+    await expect(memberPage).toHaveURL(
+      new RegExp(`/pods/${fixture.podId}/submissions/[0-9a-f-]+$`)
+    );
     await expect(memberPage.getByRole("heading", { name: "Creator review in progress" })).toBeVisible();
+    await expect(memberPage.getByText("Creator only", { exact: true })).toBeVisible();
+    await memberPage.screenshot({
+      path: testInfo.outputPath("submission-live-mobile.png"),
+      fullPage: true
+    });
 
     await creatorPage.goto(`${baseUrl}/today`);
     await expect(
@@ -426,6 +434,9 @@ test("creator approves proof through the UI without gaining member finances", as
     const firstReviewHref = await firstReviewLink.getAttribute("href");
     const firstSubmissionId = firstReviewHref?.split("/").at(-1);
     if (!firstSubmissionId) throw new Error("Creator review detail did not expose a submission id");
+    await expect(memberPage).toHaveURL(
+      `${baseUrl}/pods/${fixture.podId}/submissions/${firstSubmissionId}`
+    );
     await firstReviewLink.click();
     await expect(creatorPage).toHaveURL(
       `${baseUrl}/pods/${fixture.podId}/admin/reviews/${firstSubmissionId}`
@@ -454,6 +465,10 @@ test("creator approves proof through the UI without gaining member finances", as
     ).toBe("approved");
     await expect(creatorPage).toHaveURL(`${baseUrl}/pods/${fixture.podId}/admin/reviews`);
 
+    await expect(memberPage.getByRole("heading", { name: "Work approved" })).toBeVisible();
+    await expect(memberPage.getByText(
+      "The public pull request visibly completes the locked participant task."
+    )).toBeVisible();
     await memberPage.goto(`${baseUrl}/today`);
     await expect(memberPage.getByRole("heading", { name: "Your work is counted." })).toBeVisible();
     await memberPage.goto(
@@ -468,6 +483,12 @@ test("creator approves proof through the UI without gaining member finances", as
       hasText: "Ship the participant activity screen with private evidence and reviewer states."
     });
     await expect(approvedRoomCard.getByText("Approved", { exact: true })).toBeVisible();
+    await expect(
+      approvedRoomCard.getByRole("link", { name: "View your submission" })
+    ).toHaveAttribute(
+      "href",
+      `/pods/${fixture.podId}/submissions/${firstSubmissionId}`
+    );
     await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/activity`);
     const approvedProof = memberPage.getByRole("article").filter({
       hasText: "Ship the participant activity screen with private evidence and reviewer states."

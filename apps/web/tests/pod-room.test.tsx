@@ -73,7 +73,7 @@ describe("Pod room", () => {
     expect(screen.queryByRole("button", { name: /Heart 0/i })).not.toBeInTheDocument();
   });
 
-  it("renders participant-safe review labels on activity cards", () => {
+  it("renders participant-safe review labels and the owner's canonical detail action", () => {
     render(
       <PodRoom
         conversationId="room-1"
@@ -82,6 +82,10 @@ describe("Pod room", () => {
           id: "activity-rejected",
           kind: "activity",
           body: null,
+          sender: {
+            ...messages[0]!.sender!,
+            isViewer: true
+          },
           activity: {
             commitmentId: "commitment-1",
             occurrenceOrdinal: 1,
@@ -108,6 +112,62 @@ describe("Pod room", () => {
     );
     expect(screen.getByText("Not verified")).toBeVisible();
     expect(screen.queryByText("rejected")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View your submission" }))
+      .toHaveAttribute("href", "/pods/pod-1/submissions/submission-1");
+  });
+
+  it("gives the creator a review action without exposing participant detail to peers", () => {
+    const activityMessage = {
+      ...messages[0]!,
+      id: "activity-reviewing",
+      kind: "activity" as const,
+      body: null,
+      sender: {
+        ...messages[0]!.sender!,
+        isViewer: false
+      },
+      activity: {
+        commitmentId: "commitment-1",
+        occurrenceOrdinal: 1,
+        task: "Ship the creator review projection.",
+        deliverableType: "pull_request",
+        templateId: "build" as const,
+        state: "reviewing",
+        submissionId: "submission-1",
+        templateEvidence: null,
+        resultSummary: null,
+        artifactUrl: null,
+        sharedEvidenceAvailable: false
+      }
+    };
+    const { rerender } = render(
+      <PodRoom
+        conversationId="room-1"
+        initialMessages={[activityMessage]}
+        initialLastSequence={1}
+        isCreator
+        podId="pod-1"
+        roomState="open"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "Review proof" }))
+      .toHaveAttribute("href", "/pods/pod-1/admin/reviews/submission-1");
+
+    rerender(
+      <PodRoom
+        conversationId="room-1"
+        initialMessages={[activityMessage]}
+        initialLastSequence={1}
+        isCreator={false}
+        podId="pod-1"
+        roomState="open"
+      />
+    );
+
+    expect(screen.queryByRole("link", { name: "Review proof" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "View your submission" }))
+      .not.toBeInTheDocument();
   });
 
   it("sends optimistically and exposes reply context", async () => {

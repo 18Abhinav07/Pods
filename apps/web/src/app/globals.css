@@ -4408,3 +4408,228 @@ button.secondary-action {
   color: #a02a2a;
   font-size: 0.78rem;
 }
+
+/* Canonical participant submission */
+.participant-submission-status {
+  display: grid;
+  gap: 0;
+  padding: 3.4rem 0 0.8rem;
+}
+
+.participant-status-hero {
+  padding-bottom: 1.55rem;
+  border-bottom: 1px solid rgba(20, 28, 22, 0.11);
+}
+
+.participant-status-hero h1 {
+  max-width: 10ch;
+  margin: 0.38rem 0 0.75rem;
+  font-size: clamp(2.65rem, 13vw, 4.4rem);
+  font-weight: 620;
+  letter-spacing: -0.075em;
+  line-height: 0.92;
+}
+
+.participant-status-hero > p:last-child {
+  margin: 0;
+  color: rgba(20, 28, 22, 0.52);
+  font-size: 0.82rem;
+}
+
+.participant-submission-status.is-approved .participant-status-hero h1,
+.participant-submission-status.is-timeout_protected .participant-status-hero h1 {
+  color: #126e52;
+}
+
+.participant-submission-status.is-rejected .participant-status-hero h1 {
+  color: #8b3535;
+}
+
+.participant-review-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-bottom: 1px solid rgba(20, 28, 22, 0.11);
+}
+
+.participant-reviewer,
+.participant-proof-audience {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.72rem;
+  padding: 1rem 0;
+}
+
+.participant-proof-audience {
+  display: grid;
+  gap: 0.2rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(20, 28, 22, 0.11);
+}
+
+.participant-reviewer > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.participant-reviewer small,
+.participant-proof-audience small {
+  color: rgba(20, 28, 22, 0.43);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.participant-reviewer strong,
+.participant-proof-audience strong {
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant-reviewer span,
+.participant-proof-audience span {
+  color: rgba(20, 28, 22, 0.5);
+  font-size: 0.67rem;
+  line-height: 1.35;
+}
+
+.participant-submission-status .review-timing-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  border-bottom: 1px solid rgba(20, 28, 22, 0.11);
+}
+
+.participant-submission-status .review-timing-card > div {
+  gap: 0.3rem;
+  padding: 1rem 0.8rem 1rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.participant-submission-status .review-timing-card > div + div {
+  padding-left: 0.8rem;
+  border-left: 1px solid rgba(20, 28, 22, 0.11);
+}
+
+.participant-submission-status .review-timing-card strong {
+  font-size: 0.7rem;
+  font-weight: 720;
+}
+
+.participant-submission-status .submission-protection-note,
+.participant-submission-status .submission-private-decision-note {
+  margin: 1rem 0 0;
+  padding: 1rem 1.05rem;
+  border-radius: 1rem;
+  background: rgba(25, 31, 26, 0.055);
+}
+
+.participant-submission-status .submission-protection-note.is-success {
+  background: rgba(74, 151, 111, 0.12);
+}
+
+.participant-submission-status .submission-protection-note.is-attention {
+  background: rgba(162, 67, 67, 0.1);
+}
+
+.participant-submission-status .submission-protection-note strong,
+.participant-submission-status .submission-private-decision-note strong {
+  font-size: 0.8rem;
+}
+
+.participant-submission-status .submission-protection-note p,
+.participant-submission-status .submission-private-decision-note p {
+  margin: 0.32rem 0 0;
+  color: rgba(20, 28, 22, 0.58);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.submission-reconnect-note {
+  margin: 0.7rem 0 0;
+  color: rgba(20, 28, 22, 0.5);
+  font-size: 0.68rem;
+}
+
+.submission-detail-shell .is-editorial-submission {
+  gap: 1rem;
+  margin: 1.2rem 0 1rem;
+  padding: 1.2rem 0;
+  border: 0;
+  border-top: 1px solid rgba(20, 28, 22, 0.11);
+  border-bottom: 1px solid rgba(20, 28, 22, 0.11);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.submission-route-transition {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1.1rem 0;
+  border-top: 1px solid rgba(20, 28, 22, 0.11);
+  border-bottom: 1px solid rgba(20, 28, 22, 0.11);
+}
+
+.submission-route-transition p {
+  margin: 0;
+  color: rgba(20, 28, 22, 0.58);
+  font-size: 0.76rem;
+}
+
+.submission-route-pulse {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--theme-accent, #cbe95d);
+  box-shadow: 0 0 0 0 rgba(137, 172, 55, 0.3);
+  animation: submission-route-pulse 1.3s ease-out infinite;
+}
+
+.room-activity-action {
+  font-size: 0.7rem !important;
+  letter-spacing: -0.01em;
+}
+
+@keyframes submission-route-pulse {
+  70% {
+    box-shadow: 0 0 0 0.45rem rgba(137, 172, 55, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(137, 172, 55, 0);
+  }
+}
+
+@media (max-width: 380px) {
+  .participant-review-context,
+  .participant-submission-status .review-timing-card {
+    grid-template-columns: 1fr;
+  }
+
+  .participant-proof-audience {
+    padding-left: 0;
+    border-top: 1px solid rgba(20, 28, 22, 0.11);
+    border-left: 0;
+  }
+
+  .participant-submission-status .review-timing-card > div + div {
+    padding-left: 0;
+    border-top: 1px solid rgba(20, 28, 22, 0.11);
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submission-route-pulse {
+    animation: none;
+  }
+}

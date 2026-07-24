@@ -22,7 +22,7 @@ export type ActivitySubmissionView = {
   resultSummary: string;
   artifactUrl: string;
   templateEvidence?: TemplateEvidence | null;
-  evidenceObjectKey: string | null;
+  evidenceAvailable: boolean;
   proofShareMode: ProofShareMode;
 };
 
@@ -31,4 +31,3 @@ export type TemplateEditorProps<T extends TemplateEvidence> = {
   evidence: T;
   onChange: (next: T) => void;
 };
-

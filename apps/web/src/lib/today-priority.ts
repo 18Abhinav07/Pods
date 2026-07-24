@@ -23,6 +23,7 @@ export type TodayEnrollmentAction =
       kind: "activity";
       podId: string;
       occurrenceId: string;
+      submissionId?: string | null;
       action: TodayActivityAction;
     }
   | ({ kind: "participant" } & TodayParticipant)
@@ -63,6 +64,7 @@ export function chooseTodayEnrollmentAction(input: {
   activities?: Array<{
     podId: string;
     occurrenceId: string;
+    submissionId?: string | null;
     action: TodayActivityAction;
   }>;
   participants: TodayParticipant[];

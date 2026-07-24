@@ -32,13 +32,15 @@ describe("presentRoomActivitySchedule", () => {
   it.each([
     [{ ...base }, "lock", "Lock commitment"],
     [{ ...base, commitment: { id: "commitment-1" } }, "add", "Add proof"],
-    [{ ...base, commitment: { id: "commitment-1" }, submission: { state: "draft" } }, "continue", "Continue proof"],
-    [{ ...base, commitment: { id: "commitment-1" }, submission: { state: "reviewing" } }, "view", "View submission"]
+    [{ ...base, commitment: { id: "commitment-1" }, submission: { id: "submission-1", state: "draft" } }, "continue", "Continue proof"],
+    [{ ...base, commitment: { id: "commitment-1" }, submission: { id: "submission-1", state: "reviewing" } }, "view", "View submission"]
   ])("derives the %s action from the current occurrence", (row, mode, label) => {
     expect(presentRoomActivitySchedule({ podId: "pod-1", now, rows: [row] })).toMatchObject({
       mode,
       label,
-      href: "/pods/pod-1/activity/occurrence-1",
+      href: mode === "view"
+        ? "/pods/pod-1/submissions/submission-1"
+        : "/pods/pod-1/activity/occurrence-1",
       progressLabel: "Occurrence 1 of 1"
     });
   });
@@ -59,7 +61,11 @@ describe("presentRoomActivitySchedule", () => {
 
   it("shows the next opening after a submitted occurrence", () => {
     const rows = [
-      { ...base, commitment: { id: "commitment-1" }, submission: { state: "approved" } },
+      {
+        ...base,
+        commitment: { id: "commitment-1" },
+        submission: { id: "submission-1", state: "approved" }
+      },
       {
         occurrence: {
           id: "occurrence-2",
@@ -75,6 +81,7 @@ describe("presentRoomActivitySchedule", () => {
     expect(presentRoomActivitySchedule({ podId: "pod-1", now, rows })).toMatchObject({
       mode: "view",
       label: "View submission",
+      href: "/pods/pod-1/submissions/submission-1",
       stateLabel: "Approved",
       progressLabel: "Occurrence 1 of 2 complete",
       targetAt: "2027-04-07T00:00:00.000Z",
@@ -94,11 +101,12 @@ describe("presentRoomActivitySchedule", () => {
         rows: [{
           ...base,
           commitment: { id: "commitment-1" },
-          submission: { state }
+          submission: { id: "submission-1", state }
         }]
       })).toMatchObject({
         mode: "view",
         label: "View submission",
+        href: "/pods/pod-1/submissions/submission-1",
         stateLabel
       });
     }
@@ -109,7 +117,11 @@ describe("presentRoomActivitySchedule", () => {
     expect(presentRoomActivitySchedule({
       podId: "pod-1",
       now: afterClose,
-      rows: [{ ...base, commitment: { id: "commitment-1" }, submission: { state: "approved" } }]
+      rows: [{
+        ...base,
+        commitment: { id: "commitment-1" },
+        submission: { id: "submission-1", state: "approved" }
+      }]
     })).toMatchObject({
       mode: "complete",
       label: "Schedule complete",

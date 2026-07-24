@@ -172,8 +172,9 @@ simultaneous authorities from making contradictory decisions.
 ## 9. Compatibility
 
 - New contracts freeze `verification.verifier = "creator"`.
-- The production application database was reset before this release, so no
-  live financial migration is required.
+- Production was reset before the creator-review release. One approved legacy
+  Testnet Pod was later retained for build-in-public continuity and requires
+  the bounded amendment below.
 - The `review_decisions.reviewer_id` column remains unchanged and stores the
   creator user ID.
 - An additive schema migration expands review decisions to
@@ -184,6 +185,31 @@ simultaneous authorities from making contradictory decisions.
 - The internal `reviewer_only` proof-share value remains readable while its UI
   label changes to `Creator only`.
 - Public safety moderation remains backward compatible.
+
+### 9.1 Legacy Testnet verifier amendment
+
+The retained legacy Pod keeps its original contract JSON, contract hash,
+member acceptances, deposits, occurrences, submissions, deadlines, and
+financial state unchanged. An append-only `pod_verifier_overrides` record may
+change only its effective operational verifier from `pods_team` to `creator`.
+
+The amendment command is disabled by default and must fail closed unless all
+of the following match:
+
+- environment `alpha` and Nimiq `testnet`;
+- the exact Pod ID, contract hash, and creator user ID;
+- a frozen `pods_team` verifier and `full_refund_alpha` settlement policy;
+- no creator membership, creator review decision, or settlement run;
+- an explicit operator actor and reason.
+
+The creator remains outside member and financial records. The rules screen
+shows the frozen Pods Team contract and the separate Testnet operational
+amendment. Proof access uses the effective verifier authority, while ordinary
+creator room administration remains independent. Timeout protection triggered
+by the amendment is scoped to that Pod only.
+
+Mainnet overrides, contract mutation, hash replacement, and broad timeout
+sweeps are forbidden.
 
 ## 10. Failure Handling
 

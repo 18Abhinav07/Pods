@@ -32,7 +32,13 @@ export async function GET(
     submissionId
   });
   if (!result || result.pod.id !== podId) return notFoundResponse();
-  const creatorProfile = result.pod.creatorUserId
+  const verifierAuthority =
+    await podsRepository.getVerifierAuthorityForPod(result.pod.id);
+  const reviewerKind =
+    verifierAuthority?.effectiveVerifier ??
+    result.pod.contractData?.verification.verifier ??
+    "pods_team";
+  const creatorProfile = reviewerKind === "creator" && result.pod.creatorUserId
     ? await podsRepository.getProfileForUser(result.pod.creatorUserId)
     : null;
   const creator = creatorProfile
@@ -47,7 +53,8 @@ export async function GET(
       status: participantSubmissionStatusDto({
         submission: result.submission,
         reviewDecision: result.reviewDecision,
-        creator
+        creator,
+        reviewerKind
       })
     },
     {

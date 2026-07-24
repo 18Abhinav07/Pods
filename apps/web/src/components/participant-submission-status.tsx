@@ -44,8 +44,15 @@ export function ParticipantSubmissionStatus({
   const [status, setStatus] = useState(initial);
   const [connectionIssue, setConnectionIssue] = useState(false);
   const inFlight = useRef(false);
-  const presentation = participantSubmissionPresentation(status.state);
-  const audience = proofAudiencePresentation(status.proofShareMode);
+  const reviewerKind = status.reviewerKind ?? "creator";
+  const presentation = participantSubmissionPresentation(
+    status.state,
+    reviewerKind
+  );
+  const audience = proofAudiencePresentation(
+    status.proofShareMode,
+    reviewerKind
+  );
   const successful =
     status.state === "approved" || status.state === "timeout_protected";
 
@@ -108,7 +115,7 @@ export function ParticipantSubmissionStatus({
 
       <div className="participant-review-context">
         <div className="participant-reviewer">
-          {status.creator ? (
+          {reviewerKind === "creator" && status.creator ? (
             <>
               <ProfileAvatar
                 avatar={status.creator.avatar}
@@ -124,8 +131,14 @@ export function ParticipantSubmissionStatus({
           ) : (
             <div>
               <small>Reviewer</small>
-              <strong>Pod creator</strong>
-              <span>Profile unavailable</span>
+              <strong>
+                {reviewerKind === "creator" ? "Pod creator" : "Pods Team"}
+              </strong>
+              <span>
+                {reviewerKind === "creator"
+                  ? "Profile unavailable"
+                  : "Platform review"}
+              </span>
             </div>
           )}
         </div>
@@ -182,7 +195,7 @@ export function ParticipantSubmissionStatus({
 
       {connectionIssue && status.state === "reviewing" ? (
         <p className="submission-reconnect-note" role="status">
-          Reconnecting to creator review
+          Reconnecting to {reviewerKind === "creator" ? "creator" : "Pods Team"} review
         </p>
       ) : null}
     </section>

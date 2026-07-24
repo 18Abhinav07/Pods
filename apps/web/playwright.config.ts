@@ -22,7 +22,7 @@ export default defineConfig({
   webServer: externalBaseUrl
     ? undefined
     : {
-        command: "corepack pnpm dev --hostname 127.0.0.1 --port 3410",
+        command: "corepack pnpm dev --webpack --hostname 127.0.0.1 --port 3410",
         env: {
           PODS_MODERATION_ENABLED: "true",
           PODS_PUBLIC_VISITOR_ROOMS_ENABLED: "true"

@@ -42,10 +42,12 @@ import type {
   ReportReason,
   RoomState
 } from "@pods/domain";
+import { sql } from "drizzle-orm";
 import {
   bigint,
   bigserial,
   boolean,
+  check,
   date,
   index,
   integer,
@@ -358,6 +360,41 @@ export const pods = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
   },
   (table) => [index("pods_creator_state_idx").on(table.creatorUserId, table.state)]
+);
+
+export const podVerifierOverrides = pgTable(
+  "pod_verifier_overrides",
+  {
+    podId: uuid("pod_id")
+      .primaryKey()
+      .references(() => pods.id, { onDelete: "restrict" }),
+    contractHash: text("contract_hash").notNull(),
+    creatorUserId: uuid("creator_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    network: text("network").$type<FundingNetwork>().notNull(),
+    fromVerifier: text("from_verifier").$type<"pods_team">().notNull(),
+    toVerifier: text("to_verifier").$type<"creator">().notNull(),
+    actor: text("actor").notNull(),
+    reason: text("reason").notNull(),
+    effectiveAt: timestamp("effective_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    index("pod_verifier_overrides_creator_effective_idx").on(
+      table.creatorUserId,
+      table.effectiveAt
+    ),
+    check("pod_verifier_overrides_testnet_check", sql`${table.network} = 'testnet'`),
+    check(
+      "pod_verifier_overrides_direction_check",
+      sql`${table.fromVerifier} = 'pods_team' AND ${table.toVerifier} = 'creator'`
+    ),
+    check(
+      "pod_verifier_overrides_actor_reason_check",
+      sql`length(trim(${table.actor})) > 0 AND length(trim(${table.reason})) > 0`
+    )
+  ]
 );
 
 export const occurrences = pgTable(

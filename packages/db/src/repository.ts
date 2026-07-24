@@ -27,6 +27,7 @@ import { createClockMethods } from "./clock-repository";
 import { createCutoffMethods } from "./cutoff-repository";
 import { createTransferMethods } from "./transfer-repository";
 import { createWaitingRoomMethods } from "./waiting-room-repository";
+import { createVerifierOverrideMethods } from "./verifier-override-repository";
 import * as schema from "./schema";
 import { conversations, occurrences, pods, sessions, users, walletChallenges } from "./schema";
 import type { PodDraftData } from "./schema";
@@ -80,6 +81,7 @@ export function createPodsRepository(connectionString: string) {
     ...createCutoffMethods(database),
     ...createTransferMethods(database),
     ...createWaitingRoomMethods(database),
+    ...createVerifierOverrideMethods(database),
 
     async checkHealth() {
       await pool.query("select 1");

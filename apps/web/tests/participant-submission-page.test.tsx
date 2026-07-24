@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const repositoryMocks = vi.hoisted(() => ({
   getProfileForUser: vi.fn(),
-  getSubmissionForOwner: vi.fn()
+  getSubmissionForOwner: vi.fn(),
+  getVerifierAuthorityForPod: vi.fn()
 }));
 
 vi.mock("../src/lib/session", () => ({
@@ -57,6 +58,12 @@ describe("ParticipantSubmissionPage", () => {
       displayName: "Abhinav",
       avatar: { kind: "preset", preset: "ember" }
     });
+    repositoryMocks.getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "creator",
+      effectiveVerifier: "creator",
+      source: "contract",
+      amendedAt: null
+    });
   });
 
   it("renders one editorial proof record and one chronological review timeline", async () => {
@@ -102,6 +109,28 @@ describe("ParticipantSubmissionPage", () => {
       "This proof has not been sent to the Pod creator yet."
     )).toBeVisible();
     expect(screen.queryByText("Creator review in progress")).not.toBeInTheDocument();
+  });
+
+  it("keeps the page header aligned with a legacy Pods Team reviewer", async () => {
+    repositoryMocks.getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "pods_team",
+      effectiveVerifier: "pods_team",
+      source: "contract",
+      amendedAt: null
+    });
+
+    const { container } = render(await ParticipantSubmissionPage({
+      params: Promise.resolve({ podId: "pod-1", submissionId: "submission-1" })
+    }));
+
+    expect(container.querySelector(".phase-pill")).toHaveTextContent(
+      "Review in progress"
+    );
+    expect(container.querySelector(".phase-pill")).not.toHaveTextContent(
+      "Creator review in progress"
+    );
+    expect(screen.getByText("Pods Team")).toBeVisible();
+    expect(repositoryMocks.getProfileForUser).not.toHaveBeenCalled();
   });
 
   it("shows the owner's private rejection decision without an appeal control", async () => {

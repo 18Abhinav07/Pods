@@ -5,7 +5,8 @@ const requireEnrollmentOwner = vi.hoisted(() => vi.fn());
 const repository = vi.hoisted(() => ({
   listApplicationsForCreator: vi.fn(),
   listInvitationsForCreator: vi.fn(),
-  listPendingReviewsForCreator: vi.fn()
+  listPendingReviewsForCreator: vi.fn(),
+  getVerifierAuthorityForPod: vi.fn()
 }));
 
 vi.mock("../src/lib/enrollment-guards", () => ({
@@ -37,6 +38,12 @@ describe("PodAdminPage lifecycle state", () => {
     repository.listApplicationsForCreator.mockResolvedValue([]);
     repository.listInvitationsForCreator.mockResolvedValue([]);
     repository.listPendingReviewsForCreator.mockResolvedValue([]);
+    repository.getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "creator",
+      effectiveVerifier: "creator",
+      source: "contract",
+      amendedAt: null
+    });
   });
 
   it("replaces enrollment controls with the locked Pod destination after cutoff", async () => {
@@ -109,6 +116,12 @@ describe("PodAdminPage lifecycle state", () => {
       }
     });
     repository.listPendingReviewsForCreator.mockResolvedValue(null);
+    repository.getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "pods_team",
+      effectiveVerifier: "pods_team",
+      source: "contract",
+      amendedAt: null
+    });
 
     render(await PodAdminPage({ params: Promise.resolve({ podId: "pod-1" }) }));
 
@@ -121,6 +134,41 @@ describe("PodAdminPage lifecycle state", () => {
     expect(screen.getByRole("link", { name: "Open Pod room" }))
       .toHaveAttribute("href", "/pods/pod-1/room");
     expect(repository.listPendingReviewsForCreator).not.toHaveBeenCalled();
+  });
+
+  it("shows creator review for an audited legacy Testnet override", async () => {
+    requireEnrollmentOwner.mockResolvedValue({
+      session: { userId: "creator-1" },
+      pod: {
+        id: "pod-1",
+        state: "active",
+        contractHash: "a".repeat(64),
+        contractData: {
+          activity: { name: "Ship together" },
+          community: { visibility: "public" },
+          verification: { verifier: "pods_team" }
+        }
+      }
+    });
+    repository.getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "pods_team",
+      effectiveVerifier: "creator",
+      source: "testnet_override",
+      amendedAt: new Date("2026-07-24T08:30:00.000Z")
+    });
+    repository.listPendingReviewsForCreator.mockResolvedValue([
+      { submission: { id: "proof-1", state: "reviewing" } }
+    ]);
+
+    render(await PodAdminPage({ params: Promise.resolve({ podId: "pod-1" }) }));
+
+    expect(screen.getByText("Creator review active")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Review 1 proof" }))
+      .toHaveAttribute("href", "/pods/pod-1/admin/reviews");
+    expect(repository.listPendingReviewsForCreator).toHaveBeenCalledWith({
+      creatorUserId: "creator-1",
+      podId: "pod-1"
+    });
   });
 
   it("renders completion as an archive without any cancelled or review state", async () => {

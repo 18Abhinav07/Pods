@@ -18,6 +18,7 @@ import { and, asc, desc, eq, ilike, inArray, lte, max, ne, or, sql } from "drizz
 
 import type { PodsDatabase } from "./enrollment-repository";
 import { projectProofForAudience } from "./proof-projection";
+import { resolveVerifierAuthority } from "./verifier-override-repository";
 import {
   activityMessages,
   conversations,
@@ -86,6 +87,78 @@ function requireParticipantWindow(input: {
   if (input.occurrence.podId !== input.pod.id) {
     throw new Error("Occurrence does not belong to this Pod");
   }
+}
+
+async function protectTimedOutReviewBatch(
+  database: PodsDatabase,
+  input: { now: Date; podId?: string }
+) {
+  return database.transaction(async (transaction) => {
+    const filters = [
+      eq(submissions.state, "reviewing"),
+      lte(submissions.reviewHardDeadlineAt, input.now)
+    ];
+    if (input.podId) filters.push(eq(occurrences.podId, input.podId));
+    const due = await transaction
+      .select({ submission: submissions })
+      .from(submissions)
+      .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+      .where(and(...filters))
+      .orderBy(asc(submissions.reviewHardDeadlineAt), asc(submissions.id))
+      .limit(100)
+      .for("update", { of: submissions, skipLocked: true });
+    const state = nextSubmissionState(
+      "reviewing",
+      "protect_timeout",
+      "system"
+    );
+    if (state !== "timeout_protected") {
+      throw new Error("Timed out review cannot be protected");
+    }
+
+    let protectedSubmissions = 0;
+    for (const candidate of due) {
+      const [submission] = await transaction
+        .update(submissions)
+        .set({
+          state,
+          reviewedAt: input.now,
+          approvedAt: null,
+          updatedAt: input.now
+        })
+        .where(
+          and(
+            eq(submissions.id, candidate.submission.id),
+            eq(submissions.state, "reviewing")
+          )
+        )
+        .returning();
+      if (!submission) continue;
+      protectedSubmissions += 1;
+
+      const [projection] = await transaction
+        .select({
+          messageId: activityMessages.messageId,
+          conversationId: messages.conversationId
+        })
+        .from(activityMessages)
+        .innerJoin(messages, eq(activityMessages.messageId, messages.id))
+        .where(eq(activityMessages.commitmentId, submission.commitmentId));
+      if (projection) {
+        await transaction.insert(realtimeEvents).values({
+          conversationId: projection.conversationId,
+          recipientUserId: null,
+          kind: "submission.timeout_protected",
+          payload: {
+            messageId: projection.messageId,
+            submissionId: submission.id
+          },
+          createdAt: input.now
+        });
+      }
+    }
+    return { protectedSubmissions };
+  });
 }
 
 export function createActivityMethods(database: PodsDatabase) {
@@ -788,6 +861,13 @@ export function createActivityMethods(database: PodsDatabase) {
       creatorUserId: string;
       podId: string;
     }) {
+      const authority = await resolveVerifierAuthority(database, input.podId);
+      if (
+        authority?.creatorUserId !== input.creatorUserId ||
+        authority.effectiveVerifier !== "creator"
+      ) {
+        return null;
+      }
       const [owned] = await database
         .select({ pod: pods })
         .from(pods)
@@ -798,9 +878,7 @@ export function createActivityMethods(database: PodsDatabase) {
           )
         );
       const contract = owned?.pod.contractData;
-      if (!owned || contract?.verification.verifier !== "creator") {
-        return null;
-      }
+      if (!owned || !contract) return null;
       const queue = await database
         .select({
           submission: submissions,
@@ -833,7 +911,7 @@ export function createActivityMethods(database: PodsDatabase) {
     async findFirstPendingReviewForCreator(input: {
       creatorUserId: string;
     }) {
-      const [result] = await database
+      const results = await database
         .select({ pod: pods })
         .from(submissions)
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
@@ -842,16 +920,21 @@ export function createActivityMethods(database: PodsDatabase) {
           and(
             eq(pods.creatorUserId, input.creatorUserId),
             inArray(pods.state, ["active", "final_review"]),
-            eq(submissions.state, "reviewing"),
-            sql`${pods.contractData} -> 'verification' ->> 'verifier' = 'creator'`
+            eq(submissions.state, "reviewing")
           )
         )
         .orderBy(asc(submissions.reviewTargetAt), asc(submissions.id))
-        .limit(1);
-      if (result?.pod.contractData?.verification.verifier !== "creator") {
-        return null;
+        .limit(100);
+      for (const result of results) {
+        const authority = await resolveVerifierAuthority(database, result.pod.id);
+        if (
+          authority?.creatorUserId === input.creatorUserId &&
+          authority.effectiveVerifier === "creator"
+        ) {
+          return result.pod;
+        }
       }
-      return result.pod;
+      return null;
     },
 
     async getReviewSubmissionForCreator(input: {
@@ -887,7 +970,14 @@ export function createActivityMethods(database: PodsDatabase) {
             ne(submissions.state, "draft")
           )
         );
-      if (result?.pod.contractData?.verification.verifier !== "creator") {
+      const authority = result
+        ? await resolveVerifierAuthority(database, result.pod.id)
+        : null;
+      if (
+        !result ||
+        authority?.creatorUserId !== input.creatorUserId ||
+        authority.effectiveVerifier !== "creator"
+      ) {
         return null;
       }
       return result;
@@ -898,16 +988,11 @@ export function createActivityMethods(database: PodsDatabase) {
       podId: string;
       submissionId: string;
     }) {
-      const [owned] = await database
-        .select({ contractData: pods.contractData })
-        .from(pods)
-        .where(
-          and(
-            eq(pods.id, input.podId),
-            eq(pods.creatorUserId, input.creatorUserId)
-          )
-        );
-      if (owned?.contractData?.verification.verifier !== "creator") {
+      const authority = await resolveVerifierAuthority(database, input.podId);
+      if (
+        authority?.creatorUserId !== input.creatorUserId ||
+        authority.effectiveVerifier !== "creator"
+      ) {
         return null;
       }
       const [result] = await database
@@ -943,6 +1028,16 @@ export function createActivityMethods(database: PodsDatabase) {
       now: Date;
     }) {
       return database.transaction(async (transaction) => {
+        const authority = await resolveVerifierAuthority(
+          transaction as unknown as PodsDatabase,
+          input.podId
+        );
+        if (
+          authority?.creatorUserId !== input.creatorUserId ||
+          authority.effectiveVerifier !== "creator"
+        ) {
+          return null;
+        }
         const [owned] = await transaction
           .select({
             submission: submissions,
@@ -959,12 +1054,7 @@ export function createActivityMethods(database: PodsDatabase) {
             )
           )
           .for("update", { of: submissions });
-        if (
-          !owned ||
-          owned.contractData?.verification.verifier !== "creator"
-        ) {
-          return null;
-        }
+        if (!owned) return null;
         if (
           owned.submission.state === "approved" ||
           owned.submission.state === "rejected" ||
@@ -1095,71 +1185,11 @@ export function createActivityMethods(database: PodsDatabase) {
     },
 
     async protectTimedOutReviews(now: Date) {
-      return database.transaction(async (transaction) => {
-        const due = await transaction
-          .select({ submission: submissions })
-          .from(submissions)
-          .where(
-            and(
-              eq(submissions.state, "reviewing"),
-              lte(submissions.reviewHardDeadlineAt, now)
-            )
-          )
-          .orderBy(asc(submissions.reviewHardDeadlineAt), asc(submissions.id))
-          .limit(100)
-          .for("update", { of: submissions, skipLocked: true });
-        const state = nextSubmissionState(
-          "reviewing",
-          "protect_timeout",
-          "system"
-        );
-        if (state !== "timeout_protected") {
-          throw new Error("Timed out review cannot be protected");
-        }
+      return protectTimedOutReviewBatch(database, { now });
+    },
 
-        let protectedSubmissions = 0;
-        for (const candidate of due) {
-          const [submission] = await transaction
-            .update(submissions)
-            .set({
-              state,
-              reviewedAt: now,
-              approvedAt: null,
-              updatedAt: now
-            })
-            .where(
-              and(
-                eq(submissions.id, candidate.submission.id),
-                eq(submissions.state, "reviewing")
-              )
-            )
-            .returning();
-          if (!submission) continue;
-          protectedSubmissions += 1;
-
-          const [projection] = await transaction
-            .select({
-              messageId: activityMessages.messageId,
-              conversationId: messages.conversationId
-            })
-            .from(activityMessages)
-            .innerJoin(messages, eq(activityMessages.messageId, messages.id))
-            .where(eq(activityMessages.commitmentId, submission.commitmentId));
-          if (projection) {
-            await transaction.insert(realtimeEvents).values({
-              conversationId: projection.conversationId,
-              recipientUserId: null,
-              kind: "submission.timeout_protected",
-              payload: {
-                messageId: projection.messageId,
-                submissionId: submission.id
-              },
-              createdAt: now
-            });
-          }
-        }
-        return { protectedSubmissions };
-      });
+    async protectTimedOutReviewsForPod(input: { podId: string; now: Date }) {
+      return protectTimedOutReviewBatch(database, input);
     },
 
     async getSubmissionForOwner(input: { userId: string; submissionId: string }) {
@@ -1305,40 +1335,6 @@ export function createActivityMethods(database: PodsDatabase) {
         .orderBy(asc(occurrences.ordinal));
     },
 
-    async listApprovedFeedForPod(input: { userId: string; podId: string }) {
-      const [membership] = await database
-        .select({ id: memberships.id })
-        .from(memberships)
-        .where(
-          and(
-            eq(memberships.userId, input.userId),
-            eq(memberships.podId, input.podId),
-            inArray(memberships.state, ["roster_locked", "active"])
-          )
-        );
-      const [owned] = await database
-        .select({ id: pods.id })
-        .from(pods)
-        .where(and(eq(pods.id, input.podId), eq(pods.creatorUserId, input.userId)));
-      if (!membership && !owned) return null;
-      return database
-        .select({
-          submission: submissions,
-          commitment: occurrenceCommitments,
-          occurrence: occurrences
-        })
-        .from(submissions)
-        .innerJoin(occurrenceCommitments, eq(submissions.commitmentId, occurrenceCommitments.id))
-        .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
-        .where(
-          and(
-            eq(occurrences.podId, input.podId),
-            inArray(submissions.state, ["approved", "timeout_protected"])
-          )
-        )
-        .orderBy(asc(occurrences.ordinal), asc(submissions.approvedAt));
-    },
-
     async listPodVisibleSubmissions(input: {
       userId: string;
       podId: string;
@@ -1362,6 +1358,12 @@ export function createActivityMethods(database: PodsDatabase) {
         .from(pods)
         .where(and(eq(pods.id, input.podId), eq(pods.creatorUserId, input.userId)));
       if (!membership && !owned) return null;
+      const authority = owned
+        ? await resolveVerifierAuthority(database, input.podId)
+        : null;
+      const canReviewProofs =
+        authority?.creatorUserId === input.userId &&
+        authority.effectiveVerifier === "creator";
 
       const page = Math.max(Math.floor(input.page ?? 1), 1);
       const limit = Math.min(Math.max(Math.floor(input.limit ?? 20), 1), 40);
@@ -1421,21 +1423,21 @@ export function createActivityMethods(database: PodsDatabase) {
         items: rows.slice(0, limit).map((row) => {
           const isViewer = row.participantUserId === input.userId;
           const proof = projectProofForAudience({
-            audience: owned ? "creator" : isViewer ? "owner" : "member",
+            audience: canReviewProofs ? "reviewer" : isViewer ? "owner" : "member",
             shareMode: row.submission.proofShareMode,
             templateEvidence: row.submission.templateEvidence,
             resultSummary: row.submission.resultSummary,
             artifactUrl: row.submission.artifactUrl,
             hasAttachment: Boolean(row.submission.evidenceObjectKey)
           });
-          const { evidenceObjectKey: _objectKey, proofShareMode: _shareMode, ...submission } =
-            row.submission;
           return {
             submission: {
-              ...submission,
+              id: row.submission.id,
+              state: row.submission.state,
               templateEvidence: proof.templateEvidence,
               resultSummary: proof.resultSummary,
-              artifactUrl: proof.artifactUrl
+              artifactUrl: proof.artifactUrl,
+              submittedAt: row.submission.submittedAt
             },
             commitment: row.commitment,
             occurrence: row.occurrence,

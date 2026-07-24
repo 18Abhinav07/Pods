@@ -16,7 +16,7 @@ const proof = {
 };
 
 describe("proof audience projection", () => {
-  it.each(["owner", "creator"] as const)(
+  it.each(["owner", "reviewer"] as const)(
     "allows complete canonical evidence for the %s",
     (audience) => {
       expect(projectProofForAudience({ ...proof, audience })).toEqual({

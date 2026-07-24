@@ -24,6 +24,7 @@ export default async function PodRoomPage({ params }: { params: Promise<{ podId:
   if (authenticatedRoom) {
     const {
       conversation,
+      canReviewProofs,
       effectiveNow,
       initial,
       media,
@@ -50,6 +51,7 @@ export default async function PodRoomPage({ params }: { params: Promise<{ podId:
           initialChangeCursor={initial.conversation.changeCursor}
           initialLastSequence={initial.conversation.lastSequence}
           initialMessages={messages}
+          canReviewProofs={canReviewProofs}
           isCreator={waitingRoom.viewerRole === "creator"}
           podId={podId}
           proofAction={proofAction}
@@ -116,6 +118,11 @@ async function loadPodRoom(userId: string, podId: string) {
     limit: 100
   });
   const now = await podsRepository.getEffectiveTime(new Date());
+  const verifierAuthority =
+    await podsRepository.getVerifierAuthorityForPod(waitingRoom.pod.id);
+  const canReviewProofs =
+    waitingRoom.viewerRole === "creator" &&
+    verifierAuthority?.effectiveVerifier === "creator";
   const schedule = waitingRoom.viewerRole === "participant"
     ? await podsRepository.listActivityScheduleForMember({ userId, podId })
     : null;
@@ -137,6 +144,7 @@ async function loadPodRoom(userId: string, podId: string) {
       };
   return {
     waitingRoom,
+    canReviewProofs,
     conversation,
     initial,
     theme: adaptiveThemeForTemplate(waitingRoom.pod.templateId),

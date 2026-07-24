@@ -25,9 +25,14 @@ export default async function ParticipantSubmissionPage({
   const { submission, commitment, occurrence, pod, reviewDecision } = result;
   const contract = pod.contractData;
   if (!contract) notFound();
-  const creatorProfile = await podsRepository.getProfileForUser(
-    pod.creatorUserId
-  );
+  const verifierAuthority =
+    await podsRepository.getVerifierAuthorityForPod(pod.id);
+  const reviewerKind =
+    verifierAuthority?.effectiveVerifier ??
+    contract.verification.verifier;
+  const creatorProfile = reviewerKind === "creator"
+    ? await podsRepository.getProfileForUser(pod.creatorUserId)
+    : null;
   const creator = creatorProfile
     ? {
         handle: creatorProfile.handle,
@@ -38,9 +43,13 @@ export default async function ParticipantSubmissionPage({
   const status = participantSubmissionStatusDto({
     submission,
     reviewDecision,
-    creator
+    creator,
+    reviewerKind
   });
-  const presentation = participantSubmissionPresentation(submission.state);
+  const presentation = participantSubmissionPresentation(
+    submission.state,
+    reviewerKind
+  );
   const evidence = presentTemplateEvidence({
     templateId: contract.templateId,
     frozenConfig: contract.activity.config,

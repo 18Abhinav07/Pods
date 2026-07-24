@@ -12,8 +12,11 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   const { session, pod } = await requireEnrollmentOwner(podId, `/pods/${podId}/admin`);
   const contract = pod.contractData;
   if (!contract) return null;
+  const verifierAuthority = await podsRepository.getVerifierAuthorityForPod(pod.id);
+  const effectiveVerifier =
+    verifierAuthority?.effectiveVerifier ?? contract.verification.verifier;
   const creatorReviews =
-    contract.verification.verifier === "creator" &&
+    effectiveVerifier === "creator" &&
     (pod.state === "active" || pod.state === "final_review");
   const reviewRecords = creatorReviews
     ? await podsRepository.listPendingReviewsForCreator({
@@ -27,7 +30,7 @@ export default async function PodAdminPage({ params }: { params: Promise<{ podId
   const statePresentation = presentCreatorPodState({
     podId: pod.id,
     state: pod.state as PodState,
-    verifier: contract.verification.verifier,
+    verifier: effectiveVerifier,
     pendingReviewCount: pendingReviews,
     ...(contract.settlementMode
       ? { settlementMode: contract.settlementMode }

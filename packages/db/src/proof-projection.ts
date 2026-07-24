@@ -5,7 +5,7 @@ import type {
 
 export type ProofAudience =
   | "owner"
-  | "creator"
+  | "reviewer"
   | "member"
   | "visitor"
   | "other";
@@ -20,7 +20,7 @@ export function projectProofForAudience(input: {
 }) {
   const authorized =
     input.audience === "owner" ||
-    input.audience === "creator" ||
+    input.audience === "reviewer" ||
     (
       input.audience === "member" &&
       (input.shareMode === "pod_shared" || input.shareMode === "public")

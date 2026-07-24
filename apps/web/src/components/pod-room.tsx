@@ -162,6 +162,7 @@ export function PodRoom({
   initialMessages,
   initialLastSequence,
   initialChangeCursor = 0,
+  canReviewProofs = false,
   isCreator,
   roomState,
   proofAction,
@@ -174,6 +175,7 @@ export function PodRoom({
   initialMessages: RoomMessage[];
   initialLastSequence: number;
   initialChangeCursor?: number;
+  canReviewProofs?: boolean;
   isCreator: boolean;
   roomState: "open" | "archived";
   proofAction?: { href: string; label: string };
@@ -551,7 +553,7 @@ export function PodRoom({
                           View your submission
                         </Link>
                       ) : message.activity.submissionId &&
-                        isCreator &&
+                        canReviewProofs &&
                         message.activity.state === "reviewing" ? (
                           <Link
                             className="room-activity-action"

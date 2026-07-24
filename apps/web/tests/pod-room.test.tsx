@@ -145,6 +145,7 @@ describe("Pod room", () => {
         conversationId="room-1"
         initialMessages={[activityMessage]}
         initialLastSequence={1}
+        canReviewProofs
         isCreator
         podId="pod-1"
         roomState="open"
@@ -159,7 +160,8 @@ describe("Pod room", () => {
         conversationId="room-1"
         initialMessages={[activityMessage]}
         initialLastSequence={1}
-        isCreator={false}
+        canReviewProofs={false}
+        isCreator
         podId="pod-1"
         roomState="open"
       />
@@ -167,6 +169,20 @@ describe("Pod room", () => {
 
     expect(screen.queryByRole("link", { name: "Review proof" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "View your submission" }))
+      .not.toBeInTheDocument();
+
+    rerender(
+      <PodRoom
+        conversationId="room-1"
+        initialMessages={[activityMessage]}
+        initialLastSequence={1}
+        canReviewProofs={false}
+        isCreator={false}
+        podId="pod-1"
+        roomState="open"
+      />
+    );
+    expect(screen.queryByRole("link", { name: "Review proof" }))
       .not.toBeInTheDocument();
   });
 

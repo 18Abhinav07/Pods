@@ -49,6 +49,18 @@ const legacyReviewerContract: PublishedPodContract = {
     timeoutProtectionHours: 24
   }
 };
+const legacyFullRefundContract: PublishedPodContract = {
+  ...legacyReviewerContract,
+  settlementMode: "full_refund_alpha"
+};
+const creatorFullRefundContract: PublishedPodContract = {
+  ...legacyFullRefundContract,
+  verification: {
+    verifier: "creator",
+    targetReviewHours: 12,
+    timeoutProtectionHours: 24
+  }
+};
 
 beforeAll(async () => {
   await runPodsMigrations(databaseUrl);
@@ -59,6 +71,10 @@ afterAll(async () => {
   if (testUserIds.size === 0) return;
   const pool = new Pool({ connectionString: databaseUrl });
   try {
+    await pool.query(
+      "DELETE FROM pod_verifier_overrides WHERE creator_user_id = ANY($1::uuid[])",
+      [[...testUserIds]]
+    );
     await pool.query("DELETE FROM users WHERE id = ANY($1::uuid[])", [[...testUserIds]]);
   } finally {
     await pool.end();
@@ -684,6 +700,317 @@ describe("Phase 4 Build and Ship persistence", () => {
     });
   });
 
+  it("grants an exact audited Testnet override without changing the frozen contract", async () => {
+    const fixture = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    const pool = new Pool({ connectionString: databaseUrl });
+    await pool.query(
+      "UPDATE submissions SET review_hard_deadline_at = $2 WHERE id = $1",
+      [fixture.submission.id, new Date("2027-04-07T11:00:00.000Z")]
+    );
+    const before = await pool.query(
+      `SELECT
+         (SELECT to_jsonb(p) FROM pods p WHERE p.id = $1) AS pod,
+         (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.id) FROM memberships m WHERE m.pod_id = $1) AS memberships,
+         (SELECT jsonb_agg(to_jsonb(o) ORDER BY o.id) FROM occurrences o WHERE o.pod_id = $1) AS occurrences,
+         (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id)
+            FROM submissions s JOIN occurrences o ON o.id = s.occurrence_id
+           WHERE o.pod_id = $1) AS submissions`,
+      [fixture.podId]
+    );
+    const creatorRoomBefore = await repository.listConversationMessages({
+      conversationId: fixture.conversation.id,
+      userId: fixture.owner.userId,
+      afterSequence: 0,
+      limit: 20
+    });
+    expect(creatorRoomBefore.messages[0]?.activity).toMatchObject({
+      resultSummary: null,
+      artifactUrl: null,
+      sharedEvidenceAvailable: false
+    });
+    expect(await repository.getSharedSubmissionEvidence({
+      podId: fixture.podId,
+      submissionId: fixture.submission.id,
+      userId: fixture.owner.userId
+    })).toBeNull();
+
+    const input = {
+      network: "testnet" as const,
+      podId: fixture.podId,
+      expectedContractHash: "phase4-contract",
+      expectedCreatorUserId: fixture.owner.userId,
+      actor: "ops:phase4-legacy-amendment",
+      reason: "Authorize the frozen Pod creator for Testnet proof review.",
+      effectiveAt: new Date("2027-04-05T11:30:00.000Z"),
+      createdAt: new Date("2027-04-05T11:31:00.000Z")
+    };
+    expect(await repository.amendLegacyPodVerifierForTestnet(input)).toMatchObject({
+      kind: "created",
+      authority: {
+        frozenVerifier: "pods_team",
+        effectiveVerifier: "creator",
+        source: "testnet_override",
+        amendedAt: input.effectiveAt
+      }
+    });
+    expect(await repository.amendLegacyPodVerifierForTestnet({
+      ...input,
+      effectiveAt: new Date("2027-04-05T11:45:00.000Z"),
+      createdAt: new Date("2027-04-05T11:46:00.000Z")
+    })).toMatchObject({
+      kind: "existing",
+      authority: { effectiveVerifier: "creator", source: "testnet_override" }
+    });
+    expect(await repository.getVerifierAuthorityForPod(fixture.podId)).toMatchObject({
+      frozenVerifier: "pods_team",
+      effectiveVerifier: "creator",
+      source: "testnet_override",
+      amendedAt: input.effectiveAt
+    });
+    expect(await repository.listPendingReviewsForCreator({
+      creatorUserId: fixture.owner.userId,
+      podId: fixture.podId
+    })).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        submission: expect.objectContaining({ id: fixture.submission.id })
+      })
+    ]));
+    expect(await repository.getCreatorSubmissionEvidence({
+      creatorUserId: fixture.owner.userId,
+      podId: fixture.podId,
+      submissionId: fixture.submission.id
+    })).toMatchObject({
+      objectKey: expect.stringContaining(fixture.podId),
+      contentType: "image/webp"
+    });
+    const creatorRoomAfter = await repository.listConversationMessages({
+      conversationId: fixture.conversation.id,
+      userId: fixture.owner.userId,
+      afterSequence: 0,
+      limit: 20
+    });
+    expect(creatorRoomAfter.messages[0]?.activity).toMatchObject({
+      resultSummary: expect.any(String),
+      artifactUrl: expect.stringContaining("github.com"),
+      sharedEvidenceAvailable: true
+    });
+
+    const after = await pool.query(
+      `SELECT
+         (SELECT to_jsonb(p) FROM pods p WHERE p.id = $1) AS pod,
+         (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.id) FROM memberships m WHERE m.pod_id = $1) AS memberships,
+         (SELECT jsonb_agg(to_jsonb(o) ORDER BY o.id) FROM occurrences o WHERE o.pod_id = $1) AS occurrences,
+         (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id)
+            FROM submissions s JOIN occurrences o ON o.id = s.occurrence_id
+           WHERE o.pod_id = $1) AS submissions`,
+      [fixture.podId]
+    );
+    expect(after.rows[0]).toEqual(before.rows[0]);
+    expect((await pool.query(
+      "SELECT count(*)::integer AS count FROM pod_verifier_overrides WHERE pod_id = $1",
+      [fixture.podId]
+    )).rows[0]?.count).toBe(1);
+    await pool.end();
+  });
+
+  it("rejects unsafe legacy verifier amendments without an audit write", async () => {
+    const fixture = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    const amendmentInput = (candidate: typeof fixture) => ({
+      network: "testnet" as const,
+      podId: candidate.podId,
+      expectedContractHash: "phase4-contract",
+      expectedCreatorUserId: candidate.owner.userId,
+      actor: "ops:phase4-legacy-amendment",
+      reason: "Authorize the frozen Pod creator for Testnet proof review.",
+      effectiveAt: new Date("2027-04-05T11:30:00.000Z"),
+      createdAt: new Date("2027-04-05T11:31:00.000Z")
+    });
+    const base = amendmentInput(fixture);
+    const pool = new Pool({ connectionString: databaseUrl });
+    await pool.query(
+      "UPDATE submissions SET review_hard_deadline_at = $2 WHERE id = $1",
+      [fixture.submission.id, new Date("2027-04-07T11:00:00.000Z")]
+    );
+    await expect(repository.amendLegacyPodVerifierForTestnet({
+      ...base,
+      network: "mainnet"
+    })).rejects.toThrow("Legacy verifier amendments require Nimiq Testnet");
+    await expect(repository.amendLegacyPodVerifierForTestnet({
+      ...base,
+      expectedContractHash: "wrong-contract"
+    })).rejects.toThrow("Frozen Pod contract does not match");
+    await expect(repository.amendLegacyPodVerifierForTestnet({
+      ...base,
+      expectedCreatorUserId: fixture.member.userId
+    })).rejects.toThrow("Frozen Pod creator does not match");
+
+    const creatorVerifier = await createReviewingFixture(
+      "reviewer_only",
+      creatorFullRefundContract
+    );
+    await expect(repository.amendLegacyPodVerifierForTestnet(
+      amendmentInput(creatorVerifier)
+    )).rejects.toThrow("Pod does not use the legacy Pods Team verifier");
+
+    const proportional = await createReviewingFixture(
+      "reviewer_only",
+      legacyReviewerContract
+    );
+    await expect(repository.amendLegacyPodVerifierForTestnet(
+      amendmentInput(proportional)
+    )).rejects.toThrow("Only full-return alpha Pods can be amended");
+
+    const completed = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    await pool.query("UPDATE pods SET state = 'completed' WHERE id = $1", [
+      completed.podId
+    ]);
+    await expect(repository.amendLegacyPodVerifierForTestnet(
+      amendmentInput(completed)
+    )).rejects.toThrow("Pod lifecycle is not eligible for amendment");
+
+    const creatorMember = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    const financialStateAt = new Date("2027-04-05T11:15:00.000Z");
+    await pool.query(
+      `INSERT INTO memberships
+         (id, pod_id, user_id, admission_source, state, accepted_at, created_at, updated_at)
+       VALUES ($1, $2, $3, 'public_application', 'roster_locked', $4, $4, $4)`,
+      [
+        randomUUID(),
+        creatorMember.podId,
+        creatorMember.owner.userId,
+        financialStateAt
+      ]
+    );
+    await expect(repository.amendLegacyPodVerifierForTestnet(
+      amendmentInput(creatorMember)
+    )).rejects.toThrow("Pod creator has participant financial state");
+
+    const creatorDecision = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    await pool.query(
+      `INSERT INTO review_decisions
+         (id, submission_id, action, reviewer_id, reason_code, note, created_at)
+       VALUES ($1, $2, 'approved', $3, 'meets_commitment', $4, $5)`,
+      [
+        randomUUID(),
+        creatorDecision.submission.id,
+        creatorDecision.owner.userId,
+        "Existing creator decision.",
+        financialStateAt
+      ]
+    );
+    await expect(repository.amendLegacyPodVerifierForTestnet(
+      amendmentInput(creatorDecision)
+    )).rejects.toThrow("Pod creator already has a review decision");
+
+    const settled = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    await pool.query(
+      `INSERT INTO settlement_runs
+         (id, pod_id, contract_hash, calculator_version, input_digest, state,
+          total_deposit_luna, total_payout_luna, finalized_at, created_at, updated_at)
+       VALUES ($1, $2, 'phase4-contract', 1, 'legacy-amendment-guard',
+               'finalized', 0, 0, $3, $3, $3)`,
+      [randomUUID(), settled.podId, financialStateAt]
+    );
+    await expect(repository.amendLegacyPodVerifierForTestnet(
+      amendmentInput(settled)
+    )).rejects.toThrow("Pod settlement already exists");
+
+    await pool.query(
+      `UPDATE submissions
+       SET review_hard_deadline_at = $2
+       WHERE id = ANY($1::uuid[])`,
+      [
+        [
+          fixture.submission.id,
+          creatorVerifier.submission.id,
+          proportional.submission.id,
+          completed.submission.id,
+          creatorMember.submission.id,
+          creatorDecision.submission.id,
+          settled.submission.id
+        ],
+        new Date("2027-04-07T11:00:00.000Z")
+      ]
+    );
+    expect((await pool.query(
+      `SELECT count(*)::integer AS count
+       FROM pod_verifier_overrides
+       WHERE pod_id = ANY($1::uuid[])`,
+      [[
+        fixture.podId,
+        creatorVerifier.podId,
+        proportional.podId,
+        completed.podId,
+        creatorMember.podId,
+        creatorDecision.podId,
+        settled.podId
+      ]]
+    )).rows[0]?.count).toBe(0);
+    await pool.end();
+  });
+
+  it("protects timed-out reviews only inside the amended Pod", async () => {
+    const amended = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    const unrelated = await createReviewingFixture(
+      "reviewer_only",
+      legacyFullRefundContract
+    );
+    const deadline = new Date("2027-04-06T10:00:00.000Z");
+    const now = new Date("2027-04-06T10:00:00.000Z");
+    const pool = new Pool({ connectionString: databaseUrl });
+    await pool.query(
+      "UPDATE submissions SET review_hard_deadline_at = $2 WHERE id = ANY($1::uuid[])",
+      [[amended.submission.id, unrelated.submission.id], deadline]
+    );
+
+    try {
+      expect(await repository.protectTimedOutReviewsForPod({
+        podId: amended.podId,
+        now
+      })).toEqual({ protectedSubmissions: 1 });
+      expect(await repository.getSubmissionForOwner({
+        userId: amended.member.userId,
+        submissionId: amended.submission.id
+      })).toMatchObject({ submission: { state: "timeout_protected" } });
+      expect(await repository.getSubmissionForOwner({
+        userId: unrelated.member.userId,
+        submissionId: unrelated.submission.id
+      })).toMatchObject({ submission: { state: "reviewing" } });
+    } finally {
+      await pool.query(
+        `UPDATE submissions
+         SET review_hard_deadline_at = $2
+         WHERE id = ANY($1::uuid[]) AND state = 'reviewing'`,
+        [
+          [amended.submission.id, unrelated.submission.id],
+          new Date("2027-04-07T11:00:00.000Z")
+        ]
+      );
+      await pool.end();
+    }
+  });
+
   it("stores a creator rejection privately and leaves the room projection reason-free", async () => {
     const fixture = await createReviewingFixture();
     const reason = "The artifact does not implement the locked persistence deliverable.";
@@ -1021,11 +1348,14 @@ describe("Phase 4 Build and Ship persistence", () => {
       podId: fixture.podId,
       now: new Date("2027-04-09T00:00:00.000Z")
     })).toBe(2);
-    expect((await repository.listApprovedFeedForPod({
+    expect((await repository.listPodVisibleSubmissions({
       userId: fixture.owner.userId,
-      podId: fixture.podId
-    }))?.map(({ submission }) => submission.state)).toEqual([
+      podId: fixture.podId,
+      page: 1,
+      limit: 20
+    }))?.items.map(({ submission }) => submission.state).sort()).toEqual([
       "approved",
+      "rejected",
       "timeout_protected"
     ]);
   });

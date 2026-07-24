@@ -11,6 +11,7 @@ import { and, asc, desc, eq, gt, inArray, max, or, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
 import { projectProofForAudience } from "./proof-projection";
+import { resolveVerifierAuthority } from "./verifier-override-repository";
 import {
   activityMessages,
   conversationReads,
@@ -52,13 +53,22 @@ async function requireConversationAccess(
     if (conversation.directState !== "active") {
       throw new Error("Direct conversation is not active");
     }
-    return { conversation, isCreator: false };
+    return { conversation, isCreator: false, canReviewProofs: false };
   }
 
   if (!conversation.podId) throw new Error("Pod conversation is invalid");
   const [pod] = await database.select().from(pods).where(eq(pods.id, conversation.podId));
   if (!pod) throw new Error("Pod conversation is invalid");
-  if (pod.creatorUserId === userId) return { conversation, isCreator: true };
+  if (pod.creatorUserId === userId) {
+    const authority = await resolveVerifierAuthority(database, pod.id);
+    return {
+      conversation,
+      isCreator: true,
+      canReviewProofs:
+        authority?.creatorUserId === userId &&
+        authority.effectiveVerifier === "creator"
+    };
+  }
   const [membership] = await database
     .select()
     .from(memberships)
@@ -70,7 +80,7 @@ async function requireConversationAccess(
       )
     );
   if (!membership) throw new Error("Pod room access requires a locked roster place");
-  return { conversation, isCreator: false };
+  return { conversation, isCreator: false, canReviewProofs: false };
 }
 
 export function createMessagingMethods(database: PodsDatabase) {
@@ -441,8 +451,8 @@ export function createMessagingMethods(database: PodsDatabase) {
         return null;
       }
       const proof = projectProofForAudience({
-        audience: access.isCreator
-          ? "creator"
+        audience: access.canReviewProofs
+          ? "reviewer"
           : result.participantUserId === input.userId
             ? "owner"
             : "member",
@@ -686,8 +696,8 @@ export function createMessagingMethods(database: PodsDatabase) {
             : null;
           const visibleProof = visibleSubmission && activityRow
             ? projectProofForAudience({
-                audience: access.isCreator
-                  ? "creator"
+                audience: access.canReviewProofs
+                  ? "reviewer"
                   : activityRow.participantUserId === input.userId
                     ? "owner"
                     : "member",

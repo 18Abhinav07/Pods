@@ -13,6 +13,7 @@ export type ParticipantSubmissionCreator = {
 export type ParticipantSubmissionStatusDto = {
   state: SubmissionState;
   proofShareMode: ProofShareMode;
+  reviewerKind?: "creator" | "pods_team";
   submittedAt: string | null;
   reviewTargetAt: string | null;
   reviewHardDeadlineAt: string | null;
@@ -36,10 +37,12 @@ export function participantSubmissionStatusDto(input: {
   };
   reviewDecision?: { note?: string | null } | null;
   creator?: ParticipantSubmissionCreator | null;
+  reviewerKind?: "creator" | "pods_team";
 }): ParticipantSubmissionStatusDto {
   return {
     state: input.submission.state,
     proofShareMode: input.submission.proofShareMode ?? "reviewer_only",
+    reviewerKind: input.reviewerKind ?? "creator",
     submittedAt: isoMoment(input.submission.submittedAt),
     reviewTargetAt: isoMoment(input.submission.reviewTargetAt),
     reviewHardDeadlineAt: isoMoment(
@@ -82,8 +85,40 @@ const submissionPresentations = {
   detail: string;
 }>;
 
-export function participantSubmissionPresentation(state: SubmissionState) {
-  return submissionPresentations[state];
+export function participantSubmissionPresentation(
+  state: SubmissionState,
+  reviewerKind: "creator" | "pods_team" = "creator"
+) {
+  if (reviewerKind === "creator") return submissionPresentations[state];
+  if (state === "draft") {
+    return {
+      eyebrow: "Unsent proof",
+      heading: "Proof draft",
+      detail: "This proof has not been sent to the Pods Team yet."
+    };
+  }
+  if (state === "reviewing") {
+    return {
+      eyebrow: "Pods Team review",
+      heading: "Review in progress",
+      detail: "The Pods Team is checking your proof against the locked commitment."
+    };
+  }
+  if (state === "approved") {
+    return {
+      eyebrow: "Review complete",
+      heading: "Work approved",
+      detail: "The Pods Team approved this proof. It counts toward your progress and streak."
+    };
+  }
+  if (state === "rejected") {
+    return {
+      eyebrow: "Review complete",
+      heading: "Not verified",
+      detail: "The Pods Team did not verify this proof against the locked commitment."
+    };
+  }
+  return submissionPresentations.timeout_protected;
 }
 
 const proofAudiencePresentations = {
@@ -101,6 +136,15 @@ const proofAudiencePresentations = {
   }
 } satisfies Record<ProofShareMode, { label: string; detail: string }>;
 
-export function proofAudiencePresentation(mode: ProofShareMode) {
+export function proofAudiencePresentation(
+  mode: ProofShareMode,
+  reviewerKind: "creator" | "pods_team" = "creator"
+) {
+  if (mode === "reviewer_only" && reviewerKind === "pods_team") {
+    return {
+      label: "Pods Team only",
+      detail: "Your proof is private between you and the Pods Team reviewer."
+    };
+  }
   return proofAudiencePresentations[mode];
 }

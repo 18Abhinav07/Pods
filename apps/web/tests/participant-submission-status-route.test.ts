@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const session = vi.hoisted(() => vi.fn());
 const getSubmissionForOwner = vi.hoisted(() => vi.fn());
 const getProfileForUser = vi.hoisted(() => vi.fn());
+const getVerifierAuthorityForPod = vi.hoisted(() => vi.fn());
 
 vi.mock("../src/lib/session", () => ({ getCurrentSession: session }));
 vi.mock("../src/lib/server-db", () => ({
   podsRepository: {
     getProfileForUser,
-    getSubmissionForOwner
+    getSubmissionForOwner,
+    getVerifierAuthorityForPod
   }
 }));
 
@@ -46,6 +48,12 @@ describe("participant submission status route", () => {
       avatar: { kind: "preset", preset: "ember" },
       userId: "creator-1"
     });
+    getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "creator",
+      effectiveVerifier: "creator",
+      source: "contract",
+      amendedAt: null
+    });
   });
 
   it("requires the signed wallet session", async () => {
@@ -80,6 +88,7 @@ describe("participant submission status route", () => {
       status: {
         state: "reviewing",
         proofShareMode: "reviewer_only",
+        reviewerKind: "creator",
         creator: {
           handle: "ryuk",
           displayName: "Abhinav",
@@ -92,6 +101,24 @@ describe("participant submission status route", () => {
     expect(serialized).not.toContain("creatorUserId");
     expect(serialized).not.toContain("wallet");
     expect(serialized).not.toContain("userId");
+  });
+
+  it("identifies the platform reviewer without projecting the creator profile", async () => {
+    getVerifierAuthorityForPod.mockResolvedValueOnce({
+      frozenVerifier: "pods_team",
+      effectiveVerifier: "pods_team",
+      source: "contract",
+      amendedAt: null
+    });
+
+    const response = await GET(new Request("http://localhost"), params);
+
+    await expect(response.json()).resolves.toMatchObject({
+      status: {
+        reviewerKind: "pods_team",
+        creator: null
+      }
+    });
   });
 
   it("does not reveal a submission through the wrong Pod route", async () => {

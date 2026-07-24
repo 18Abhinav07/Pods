@@ -133,3 +133,19 @@ Advance lifecycle time only through the audited Clock command.
 ## Gate Decision
 
 `AUTOMATED_BROWSER_DEPLOYED_PASS_PHYSICAL_V2_ROOM_PENDING`
+
+## Testnet legacy verifier override spike
+
+- Assumption: a separate effective-verifier projection can authorize the Pod
+  creator without rewriting the frozen Pod contract or any accepted hash.
+- File: `validation/spike-testnet-verifier-override.mjs`
+- Result: PASS.
+- Evidence: the rollback-only Postgres spike projected `creator` through an
+  exact Pod-and-contract-hash override while the contract JSON, Pod contract
+  hash, and membership acceptance hash remained unchanged.
+- Impact: the live legacy Testnet Pod can use an append-only operational
+  override. Its frozen financial contract remains immutable.
+
+## Verifier override gate decision
+
+`PASS_EFFECTIVE_VERIFIER_WITH_FROZEN_HASHES`

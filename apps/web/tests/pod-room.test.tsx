@@ -87,8 +87,14 @@ describe("Pod room", () => {
             occurrenceOrdinal: 1,
             task: "Ship the private rejection projection.",
             deliverableType: "pull_request",
+            templateId: "build",
             state: "rejected",
             submissionId: "submission-1",
+            templateEvidence: {
+              kind: "build",
+              resultSummary: "Submitted a public artifact.",
+              artifactUrl: "https://github.com/18Abhinav07/Pods/pull/43"
+            },
             resultSummary: "Submitted a public artifact.",
             artifactUrl: "https://github.com/18Abhinav07/Pods/pull/43",
             sharedEvidenceAvailable: false
@@ -544,8 +550,14 @@ describe("Pod room", () => {
             occurrenceOrdinal: 2,
             task: "Ship the responsive Pod room.",
             deliverableType: "pull_request",
+            templateId: "build",
             state: "reviewing",
             submissionId: "submission-1",
+            templateEvidence: {
+              kind: "build",
+              resultSummary: "The room now supports replies and reactions.",
+              artifactUrl: "https://github.com/18Abhinav07/Pods/pull/8"
+            },
             resultSummary: "The room now supports replies and reactions.",
             artifactUrl: "https://github.com/18Abhinav07/Pods/pull/8",
             sharedEvidenceAvailable: true

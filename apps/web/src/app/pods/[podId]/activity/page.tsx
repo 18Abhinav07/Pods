@@ -7,6 +7,7 @@ import { ProfileAvatar } from "../../../../components/profile-avatar";
 import { profileForSession } from "../../../../lib/profile-presentation";
 import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
+import { presentTemplateEvidence } from "../../../../lib/template-evidence-presentation";
 
 function proofStateLabel(state: string) {
   if (state === "submitted" || state === "reviewing") return "Creator review";
@@ -76,8 +77,32 @@ export default async function PodActivityPage({
 
       {feed.items.length > 0 ? (
         <section className="proof-history-list" aria-label="Submitted proofs">
-          {feed.items.map(({ submission, commitment, occurrence, participant, isViewer, sharedEvidenceAvailable }) => (
-            <article className="proof-history-entry is-editorial-proof" key={submission.id}>
+          {feed.items.map((item) => {
+            const {
+              submission,
+              commitment,
+              occurrence,
+              participant,
+              templateId,
+              isViewer,
+              sharedEvidenceAvailable
+            } = item;
+            const presentation = presentTemplateEvidence({
+              templateId,
+              frozenConfig: {},
+              commitment,
+              templateEvidence: submission.templateEvidence,
+              ...(submission.resultSummary !== null
+                ? {
+                    legacySubmission: {
+                      resultSummary: submission.resultSummary,
+                      artifactUrl: submission.artifactUrl ?? ""
+                    }
+                  }
+                : {})
+            });
+            return (
+              <article className="proof-history-entry is-editorial-proof" key={submission.id}>
               <header>
                 <Link className="proof-participant" href={`/u/${participant.handle}`}>
                   <ProfileAvatar avatar={participant.avatar} displayName={participant.displayName} size="small" />
@@ -101,12 +126,26 @@ export default async function PodActivityPage({
                 </a>
               ) : null}
               <div className="proof-history-copy">
+                <span>{presentation.templateName}</span>
                 <h2>{commitment.task}</h2>
-                <p>{submission.resultSummary}</p>
-                {submission.artifactUrl ? <a href={submission.artifactUrl} rel="noreferrer" target="_blank">Open submitted work</a> : null}
+                {presentation.evidenceRows.length > 0 ? (
+                  <div className="proof-template-rows">
+                    {presentation.evidenceRows.map((row) => (
+                      <p key={row.label}><strong>{row.label}</strong>{row.value}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p>Proof details were kept private by this participant.</p>
+                )}
+                {presentation.artifact ? (
+                  <a href={presentation.artifact.href} rel="noreferrer" target="_blank">
+                    {presentation.artifact.label}
+                  </a>
+                ) : null}
               </div>
             </article>
-          ))}
+            );
+          })}
         </section>
       ) : (
         <section className="neutral-empty">

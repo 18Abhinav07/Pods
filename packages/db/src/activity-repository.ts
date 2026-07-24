@@ -17,6 +17,7 @@ import {
 import { and, asc, desc, eq, ilike, inArray, lte, max, ne, or, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
+import { projectProofForAudience } from "./proof-projection";
 import {
   activityMessages,
   conversations,
@@ -1383,8 +1384,11 @@ export function createActivityMethods(database: PodsDatabase) {
           submission: {
             id: submissions.id,
             state: submissions.state,
+            templateEvidence: submissions.templateEvidence,
             resultSummary: submissions.resultSummary,
             artifactUrl: submissions.artifactUrl,
+            proofShareMode: submissions.proofShareMode,
+            evidenceObjectKey: submissions.evidenceObjectKey,
             submittedAt: submissions.submittedAt
           },
           commitment: {
@@ -1401,11 +1405,12 @@ export function createActivityMethods(database: PodsDatabase) {
             avatar: profiles.avatar
           },
           participantUserId: memberships.userId,
-          sharedEvidenceAvailable: sql<boolean>`${submissions.proofShareMode} = 'pod_shared' AND ${submissions.evidenceObjectKey} IS NOT NULL`
+          templateId: pods.templateId
         })
         .from(submissions)
         .innerJoin(occurrenceCommitments, eq(submissions.commitmentId, occurrenceCommitments.id))
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+        .innerJoin(pods, eq(occurrences.podId, pods.id))
         .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
         .innerJoin(profiles, eq(memberships.userId, profiles.userId))
         .where(and(...filters))
@@ -1413,10 +1418,33 @@ export function createActivityMethods(database: PodsDatabase) {
         .limit(limit + 1)
         .offset((page - 1) * limit);
       return {
-        items: rows.slice(0, limit).map(({ participantUserId, ...row }) => ({
-          ...row,
-          isViewer: participantUserId === input.userId
-        })),
+        items: rows.slice(0, limit).map((row) => {
+          const isViewer = row.participantUserId === input.userId;
+          const proof = projectProofForAudience({
+            audience: owned ? "creator" : isViewer ? "owner" : "member",
+            shareMode: row.submission.proofShareMode,
+            templateEvidence: row.submission.templateEvidence,
+            resultSummary: row.submission.resultSummary,
+            artifactUrl: row.submission.artifactUrl,
+            hasAttachment: Boolean(row.submission.evidenceObjectKey)
+          });
+          const { evidenceObjectKey: _objectKey, proofShareMode: _shareMode, ...submission } =
+            row.submission;
+          return {
+            submission: {
+              ...submission,
+              templateEvidence: proof.templateEvidence,
+              resultSummary: proof.resultSummary,
+              artifactUrl: proof.artifactUrl
+            },
+            commitment: row.commitment,
+            occurrence: row.occurrence,
+            participant: row.participant,
+            templateId: row.templateId,
+            isViewer,
+            sharedEvidenceAvailable: proof.attachmentAvailable
+          };
+        }),
         page,
         hasNext: rows.length > limit
       };

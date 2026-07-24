@@ -10,6 +10,7 @@ import {
 import { and, asc, desc, eq, gt, inArray, max, or, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
+import { projectProofForAudience } from "./proof-projection";
 import {
   activityMessages,
   conversationReads,
@@ -413,11 +414,20 @@ export function createMessagingMethods(database: PodsDatabase) {
         .from(conversations)
         .where(and(eq(conversations.kind, "pod"), eq(conversations.podId, input.podId)));
       if (!conversation) return null;
-      await requireConversationAccess(database, conversation.id, input.userId);
+      const access = await requireConversationAccess(
+        database,
+        conversation.id,
+        input.userId
+      );
       const [result] = await database
-        .select({ submission: submissions, occurrence: occurrences })
+        .select({
+          submission: submissions,
+          occurrence: occurrences,
+          participantUserId: memberships.userId
+        })
         .from(submissions)
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+        .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
         .where(
           and(
             eq(submissions.id, input.submissionId),
@@ -426,10 +436,23 @@ export function createMessagingMethods(database: PodsDatabase) {
         );
       if (
         !result ||
-        result.submission.state === "draft" ||
-        result.submission.proofShareMode !== "pod_shared" ||
-        !result.submission.evidenceObjectKey
+        result.submission.state === "draft"
       ) {
+        return null;
+      }
+      const proof = projectProofForAudience({
+        audience: access.isCreator
+          ? "creator"
+          : result.participantUserId === input.userId
+            ? "owner"
+            : "member",
+        shareMode: result.submission.proofShareMode,
+        templateEvidence: result.submission.templateEvidence,
+        resultSummary: result.submission.resultSummary,
+        artifactUrl: result.submission.artifactUrl,
+        hasAttachment: Boolean(result.submission.evidenceObjectKey)
+      });
+      if (!proof.attachmentAvailable || !result.submission.evidenceObjectKey) {
         return null;
       }
       return {
@@ -605,7 +628,9 @@ export function createMessagingMethods(database: PodsDatabase) {
               messageId: activityMessages.messageId,
               commitment: occurrenceCommitments,
               occurrence: occurrences,
-              submission: submissions
+              submission: submissions,
+              participantUserId: memberships.userId,
+              templateId: pods.templateId
             })
             .from(activityMessages)
             .innerJoin(
@@ -616,6 +641,11 @@ export function createMessagingMethods(database: PodsDatabase) {
               occurrences,
               eq(occurrenceCommitments.occurrenceId, occurrences.id)
             )
+            .innerJoin(
+              memberships,
+              eq(occurrenceCommitments.membershipId, memberships.id)
+            )
+            .innerJoin(pods, eq(occurrences.podId, pods.id))
             .leftJoin(
               submissions,
               eq(submissions.commitmentId, occurrenceCommitments.id)
@@ -653,6 +683,20 @@ export function createMessagingMethods(database: PodsDatabase) {
           const activityRow = activityByMessage.get(message.id);
           const visibleSubmission = activityRow?.submission?.state !== "draft"
             ? activityRow?.submission ?? null
+            : null;
+          const visibleProof = visibleSubmission && activityRow
+            ? projectProofForAudience({
+                audience: access.isCreator
+                  ? "creator"
+                  : activityRow.participantUserId === input.userId
+                    ? "owner"
+                    : "member",
+                shareMode: visibleSubmission.proofShareMode,
+                templateEvidence: visibleSubmission.templateEvidence,
+                resultSummary: visibleSubmission.resultSummary,
+                artifactUrl: visibleSubmission.artifactUrl,
+                hasAttachment: Boolean(visibleSubmission.evidenceObjectKey)
+              })
             : null;
           const messageReactionsForRow = reactions.filter(
             (reaction) => reaction.messageId === message.id
@@ -724,14 +768,14 @@ export function createMessagingMethods(database: PodsDatabase) {
                   occurrenceOrdinal: activityRow.occurrence.ordinal,
                   task: activityRow.commitment.task,
                   deliverableType: activityRow.commitment.deliverableType,
+                  templateId: activityRow.templateId,
                   state: visibleSubmission?.state ?? "committed",
                   submissionId: visibleSubmission?.id ?? null,
-                  resultSummary: visibleSubmission?.resultSummary ?? null,
-                  artifactUrl: visibleSubmission?.artifactUrl ?? null,
-                  sharedEvidenceAvailable: Boolean(
-                    visibleSubmission?.evidenceObjectKey &&
-                    visibleSubmission.proofShareMode === "pod_shared"
-                  )
+                  templateEvidence: visibleProof?.templateEvidence ?? null,
+                  resultSummary: visibleProof?.resultSummary ?? null,
+                  artifactUrl: visibleProof?.artifactUrl ?? null,
+                  sharedEvidenceAvailable:
+                    visibleProof?.attachmentAvailable ?? false
                 }
               : null,
             reactions: [...byCode.entries()].map(([code, summary]) => ({

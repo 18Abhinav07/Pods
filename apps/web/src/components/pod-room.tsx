@@ -3,7 +3,9 @@
 import type {
   MessageReplyPreview as MessageReplyPreviewType,
   ProfileAvatar as ProfileAvatarType,
-  ReactionCode
+  ReactionCode,
+  TemplateEvidence,
+  TemplateId
 } from "@pods/domain";
 import { DotsThree, Lightning, PaperPlaneRight, Plus, UserPlus, X } from "@phosphor-icons/react";
 import Image from "next/image";
@@ -12,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { createClientUuid } from "../lib/client-id";
 import { roomSubmissionStateLabel } from "../lib/room-activity-presentation";
+import { presentTemplateEvidence } from "../lib/template-evidence-presentation";
 import {
   localReplyPreview,
   MessageReplyPreviewView,
@@ -41,14 +44,67 @@ export type RoomMessage = {
     occurrenceOrdinal: number;
     task: string;
     deliverableType: string | null;
+    templateId: TemplateId;
     state: string;
     submissionId: string | null;
+    templateEvidence: TemplateEvidence | null;
     resultSummary: string | null;
     artifactUrl: string | null;
     sharedEvidenceAvailable: boolean;
   } | null;
   delivery?: "sending" | "failed";
 };
+
+function RoomActivityEvidence({
+  activity
+}: {
+  activity: NonNullable<RoomMessage["activity"]>;
+}) {
+  const presentation = presentTemplateEvidence({
+    templateId: activity.templateId,
+    frozenConfig: {},
+    commitment: {
+      task: activity.task,
+      deliverableType:
+        activity.deliverableType === "pull_request" ||
+        activity.deliverableType === "commit" ||
+        activity.deliverableType === "issue" ||
+        activity.deliverableType === "live_artifact"
+          ? activity.deliverableType
+          : null
+    },
+    templateEvidence: activity.templateEvidence,
+    ...(activity.resultSummary !== null
+      ? {
+          legacySubmission: {
+            resultSummary: activity.resultSummary,
+            artifactUrl: activity.artifactUrl ?? ""
+          }
+        }
+      : {})
+  });
+  if (presentation.evidenceRows.length === 0) {
+    return (
+      <p className="activity-card-waiting">
+        {activity.submissionId
+          ? "Proof submitted privately. Details are visible only to the participant and creator."
+          : "Commitment locked. Proof will appear after submission."}
+      </p>
+    );
+  }
+  return (
+    <div className="room-template-evidence" aria-label={`${presentation.templateName} proof`}>
+      {presentation.evidenceRows.map((row) => (
+        <p key={row.label}><span>{row.label}</span>{row.value}</p>
+      ))}
+      {presentation.artifact ? (
+        <a href={presentation.artifact.href} rel="noreferrer" target="_blank">
+          {presentation.artifact.label}
+        </a>
+      ) : null}
+    </div>
+  );
+}
 
 const reactionLabels: Record<ReactionCode, string> = {
   heart: "Heart",
@@ -465,7 +521,7 @@ export function PodRoom({
                       <div className="room-activity-main">
                         <div className="room-activity-copy">
                           <h3>{message.activity.task}</h3>
-                          {message.activity.resultSummary ? <p>{message.activity.resultSummary}</p> : <p className="activity-card-waiting">Commitment locked. Proof will appear after submission.</p>}
+                          <RoomActivityEvidence activity={message.activity} />
                         </div>
                         {message.activity.sharedEvidenceAvailable && message.activity.submissionId ? (
                           <a
@@ -486,7 +542,6 @@ export function PodRoom({
                           </a>
                         ) : null}
                       </div>
-                      {message.activity.artifactUrl ? <a href={message.activity.artifactUrl} rel="noreferrer" target="_blank">Open public artifact</a> : null}
                     </div>
                   ) : <MessageBody body={message.body} />}
                   {message.delivery === "sending" ? <small className="delivery-state is-sending">Sending</small> : null}

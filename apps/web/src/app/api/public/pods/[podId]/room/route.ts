@@ -68,8 +68,10 @@ function serializePublicVisitorRoom(
             localDate: message.activity.localDate,
             task: message.activity.task,
             deliverableType: message.activity.deliverableType,
+            templateId: message.activity.templateId,
             state: message.activity.state,
             submissionId: message.activity.submissionId,
+            templateEvidence: message.activity.templateEvidence,
             resultSummary: message.activity.resultSummary,
             artifactUrl: message.activity.artifactUrl,
             supportingImageAvailable:

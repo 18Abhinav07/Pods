@@ -6,6 +6,7 @@ import {
 import { and, asc, eq, gt, inArray, isNull, max, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
+import { projectProofForAudience } from "./proof-projection";
 import {
   activityMessages,
   conversations,
@@ -345,6 +346,16 @@ export function createPublicRoomMethods(database: PodsDatabase) {
             activity?.submission && activity.submission.state !== "draft"
               ? activity.submission
               : null;
+          const visibleProof = visibleSubmission
+            ? projectProofForAudience({
+                audience: "visitor",
+                shareMode: visibleSubmission.proofShareMode,
+                templateEvidence: visibleSubmission.templateEvidence,
+                resultSummary: visibleSubmission.resultSummary,
+                artifactUrl: visibleSubmission.artifactUrl,
+                hasAttachment: Boolean(visibleSubmission.evidenceObjectKey)
+              })
+            : null;
           const replyTarget = message.replyToMessageId
             ? replyById.get(message.replyToMessageId)
             : null;
@@ -389,16 +400,16 @@ export function createPublicRoomMethods(database: PodsDatabase) {
                   localDate: activity.occurrence.localDate,
                   task: activity.commitment.task,
                   deliverableType: activity.commitment.deliverableType,
+                  templateId: pod.templateId,
                   state: publicSubmissionState(
                     visibleSubmission?.state ?? null
                   ),
                   submissionId: visibleSubmission?.id ?? null,
-                  resultSummary: visibleSubmission?.resultSummary ?? null,
-                  artifactUrl: visibleSubmission?.artifactUrl ?? null,
-                  supportingImageAvailable: Boolean(
-                    visibleSubmission?.evidenceObjectKey &&
-                    visibleSubmission.proofShareMode === "public"
-                  )
+                  templateEvidence: visibleProof?.templateEvidence ?? null,
+                  resultSummary: visibleProof?.resultSummary ?? null,
+                  artifactUrl: visibleProof?.artifactUrl ?? null,
+                  supportingImageAvailable:
+                    visibleProof?.attachmentAvailable ?? false
                 }
               : null,
             reactions: reactionRows

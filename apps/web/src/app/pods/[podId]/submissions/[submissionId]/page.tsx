@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { podsRepository } from "../../../../../lib/server-db";
 import { requireSession } from "../../../../../lib/session";
+import { presentTemplateEvidence } from "../../../../../lib/template-evidence-presentation";
 
 const submissionPresentations = {
   draft: {
@@ -55,7 +56,19 @@ export default async function ParticipantSubmissionPage({
   });
   if (!result || result.pod.id !== podId) notFound();
   const { submission, commitment, occurrence, pod, reviewDecision } = result;
+  const contract = pod.contractData;
+  if (!contract) notFound();
   const presentation = submissionPresentation(submission.state);
+  const evidence = presentTemplateEvidence({
+    templateId: contract.templateId,
+    frozenConfig: contract.activity.config,
+    commitment,
+    templateEvidence: submission.templateEvidence,
+    legacySubmission: {
+      resultSummary: submission.resultSummary,
+      artifactUrl: submission.artifactUrl
+    }
+  });
   const successful = submission.state === "approved" ||
     submission.state === "timeout_protected";
   return (
@@ -67,12 +80,21 @@ export default async function ParticipantSubmissionPage({
       <section className="today-hero entrance entrance-hero">
         <p className="eyebrow">Occurrence {occurrence.ordinal}</p>
         <h1>{presentation.heading}</h1>
-        <p className="screen-copy">{pod.contractData?.activity.name}</p>
+        <p className="screen-copy">{contract.activity.name}</p>
       </section>
       <section className="submission-detail-card is-editorial-submission">
-        <div><span>Locked task</span><strong>{commitment.task}</strong></div>
-        <div><span>Result</span><p>{submission.resultSummary}</p></div>
-        <a className="submission-artifact-link" href={submission.artifactUrl} rel="noreferrer" target="_blank">Open public artifact <span aria-hidden="true">↗</span></a>
+        <header><span>{evidence.templateName}</span><strong>Your submitted proof</strong></header>
+        {evidence.frozenCriterion.map((row) => (
+          <div key={`criterion-${row.label}`}><span>{row.label}</span><strong>{row.value}</strong></div>
+        ))}
+        {evidence.evidenceRows.map((row) => (
+          <div key={`evidence-${row.label}`}><span>{row.label}</span><p>{row.value}</p></div>
+        ))}
+        {evidence.artifact ? (
+          <a className="submission-artifact-link" href={evidence.artifact.href} rel="noreferrer" target="_blank">
+            {evidence.artifact.label} <span aria-hidden="true">↗</span>
+          </a>
+        ) : null}
         {submission.evidenceObjectKey ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img alt="Your optional evidence" src={`/api/pods/${podId}/submissions/${submission.id}/evidence`} />

@@ -26,9 +26,21 @@ const submissionResult = {
     reviewTargetAt: new Date("2027-04-05T20:00:00.000Z"),
     reviewHardDeadlineAt: new Date("2027-04-06T08:00:00.000Z")
   },
-  commitment: { task: "Ship the complete proof experience." },
+  commitment: {
+    task: "Ship the complete proof experience.",
+    deliverableType: "pull_request"
+  },
   occurrence: { ordinal: 4 },
-  pod: { id: "pod-1", contractData: { activity: { name: "Build Pods in public" } } },
+  pod: {
+    id: "pod-1",
+    contractData: {
+      templateId: "build",
+      activity: {
+        name: "Build Pods in public",
+        config: { projectTheme: "Pods activity proof" }
+      }
+    }
+  },
   reviewDecision: null
 };
 

@@ -13,6 +13,25 @@ export interface TemplateEvidencePresentation {
   imageRequired: boolean;
 }
 
+export function presentTemplateShareCard(input: {
+  podName: string;
+  templateId: TemplateId;
+  occurrenceOrdinal: number;
+  outcome: "approved" | "timeout_protected";
+}) {
+  const templateName =
+    templateContracts.find((template) => template.id === input.templateId)?.name ??
+    "Activity";
+  const outcome =
+    input.outcome === "approved" ? "approved" : "protected after review timeout";
+  return {
+    title: `${input.podName} on Pods`,
+    eyebrow: templateName,
+    headline: `Occurrence ${input.occurrenceOrdinal} complete`,
+    text: `Occurrence ${input.occurrenceOrdinal} was ${outcome} in ${input.podName}.`
+  };
+}
+
 interface PresentationInput {
   templateId: TemplateId;
   frozenConfig: unknown;

@@ -90,7 +90,9 @@ async function publishVisitorPod(creatorUserId: string) {
   return { pod, occurrence: frozen.occurrences[0]! };
 }
 
-async function activateVisitorPod() {
+async function activateVisitorPod(
+  proofShareMode: "reviewer_only" | "pod_shared" | "public" = "public"
+) {
   const creator = await createUser("Creator");
   const member = await createUser("Private builder", "private");
   const { pod } = await publishVisitorPod(creator.userId);
@@ -161,7 +163,7 @@ async function activateVisitorPod() {
       contentType: "image/webp",
       byteSize: 2048
     },
-    proofShareMode: "public",
+    proofShareMode,
     now: new Date("2027-04-05T10:00:00.000Z")
   });
   await repository.submitOccurrenceEvidence({
@@ -173,6 +175,40 @@ async function activateVisitorPod() {
 }
 
 describe("public visitor read model", () => {
+  it.each(["reviewer_only", "pod_shared"] as const)(
+    "suppresses every evidence-derived field when proof sharing is %s",
+    async (proofShareMode) => {
+      const fixture = await activateVisitorPod(proofShareMode);
+      const result = await repository.getPublicVisitorRoom({
+        podId: fixture.pod.id,
+        afterSequence: 0,
+        limit: 20
+      });
+      const activity = result?.messages.find(
+        (message) => message.kind === "activity"
+      )?.activity;
+
+      expect(activity).toMatchObject({
+        submissionId: fixture.submissionId,
+        templateId: "build",
+        templateEvidence: null,
+        resultSummary: null,
+        artifactUrl: null,
+        supportingImageAvailable: false
+      });
+      expect(await repository.getPublicSubmissionEvidence({
+        podId: fixture.pod.id,
+        submissionId: fixture.submissionId
+      })).toBeNull();
+      expect(JSON.stringify(result)).not.toContain(
+        "Implemented a separate public read model"
+      );
+      expect(JSON.stringify(result)).not.toContain(
+        "https://github.com/18Abhinav07/Pods/pull/42"
+      );
+    }
+  );
+
   it("opens only an eligible post-lock version two Pod and returns a strict DTO", async () => {
     const fixture = await activateVisitorPod();
     const result = await repository.getPublicVisitorRoom({

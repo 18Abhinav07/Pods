@@ -1,11 +1,17 @@
 "use client";
 
-import type { ProfileAvatar, ReactionCode, TemplateId } from "@pods/domain";
+import type {
+  ProfileAvatar,
+  ReactionCode,
+  TemplateEvidence,
+  TemplateId
+} from "@pods/domain";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { mediaForTemplate } from "../lib/template-presentation";
+import { presentTemplateEvidence } from "../lib/template-evidence-presentation";
 import { ProfileAvatar as Avatar } from "./profile-avatar";
 
 export type PublicVisitorMessage = {
@@ -33,6 +39,7 @@ export type PublicVisitorMessage = {
     localDate: string;
     task: string;
     deliverableType: string | null;
+    templateId: TemplateId;
     state:
       | "committed"
       | "under_review"
@@ -40,12 +47,60 @@ export type PublicVisitorMessage = {
       | "rejected"
       | "timeout_protected";
     submissionId: string | null;
+    templateEvidence: TemplateEvidence | null;
     resultSummary: string | null;
     artifactUrl: string | null;
     supportingImageAvailable: boolean;
   } | null;
   reactions: Array<{ code: ReactionCode; count: number }>;
 };
+
+function PublicActivityEvidence({
+  activity
+}: {
+  activity: NonNullable<PublicVisitorMessage["activity"]>;
+}) {
+  const presentation = presentTemplateEvidence({
+    templateId: activity.templateId,
+    frozenConfig: {},
+    commitment: {
+      task: activity.task,
+      deliverableType:
+        activity.deliverableType === "pull_request" ||
+        activity.deliverableType === "commit" ||
+        activity.deliverableType === "issue" ||
+        activity.deliverableType === "live_artifact"
+          ? activity.deliverableType
+          : null
+    },
+    templateEvidence: activity.templateEvidence,
+    ...(activity.resultSummary !== null
+      ? {
+          legacySubmission: {
+            resultSummary: activity.resultSummary,
+            artifactUrl: activity.artifactUrl ?? ""
+          }
+        }
+      : {})
+  });
+  if (presentation.evidenceRows.length === 0) {
+    return activity.submissionId ? (
+      <p>Proof submitted. Details were not shared publicly.</p>
+    ) : null;
+  }
+  return (
+    <div className="public-template-evidence" aria-label={`${presentation.templateName} proof`}>
+      {presentation.evidenceRows.map((row) => (
+        <p key={row.label}><span>{row.label}</span>{row.value}</p>
+      ))}
+      {presentation.artifact ? (
+        <a href={presentation.artifact.href} rel="noopener noreferrer" target="_blank">
+          {presentation.artifact.label}
+        </a>
+      ) : null}
+    </div>
+  );
+}
 
 export type PublicVisitorRoomData = {
   pod: {
@@ -306,7 +361,7 @@ export function PublicVisitorRoom({
                       <b>{publicProofStateLabel(message.activity.state)}</b>
                     </div>
                     <h2>{message.activity.task}</h2>
-                    {message.activity.resultSummary ? <p>{message.activity.resultSummary}</p> : null}
+                    <PublicActivityEvidence activity={message.activity} />
                     {message.activity.supportingImageAvailable && message.activity.submissionId ? (
                       // The optimized Next image loader is intentionally not used for an authenticated
                       // no-store byte stream whose dimensions are not known until decode.
@@ -316,11 +371,6 @@ export function PublicVisitorRoom({
                         loading="lazy"
                         src={`/api/public/pods/${data.pod.id}/proofs/${message.activity.submissionId}/image`}
                       />
-                    ) : null}
-                    {message.activity.artifactUrl ? (
-                      <a href={message.activity.artifactUrl} rel="noopener noreferrer" target="_blank">
-                        Open public artifact
-                      </a>
                     ) : null}
                   </div>
                 ) : null}

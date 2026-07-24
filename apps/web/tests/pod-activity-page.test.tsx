@@ -29,6 +29,11 @@ const proof = {
   submission: {
     id: "submission-1",
     state: "reviewing",
+    templateEvidence: {
+      kind: "build",
+      resultSummary: "The responsive room is ready for review.",
+      artifactUrl: "https://example.com/proof"
+    },
     resultSummary: "The responsive room is ready for review.",
     artifactUrl: "https://example.com/proof",
     submittedAt: new Date("2027-03-01T10:00:00.000Z")
@@ -40,6 +45,7 @@ const proof = {
     displayName: "Ryuk",
     avatar: { kind: "preset", preset: "moss" }
   },
+  templateId: "build",
   isViewer: false,
   sharedEvidenceAvailable: true
 };
@@ -99,6 +105,35 @@ describe("PodActivityPage", () => {
     }));
 
     expect(screen.queryByRole("img", { name: "Pod-shared proof from Ryuk" })).not.toBeInTheDocument();
+  });
+
+  it("renders no evidence-derived copy or links when the repository suppresses a private proof", async () => {
+    listPodVisibleSubmissions.mockResolvedValue({
+      items: [{
+        ...proof,
+        submission: {
+          ...proof.submission,
+          templateEvidence: null,
+          resultSummary: null,
+          artifactUrl: null
+        },
+        sharedEvidenceAvailable: false
+      }],
+      page: 1,
+      hasNext: false
+    });
+
+    render(await PodActivityPage({
+      params: Promise.resolve({ podId: "pod-1" }),
+      searchParams: Promise.resolve({})
+    }));
+
+    expect(screen.getByText("Proof details were kept private by this participant."))
+      .toBeVisible();
+    expect(screen.queryByText("The responsive room is ready for review."))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /artifact/i }))
+      .not.toBeInTheDocument();
   });
 
   it.each([

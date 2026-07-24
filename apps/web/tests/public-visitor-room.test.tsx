@@ -46,8 +46,14 @@ const room: PublicVisitorRoomData = {
       localDate: "2026-07-23",
       task: "Publish the visitor room",
       deliverableType: "Working route",
+      templateId: "build",
       state: "approved",
       submissionId: "22222222-2222-4222-8222-222222222222",
+      templateEvidence: {
+        kind: "build",
+        resultSummary: "The room is live and read only.",
+        artifactUrl: "https://example.com/build"
+      },
       resultSummary: "The room is live and read only.",
       artifactUrl: "https://example.com/build",
       supportingImageAvailable: false
@@ -93,6 +99,32 @@ describe("PublicVisitorRoom", () => {
     render(<PublicVisitorRoom initial={rejectedRoom} />);
 
     expect(screen.getByText("Not verified")).toBeVisible();
+  });
+
+  it("shows a privacy-safe receipt when proof details are not public", () => {
+    const privateProofRoom: PublicVisitorRoomData = {
+      ...room,
+      messages: room.messages.map((message) => ({
+        ...message,
+        activity: message.activity ? {
+          ...message.activity,
+          templateEvidence: null,
+          resultSummary: null,
+          artifactUrl: null,
+          supportingImageAvailable: false
+        } : null
+      }))
+    };
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<PublicVisitorRoom initial={privateProofRoom} />);
+
+    expect(screen.getByText("Proof submitted. Details were not shared publicly."))
+      .toBeVisible();
+    expect(screen.queryByText("The room is live and read only."))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /artifact/i }))
+      .not.toBeInTheDocument();
   });
 
   it("lets a signed visitor privately report public content without gaining room controls", async () => {

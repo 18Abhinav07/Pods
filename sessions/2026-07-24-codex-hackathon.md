@@ -45,8 +45,14 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
   occurrence, and submission digests.
 - Amendment flag read back as `false`.
 - Railway SSH key list read back empty.
+- Release commit `faf2d55` passed 73 focused UI tests, lint, copy checks,
+  typecheck, and the Android approve, reject-with-privacy, and timeout journeys.
+- Web deployment `5d8e292b-a230-45e1-be0d-89bff0da04cc` reached `SUCCESS`.
+- The production landing returned HTTP 200 and all web readiness checks passed.
+- Abhinav confirmed the physical Nimiq Pay creator-participant journey works.
 
 ## Open
 
-- Real Nimiq Pay creator review and participant refresh remain the final
-  physical gate. Automated browser proof does not replace wallet WebView proof.
+- No blocker for the small Nimiq Testnet community alpha.
+- Proportional settlement still requires its separate physical payout gate
+  before redistributed rewards are advertised.

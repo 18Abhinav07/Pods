@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-24 15:20
+last-updated: 2026-07-24 17:40
 last-agent: codex
 mode: HACKATHON
 ---
@@ -12,37 +12,40 @@ Related: [[README]] | [[sessions/2026-07-24-codex-hackathon]] |
 
 ## State
 
-Phase 4 template commitments, proof submission, creator review, and canonical
-participant status are deployed. The live legacy Testnet Pod now uses its
-creator as the effective reviewer through an additive audited override.
+Phase 4 community Testnet alpha is release-ready. The deployed creator,
+participant, proof, room, privacy, and timeout journeys passed automated,
+production-readiness, and physical Nimiq Pay verification.
 
 ## In Progress (resume here)
 
-- Task: complete the physical Nimiq Pay creator-review gate.
+- Task: publish the community launch post and open a fresh public
+  `Pods in Pods` cohort.
 - Production: `https://pods-nimiq-activity.up.railway.app`.
-- Pod: `82663fcc-0f27-4b38-8432-d4c5986a0e70`.
-- Creator route: `/pods/82663fcc-0f27-4b38-8432-d4c5986a0e70/admin/reviews`.
-- Participant submission remains `reviewing` and inside its hard deadline.
+- Launch asset:
+  `/Users/18abhinav07/.codex/generated_images/019f7647-a0c6-73c3-bde8-f6cdc4600925/call_7ixDaH4oMm9TLknGJ2Bj553F.png`.
 
 ## Open Errors / Blockers
 
-- No automated or deployment blocker.
-- Physical Nimiq Pay proof is pending for creator evidence inspection,
-  approve/reject action, and participant-side projection after refresh.
+- None for the small, clearly labelled Nimiq Testnet community alpha.
 - Proportional settlement remains disabled for the existing
   `full_refund_alpha` contract.
 
 ## Git State
 
 - Branch: `fix/phase4-activity-experience`.
-- Implementation commit: `6a82312 feat: safely amend legacy testnet verifier`.
+- Clean release commit: `faf2d55 polish Phase 4 activity release`.
+- `origin/main` and the release branch both point to `faf2d55`.
 - Full `pnpm check`: PASS with 587 non-integration and 90 integration tests.
-- Exact Phase 4 Android browser journeys: 3 of 3 PASS.
+- Focused release UI tests: 73 PASS.
+- Android approve, reject-with-privacy, and timeout journeys: PASS.
 
 ## Runtime State
 
-- Web deployment `8ccf3524-de14-481d-a4dc-1cfb2825ba32`: `SUCCESS`.
+- Web deployment `5d8e292b-a230-45e1-be0d-89bff0da04cc`: `SUCCESS`.
 - Final Worker deployment `2059aba2-58e1-45c7-94ff-7c29c107606a`: `SUCCESS`.
+- Production landing returns HTTP 200. Configuration, database, and evidence
+  storage readiness checks return `ready`.
+- Abhinav confirmed the Nimiq Pay creator-participant journey works correctly.
 - Amendment flag: `false` in the running Worker.
 - Railway SSH keys: none registered.
 - Frozen contract hash and creator consent hash remain
@@ -52,8 +55,8 @@ creator as the effective reviewer through an additive audited override.
 
 ## Next 3 Tasks
 
-1. Open the creator review route in Nimiq Pay and inspect the participant's
-   image, artifact URL, commitment, and result summary.
-2. Approve or reject once, then verify Today, Room, submission detail, and
-   Updates show one canonical outcome without exposing reviewer-only evidence.
-3. Record the physical PASS or exact correction before opening the next phase.
+1. Create the public `Pods in Pods` Pod with visitors enabled and publish the
+   approved community post.
+2. Monitor the first small Testnet cohort and record only reproducible issues.
+3. Complete the physical proportional-settlement and payout gate before
+   advertising redistributed rewards.

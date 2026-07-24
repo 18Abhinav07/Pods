@@ -3,7 +3,7 @@ created: 2026-07-21
 project: pods
 ecosystem: nimiq
 tags: [validation, phase-4, activity, evidence, review, mobile]
-status: automated-pass-phone-confirmation-pending
+status: pass
 ---
 
 # Phase 4 Build & Ship Activity Gate
@@ -12,11 +12,10 @@ Related: [[HANDOFF]] | [[validation/phase-4-spike-results]] | [[sessions/2026-07
 
 ## Current verdict
 
-`AUTOMATED PASS, PHYSICAL NIMIQ PAY CONFIRMATION PENDING`
+`PASS`
 
-The Phase 4 implementation is code, database, storage, worker, and browser
-verified. A physical Nimiq Pay walkthrough with real Testnet wallet sessions is
-still required before Phase 4 receives its final product approval.
+The Phase 4 implementation is code, database, storage, worker, browser, and
+physical Nimiq Pay verified for a small Testnet community alpha.
 
 ## Implemented boundary
 
@@ -30,8 +29,9 @@ still required before Phase 4 receives its final product approval.
 - Participant projections across Today, My Pods, Inbox, Pod room, submission detail, and approved-only Pod feed.
 - Explicit access isolation for participant evidence and reviewer routes.
 
-Clarification, rejection, dispute, timeout automation, missed occurrences, and
-settlement remain outside Phase 4.
+The later creator-review amendment adds rejection and timeout protection.
+Clarification, dispute, and proportional settlement remain outside this
+`full_refund_alpha` contract.
 
 ## Automated evidence
 
@@ -74,8 +74,9 @@ They do not prove the injected provider behavior of a physical Nimiq Pay WebView
 - Public artifact `79794f5b887aa1c2cd8e637200129f02b9cc3f8e` exists on GitHub `main` and contains the Phase 4 participant and reviewer implementation.
 - The private evidence endpoint returned a sanitized `image/webp` object of `171,028` bytes to an authenticated reviewer only.
 - The reviewer approved once with reason `meets_frozen_commitment`; exactly one review decision and one approved feed item exist.
-- Participant confirmation of the approved phone projections remains pending.
+- On 2026-07-24, Abhinav confirmed the deployed creator review and participant
+  projections work correctly in Nimiq Pay.
 
 ## Final verdict
 
-`PENDING PHYSICAL APPROVAL`
+`PASS`

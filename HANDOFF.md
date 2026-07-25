@@ -20,12 +20,12 @@ authorization has not yet been given.
 
 ## In Progress (resume here)
 
-- GitHub `main` and `upgrade/build-ship-testnet-core` contain the approved
-  release through `06ccae8f4da4927eb9f7d0293eb553615eaaae3f`.
-- Web deployment `ad16e9f3-5acf-444b-9604-1b7da1485e82`: `SUCCESS`.
-- Worker deployment `0f2b94d7-fdf9-41fd-b742-2df303ffb4d7`: `SUCCESS`.
+- GitHub `main` contains the approved release and
+  `upgrade/build-ship-testnet-core` remains as its merged source branch.
+- The newest Railway web and worker deployments are `SUCCESS`.
 - Live web readiness: configuration, database, evidence storage, and schema
-  `ready`; runtime release `06ccae8f4da4`, schema `0017_robust_loners`.
+  `ready`; runtime release matches remote `main`, schema
+  `0017_robust_loners`.
 - Railway uses Nimiq Testnet, public proportional settlement, and an available
   worker-only treasury signer.
 - Production safety audit before payout enablement: two historical refunds
@@ -44,7 +44,8 @@ authorization has not yet been given.
 
 ## Git State
 
-- Current worktree: clean `main` before this release-record update.
+- Current worktree: clean `main`, verified equal to `origin/main` at release
+  close.
 - The older root worktree remains on `phase/04-activity` and was not modified.
 - The Phase 5 integration teardown now removes generated ledger rows and Pods
   before generated users. The complete merged release gate passed with 699

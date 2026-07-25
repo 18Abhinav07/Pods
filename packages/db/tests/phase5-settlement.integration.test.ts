@@ -12,6 +12,7 @@ const databaseUrl =
   "postgresql://pods:pods-local-only@127.0.0.1:54329/pods";
 const repository = createPodsRepository(databaseUrl);
 const testUserIds = new Set<string>();
+const testPodIds = new Set<string>();
 
 const contract: PublishedPodContract = {
   version: 1,
@@ -58,6 +59,15 @@ afterAll(async () => {
   if (testUserIds.size === 0) return;
   const pool = new Pool({ connectionString: databaseUrl });
   try {
+    if (testPodIds.size > 0) {
+      await pool.query(
+        "DELETE FROM ledger_entries WHERE pod_id = ANY($1::uuid[])",
+        [[...testPodIds]]
+      );
+      await pool.query("DELETE FROM pods WHERE id = ANY($1::uuid[])", [
+        [...testPodIds]
+      ]);
+    }
     await pool.query("DELETE FROM users WHERE id = ANY($1::uuid[])", [
       [...testUserIds]
     ]);
@@ -91,6 +101,7 @@ async function seedApprovedAndRejectedPod() {
   const approved = await createUser("approved_member");
   const rejected = await createUser("rejected_member");
   const podId = randomUUID();
+  testPodIds.add(podId);
   const occurrenceId = randomUUID();
   const conversationId = randomUUID();
   const membershipIds = [randomUUID(), randomUUID()];

@@ -7,97 +7,144 @@ import {
   GitCommit,
   GitPullRequest,
   GlobeSimple,
-  ListChecks
+  ListChecks,
+  LockSimple,
+  PaintBrushBroad
 } from "@phosphor-icons/react";
 import type { BuildDeliverableType } from "@pods/domain";
 import { motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
 
 import { formatZonedMoment } from "../../lib/format-moment";
+import styles from "../activity-ritual/activity-ritual.module.css";
 import { deliverableLabel } from "./build-editor";
 import { FlowProgress } from "./flow-progress";
 
-const deliverableIcons: Record<
-  BuildDeliverableType,
-  typeof GitPullRequest
-> = {
+const deliverableIcons: Record<BuildDeliverableType, typeof GitPullRequest> = {
   pull_request: GitPullRequest,
   commit: GitCommit,
   issue: ListChecks,
   live_artifact: GlobeSimple
 };
 
+const deliverableDescriptions: Record<BuildDeliverableType, string> = {
+  pull_request: "Best for a reviewable feature or fix.",
+  commit: "Best for a focused code or content change.",
+  issue: "Best when completion closes a tracked task.",
+  live_artifact: "Best for a deployed page, demo, or release."
+};
+
+const buildHints = [
+  "Merge a reviewable pull request",
+  "Publish the two-wallet demo",
+  "Close the funding-state issue"
+] as const;
+
+function specificity(value: string) {
+  const length = value.trim().length;
+  if (length >= 36) return { label: "Specific enough", segments: 4 };
+  if (length >= 24) return { label: "Nearly there", segments: 3 };
+  if (length >= 12) return { label: "Getting clearer", segments: 2 };
+  return { label: "Add a concrete result", segments: 1 };
+}
+
 export function CommitmentWizard({
   allowedDeliverables,
   busy,
   closesAt,
   deliverableType,
+  fullReturnAlpha,
   goal,
+  occurrenceOrdinal,
   onDeliverableType,
+  onExit,
   onGoal,
+  onStep,
   onTask,
   projectTheme,
+  reviewerKind,
+  stakeNim,
+  step,
   task,
   templateId,
   timeZone
 }: {
   allowedDeliverables: readonly BuildDeliverableType[];
   busy: boolean;
-  closesAt: string | null;
+  closesAt: string;
   deliverableType: BuildDeliverableType;
+  fullReturnAlpha: boolean;
   goal: string;
+  occurrenceOrdinal: number;
   onDeliverableType: (value: BuildDeliverableType) => void;
+  onExit: () => void;
   onGoal: (value: string) => void;
+  onStep: (value: number) => void;
   onTask: (value: string) => void;
   projectTheme: string;
+  reviewerKind: "creator" | "pods_team";
+  stakeNim: number;
+  step: number;
   task: string;
   templateId: "build" | "create";
   timeZone: string;
 }) {
-  const [step, setStep] = useState(0);
   const reduceMotion = useReducedMotion();
   const isCreate = templateId === "create";
   const commitment = isCreate ? goal : task;
   const commitmentReady = commitment.trim().length >= 12;
   const labels = isCreate
     ? ["Define", "Check", "Lock"]
-    : ["Define", "Proof type", "Lock"];
+    : ["Define", "Proof", "Lock"];
+  const commitmentSpecificity = specificity(commitment);
+  const reviewerReference = reviewerKind === "pods_team"
+    ? "The Pods Team"
+    : "The Pod creator";
 
   function advance() {
-    setStep((current) => Math.min(labels.length - 1, current + 1));
+    onStep(Math.min(labels.length - 1, step + 1));
   }
 
   function back() {
-    setStep((current) => Math.max(0, current - 1));
+    if (step === 0) {
+      onExit();
+      return;
+    }
+    onStep(Math.max(0, step - 1));
   }
 
   return (
-    <>
+    <section className={styles.wizard}>
       <FlowProgress
         ariaLabel="Commitment progress"
         labels={labels}
         step={step}
       />
+
       <motion.section
         animate={{ opacity: 1, x: 0 }}
-        className="flow-stage"
-        initial={reduceMotion ? false : { opacity: 0, x: 14 }}
+        className={styles.wizardStage}
+        data-flow-stage
+        initial={reduceMotion ? false : { opacity: 0, x: 12 }}
         key={step}
-        transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+        transition={{
+          duration: reduceMotion ? 0 : 0.22,
+          ease: [0.22, 1, 0.36, 1]
+        }}
       >
-          {step === 0 ? (
-            <>
-              <header className="flow-stage-heading">
-                <span>Commitment</span>
-                <h2>{isCreate ? "What will you create today?" : "What will you finish today?"}</h2>
-                <p>
-                  {isCreate
-                    ? "Choose one concrete result you can show when the session closes."
-                    : "Write one result another builder can verify without guessing."}
-                </p>
-              </header>
+        {step === 0 ? (
+          <>
+            <header className={styles.stageHeading}>
+              <span>Name the finish line</span>
+              <h2>What will be true when today is done?</h2>
+              <p>
+                Make it specific enough that another person can verify the
+                result without guessing.
+              </p>
+            </header>
+
+            <div className={styles.statementEditor}>
               <label htmlFor={isCreate ? "create-goal" : "occurrence-task"}>
-                {isCreate ? "Output goal" : "Today's task"}
+                {isCreate ? "Today I will make" : "Today I will"}
               </label>
               <textarea
                 id={isCreate ? "create-goal" : "occurrence-task"}
@@ -109,110 +156,178 @@ export function CommitmentWizard({
                 }}
                 placeholder={
                   isCreate
-                    ? "Complete one finished character color study."
-                    : "Ship the mobile evidence capture and review states."
+                    ? "finish one complete character color study"
+                    : "ship one concrete result"
                 }
                 required
-                rows={5}
+                rows={4}
                 value={commitment}
               />
-              <div className="flow-character-count">
-                <span>One clear promise</span>
-                <b>{commitment.length}/240</b>
+              <div className={styles.specificity}>
+                <span>{commitmentSpecificity.label}</span>
+                <div aria-hidden="true" className={styles.specificityMeter}>
+                  {[0, 1, 2, 3].map((index) => (
+                    <i
+                      data-active={index < commitmentSpecificity.segments}
+                      key={index}
+                    />
+                  ))}
+                </div>
+                <strong>{commitment.length}/240</strong>
               </div>
-            </>
-          ) : null}
+            </div>
 
-          {step === 1 && !isCreate ? (
-            <>
-              <header className="flow-stage-heading">
-                <span>Proof type</span>
-                <h2>How will you show the work?</h2>
-                <p>The final link must match this choice and the task you locked.</p>
-              </header>
-              <fieldset className="deliverable-choice-grid is-visual-choice">
-                <legend>Visible deliverable</legend>
-                {allowedDeliverables.map((value) => {
-                  const Icon = deliverableIcons[value];
-                  return (
-                    <label
-                      className={deliverableType === value ? "is-selected" : ""}
-                      key={value}
+            {!isCreate ? (
+              <div className={styles.promptHints}>
+                <span>Need a sharper start?</span>
+                <div>
+                  {buildHints.map((hint) => (
+                    <button
+                      key={hint}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        onTask(hint);
+                      }}
+                      type="button"
                     >
-                      <input
-                        checked={deliverableType === value}
-                        name="deliverable"
-                        onChange={() => onDeliverableType(value)}
-                        type="radio"
-                        value={value}
-                      />
-                      <Icon aria-hidden="true" size={23} weight="regular" />
-                      <span>{deliverableLabel(value)}</span>
-                      <i aria-hidden="true">
-                        {deliverableType === value
-                          ? <Check size={13} weight="bold" />
-                          : null}
-                      </i>
-                    </label>
-                  );
-                })}
-              </fieldset>
-            </>
-          ) : null}
+                      {hint}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : null}
 
-          {step === 1 && isCreate ? (
-            <>
-              <header className="flow-stage-heading">
-                <span>Match the ritual</span>
-                <h2>Check the promise.</h2>
-                <p>Your creator will compare the finished proof with this locked output.</p>
-              </header>
-              <div className="commitment-review-block">
-                <span>Practice</span>
+        {step === 1 && !isCreate ? (
+          <>
+            <header className={styles.stageHeading}>
+              <span>Choose the artifact</span>
+              <h2>How will the room know?</h2>
+              <p>
+                Pick the artifact that best proves this commitment. You will
+                add the link or image later.
+              </p>
+            </header>
+            <fieldset className={styles.artifactList}>
+              <legend className={styles.visuallyHidden}>Proof type</legend>
+              {allowedDeliverables.map((value) => {
+                const Icon = deliverableIcons[value];
+                const selected = deliverableType === value;
+                return (
+                  <label data-selected={selected} key={value}>
+                    <input
+                      checked={selected}
+                      name="deliverable"
+                      onChange={() => onDeliverableType(value)}
+                      type="radio"
+                      value={value}
+                    />
+                    <span className={styles.artifactIcon}>
+                      <Icon aria-hidden="true" size={22} weight="regular" />
+                    </span>
+                    <span className={styles.artifactCopy}>
+                      <strong>{deliverableLabel(value)}</strong>
+                      <small>{deliverableDescriptions[value]}</small>
+                    </span>
+                    <span aria-hidden="true" className={styles.choiceCheck}>
+                      {selected ? <Check size={13} weight="bold" /> : null}
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+            <p className={styles.artifactExample}>
+              Expected later: a public URL plus an optional Pod-visible image.
+            </p>
+          </>
+        ) : null}
+
+        {step === 1 && isCreate ? (
+          <>
+            <header className={styles.stageHeading}>
+              <span>Match the ritual</span>
+              <h2>Check the promise.</h2>
+              <p>
+                {reviewerReference} compares your finished proof with this
+                exact locked output.
+              </p>
+            </header>
+            <article className={styles.promiseCheck}>
+              <span className={styles.promiseIcon}>
+                <PaintBrushBroad aria-hidden="true" size={26} />
+              </span>
+              <div>
+                <small>Practice</small>
                 <strong>{projectTheme}</strong>
                 <p>{goal}</p>
               </div>
-            </>
-          ) : null}
+              <Check aria-hidden="true" size={18} weight="bold" />
+            </article>
+          </>
+        ) : null}
 
-          {step === 2 ? (
-            <>
-              <header className="flow-stage-heading">
-                <span>Review</span>
-                <h2>Ready to commit?</h2>
-                <p>After this moment, the promise stays fixed for the occurrence.</p>
-              </header>
-              <div className="commitment-review-block">
-                <span>{isCreate ? "Output goal" : "Task"}</span>
-                <strong>{commitment}</strong>
-                {!isCreate ? <p>{deliverableLabel(deliverableType)}</p> : null}
+        {step === 2 ? (
+          <>
+            <header className={styles.stageHeading}>
+              <span>Final check</span>
+              <h2>Make it real.</h2>
+              <p>
+                After locking, the commitment cannot be made easier for this
+                occurrence.
+              </p>
+            </header>
+            <article className={styles.sealStage}>
+              <div className={styles.sealMeta}>
+                <span>
+                  Occurrence {String(occurrenceOrdinal).padStart(2, "0")}
+                </span>
+                <strong>Ready to lock</strong>
               </div>
-              <aside className="activity-lock-disclosure">
-                <strong>
-                  Lock by{" "}
-                  {closesAt
-                    ? formatZonedMoment(closesAt, { timeZone })
-                    : "the commitment cutoff"}
-                </strong>
-                <p>
-                  Once locked, this {isCreate ? "goal" : "task"} cannot be changed
-                  for this occurrence.
-                </p>
-              </aside>
-            </>
-          ) : null}
+              <span className={styles.sealIcon}>
+                {isCreate
+                  ? <PaintBrushBroad aria-hidden="true" size={28} />
+                  : <GitPullRequest aria-hidden="true" size={28} />}
+              </span>
+              <h3>{commitment}</h3>
+              <div className={styles.sealFacts}>
+                <div>
+                  <span>{fullReturnAlpha ? "Activity slice" : "At risk"}</span>
+                  <strong>{stakeNim} NIM</strong>
+                </div>
+                <div>
+                  <span>Proof</span>
+                  <strong>
+                    {isCreate
+                      ? "Creative artifact"
+                      : deliverableLabel(deliverableType)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Due</span>
+                  <strong>{formatZonedMoment(closesAt, { timeZone })}</strong>
+                </div>
+              </div>
+            </article>
+            <aside className={styles.lockDisclosure}>
+              <LockSimple aria-hidden="true" size={22} />
+              <p>
+                {reviewerReference} reviews your proof. The locked promise
+                cannot be changed for this occurrence.
+              </p>
+            </aside>
+          </>
+        ) : null}
       </motion.section>
 
-      <footer className="flow-action-dock">
-        {step > 0 ? (
-          <button className="flow-back-action" onClick={back} type="button">
-            <ArrowLeft aria-hidden="true" size={18} />
-            Back
-          </button>
-        ) : <span />}
+      <footer className={styles.wizardDock}>
+        <button className={styles.secondaryAction} onClick={back} type="button">
+          <ArrowLeft aria-hidden="true" size={18} />
+          Back
+        </button>
         {step < 2 ? (
           <button
-            className="flow-primary-action"
+            className={styles.primaryAction}
             disabled={step === 0 && !commitmentReady}
             onClick={(event) => {
               event.preventDefault();
@@ -220,24 +335,30 @@ export function CommitmentWizard({
             }}
             type="button"
           >
-            {step === 0
-              ? isCreate ? "Review goal" : "Choose proof type"
-              : "Review commitment"}
-            <ArrowRight aria-hidden="true" size={18} />
+            <span>
+              {step === 0
+                ? isCreate ? "Check promise" : "Choose proof"
+                : "Review commitment"}
+            </span>
+            <span aria-hidden="true" className={styles.actionIcon}>
+              <ArrowRight size={18} weight="bold" />
+            </span>
           </button>
         ) : (
           <button
-            className="flow-primary-action"
+            className={styles.primaryAction}
             disabled={busy}
             type="submit"
           >
-            {busy
-              ? "Locking"
-              : isCreate ? "Lock this goal" : "Lock this task"}
-            <Check aria-hidden="true" size={18} weight="bold" />
+            <span>{busy ? "Locking" : "Lock this commitment"}</span>
+            <span aria-hidden="true" className={styles.actionIcon}>
+              {busy
+                ? <span className={styles.busyDot} />
+                : <LockSimple size={18} weight="bold" />}
+            </span>
           </button>
         )}
       </footer>
-    </>
+    </section>
   );
 }

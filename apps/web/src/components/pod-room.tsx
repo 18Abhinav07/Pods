@@ -28,6 +28,7 @@ import {
   MessageReplyPreviewView,
   unavailableReplyPreview
 } from "./message-reply-preview";
+import styles from "./activity-ritual/activity-ritual.module.css";
 import { ProfileAvatar } from "./profile-avatar";
 
 export type RoomMessage = {
@@ -93,15 +94,18 @@ function RoomActivityEvidence({
   });
   if (presentation.evidenceRows.length === 0) {
     return (
-      <p className="activity-card-waiting">
+      <p className={styles.roomArtifactWaiting}>
         {activity.submissionId
-          ? "Proof submitted privately. Details are visible only to the participant and creator."
+          ? "Proof submitted privately. Details are visible only to the participant and assigned reviewer."
           : "Commitment locked. Proof will appear after submission."}
       </p>
     );
   }
   return (
-    <div className="room-template-evidence" aria-label={`${presentation.templateName} proof`}>
+    <div
+      aria-label={`${presentation.templateName} proof`}
+      className={styles.roomArtifactEvidence}
+    >
       {presentation.evidenceRows.map((row) => (
         <p key={row.label}>
           <span>{row.label}</span>
@@ -111,7 +115,8 @@ function RoomActivityEvidence({
       {presentation.artifact ? (
         <a
           aria-label={presentation.artifact.label}
-          className="room-public-artifact"
+          className={styles.roomArtifactLink}
+          data-room-public-artifact
           href={presentation.artifact.href}
           rel="noreferrer"
           target="_blank"
@@ -539,24 +544,30 @@ export function PodRoom({
                     ) : <MessageReplyPreviewView preview={message.replyPreview} />
                   ) : null}
                   {message.kind === "activity" && message.activity ? (
-                    <div className="room-activity-card">
-                      <div><span>Occurrence {message.activity.occurrenceOrdinal}</span><i>{roomSubmissionStateLabel(message.activity.state)}</i></div>
-                      <div className="room-activity-main">
-                        <div className="room-activity-copy">
+                    <div
+                      className={styles.roomActivityArtifact}
+                      data-room-activity-card
+                    >
+                      <div className={styles.roomArtifactMeta}>
+                        <span>Occurrence {message.activity.occurrenceOrdinal}</span>
+                        <i>{roomSubmissionStateLabel(message.activity.state)}</i>
+                      </div>
+                      <div className={styles.roomArtifactMain}>
+                        <div className={styles.roomArtifactCopy}>
                           <h3>{message.activity.task}</h3>
                           <RoomActivityEvidence activity={message.activity} />
                         </div>
                         {message.activity.sharedEvidenceAvailable && message.activity.submissionId ? (
                           <a
                             aria-label="Open shared proof"
-                            className="room-proof-link"
+                            className={styles.roomProofLink}
                             href={`/api/pods/${podId}/submissions/${message.activity.submissionId}/shared-evidence`}
                             rel="noreferrer"
                             target="_blank"
                           >
                             <Image
                               alt="Pod-shared proof"
-                              className="room-proof-image"
+                              className={styles.roomProofImage}
                               height={192}
                               src={`/api/pods/${podId}/submissions/${message.activity.submissionId}/shared-evidence`}
                               unoptimized
@@ -568,7 +579,7 @@ export function PodRoom({
                       {message.activity.submissionId &&
                       message.sender?.isViewer ? (
                         <Link
-                          className="room-activity-action"
+                          className={styles.roomArtifactAction}
                           href={`/pods/${podId}/submissions/${message.activity.submissionId}`}
                         >
                           View your submission
@@ -577,7 +588,7 @@ export function PodRoom({
                         canReviewProofs &&
                         message.activity.state === "reviewing" ? (
                           <Link
-                            className="room-activity-action"
+                            className={styles.roomArtifactAction}
                             href={`/pods/${podId}/admin/reviews/${message.activity.submissionId}`}
                           >
                             Review proof
@@ -671,7 +682,15 @@ export function PodRoom({
           <div className={`composer-row${mode === "direct" ? " is-direct" : ""}`}>
             {mode === "pod" ? <button aria-expanded={addMenuOpen} className="composer-plus" onClick={() => setAddMenuOpen((open) => !open)} type="button" aria-label="Add to message"><Plus aria-hidden="true" size={22} weight="bold" /></button> : null}
             <textarea aria-label="Message" id="room-message" maxLength={2000} onChange={(event) => setComposer(event.target.value)} placeholder="Message" rows={1} value={composer} />
-            <button className={`composer-send ${composer.trim() ? "is-ready" : "is-disabled"}`} disabled={!composer.trim()} type="submit" aria-label="Send message"><PaperPlaneRight aria-hidden="true" size={21} weight="fill" /></button>
+            <button
+              aria-label="Send message"
+              className={`composer-send ${styles.composerSend} ${composer.trim() ? "is-ready" : "is-disabled"}`}
+              data-ready={composer.trim() ? "true" : "false"}
+              disabled={!composer.trim()}
+              type="submit"
+            >
+              <PaperPlaneRight aria-hidden="true" size={21} weight="fill" />
+            </button>
           </div>
         </form>
       )}

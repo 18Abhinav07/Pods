@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { cssVariables } from "@pods/ui";
 import { describe, expect, it } from "vitest";
 
 const designCss = () => readFileSync(resolve(process.cwd(), "src/app/design-system.css"), "utf8");
@@ -15,13 +16,32 @@ describe("Pods mobile design system", () => {
     );
   });
 
+  it("applies the package-owned runtime variables to the document root", () => {
+    const source = layoutSource();
+
+    expect(source).toContain('import { cssVariables } from "@pods/ui"');
+    expect(source).toContain(
+      '<html lang="en" style={cssVariables as CSSProperties} suppressHydrationWarning>'
+    );
+    expect(source).toContain("<body>{children}</body>");
+  });
+
+  it("keeps only derived aliases in the design layer root", () => {
+    const css = designCss();
+    const rootRule = css.match(/:root\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    for (const [name, value] of Object.entries(cssVariables)) {
+      expect(rootRule).not.toContain(`${name}: ${value}`);
+    }
+
+    expect(rootRule).toContain("--canvas: var(--color-canvas)");
+    expect(rootRule).toMatch(
+      /--activity-neutral:\s*color-mix\([^;]*var\(--activity-build\)[^;]*var\(--color-paper\)/
+    );
+  });
+
   it("defines one neutral authenticated shell with restrained activity accents", () => {
     const css = designCss().toLowerCase();
-    expect(css).toContain("--color-ink: #20241f");
-    expect(css).toContain("--color-paper: #faf9f4");
-    expect(css).toContain("--activity-neutral: #dce4cf");
-    expect(css).toContain("--activity-fitness: #fa7448");
-    expect(css).toContain("--activity-reading: #aeb8f0");
     expect(css).toMatch(/\.theme-momentum,[\s\S]*\.theme-build\s*\{[\s\S]*--theme-accent:\s*var\(--activity-neutral\)/);
     expect(css).not.toContain("#3b5ccc");
     expect(css).not.toContain("#5267cc");

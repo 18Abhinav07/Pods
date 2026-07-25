@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const refresh = vi.fn();
@@ -11,11 +11,14 @@ const shared = {
   occurrenceId: "occurrence-1",
   podName: "A truthful activity",
   occurrenceOrdinal: 3,
+  opensAt: "2027-05-03T00:00:00.000Z",
+  initiallyOpen: true,
   closesAt: "2027-05-03T23:59:59.999Z",
   stakeNim: 0.1,
   settlementMode: "proportional" as const,
   currentStreak: 2,
   timeZone: "UTC",
+  effectiveNowAt: "2027-05-03T08:00:00.000Z",
   submission: null
 };
 
@@ -111,10 +114,48 @@ describe("template activity editors", () => {
       />
     );
 
-    expect(screen.getByLabelText("Today's task")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Choose proof type" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Lock this task" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", {
+      name: "Choose the one thing you will ship."
+    })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Start commitment" }));
+    expect(screen.getByLabelText("Today I will")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose proof" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Lock this commitment" }))
+      .not.toBeInTheDocument();
     expect(screen.queryByLabelText("Result summary")).not.toBeInTheDocument();
+  });
+
+  it("names the effective Pods Team reviewer throughout a legacy Build commitment", () => {
+    render(
+      <ActivityOccurrence
+        {...shared}
+        allowedDeliverables={["pull_request", "commit"]}
+        commitment={null}
+        commitmentDeadlineAt="2027-05-03T09:00:00.000Z"
+        projectTheme="Pods"
+        reviewerKind="pods_team"
+        templateConfig={{
+          projectTheme: "Pods",
+          allowedDeliverables: ["pull_request", "commit"],
+          commitmentCutoff: "09:00"
+        }}
+        templateId="build"
+      />
+    );
+
+    expect(screen.getByText(
+      "Lock one concrete finish line now. The Pods Team reviews the proof later."
+    )).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Start commitment" }));
+    fireEvent.change(screen.getByLabelText("Today I will"), {
+      target: { value: "Ship the effective reviewer copy across the commitment ritual." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Choose proof" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review commitment" }));
+
+    expect(screen.getByText(
+      "The Pods Team reviews your proof. The locked promise cannot be changed for this occurrence."
+    )).toBeInTheDocument();
   });
 
   it("uses a distinct Practice goal lock instead of Build deliverables", () => {
@@ -134,9 +175,43 @@ describe("template activity editors", () => {
       />
     );
 
-    expect(screen.getByLabelText("Output goal")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Review goal" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Lock this goal" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Visible deliverable")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", {
+      name: "Choose the one thing you will make."
+    })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Start commitment" }));
+    expect(screen.getByLabelText("Today I will make")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Check promise" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Lock this commitment" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  });
+
+  it("names the effective Pods Team reviewer in the legacy Practice check", () => {
+    render(
+      <ActivityOccurrence
+        {...shared}
+        allowedDeliverables={[]}
+        commitment={null}
+        commitmentDeadlineAt="2027-05-03T09:00:00.000Z"
+        projectTheme="Illustration"
+        reviewerKind="pods_team"
+        templateConfig={{
+          discipline: "Illustration",
+          minimumExpectation: "Complete one character study",
+          commitmentCutoff: "09:00"
+        }}
+        templateId="create"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Start commitment" }));
+    fireEvent.change(screen.getByLabelText("Today I will make"), {
+      target: { value: "Finish one expressive character study with a clear silhouette." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Check promise" }));
+
+    expect(screen.getByText(
+      "The Pods Team compares your finished proof with this exact locked output."
+    )).toBeInTheDocument();
   });
 });

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import styles from "./activity-ritual/activity-ritual.module.css";
+
 export function CreatorReviewEvidence({
   podId,
   submissionId
@@ -13,7 +15,7 @@ export function CreatorReviewEvidence({
 
   if (unavailable) {
     return (
-      <div className="creator-review-evidence-unavailable" role="status">
+      <div className={styles.evidenceUnavailable} role="status">
         <strong>Evidence unavailable</strong>
         <p>
           The proof details remain available for review. Use the locked task,

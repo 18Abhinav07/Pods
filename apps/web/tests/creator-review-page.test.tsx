@@ -165,7 +165,11 @@ describe("creator proof review pages", () => {
       params: Promise.resolve({ podId, submissionId })
     }));
 
-    expect(container.querySelector(".creator-review-workspace")).toBeVisible();
+    expect(container.querySelector("[data-review-workspace]")).toBeVisible();
+    expect(container.querySelector("[data-review-participant]"))
+      .toHaveTextContent("Pods Builder@pods-builder");
+    expect(container.querySelector(".creator-review-workspace"))
+      .not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Pods in Pods" })).toBeVisible();
     expect(screen.getByLabelText("Pods Builder avatar")).toBeVisible();
     expect(screen.getByText("Pods Builder")).toBeVisible();
@@ -180,7 +184,7 @@ describe("creator proof review pages", () => {
     expect(screen.getByRole("link", { name: "Open public artifact" }))
       .toHaveAttribute("href", "https://github.com/example/pods/pull/42");
     expect(screen.getByRole("link", { name: "Open public artifact" }))
-      .toHaveClass("artifact-action");
+      .toHaveAttribute("data-artifact-action");
     expect(screen.getByRole("img", { name: "Creator-only evidence" }))
       .toHaveAttribute(
         "src",

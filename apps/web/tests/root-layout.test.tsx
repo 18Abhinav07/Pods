@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cssVariables } from "@pods/ui";
 
 import RootLayout from "../src/app/layout";
 
@@ -8,5 +9,7 @@ describe("Nimiq Pay root layout", () => {
 
     expect(layout.type).toBe("html");
     expect(layout.props.suppressHydrationWarning).toBe(true);
+    expect(layout.props.style).toEqual(cssVariables);
+    expect(layout.props.children.props.style).toBeUndefined();
   });
 });

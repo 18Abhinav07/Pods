@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  CheckCircle,
+  ClockCountdown,
+  PencilSimple,
+  ShieldCheck,
+  XCircle
+} from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { formatZonedMoment } from "../lib/format-moment";
@@ -8,6 +15,7 @@ import {
   proofAudiencePresentation,
   type ParticipantSubmissionStatusDto
 } from "../lib/participant-submission-status";
+import styles from "./activity-ritual/activity-ritual.module.css";
 import { ProfileAvatar } from "./profile-avatar";
 
 function formattedMoment(value: string | null, timeZone: string) {
@@ -46,7 +54,8 @@ function ReviewTimeline({
   return (
     <section
       aria-label="Review timeline"
-      className="review-timing-card is-review-timeline"
+      className={styles.reviewTimeline}
+      data-review-timeline
     >
       <div>
         <span>Submitted</span>
@@ -64,6 +73,26 @@ function ReviewTimeline({
       </div>
     </section>
   );
+}
+
+function StateIcon({
+  state
+}: {
+  state: ParticipantSubmissionStatusDto["state"];
+}) {
+  if (state === "approved") {
+    return <CheckCircle aria-hidden="true" size={30} weight="fill" />;
+  }
+  if (state === "timeout_protected") {
+    return <ShieldCheck aria-hidden="true" size={30} weight="fill" />;
+  }
+  if (state === "rejected") {
+    return <XCircle aria-hidden="true" size={30} weight="fill" />;
+  }
+  if (state === "draft") {
+    return <PencilSimple aria-hidden="true" size={28} weight="fill" />;
+  }
+  return <ClockCountdown aria-hidden="true" size={28} weight="fill" />;
 }
 
 export function ParticipantSubmissionStatus({
@@ -141,18 +170,24 @@ export function ParticipantSubmissionStatus({
   return (
     <section
       aria-live="polite"
-      className={`participant-submission-status is-${status.state}`}
+      className={styles.submissionStatus}
+      data-state={status.state}
+      data-submission-state={status.state}
     >
-      <header className="participant-status-hero">
-        <p className="eyebrow">
+      <header className={styles.statusHero}>
+        <span aria-hidden="true" className={styles.statusIcon}>
+          <StateIcon state={status.state} />
+        </span>
+        <p>
           {occurrenceOrdinal ? `Occurrence ${occurrenceOrdinal}` : presentation.eyebrow}
         </p>
         <h1>{presentation.heading}</h1>
-        {podName ? <p>{podName}</p> : null}
+        <span>{presentation.detail}</span>
+        {podName ? <small>{podName}</small> : null}
       </header>
 
-      <div className="participant-review-context">
-        <div className="participant-reviewer">
+      <div className={styles.reviewContext}>
+        <div className={styles.reviewerIdentity}>
           {reviewerKind === "creator" && status.creator ? (
             <>
               <ProfileAvatar
@@ -180,7 +215,7 @@ export function ParticipantSubmissionStatus({
             </div>
           )}
         </div>
-        <div className="participant-proof-audience">
+        <div className={styles.audienceSummary}>
           <small>Proof audience</small>
           <strong>{audience.label}</strong>
           <span>{audience.detail}</span>
@@ -190,7 +225,7 @@ export function ParticipantSubmissionStatus({
       {status.state === "reviewing" ? (
         <ReviewTimeline status={status} timeZone={timeZone} />
       ) : status.state === "draft" ? null : (
-        <details className="participant-review-history">
+        <details className={styles.reviewHistory}>
           <summary>
             <span>Review timing</span>
             <strong>3 checkpoints</strong>
@@ -200,27 +235,27 @@ export function ParticipantSubmissionStatus({
       )}
 
       <aside
-        className={`submission-protection-note is-${
+        className={styles.outcomeNote}
+        data-tone={
           successful
             ? "success"
             : status.state === "rejected"
               ? "attention"
               : "pending"
-        }`}
+        }
       >
         <strong>{outcomeTitle(status.state)}</strong>
-        <p>{presentation.detail}</p>
       </aside>
 
       {status.reviewDecisionNote ? (
-        <aside className="submission-private-decision-note">
+        <aside className={styles.decisionNote}>
           <strong>Private decision note</strong>
           <p>{status.reviewDecisionNote}</p>
         </aside>
       ) : null}
 
       {connectionIssue && status.state === "reviewing" ? (
-        <p className="submission-reconnect-note" role="status">
+        <p className={styles.reconnectNote} role="status">
           Reconnecting to {reviewerKind === "creator" ? "creator" : "Pods Team"} review
         </p>
       ) : null}

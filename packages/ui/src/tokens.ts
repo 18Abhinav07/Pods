@@ -50,3 +50,44 @@ export const motion = {
   navigation: 240,
   ease: [0.16, 1, 0.3, 1]
 } as const;
+
+export type CssVariableName = `--${string}`;
+export type CssVariables = Readonly<Record<CssVariableName, string>>;
+
+export const cssVariables = {
+  "--color-canvas": palette.canvas,
+  "--color-paper": palette.paper,
+  "--color-surface": palette.surface,
+  "--color-soft": palette.soft,
+  "--color-ink": palette.ink,
+  "--color-muted": palette.muted,
+  "--color-line": palette.line,
+  "--color-success": palette.success,
+  "--color-success-soft": palette.successSoft,
+  "--color-warning": palette.warning,
+  "--color-warning-soft": palette.warningSoft,
+  "--color-danger": palette.danger,
+  "--color-danger-soft": palette.dangerSoft,
+  "--color-nim": palette.nim,
+  "--font-sans": `"${typography.sans} Variable", sans-serif`,
+  "--font-mono": typography.mono,
+  "--motion-immediate": `${motion.immediate}ms`,
+  "--motion-tactile": `${motion.tactile}ms`,
+  "--motion-state": `${motion.state}ms`,
+  "--motion-navigation": `${motion.navigation}ms`,
+  "--ease-premium": `cubic-bezier(${motion.ease.join(", ")})`,
+  "--radius-control": `${rounded.control}px`,
+  "--radius-panel": `${rounded.panel}px`,
+  "--radius-media": `${rounded.media}px`,
+  "--radius-pill": `${rounded.pill}px`,
+  "--activity-build": palette.activities.build.accent,
+  "--activity-build-deep": palette.activities.build.deep,
+  "--activity-practice": palette.activities.practice.accent,
+  "--activity-practice-deep": palette.activities.practice.deep,
+  "--activity-fitness": palette.activities.fitness.accent,
+  "--activity-fitness-deep": palette.activities.fitness.deep,
+  "--activity-reading": palette.activities.reading.accent,
+  "--activity-reading-deep": palette.activities.reading.deep,
+  "--activity-study": palette.activities.study.accent,
+  "--activity-study-deep": palette.activities.study.deep
+} as const satisfies CssVariables;

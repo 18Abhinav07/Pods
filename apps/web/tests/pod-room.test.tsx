@@ -74,7 +74,7 @@ describe("Pod room", () => {
   });
 
   it("renders participant-safe review labels and the owner's canonical detail action", () => {
-    render(
+    const { container } = render(
       <PodRoom
         conversationId="room-1"
         initialMessages={[{
@@ -110,6 +110,7 @@ describe("Pod room", () => {
         roomState="open"
       />
     );
+    expect(container.querySelector("[data-room-activity-card]")).toBeVisible();
     expect(screen.getByText("Not verified")).toBeVisible();
     expect(screen.queryByText("rejected")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View your submission" }))
@@ -154,6 +155,9 @@ describe("Pod room", () => {
 
     expect(screen.getByRole("link", { name: "Review proof" }))
       .toHaveAttribute("href", "/pods/pod-1/admin/reviews/submission-1");
+    expect(screen.getByText(
+      "Proof submitted privately. Details are visible only to the participant and assigned reviewer."
+    )).toBeInTheDocument();
 
     rerender(
       <PodRoom
@@ -208,6 +212,8 @@ describe("Pod room", () => {
     expect(within(composer).getByText("Abhinav")).toBeInTheDocument();
     expect(within(composer).getByText("Ship room walkthrough at 8 PM.")).toBeInTheDocument();
     fireEvent.change(within(composer).getByLabelText("Message"), { target: { value: "The mobile room is ready." } });
+    expect(within(composer).getByRole("button", { name: "Send message" }))
+      .toHaveAttribute("data-ready", "true");
     fireEvent.submit(composer);
     expect(screen.getByText("The mobile room is ready.")).toBeInTheDocument();
     expect(screen.getByRole("button", {
@@ -649,12 +655,12 @@ describe("Pod room", () => {
     const proofPath = "/api/pods/pod-1/submissions/submission-1/shared-evidence";
     expect(screen.getByRole("img", { name: "Pod-shared proof" })).toHaveAttribute("src", proofPath);
     expect(screen.getByRole("link", { name: "Open shared proof" })).toHaveAttribute("href", proofPath);
-    expect(screen.getByText("Ship the responsive Pod room.").closest(".room-activity-main"))
+    expect(screen.getByText("Ship the responsive Pod room.").closest("[data-room-activity-card]"))
       .toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open public artifact" }))
       .toHaveAttribute("href", "https://github.com/18Abhinav07/Pods/pull/8");
     expect(screen.getByRole("link", { name: "Open public artifact" }))
-      .toHaveClass("room-public-artifact");
+      .toHaveAttribute("data-room-public-artifact");
     expect(screen.getByText("Public link")).toBeVisible();
   });
 });

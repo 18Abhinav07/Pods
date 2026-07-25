@@ -1,7 +1,10 @@
 import type { SubmissionState } from "@pods/domain";
-import Link from "next/link";
+import { templateContracts } from "@pods/domain";
 import { notFound } from "next/navigation";
 
+import styles from "../../../../../../components/activity-ritual/activity-ritual.module.css";
+import { PodActionHeader } from "../../../../../../components/activity-ritual/pod-action-header";
+import { RitualIcon } from "../../../../../../components/activity-ritual/ritual-icon";
 import { CreatorReviewForm } from "../../../../../../components/creator-review-form";
 import { CreatorReviewEvidence } from "../../../../../../components/creator-review-evidence";
 import { ProfileAvatar } from "../../../../../../components/profile-avatar";
@@ -72,21 +75,23 @@ export default async function CreatorReviewWorkspacePage({
       artifactUrl: submission.artifactUrl
     }
   });
+  const templateLabel =
+    templateContracts.find((template) => template.id === contract.templateId)
+      ?.name ?? "Activity";
 
   return (
-    <main className="app-shell admin-shell creator-review-shell">
-      <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href={`/pods/${podId}/admin/reviews`}>
-          <span className="pod-mark" aria-hidden="true" />pods
-        </Link>
-        <span className="phase-pill">Proof review</span>
-      </header>
-      <section className="creator-review-hero entrance entrance-hero">
-        <div>
-          <p className="eyebrow">Occurrence {occurrence.ordinal}</p>
-          <h1>{contract.activity.name}</h1>
-        </div>
-        <div className="creator-review-participant">
+    <main className={styles.ritualShell}>
+      <PodActionHeader
+        occurrenceNumber={occurrence.ordinal}
+        podId={podId}
+        podName={contract.activity.name}
+        templateLabel={templateLabel}
+      />
+      <div className={styles.reviewScroll}>
+        <section
+          className={styles.reviewParticipant}
+          data-review-participant
+        >
           <ProfileAvatar
             avatar={participant.avatar}
             displayName={participant.displayName}
@@ -96,106 +101,110 @@ export default async function CreatorReviewWorkspacePage({
             <strong>{participant.displayName}</strong>
             <small>@{participant.handle}</small>
           </span>
-        </div>
-      </section>
-
-      <section className="creator-review-workspace">
-        <section className="review-workspace-section">
-          <header>
-            <span>{evidence.templateName} · Frozen Pod rule</span>
-            <h2>Locked commitment</h2>
-          </header>
-          <div className="review-workspace-rows">
-            {evidence.frozenCriterion.map((item) => (
-              <div key={`criterion-${item.label}`}>
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-              </div>
-            ))}
-          </div>
         </section>
 
-        <section className="review-workspace-section">
-          <header>
-            <span>Participant report</span>
-            <h2>Submitted proof</h2>
-          </header>
-          <div className="review-workspace-rows">
-            {evidence.evidenceRows.map((item) => (
-              <div key={`evidence-${item.label}`}>
-                <span>{item.label}</span>
-                <p>{item.value}</p>
-              </div>
-            ))}
-            <div>
-              <span>Image evidence</span>
-              <strong>
-                {submission.evidenceObjectKey
-                  ? "Attached for creator review"
-                  : evidence.imageRequired
-                    ? "Required image unavailable"
-                    : "Optional for this activity"}
-              </strong>
+        <section
+          className={styles.reviewWorkspace}
+          data-review-workspace
+        >
+          <section className={styles.reviewSection}>
+            <header>
+              <span>{evidence.templateName} · Frozen Pod rule</span>
+              <h1>Locked commitment</h1>
+            </header>
+            <div className={styles.reviewRows}>
+              {evidence.frozenCriterion.map((item) => (
+                <div key={`criterion-${item.label}`}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </div>
-          </div>
-          {evidence.artifact ? (
-            <a
-              aria-label={evidence.artifact.label}
-              className="artifact-action submission-artifact-link"
-              href={evidence.artifact.href}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <span>
-                <small>Public link</small>
-                <strong>{evidence.artifact.label}</strong>
-              </span>
-              <i aria-hidden="true">↗</i>
-            </a>
+          </section>
+
+          <section className={styles.reviewSection}>
+            <header>
+              <span>Participant result</span>
+              <h2>Submitted proof</h2>
+            </header>
+            <div className={styles.reviewRows}>
+              {evidence.evidenceRows.map((item) => (
+                <div key={`evidence-${item.label}`}>
+                  <span>{item.label}</span>
+                  <p>{item.value}</p>
+                </div>
+              ))}
+              <div>
+                <span>Image evidence</span>
+                <strong>
+                  {submission.evidenceObjectKey
+                    ? "Attached for creator review"
+                    : evidence.imageRequired
+                      ? "Required image unavailable"
+                      : "Optional for this activity"}
+                </strong>
+              </div>
+            </div>
+            {evidence.artifact ? (
+              <a
+                aria-label={evidence.artifact.label}
+                className={styles.artifactAction}
+                data-artifact-action
+                href={evidence.artifact.href}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span>
+                  <small>Public artifact</small>
+                  <strong>{evidence.artifact.label}</strong>
+                </span>
+                <RitualIcon name="external" size={19} />
+              </a>
+            ) : null}
+          </section>
+
+          {submission.evidenceObjectKey ? (
+            <figure className={styles.reviewEvidenceFigure}>
+              <figcaption>
+                <span>Creator-only evidence</span>
+                <small>Private to this decision</small>
+              </figcaption>
+              <CreatorReviewEvidence
+                podId={podId}
+                submissionId={submissionId}
+              />
+            </figure>
           ) : null}
         </section>
 
-        {submission.evidenceObjectKey ? (
-          <figure className="review-evidence-figure">
-            <figcaption>
-              <span>Creator-only evidence</span>
-              <small>Private to this decision</small>
-            </figcaption>
-            <CreatorReviewEvidence
-              podId={podId}
-              submissionId={submissionId}
-            />
-          </figure>
-        ) : null}
-      </section>
+        <details className={styles.reviewHistory}>
+          <summary>
+            <span>Review timing</span>
+            <strong>3 checkpoints</strong>
+          </summary>
+          <section className={styles.reviewTimeline} aria-label="Review timing">
+            <div><span>Submitted</span><strong>{moment(submission.submittedAt)}</strong></div>
+            <div><span>Review target</span><strong>{moment(submission.reviewTargetAt)}</strong></div>
+            <div><span>Hard deadline</span><strong>{moment(submission.reviewHardDeadlineAt)}</strong></div>
+          </section>
+        </details>
 
-      <details className="review-timing-disclosure">
-        <summary>
-          <span>Review timing</span>
-          <strong>3 checkpoints</strong>
-        </summary>
-        <section className="review-timing-card" aria-label="Review timing">
-          <div><span>Submitted</span><strong>{moment(submission.submittedAt)}</strong></div>
-          <div><span>Review target</span><strong>{moment(submission.reviewTargetAt)}</strong></div>
-          <div><span>Hard deadline</span><strong>{moment(submission.reviewHardDeadlineAt)}</strong></div>
-        </section>
-      </details>
-
-      {terminal ? (
-        <section className="creator-review-recorded">
-          <span>Decision recorded</span>
-          <strong>{submissionStatusLabel(submission.state)}</strong>
-          <p>This proof already has one final result.</p>
-          {reviewDecision?.note ? (
-            <aside>
-              <strong>Private decision note</strong>
-              <p>{reviewDecision.note}</p>
-            </aside>
-          ) : null}
-        </section>
-      ) : (
-        <CreatorReviewForm podId={podId} submissionId={submissionId} />
-      )}
+        {terminal ? (
+          <section className={styles.recordedDecision}>
+            <span>Decision recorded</span>
+            <strong>{submissionStatusLabel(submission.state)}</strong>
+            <p>This proof already has one final result.</p>
+            {reviewDecision?.note ? (
+              <aside>
+                <strong>Private decision note</strong>
+                <p>{reviewDecision.note}</p>
+              </aside>
+            ) : null}
+          </section>
+        ) : (
+          <CreatorReviewForm podId={podId} submissionId={submissionId} />
+        )}
+      </div>
     </main>
   );
 }

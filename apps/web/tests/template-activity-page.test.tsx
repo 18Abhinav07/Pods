@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const repositoryMocks = vi.hoisted(() => ({
   getActivityOccurrenceForMember: vi.fn(),
   getActivityStreak: vi.fn(),
-  getEffectiveTime: vi.fn()
+  getEffectiveTime: vi.fn(),
+  getVerifierAuthorityForPod: vi.fn()
 }));
 const redirect = vi.hoisted(() => vi.fn((href: string) => {
   throw new Error(`REDIRECT:${href}`);
@@ -37,6 +38,12 @@ describe("template activity server page", () => {
       new Date("2027-05-03T10:00:00.000Z")
     );
     repositoryMocks.getActivityStreak.mockResolvedValue(2);
+    repositoryMocks.getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "creator",
+      effectiveVerifier: "creator",
+      source: "contract",
+      amendedAt: null
+    });
   });
 
   it("dispatches a Reading editor from the frozen contract without a commitment cutoff", async () => {
@@ -82,9 +89,81 @@ describe("template activity server page", () => {
       })
     }));
 
+    expect(screen.getByRole("link", { name: "Back to Today" }))
+      .toHaveAttribute("href", "/today");
+    const heading = screen.getByRole("heading", {
+      name: "Read systems together"
+    });
+    expect(heading).toBeInTheDocument();
+    expect(heading.nextElementSibling).toHaveTextContent("Reading");
+    expect(heading.nextElementSibling).toHaveTextContent("Occurrence 01");
+    expect(screen.getByRole("link", {
+      name: "Open Read systems together room"
+    })).toHaveAttribute("href", "/pods/pod-1/room");
+    expect(screen.queryByText("pods")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Reading title")).toBeInTheDocument();
     expect(screen.getByLabelText("Amount completed")).toBeInTheDocument();
+    expect(screen.getByText(
+      "Be specific. The Pod creator compares this result with the activity rule."
+    )).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /lock/i })).not.toBeInTheDocument();
+    expect(repositoryMocks.getVerifierAuthorityForPod)
+      .toHaveBeenCalledWith("pod-1");
+  });
+
+  it("projects the effective legacy Pods Team reviewer into the proof experience", async () => {
+    repositoryMocks.getVerifierAuthorityForPod.mockResolvedValue({
+      frozenVerifier: "pods_team",
+      effectiveVerifier: "pods_team",
+      source: "contract",
+      amendedAt: null
+    });
+    repositoryMocks.getActivityOccurrenceForMember.mockResolvedValue({
+      membership: { id: "membership-1" },
+      occurrence: {
+        id: "occurrence-1",
+        ordinal: 1,
+        opensAt: new Date("2027-05-03T00:00:00.000Z"),
+        closesAt: new Date("2027-05-03T23:59:59.999Z"),
+        commitmentDeadlineAt: null
+      },
+      pod: {
+        id: "pod-1",
+        templateId: "reading",
+        contractData: {
+          version: 1,
+          templateId: "reading",
+          evidenceMode: "repeating_criterion",
+          settlementMode: "proportional",
+          activity: {
+            name: "Legacy reading Pod",
+            purpose: "Read together.",
+            timeZone: "UTC",
+            config: {
+              bookOrTheme: "Systems",
+              targetAmount: 10,
+              targetType: "pages"
+            }
+          },
+          community: { visibility: "public" },
+          commitment: { lunaPerOccurrence: 10_000 },
+          verification: { verifier: "pods_team" }
+        }
+      },
+      commitment: null,
+      submission: null
+    });
+
+    render(await ActivityOccurrencePage({
+      params: Promise.resolve({
+        podId: "pod-1",
+        occurrenceId: "occurrence-1"
+      })
+    }));
+
+    expect(screen.getByText(
+      "Be specific. The Pods Team compares this result with the activity rule."
+    )).toBeInTheDocument();
   });
 
   it("redirects a submitted occurrence to its canonical live submission route", async () => {
@@ -138,5 +217,56 @@ describe("template activity server page", () => {
     })).rejects.toThrow(
       "REDIRECT:/pods/pod-1/submissions/submission-1"
     );
+  });
+
+  it("passes server clock truth into a future Build commitment entry", async () => {
+    repositoryMocks.getEffectiveTime.mockResolvedValue(
+      new Date("2027-05-03T10:00:00.000Z")
+    );
+    repositoryMocks.getActivityOccurrenceForMember.mockResolvedValue({
+      membership: { id: "membership-1" },
+      occurrence: {
+        id: "occurrence-2",
+        ordinal: 2,
+        opensAt: new Date("2027-05-03T11:00:00.000Z"),
+        closesAt: new Date("2027-05-03T23:59:59.999Z"),
+        commitmentDeadlineAt: new Date("2027-05-03T12:00:00.000Z")
+      },
+      pod: {
+        id: "pod-1",
+        templateId: "build",
+        contractData: {
+          version: 1,
+          templateId: "build",
+          evidenceMode: "per_occurrence_commitment",
+          settlementMode: "full_refund_alpha",
+          activity: {
+            name: "Build Pods in public",
+            purpose: "Ship one visible product improvement every occurrence.",
+            timeZone: "UTC",
+            config: {
+              projectTheme: "Pods",
+              allowedDeliverables: ["pull_request"]
+            }
+          },
+          community: { visibility: "public" },
+          commitment: { lunaPerOccurrence: 10_000 }
+        }
+      },
+      commitment: null,
+      submission: null
+    });
+
+    render(await ActivityOccurrencePage({
+      params: Promise.resolve({
+        podId: "pod-1",
+        occurrenceId: "occurrence-2"
+      })
+    }));
+
+    expect(screen.getByText("Commitment opens soon")).toBeInTheDocument();
+    expect(screen.getByText("May 3 · 11:00 AM")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Commitment not open" }))
+      .toBeDisabled();
   });
 });

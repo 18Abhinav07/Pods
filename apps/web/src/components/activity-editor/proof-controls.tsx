@@ -13,6 +13,8 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
+import styles from "../activity-ritual/activity-ritual.module.css";
+
 const acceptedImages =
   "image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif";
 
@@ -24,6 +26,7 @@ export function ProofAttachmentControls({
   imageRequired,
   onArtifactUrl,
   onFile,
+  reviewerKind = "creator",
   uploadComplete,
   uploadProgress
 }: {
@@ -34,9 +37,13 @@ export function ProofAttachmentControls({
   imageRequired: boolean;
   onArtifactUrl?: (value: string) => void;
   onFile: (file: File) => void;
+  reviewerKind?: "creator" | "pods_team";
   uploadComplete: boolean;
   uploadProgress: number | null;
 }) {
+  const artifactReviewer = reviewerKind === "pods_team"
+    ? "Pods Team"
+    : "creator";
   const [linkOpen, setLinkOpen] = useState(Boolean(artifactUrl));
   const cameraInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
@@ -59,10 +66,10 @@ export function ProofAttachmentControls({
   }
 
   return (
-    <section className="proof-attachment-studio">
-      <header className="proof-stage-heading">
-        <span>Visible evidence</span>
-        <h2>{imageRequired ? "Add the required image." : "Show the finished work."}</h2>
+    <section className={styles.attachmentStudio}>
+      <header className={styles.controlHeading}>
+        <span>{imageRequired ? "Required evidence" : "Evidence options"}</span>
+        <h3>{imageRequired ? "Add one clear image." : "Show the finished work."}</h3>
         <p>
           {imageRequired
             ? "Capture now or choose one clear image from this occurrence."
@@ -73,7 +80,7 @@ export function ProofAttachmentControls({
       </header>
 
       {imagePreviewUrl ? (
-        <figure className="proof-image-preview">
+        <figure className={styles.proofPreview}>
           <Image
             alt="Selected proof preview"
             height={960}
@@ -92,7 +99,7 @@ export function ProofAttachmentControls({
           </figcaption>
         </figure>
       ) : (
-        <div className="proof-media-actions">
+        <div className={styles.mediaActions}>
           <button
             aria-label="Open camera"
             onClick={() => pickFile(cameraInput.current)}
@@ -113,11 +120,11 @@ export function ProofAttachmentControls({
       )}
 
       {onArtifactUrl ? (
-        <div className="proof-link-control">
+        <div className={styles.linkControl}>
           {!linkOpen ? (
             <button
               aria-label="Add artifact link"
-              className="proof-link-trigger"
+              className={styles.linkTrigger}
               onClick={() => setLinkOpen(true)}
               type="button"
             >
@@ -128,7 +135,7 @@ export function ProofAttachmentControls({
               </span>
             </button>
           ) : (
-            <div className="proof-link-editor">
+            <div className={styles.linkEditor}>
               <label htmlFor="proof-artifact-url">Public artifact URL</label>
               <div>
                 <LinkSimple aria-hidden="true" size={20} />
@@ -143,9 +150,9 @@ export function ProofAttachmentControls({
                 />
               </div>
               {artifactError ? (
-                <p className="proof-link-error" role="alert">{artifactError}</p>
+                <p className={styles.linkError} role="alert">{artifactError}</p>
               ) : (
-                <p>The creator opens this exact link during review.</p>
+                <p>The {artifactReviewer} opens this exact link during review.</p>
               )}
             </div>
           )}
@@ -171,8 +178,25 @@ export function ProofAttachmentControls({
       />
 
       {uploadProgress !== null && !uploadComplete ? (
-        <div className="upload-progress" aria-live="polite">
-          <i style={{ width: `${uploadProgress}%` }} />
+        <div
+          aria-live="polite"
+          className={styles.uploadProgress}
+          role="status"
+        >
+          <span
+            aria-label="Image upload progress"
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={uploadProgress}
+            role="progressbar"
+          >
+            <i
+              style={{
+                transform: `scaleX(${uploadProgress / 100})`,
+                transformOrigin: "left"
+              }}
+            />
+          </span>
           <span>
             {uploadComplete
               ? "Image secured"
@@ -189,12 +213,23 @@ export function ProofAttachmentControls({
 export function ProofPrivacyControls({
   onShareMode,
   proofShareMode,
-  publicVisitorSharingEnabled
+  publicVisitorSharingEnabled,
+  reviewerKind = "creator"
 }: {
   onShareMode: (mode: ProofShareMode) => void;
   proofShareMode: ProofShareMode;
   publicVisitorSharingEnabled: boolean;
+  reviewerKind?: "creator" | "pods_team";
 }) {
+  const reviewerTitle = reviewerKind === "pods_team"
+    ? "Pods Team"
+    : "Creator";
+  const reviewerDetail = reviewerKind === "pods_team"
+    ? "Private evidence for the Pods Team review"
+    : "Private evidence for the creator's decision";
+  const sharedDetail = reviewerKind === "pods_team"
+    ? "Visible to the Pods Team and locked members"
+    : "Visible to the creator and locked members";
   const choices: Array<{
     mode: ProofShareMode;
     title: string;
@@ -203,14 +238,14 @@ export function ProofPrivacyControls({
   }> = [
     {
       mode: "reviewer_only",
-      title: "Creator only",
-      detail: "Private evidence for the creator's decision",
+      title: `${reviewerTitle} only`,
+      detail: reviewerDetail,
       icon: LockSimple
     },
     {
       mode: "pod_shared",
       title: "Share with Pod",
-      detail: "Visible to the creator and locked members",
+      detail: sharedDetail,
       icon: UsersThree
     },
     ...(publicVisitorSharingEnabled
@@ -224,14 +259,14 @@ export function ProofPrivacyControls({
   ];
 
   return (
-    <fieldset className="proof-privacy-choice is-premium-choice">
+    <fieldset className={styles.privacyChoices}>
       <legend>Who can see this proof?</legend>
-      <p>Your choice locks when the proof is submitted.</p>
+      <p>Your visibility choice cannot change after submission.</p>
       {choices.map((choice) => {
         const Icon = choice.icon;
         return (
           <label
-            className={proofShareMode === choice.mode ? "is-selected" : ""}
+            data-selected={proofShareMode === choice.mode}
             key={choice.mode}
           >
             <input

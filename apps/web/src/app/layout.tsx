@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
+import { cssVariables } from "@pods/ui";
+import type { CSSProperties, ReactNode } from "react";
 
 import "@fontsource-variable/mulish";
 import "@fontsource/fira-mono/400.css";
@@ -38,7 +39,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" style={cssVariables as CSSProperties} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

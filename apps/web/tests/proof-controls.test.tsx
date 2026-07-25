@@ -31,6 +31,26 @@ describe("proof controls", () => {
     );
   });
 
+  it("names the Pods Team as the artifact reviewer for legacy Pods", () => {
+    render(
+      <ProofAttachmentControls
+        artifactUrl=""
+        imageRequired={false}
+        onArtifactUrl={vi.fn()}
+        onFile={vi.fn()}
+        reviewerKind="pods_team"
+        uploadComplete={false}
+        uploadProgress={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add artifact link" }));
+
+    expect(screen.getByText(
+      "The Pods Team opens this exact link during review."
+    )).toBeVisible();
+  });
+
   it("renders a secured image preview with an explicit replace action", () => {
     render(
       <ProofAttachmentControls
@@ -105,5 +125,46 @@ describe("proof controls", () => {
     expect(screen.getByRole("radio", { name: /Share with Pod/i })).toBeVisible();
     expect(screen.queryByRole("radio", { name: /Share publicly/i }))
       .not.toBeInTheDocument();
+    expect(screen.getByText(
+      "Your visibility choice cannot change after submission."
+    )).toBeVisible();
+  });
+
+  it("names the effective Pods Team reviewer for legacy Pods", () => {
+    render(
+      <ProofPrivacyControls
+        onShareMode={vi.fn()}
+        proofShareMode="reviewer_only"
+        publicVisitorSharingEnabled={false}
+        reviewerKind="pods_team"
+      />
+    );
+
+    expect(screen.getByRole("radio", { name: /Pods Team only/i })).toBeChecked();
+    expect(screen.getByText(
+      "Private evidence for the Pods Team review"
+    )).toBeVisible();
+  });
+
+  it("keeps upload progress visible at the server-confirmation boundary", () => {
+    render(
+      <ProofAttachmentControls
+        artifactUrl=""
+        imageRequired
+        onArtifactUrl={vi.fn()}
+        onFile={vi.fn()}
+        uploadComplete={false}
+        uploadProgress={99}
+      />
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent("Securing image");
+    const progress = screen.getByRole("progressbar");
+    expect(progress).toHaveAttribute("aria-valuenow", "99");
+    expect(progress.firstElementChild).toHaveStyle({
+      transform: "scaleX(0.99)",
+      transformOrigin: "left"
+    });
+    expect(progress.firstElementChild).not.toHaveStyle({ width: "99%" });
   });
 });

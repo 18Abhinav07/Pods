@@ -8,8 +8,12 @@ import type {
   TemplateId
 } from "@pods/domain";
 import { validateTemplateEvidenceSubmission } from "@pods/domain";
-import { ArrowLeft, ArrowRight, Check } from "@phosphor-icons/react";
+import {
+  ArrowRight,
+  CheckCircle
+} from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
@@ -18,7 +22,6 @@ import { BuildEditor, deliverableLabel } from "./activity-editor/build-editor";
 import { CommitmentWizard } from "./activity-editor/commitment-wizard";
 import { CreateEditor } from "./activity-editor/create-editor";
 import { FitnessEditor } from "./activity-editor/fitness-editor";
-import { FlowProgress } from "./activity-editor/flow-progress";
 import {
   ProofAttachmentControls,
   ProofPrivacyControls
@@ -29,6 +32,9 @@ import type {
   ActivityCommitmentView,
   ActivitySubmissionView
 } from "./activity-editor/types";
+import { CommitmentEntry } from "./activity-ritual/commitment-entry";
+import styles from "./activity-ritual/activity-ritual.module.css";
+import { ProofWizard } from "./activity-ritual/proof-wizard";
 
 type Props = {
   templateId?: TemplateId;
@@ -39,6 +45,9 @@ type Props = {
   projectTheme: string;
   allowedDeliverables: readonly BuildDeliverableType[];
   occurrenceOrdinal: number;
+  opensAt?: string;
+  initiallyOpen?: boolean;
+  effectiveNowAt: string;
   commitmentDeadlineAt: string | null;
   closesAt: string;
   stakeNim: number;
@@ -48,6 +57,7 @@ type Props = {
   commitment: ActivityCommitmentView | null;
   submission: ActivitySubmissionView | null;
   publicVisitorSharingEnabled?: boolean;
+  reviewerKind?: "creator" | "pods_team";
 };
 
 function initialEvidence(
@@ -151,6 +161,10 @@ export function ActivityOccurrence(props: Props) {
   const reduceMotion = useReducedMotion();
   const [commitment, setCommitment] = useState(props.commitment);
   const [submission, setSubmission] = useState(props.submission);
+  const [commitmentView, setCommitmentView] = useState<
+    "entry" | "wizard" | "success" | "proof"
+  >(() => perOccurrence && !props.commitment ? "entry" : "proof");
+  const [commitmentStep, setCommitmentStep] = useState(0);
   const [task, setTask] = useState("");
   const [goal, setGoal] = useState("");
   const [deliverableType, setDeliverableType] = useState<BuildDeliverableType>(
@@ -181,6 +195,14 @@ export function ActivityOccurrence(props: Props) {
   );
   const evidenceForm = useRef<HTMLFormElement>(null);
   const objectPreviewUrl = useRef<string | null>(null);
+  const confirmedEvidenceAvailable = useRef(
+    Boolean(props.submission?.evidenceAvailable)
+  );
+  const confirmedPreviewUrl = useRef<string | null>(
+    props.submission?.evidenceAvailable
+      ? `/api/pods/${props.podId}/submissions/${props.submission.id}/evidence`
+      : null
+  );
   const draftSaveVersion = useRef(0);
   const draftSaveQueue = useRef<Promise<ActivitySubmissionView | null>>(
     Promise.resolve(null)
@@ -191,6 +213,10 @@ export function ActivityOccurrence(props: Props) {
   const dirty =
     JSON.stringify(evidence) !== JSON.stringify(savedEvidence) ||
     proofShareMode !== savedProofShareMode;
+  const reviewerKind = props.reviewerKind ?? "creator";
+  const reviewerLabel = reviewerKind === "pods_team"
+    ? "Pods Team"
+    : "Pod creator";
 
   function setEvidence(next: TemplateEvidence) {
     setEvidenceState(next);
@@ -231,18 +257,29 @@ export function ActivityOccurrence(props: Props) {
     void uploadImage(file, version);
   }
 
+  function revokeObjectPreview() {
+    if (!objectPreviewUrl.current) return;
+    URL.revokeObjectURL(objectPreviewUrl.current);
+    objectPreviewUrl.current = null;
+  }
+
+  function rollbackImagePreview() {
+    revokeObjectPreview();
+    setImagePreviewUrl(confirmedPreviewUrl.current);
+    setUploadProgress(null);
+    setUploadComplete(confirmedEvidenceAvailable.current);
+  }
+
   useEffect(() => () => {
     uploadVersion.current += 1;
     uploadRequest.current?.abort();
     uploadRequest.current = null;
-    if (objectPreviewUrl.current) {
-      URL.revokeObjectURL(objectPreviewUrl.current);
-      objectPreviewUrl.current = null;
-    }
+    revokeObjectPreview();
   }, []);
 
   async function lock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (commitmentStep !== 2 || busy) return;
     setBusy(true);
     setError("");
     try {
@@ -268,6 +305,7 @@ export function ActivityOccurrence(props: Props) {
         );
       }
       setCommitment(body.commitment);
+      setCommitmentView("success");
       router.refresh();
     } catch (cause) {
       setError(
@@ -403,18 +441,22 @@ export function ActivityOccurrence(props: Props) {
           throw new Error(body.error ?? "Evidence image could not be uploaded");
         }
         setSubmission(body.submission);
+        revokeObjectPreview();
+        confirmedEvidenceAvailable.current = true;
+        confirmedPreviewUrl.current =
+          `/api/pods/${props.podId}/submissions/${body.submission.id}/evidence`;
+        setImagePreviewUrl(confirmedPreviewUrl.current);
         setUploadProgress(100);
         setUploadComplete(true);
         uploadRequest.current = null;
         router.refresh();
       } catch (cause) {
         uploadRequest.current = null;
-        setUploadProgress(null);
-        setUploadComplete(false);
+        rollbackImagePreview();
         setError(
-          cause instanceof Error
+          `${cause instanceof Error
             ? cause.message
-            : "Evidence image could not be uploaded"
+            : "Evidence image could not be uploaded"}. Choose the image again to retry.`
         );
       }
     };
@@ -423,9 +465,10 @@ export function ActivityOccurrence(props: Props) {
         return;
       }
       uploadRequest.current = null;
-      setUploadProgress(null);
-      setUploadComplete(false);
-      setError("Image upload was interrupted. Your saved draft is still available.");
+      rollbackImagePreview();
+      setError(
+        "Image upload was interrupted. Choose the image again to retry. Your saved draft is still available."
+      );
     };
     request.send(form);
   }
@@ -557,115 +600,154 @@ export function ActivityOccurrence(props: Props) {
       : evidence.kind === "create"
         ? evidenceValidation.success
         : true;
-  const proofLabels = ["Activity", "Evidence", "Visibility", "Review"] as const;
   const visibilityLabel =
     proofShareMode === "reviewer_only"
-      ? "Creator only"
+      ? reviewerKind === "pods_team"
+        ? "Pods Team only"
+        : "Creator only"
       : proofShareMode === "pod_shared"
         ? "Share with Pod"
         : "Share publicly";
 
+  if (perOccurrence && commitmentView !== "proof") {
+    if (commitmentView === "entry") {
+      return (
+        <CommitmentEntry
+          closesAt={props.closesAt}
+          commitmentDeadlineAt={props.commitmentDeadlineAt ?? props.closesAt}
+          currentStreak={props.currentStreak}
+          effectiveNowAt={props.effectiveNowAt}
+          fullReturnAlpha={fullReturnAlpha}
+          initiallyOpen={props.initiallyOpen ?? true}
+          onStart={() => setCommitmentView("wizard")}
+          opensAt={props.opensAt ?? props.closesAt}
+          projectTheme={props.projectTheme}
+          reviewerKind={reviewerKind}
+          stakeNim={props.stakeNim}
+          templateId={templateId}
+          timeZone={props.timeZone}
+        />
+      );
+    }
+
+    if (commitmentView === "success" && commitment) {
+      return (
+        <motion.section
+          animate={{ opacity: 1, y: 0 }}
+          aria-live="polite"
+          className={styles.commitmentSuccess}
+          data-template={templateId}
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          transition={{
+            duration: reduceMotion ? 0 : 0.24,
+            ease: [0.22, 1, 0.36, 1]
+          }}
+        >
+          <span aria-hidden="true" className={styles.successMark}>
+            <CheckCircle size={34} weight="fill" />
+          </span>
+          <p className={styles.signalKicker}>Finish line secured</p>
+          <h2>Commitment locked.</h2>
+          <p className={styles.successCommitment}>{commitment.task}</p>
+          <p className={styles.successCopy}>
+            Your finish line is visible in the room. Return with the proof
+            before {formatZonedMoment(props.closesAt, {
+              timeZone: props.timeZone
+            })}.
+          </p>
+          <div className={styles.successActions}>
+            <button
+              className={styles.primaryAction}
+              onClick={() => setCommitmentView("proof")}
+              type="button"
+            >
+              <span>Continue to proof</span>
+              <span aria-hidden="true" className={styles.actionIcon}>
+                <ArrowRight size={18} weight="bold" />
+              </span>
+            </button>
+            <Link
+              className={styles.roomLink}
+              href={`/pods/${props.podId}/room`}
+            >
+              Open Pod room
+            </Link>
+          </div>
+        </motion.section>
+      );
+    }
+
+    return (
+      <motion.form
+        animate={{ opacity: 1, y: 0 }}
+        className={styles.commitmentForm}
+        data-template={templateId}
+        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+        onSubmit={lock}
+      >
+        <CommitmentWizard
+          allowedDeliverables={props.allowedDeliverables}
+          busy={busy}
+          closesAt={props.closesAt}
+          deliverableType={deliverableType}
+          fullReturnAlpha={fullReturnAlpha}
+          goal={goal}
+          occurrenceOrdinal={props.occurrenceOrdinal}
+          onDeliverableType={setDeliverableType}
+          onExit={() => setCommitmentView("entry")}
+          onGoal={setGoal}
+          onStep={setCommitmentStep}
+          onTask={setTask}
+          projectTheme={props.projectTheme}
+          reviewerKind={reviewerKind}
+          stakeNim={props.stakeNim}
+          step={commitmentStep}
+          task={task}
+          templateId={templateId}
+          timeZone={props.timeZone}
+        />
+        {error ? (
+          <p className={styles.formError} role="alert">{error}</p>
+        ) : null}
+      </motion.form>
+    );
+  }
+
   return (
     <>
-      <section className="activity-hero entrance entrance-hero">
-        <p className="eyebrow">Occurrence {props.occurrenceOrdinal}</p>
-        <h1>{props.podName}</h1>
-        <p>{props.projectTheme}</p>
-      </section>
-      <section className="occurrence-context-grid entrance entrance-status">
-        <div>
-          <span>{fullReturnAlpha ? "Activity slice" : "At risk"}</span>
-          <strong>{props.stakeNim} NIM</strong>
-        </div>
-        <div>
-          <span>Current streak</span>
-          <strong>{props.currentStreak} occurrences</strong>
-        </div>
-        <div>
-          <span>Evidence closes</span>
-          <strong>
-            {formatZonedMoment(props.closesAt, { timeZone: props.timeZone })}
-          </strong>
-        </div>
-      </section>
-      {fullReturnAlpha ? (
-        <p className="occurrence-consequence-note">
-          Your full Testnet principal remains returnable.
-        </p>
-      ) : null}
-
       {submission && submission.state !== "draft" ? (
-        <section className="submission-route-transition" role="status">
-          <span className="submission-route-pulse" aria-hidden="true" />
+        <section className={styles.routeTransition} role="status">
+          <span aria-hidden="true" />
           <p>Opening your live submission</p>
         </section>
-      ) : perOccurrence && !commitment ? (
-        <motion.form
-          animate={{ opacity: 1, y: 0 }}
-          className="activity-contract-card is-guided-flow"
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          onSubmit={lock}
-        >
-          <CommitmentWizard
-            allowedDeliverables={props.allowedDeliverables}
-            busy={busy}
-            closesAt={props.commitmentDeadlineAt}
-            deliverableType={deliverableType}
-            goal={goal}
-            onDeliverableType={setDeliverableType}
-            onGoal={setGoal}
-            onTask={setTask}
-            projectTheme={props.projectTheme}
-            task={task}
-            templateId={templateId}
-            timeZone={props.timeZone}
-          />
-          {error ? <p className="form-error" role="alert">{error}</p> : null}
-        </motion.form>
       ) : (
         <motion.form
           animate={{ opacity: 1, y: 0 }}
-          className={`activity-evidence-card is-guided-flow template-${templateId}`}
+          className={styles.proofForm}
+          data-template={templateId}
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           onSubmit={submitForReview}
           ref={evidenceForm}
         >
-          <FlowProgress
-            ariaLabel="Proof progress"
-            labels={proofLabels}
-            step={proofStep}
-          />
-          <motion.section
-            animate={{ opacity: 1, x: 0 }}
-            className="flow-stage proof-flow-stage"
-            initial={reduceMotion ? false : { opacity: 0, x: 14 }}
-            key={proofStep}
-            transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {proofStep === 0 ? (
-              <>
-                {commitment && perOccurrence ? (
-                  <div className="locked-task-panel">
-                    <span>
-                      Locked {templateId === "create" ? "goal" : "task"} ·
-                      occurrence {props.occurrenceOrdinal}
-                    </span>
-                    <strong>{commitment.task}</strong>
-                    {templateId === "build" ? (
-                      <small>{deliverableLabel(commitment.deliverableType)}</small>
-                    ) : null}
-                  </div>
-                ) : null}
-                <header className="proof-stage-heading">
-                  <span>Your result</span>
-                  <h2>What did you finish?</h2>
-                  <p>Keep it specific enough for the creator to make a fair decision.</p>
-                </header>
-                {renderEvidenceEditor()}
-              </>
-            ) : null}
-
-            {proofStep === 1 ? (
+          <ProofWizard
+            busy={busy}
+            canContinueEvidence={
+              attachmentReady &&
+              !(uploadProgress !== null && !uploadComplete)
+            }
+            canContinueResult={detailsReadyForDraft(evidence)}
+            canSubmit={
+              !(uploadProgress !== null && !uploadComplete) &&
+              evidenceValidation.success
+            }
+            deliverable={
+              templateId === "build" && commitment
+                ? deliverableLabel(commitment.deliverableType)
+                : null
+            }
+            draftState={draftState}
+            error={error}
+            evidenceControls={
               <ProofAttachmentControls
                 {...(evidence.kind === "build" || evidence.kind === "create"
                   ? {
@@ -678,114 +760,43 @@ export function ActivityOccurrence(props: Props) {
                 artifactError={artifactError}
                 artifactMode={evidence.kind === "create" ? "image_or_link" : "required"}
                 onFile={selectImage}
+                reviewerKind={reviewerKind}
                 uploadComplete={uploadComplete}
                 uploadProgress={uploadProgress}
               />
-            ) : null}
-
-            {proofStep === 2 ? (
-              <>
-                <header className="proof-stage-heading">
-                  <span>Proof audience</span>
-                  <h2>Choose the right visibility.</h2>
-                  <p>Private evidence stays between you and the creator. Shared evidence becomes part of the Pod story.</p>
-                </header>
-                <ProofPrivacyControls
-                  onShareMode={setProofShareMode}
-                  proofShareMode={proofShareMode}
-                  publicVisitorSharingEnabled={Boolean(
-                    props.publicVisitorSharingEnabled
-                  )}
-                />
-              </>
-            ) : null}
-
-            {proofStep === 3 ? (
-              <>
-                <header className="proof-stage-heading">
-                  <span>Review</span>
-                  <h2>Ready to submit?</h2>
-                  <p>The proof and its visibility become immutable after submission.</p>
-                </header>
-                <div className="proof-review-summary">
-                  <div><span>Activity</span><strong>{evidenceSummary(evidence)}</strong></div>
-                  <div>
-                    <span>Evidence</span>
-                    <strong>
-                      {uploadComplete && hasSafeArtifact
-                        ? "Image and public link"
-                        : uploadComplete
-                          ? "Image"
-                          : "Public link"}
-                    </strong>
-                  </div>
-                  <div><span>Visibility</span><strong>{visibilityLabel}</strong></div>
-                  <div><span>Reviewer</span><strong>Pod creator</strong></div>
-                </div>
-              </>
-            ) : null}
-          </motion.section>
-          {error ? <p className="form-error" role="alert">{error}</p> : null}
-          <p
-            className={`draft-saved-state is-${draftState}`}
-            aria-live="polite"
-          >
-            {draftState === "saving"
-              ? "Saving draft automatically"
-              : draftState === "saved"
-                ? "Draft saved automatically"
-                : "Changes save automatically"}
-          </p>
-          <footer className="flow-action-dock">
-            {proofStep > 0 ? (
-              <button
-                className="flow-back-action"
-                onClick={() => setProofStep((current) => Math.max(0, current - 1))}
-                type="button"
-              >
-                <ArrowLeft aria-hidden="true" size={18} />
-                Back
-              </button>
-            ) : <span />}
-            {proofStep < 3 ? (
-              <button
-                className="flow-primary-action"
-                disabled={
-                  proofStep === 0
-                    ? !detailsReadyForDraft(evidence)
-                    : proofStep === 1
-                      ? !attachmentReady ||
-                        (uploadProgress !== null && !uploadComplete)
-                      : false
-                }
-                onClick={(event) => {
-                  event.preventDefault();
-                  setProofStep((current) => Math.min(3, current + 1));
-                }}
-                type="button"
-              >
-                {proofStep === 0
-                  ? "Continue to evidence"
-                  : proofStep === 1
-                    ? "Continue to visibility"
-                    : "Review submission"}
-                <ArrowRight aria-hidden="true" size={18} />
-              </button>
-            ) : (
-              <button
-                className="flow-primary-action"
-                disabled={
-                  busy ||
-                  (uploadProgress !== null && !uploadComplete) ||
-                  !evidenceValidation.success
-                }
-                type="submit"
-              >
-                {busy ? "Submitting" : "Submit to creator"}
-                <Check aria-hidden="true" size={18} weight="bold" />
-              </button>
-            )}
-          </footer>
+            }
+            lockedTask={commitment?.task ?? null}
+            occurrenceOrdinal={props.occurrenceOrdinal}
+            onStep={setProofStep}
+            privacyControls={
+              <ProofPrivacyControls
+                onShareMode={setProofShareMode}
+                proofShareMode={proofShareMode}
+                publicVisitorSharingEnabled={Boolean(
+                  props.publicVisitorSharingEnabled
+                )}
+                reviewerKind={reviewerKind}
+              />
+            }
+            resultEditor={renderEvidenceEditor()}
+            reviewRows={[
+              { label: "Activity", value: evidenceSummary(evidence) },
+              {
+                label: "Evidence",
+                value:
+                  uploadComplete && hasSafeArtifact
+                    ? "Image and public link"
+                    : uploadComplete
+                      ? "Image"
+                      : "Public link"
+              },
+              { label: "Visibility", value: visibilityLabel },
+              { label: "Reviewer", value: reviewerLabel }
+            ]}
+            reviewerKind={reviewerKind}
+            step={proofStep}
+            templateId={templateId}
+          />
         </motion.form>
       )}
     </>

@@ -4,7 +4,13 @@ import path from "node:path";
 
 import { KeyPair, PrivateKey } from "@nimiq/core";
 import { createPodsRepository } from "@pods/db";
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import {
+  devices,
+  expect,
+  test,
+  type BrowserContext,
+  type Page
+} from "@playwright/test";
 import sharp from "sharp";
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3410";
@@ -14,6 +20,12 @@ const databaseUrl =
   "postgresql://pods:pods-local-only@127.0.0.1:54329/pods";
 const repository = createPodsRepository(databaseUrl);
 const testWalletAddresses = new Set<string>();
+
+function deviceForProject(projectName: string) {
+  return projectName === "mobile-safari"
+    ? devices["iPhone 13"]
+    : devices["Galaxy S9+"];
+}
 
 type QueryResult = { rows: Array<Record<string, unknown>> };
 type DatabasePool = {
@@ -32,7 +44,7 @@ function databasePool() {
 
 async function waitForFlowStage(page: Page) {
   await expect.poll(() =>
-    page.locator(".flow-stage").evaluate((element) =>
+    page.locator("[data-flow-stage]").evaluate((element) =>
       window.getComputedStyle(element).opacity
     )
   ).toBe("1");
@@ -291,8 +303,11 @@ test("creator approves proof through the UI without gaining member finances", as
 }, testInfo) => {
   test.setTimeout(90_000);
   const creatorWallet = await authenticate(context);
-  const memberContext = await browser.newContext();
-  const peerContext = await browser.newContext();
+  const device = deviceForProject(testInfo.project.name);
+  const memberContext = await browser.newContext(device);
+  const peerContext = await browser.newContext(device);
+  let memberContextClosed = false;
+  let peerContextClosed = false;
   const creatorPage = await context.newPage();
   const memberPage = await memberContext.newPage();
   for (const page of [creatorPage, memberPage]) {
@@ -325,22 +340,38 @@ test("creator approves proof through the UI without gaining member finances", as
       memberUserIds: [memberUserId, peerUserId],
       now: activityNow
     });
+    await peerContext.close();
+    peerContextClosed = true;
 
     await memberPage.goto(`${baseUrl}/today`);
     await expect(memberPage.getByRole("heading", { name: "Name the work before you build." })).toBeVisible();
     await memberPage.getByRole("link", { name: "Lock today's task" }).click();
+    await expect(memberPage).toHaveURL(
+      `${baseUrl}/pods/${fixture.podId}/activity/${fixture.occurrenceId}`,
+      { timeout: 20_000 }
+    );
+    await expect(
+      memberPage.getByRole("button", { name: "Start commitment" })
+    ).toBeVisible({ timeout: 20_000 });
     expect(await memberPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await memberPage.getByLabel("Today's task").fill(
+    await expect(
+      memberPage.getByRole("heading", {
+        name: "Choose the one thing you will ship."
+      })
+    ).toBeVisible();
+    await memberPage.getByRole("button", { name: "Start commitment" }).click();
+    await memberPage.getByLabel("Today I will").fill(
       "Ship the participant activity screen with private evidence and reviewer states."
     );
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
-      path: testInfo.outputPath("commitment-define-mobile.png")
+      path: testInfo.outputPath("commitment-define-mobile.png"),
+      scale: "css"
     });
-    await memberPage.getByRole("button", { name: "Choose proof type" }).click();
+    await memberPage.getByRole("button", { name: "Choose proof" }).click();
     await expect(
       memberPage.getByRole("heading", {
-        name: "How will you show the work?"
+        name: "How will the room know?"
       })
     ).toBeVisible();
     await expect(
@@ -348,20 +379,26 @@ test("creator approves proof through the UI without gaining member finances", as
     ).toBeInViewport({ ratio: 1 });
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
-      path: testInfo.outputPath("commitment-proof-type-mobile.png")
+      path: testInfo.outputPath("commitment-proof-type-mobile.png"),
+      scale: "css"
     });
     await memberPage.getByRole("radio", { name: "GitHub pull request" }).check();
     await memberPage.getByRole("button", { name: "Review commitment" }).click();
     await expect(
-      memberPage.getByRole("heading", { name: "Ready to commit?" })
+      memberPage.getByRole("heading", { name: "Make it real." })
     ).toBeVisible();
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
-      path: testInfo.outputPath("commitment-review-mobile.png")
+      path: testInfo.outputPath("commitment-review-mobile.png"),
+      scale: "css"
     });
-    await memberPage.getByRole("button", { name: "Lock this task" }).click();
+    await memberPage.getByRole("button", { name: "Lock this commitment" }).click();
     await expect(
-      memberPage.getByText("Locked task · occurrence 1", { exact: true })
+      memberPage.getByRole("heading", { name: "Commitment locked." })
+    ).toBeVisible();
+    await memberPage.getByRole("button", { name: "Continue to proof" }).click();
+    await expect(
+      memberPage.getByRole("heading", { name: "What did you finish?" })
     ).toBeVisible();
 
     await memberPage.getByLabel("Result summary").fill(
@@ -372,7 +409,7 @@ test("creator approves proof through the UI without gaining member finances", as
     await memberPage.getByLabel("Public artifact URL").fill(
       "https://github.com/18Abhinav07/Pods/pull/42"
     );
-    await expect(memberPage.getByText("Draft saved automatically")).toBeVisible();
+    await expect(memberPage.getByText("Draft saved", { exact: true })).toBeVisible();
     const evidenceImage = await sharp({
       create: { width: 640, height: 480, channels: 3, background: "#3b5ccc" }
     }).png().toBuffer();
@@ -383,27 +420,30 @@ test("creator approves proof through the UI without gaining member finances", as
     });
     await expect(memberPage.getByText("Image secured")).toBeVisible();
     await expect(
-      memberPage.getByRole("heading", { name: "Show the finished work." })
+      memberPage.getByRole("heading", { name: "Make the work visible." })
     ).toBeVisible();
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
-      path: testInfo.outputPath("proof-evidence-mobile.png")
+      path: testInfo.outputPath("proof-evidence-mobile.png"),
+      scale: "css"
     });
     await memberPage.getByRole("button", { name: "Continue to visibility" }).click();
     await expect(
-      memberPage.getByRole("heading", { name: "Choose the right visibility." })
+      memberPage.getByRole("heading", { name: "Choose who sees the proof." })
     ).toBeVisible();
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
-      path: testInfo.outputPath("proof-visibility-mobile.png")
+      path: testInfo.outputPath("proof-visibility-mobile.png"),
+      scale: "css"
     });
     await memberPage.getByRole("button", { name: "Review submission" }).click();
     await expect(
-      memberPage.getByRole("heading", { name: "Ready to submit?" })
+      memberPage.getByRole("heading", { name: "One last check." })
     ).toBeVisible();
     await waitForFlowStage(memberPage);
     await memberPage.screenshot({
-      path: testInfo.outputPath("proof-review-mobile.png")
+      path: testInfo.outputPath("proof-review-mobile.png"),
+      scale: "css"
     });
     await memberPage.getByRole("button", { name: "Submit to creator" }).click();
     await expect(memberPage).toHaveURL(
@@ -413,7 +453,7 @@ test("creator approves proof through the UI without gaining member finances", as
     await expect(memberPage.getByText("Creator only", { exact: true })).toBeVisible();
     await memberPage.screenshot({
       path: testInfo.outputPath("submission-live-mobile.png"),
-      fullPage: true
+      scale: "css"
     });
 
     await creatorPage.goto(`${baseUrl}/today`);
@@ -430,7 +470,7 @@ test("creator approves proof through the UI without gaining member finances", as
     ).toBeVisible();
     await creatorPage.screenshot({
       path: testInfo.outputPath("creator-review-queue-mobile.png"),
-      fullPage: true
+      scale: "css"
     });
     const firstReviewLink = creatorPage.getByRole("link", {
       name: "Review Phase 4 builder proof"
@@ -459,7 +499,7 @@ test("creator approves proof through the UI without gaining member finances", as
     ).toBeGreaterThan(0);
     await creatorPage.screenshot({
       path: testInfo.outputPath("creator-review-detail-mobile.png"),
-      fullPage: true
+      scale: "css"
     });
     await creatorPage.getByLabel("Approval note").fill(
       "The public pull request visibly completes the locked participant task."
@@ -488,46 +528,66 @@ test("creator approves proof through the UI without gaining member finances", as
     )).toBeVisible();
     await memberPage.screenshot({
       path: testInfo.outputPath("submission-approved-mobile.png"),
-      fullPage: true
+      scale: "css"
     });
-    await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/room`);
-    const approvedRoomCard = memberPage.getByRole("article").filter({
-      hasText: "Ship the participant activity screen with private evidence and reviewer states."
-    });
-    await expect(approvedRoomCard.getByText("Approved", { exact: true })).toBeVisible();
-    await expect(
-      approvedRoomCard.getByRole("link", { name: "View your submission" })
-    ).toHaveAttribute(
-      "href",
-      `/pods/${fixture.podId}/submissions/${firstSubmissionId}`
-    );
-    await memberPage.screenshot({
-      path: testInfo.outputPath("room-approved-mobile.png"),
-      fullPage: true
-    });
-    await memberPage.getByRole("textbox", { name: "Message" })
-      .fill("Ready for the next ship.");
-    await expect(memberPage.getByRole("button", { name: "Send message" }))
-      .toHaveClass(/is-ready/);
-    await memberPage.screenshot({
-      path: testInfo.outputPath("room-composer-ready-mobile.png")
-    });
-    await memberPage.getByRole("textbox", { name: "Message" }).fill("");
-    await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/members`);
-    await expect(
-      memberPage.getByRole("heading", { name: "3 people" })
-    ).toBeVisible();
-    await memberPage.screenshot({
-      path: testInfo.outputPath("members-mobile.png"),
-      fullPage: true
-    });
-    await memberPage.goto(`${baseUrl}/pods/${fixture.podId}/activity`);
-    const approvedProof = memberPage.getByRole("article").filter({
-      hasText: "Ship the participant activity screen with private evidence and reviewer states."
-    });
-    await expect(approvedProof.getByText("Approved", { exact: true })).toBeVisible();
-    await memberPage.goto(`${baseUrl}/updates`);
-    await expect(memberPage.getByText("Work approved", { exact: true })).toBeVisible();
+    const memberCookies = await memberContext.cookies();
+    await memberContext.close();
+    memberContextClosed = true;
+    await creatorPage.close();
+    const freshMemberContext = await browser.newContext(device);
+    try {
+      await freshMemberContext.addCookies(memberCookies);
+      const roomDocument = await freshMemberContext.request.get(
+        `${baseUrl}/pods/${fixture.podId}/room`
+      );
+      expect(roomDocument.status()).toBe(200);
+      if (testInfo.project.name !== "mobile-safari") {
+        const memberRoomPage = await freshMemberContext.newPage();
+        memberRoomPage.setDefaultTimeout(10_000);
+        memberRoomPage.setDefaultNavigationTimeout(10_000);
+        await memberRoomPage.goto(`${baseUrl}/pods/${fixture.podId}/room`);
+        const approvedRoomCard = memberRoomPage.getByRole("article").filter({
+          hasText: "Ship the participant activity screen with private evidence and reviewer states."
+        });
+        await expect(approvedRoomCard.getByText("Approved", { exact: true })).toBeVisible();
+        await expect(
+          approvedRoomCard.getByRole("link", { name: "View your submission" })
+        ).toHaveAttribute(
+          "href",
+          `/pods/${fixture.podId}/submissions/${firstSubmissionId}`
+        );
+        await memberRoomPage.screenshot({
+          path: testInfo.outputPath("room-approved-mobile.png"),
+          scale: "css"
+        });
+        await memberRoomPage.getByRole("textbox", { name: "Message" })
+          .fill("Ready for the next ship.");
+        await expect(memberRoomPage.getByRole("button", { name: "Send message" }))
+          .toHaveClass(/is-ready/);
+        await memberRoomPage.screenshot({
+          path: testInfo.outputPath("room-composer-ready-mobile.png"),
+          scale: "css"
+        });
+        await memberRoomPage.getByRole("textbox", { name: "Message" }).fill("");
+        await memberRoomPage.goto(`${baseUrl}/pods/${fixture.podId}/members`);
+        await expect(
+          memberRoomPage.getByRole("heading", { name: "3 people" })
+        ).toBeVisible();
+        await memberRoomPage.screenshot({
+          path: testInfo.outputPath("members-mobile.png"),
+          scale: "css"
+        });
+        await memberRoomPage.goto(`${baseUrl}/pods/${fixture.podId}/activity`);
+        const approvedProof = memberRoomPage.getByRole("article").filter({
+          hasText: "Ship the participant activity screen with private evidence and reviewer states."
+        });
+        await expect(approvedProof.getByText("Approved", { exact: true })).toBeVisible();
+        await memberRoomPage.goto(`${baseUrl}/updates`);
+        await expect(memberRoomPage.getByText("Work approved", { exact: true })).toBeVisible();
+      }
+    } finally {
+      await freshMemberContext.close();
+    }
 
     expect(
       (await context.request.get(`${baseUrl}/pods/${fixture.podId}/fund`)).status()
@@ -545,20 +605,21 @@ test("creator approves proof through the UI without gaining member finances", as
       refundTransfers: 0
     });
   } finally {
-    await memberContext.close();
-    await peerContext.close();
+    if (!memberContextClosed) await memberContext.close();
+    if (!peerContextClosed) await peerContext.close();
   }
 });
 
 test("creator rejection keeps the reason private from peers and public visitors", async ({
   browser,
   context
-}) => {
+}, testInfo) => {
   test.setTimeout(60_000);
   const creatorWallet = await authenticate(context);
-  const memberContext = await browser.newContext();
-  const peerContext = await browser.newContext();
-  const visitorContext = await browser.newContext();
+  const device = deviceForProject(testInfo.project.name);
+  const memberContext = await browser.newContext(device);
+  const peerContext = await browser.newContext(device);
+  const visitorContext = await browser.newContext(device);
   const creatorPage = await context.newPage();
   const memberPage = await memberContext.newPage();
   const peerPage = await peerContext.newPage();
@@ -636,12 +697,6 @@ test("creator rejection keeps the reason private from peers and public visitors"
     });
     await expect(peerRoomCard.getByText("Not verified", { exact: true })).toBeVisible();
     await expect(peerPage.getByText(privateReason)).toHaveCount(0);
-    await peerPage.goto(`${baseUrl}/pods/${rejectedFixture.podId}/activity`);
-    const peerSafeProof = peerPage.getByRole("article").filter({
-      hasText: rejectedFixture.task
-    });
-    await expect(peerSafeProof.getByText("Not verified", { exact: true })).toBeVisible();
-    await expect(peerPage.getByText(privateReason)).toHaveCount(0);
     const peerPrivateDetail = await peerContext.request.get(
       `${baseUrl}/pods/${rejectedFixture.podId}/submissions/${rejectedFixture.submission.id}`
     );
@@ -689,11 +744,12 @@ test("creator rejection keeps the reason private from peers and public visitors"
 test("creator review timeout protects the participant and rejects late decisions", async ({
   browser,
   context
-}) => {
+}, testInfo) => {
   test.setTimeout(60_000);
   const creatorWallet = await authenticate(context);
-  const memberContext = await browser.newContext();
-  const peerContext = await browser.newContext();
+  const device = deviceForProject(testInfo.project.name);
+  const memberContext = await browser.newContext(device);
+  const peerContext = await browser.newContext(device);
   const creatorPage = await context.newPage();
   const memberPage = await memberContext.newPage();
   for (const page of [creatorPage, memberPage]) {

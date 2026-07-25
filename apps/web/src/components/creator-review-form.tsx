@@ -1,7 +1,10 @@
 "use client";
 
+import { Check, X } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
+
+import styles from "./activity-ritual/activity-ritual.module.css";
 
 type DecisionResponse = {
   error?: string;
@@ -99,8 +102,12 @@ export function CreatorReviewForm({
   }
 
   return (
-    <section className="creator-review-decision" aria-label="Final proof decision">
-      <header className="creator-decision-heading">
+    <section
+      aria-label="Final proof decision"
+      className={styles.decisionArea}
+      data-review-decision
+    >
+      <header className={styles.decisionHeading}>
         <span>Decision</span>
         <h2>Does the proof match the commitment?</h2>
         <p>
@@ -108,7 +115,7 @@ export function CreatorReviewForm({
           reason.
         </p>
       </header>
-      <form className="review-decision-card" onSubmit={approve}>
+      <form className={styles.approvalForm} onSubmit={approve}>
         <label htmlFor="creator-approval-note">
           Private approval note <span>Optional</span>
         </label>
@@ -123,17 +130,20 @@ export function CreatorReviewForm({
           value={approvalNote}
         />
         <button
-          className="primary-action full-action"
+          className={styles.primaryAction}
           disabled={status !== "idle"}
           type="submit"
         >
-          {status === "pending" ? "Saving decision" : "Approve proof"}
+          <span>{status === "pending" ? "Saving decision" : "Approve proof"}</span>
+          <span aria-hidden="true" className={styles.actionIcon}>
+            <Check size={18} weight="bold" />
+          </span>
         </button>
       </form>
 
       {!rejectionOpen ? (
         <button
-          className="secondary-action full-action creator-reject-trigger"
+          className={styles.rejectTrigger}
           disabled={status !== "idle"}
           onClick={() => setRejectionOpen(true)}
           type="button"
@@ -141,8 +151,8 @@ export function CreatorReviewForm({
           Reject proof
         </button>
       ) : (
-        <form className="creator-rejection-panel" onSubmit={reject}>
-          <p className="creator-rejection-announcement" role="status">
+        <form className={styles.rejectionPanel} onSubmit={reject}>
+          <p className={styles.rejectionAnnouncement} role="status">
             Rejection reason required
           </p>
           <label htmlFor="creator-rejection-reason">Rejection reason</label>
@@ -158,18 +168,19 @@ export function CreatorReviewForm({
             value={rejectionReason}
           />
           <button
-            className="secondary-action full-action is-destructive"
+            className={styles.confirmReject}
             disabled={status !== "idle"}
             type="submit"
           >
+            <X aria-hidden="true" size={18} weight="bold" />
             {status === "pending" ? "Saving decision" : "Confirm rejection"}
           </button>
         </form>
       )}
 
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      {error ? <p className={styles.formError} role="alert">{error}</p> : null}
       {status === "saved" ? (
-        <p className="decision-saved" role="status">Decision saved</p>
+        <p className={styles.decisionSaved} role="status">Decision saved</p>
       ) : null}
     </section>
   );

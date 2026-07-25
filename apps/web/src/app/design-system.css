@@ -1,32 +1,9 @@
 :root {
-  --color-canvas: #f3f1e9;
-  --color-paper: #faf9f4;
-  --color-surface: #fffdf8;
-  --color-soft: #eeece4;
-  --color-ink: #20241f;
-  --color-muted: #686b64;
-  --color-line: #dcddd5;
-  --color-success: #18795c;
-  --color-warning: #956400;
-  --color-danger: #b42318;
-  --activity-neutral: #dce4cf;
-  --activity-build: #d9ed72;
-  --activity-build-deep: #252b24;
-  --activity-practice: #efaa70;
-  --activity-practice-deep: #3a2720;
-  --activity-fitness: #fa7448;
-  --activity-fitness-deep: #12141c;
-  --activity-reading: #aeb8f0;
-  --activity-reading-deep: #34335a;
-  --activity-study: #8fcfc1;
-  --activity-study-deep: #203a36;
-  --radius-control: 14px;
-  --radius-panel: 20px;
-  --radius-media: 28px;
-  --motion-tactile: 140ms;
-  --motion-state: 220ms;
-  --motion-navigation: 240ms;
-  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --activity-neutral: color-mix(
+    in srgb,
+    var(--activity-build) 24%,
+    var(--color-paper)
+  );
   --page-gutter: 18px;
   --canvas: var(--color-canvas);
   --paper: var(--color-paper);
@@ -37,6 +14,13 @@
   --line: var(--color-line);
   --action: var(--color-ink);
   --action-soft: var(--color-soft);
+  --success: var(--color-success);
+  --success-soft: var(--color-success-soft);
+  --warning: var(--color-warning);
+  --warning-soft: var(--color-warning-soft);
+  --danger: var(--color-danger);
+  --danger-soft: var(--color-danger-soft);
+  --nim: var(--color-nim);
 }
 
 html {

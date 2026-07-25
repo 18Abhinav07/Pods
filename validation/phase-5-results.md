@@ -3,7 +3,7 @@ created: 2026-07-24
 project: pods
 ecosystem: nimiq
 tags: [validation, phase-5, settlement, payout, testnet]
-status: deployed-broadcast-off-physical-pending
+status: local-candidate-broadcast-off-physical-pending
 ---
 
 # Phase 5 Settlement and Payout Gate
@@ -14,15 +14,59 @@ Related: [[HANDOFF]] |
 
 ## Current verdict
 
-`AUTOMATED, MOBILE BROWSER, NON-BROADCAST DRY RUN, AND STAGED DEPLOYMENT PASS`
+`CURRENT AUTOMATED AND MOBILE BROWSER CANDIDATE PASS`
 
 `PHYSICAL NIMIQ PAY PAYOUT PENDING`
 
-The deterministic settlement, immutable payout attempts, operations recovery,
-and participant and creator settlement surfaces are implemented. No Mainnet
-behavior is authorized. No automated test broadcast a treasury transaction.
+The current Build and Ship lifecycle candidate implements consistent private
+financial projections from funding through settlement and payout tracking. No
+Mainnet behavior is authorized. Payout broadcast remains disabled, and no
+automated test broadcast a treasury transaction.
 
-## Testnet release hardening and staged deployment
+## 25 July core completion candidate
+
+Branch `upgrade/build-ship-testnet-core` at implementation commit
+`51a4b91a0c489b578dcab1f2de21e771faae0ae8` adds:
+
+- one canonical participant and creator afterstate across Today, My Pods,
+  Updates, Pod rooms, and settlement;
+- private participant payout and refund projections with no public wallet or
+  raw transaction data;
+- permanent room access to the settlement afterstate for creators and locked
+  participants;
+- explicit prepared, confirming, delayed, failed, mismatched, late,
+  manual-review, confirmed, and no-transfer payout presentation;
+- creator-visible participant entitlements and transfer exceptions;
+- refund-state isolation from proportional settlement routes;
+- zero-recipient restoration and creator archive browser coverage.
+
+The final repository gate passed on 25 July 2026:
+
+- Root tests: 6 PASS.
+- Domain tests: 86 PASS.
+- UI tests: 4 PASS.
+- Database unit tests: 10 PASS.
+- Worker tests: 70 PASS.
+- Web tests: 523 PASS.
+- PostgreSQL integration tests: 94 PASS across 15 files.
+- ESLint, copy, all workspace typechecks, worker build, and Next.js production
+  build: PASS.
+- Independent post-fix review: PASS with no remaining Critical or Important
+  implementation finding.
+
+The final mobile browser matrix passed:
+
+- Funding, roster lock, exclusion, cancellation, and refunds: 4 of 4 across
+  Mobile Safari and Android Chromium.
+- Creator, participant, visitor, proportional settlement, payout afterstate,
+  and zero-recipient restoration: 4 of 4 across Mobile Safari and Android
+  Chromium.
+
+This candidate has not been merged into `main` or deployed. The remaining gate
+is the physical two-participant Nimiq Pay walkthrough with payout broadcasting
+off until the immutable entitlement snapshot is inspected and approved.
+
+## Prior Testnet release hardening and staged deployment
 
 Release candidate `upgrade/testnet-rewards` at
 `1c4ae201e607e1b3e631074f274144d921be279f` adds:
@@ -167,8 +211,9 @@ The phase remains physically pending until Abhinav approves this walkthrough.
 
 ## Release boundary
 
-- Automated-green local implementation commit: `33e54ba`.
-- No GitHub push was performed.
-- No Railway deployment was performed.
+- Current automated-green implementation commit:
+  `51a4b91a0c489b578dcab1f2de21e771faae0ae8`.
+- The current candidate is isolated from `main` and has not been deployed.
+- Testnet payout broadcast remains disabled.
 - No Mainnet transaction was prepared or broadcast.
-- The protected Phase 4 base remains unchanged.
+- The deployed staged release remains unchanged until physical approval.

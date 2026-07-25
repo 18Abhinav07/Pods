@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-24
+last-updated: 2026-07-25
 last-agent: codex
 mode: HACKATHON
 ---
@@ -8,63 +8,69 @@ mode: HACKATHON
 # Pods Handoff
 
 Related: [[README]] |
-[[docs/superpowers/plans/2026-07-24-pods-settlement-payout]] |
+[[docs/superpowers/plans/2026-07-25-build-ship-testnet-core]] |
 [[validation/phase-5-results]]
 
 ## State
 
-The first sequential upgrade, Testnet rewards, is deployed as a staged release
-candidate. Proportional publication and settlement processing are enabled.
-Payout signing and broadcast remain fail-closed until the physical two-wallet
-settlement snapshot is inspected.
+The Build and Ship Testnet core is automated-green on the isolated
+`upgrade/build-ship-testnet-core` branch. Funding, roster lock, commitments,
+proof, creator review, deterministic proportional settlement, participant
+payout tracking, creator summaries, room archives, Today, My Pods, and Updates
+now share one canonical lifecycle projection.
 
-## In Progress (resume here)
+Payout broadcast remains disabled. The branch is not merged into `main` and is
+not deployed. The next action is the physical Nimiq Pay settlement snapshot.
 
-- Task: complete the physical proportional settlement and payout gate.
-- Production: `https://pods-nimiq-activity.up.railway.app`.
-- Payout broadcast: explicitly disabled on web and worker.
-- Required device actors: one creator and two participant wallets.
+## In Progress
 
-## Open Errors / Blockers
+- Local LAN app: port `3411`.
+- Runtime: Testnet, public local access, proportional settlement enabled.
+- Payout broadcast: explicitly disabled.
+- Required actors: one creator and two funded participant wallets.
+- Stop point: after settlement calculation and before any payout broadcast.
 
-- Physical Nimiq Pay payout confirmation is still pending.
-- Do not advertise redistributed Testnet rewards until that gate passes.
+## Automated Evidence
+
+- Implementation commit:
+  `51a4b91a0c489b578dcab1f2de21e771faae0ae8`.
+- Full `pnpm check`: PASS.
+- Unit and component tests: 699 PASS.
+- PostgreSQL integration tests: 94 PASS across 15 files.
+- Funding and cancellation browser matrix: 4 of 4 PASS.
+- Settlement and restoration browser matrix: 4 of 4 PASS.
+- Mobile engines: Mobile Safari and Android Chromium.
+- Independent review: no remaining Critical or Important implementation
+  finding.
+
+## Open Gate
+
+1. Create a one-occurrence public Build and Ship Pod.
+2. Fund it from two Testnet participant wallets.
+3. Lock both commitments and submit proof.
+4. Approve one participant and reject or miss the other.
+5. Advance time only through the audited Clock command.
+6. Finalize with payout broadcast still off.
+7. Inspect conservation, each entitlement, creator zero-receipt, and every
+   projected state.
+8. Enable payout broadcast only after Abhinav explicitly approves that
+   snapshot.
+
+The zero-recipient restoration and underfilled-cancellation paths are also
+required before release.
+
+## Git and Deployment Boundary
+
+- `main` and `origin/main` base:
+  `d3ba7d7d749886c2024ae4c531d827da761e4f10`.
+- Upgrade branch: `upgrade/build-ship-testnet-core`.
+- Main/root worktree remains untouched.
+- No current-candidate Railway deployment has been performed.
 - No Mainnet configuration or transaction is authorized.
-
-## Git State
-
-- Main remains at `6e6bb80da410abcacc12a81d936c0b3cce42a1de`.
-- Upgrade branch: `upgrade/testnet-rewards`.
-- Deployed code commit: `1c4ae201e607e1b3e631074f274144d921be279f`.
-- The release candidate branch is pushed and matched its remote before
-  deployment.
-- Full `pnpm check`: PASS with 623 non-integration tests and 91 integration
-  tests.
-- Independent hardening re-review: PASS.
-- The legacy root worktree on `phase/04-activity` is intentionally preserved
-  because it contains unrelated user changes.
-
-## Runtime State
-
-- Web deployment `bce1a1fe-454e-4265-a153-be8b51600c24`: `SUCCESS`.
-- Worker deployment `d17e7e7b-34d7-41e8-8085-82d7c78e7c62`: `SUCCESS`.
-- Both services are running and not stopped.
-- Live readiness reports configuration, database, evidence storage, and exact
-  schema identity as `ready`.
-- Live runtime reports Testnet commit `1c4ae201e607` and schema
-  `0017_robust_loners`.
-- Production data remained unchanged across deployment: one active
-  `full_refund_alpha` Pod, two confirmed refund legs, zero settlement runs,
-  and zero payout legs.
-- Controls on web and worker: public Testnet intake on, proportional
-  publication on, settlement processing on, payout broadcast off, incident
-  pause off, and legacy refunds on.
 
 ## Next 3 Tasks
 
-1. Create a small proportional Testnet Pod with one creator and two funded
-   participants, then reach terminal occurrence outcomes.
-2. Inspect the immutable settlement and conservation result while payout
-   broadcast is still off.
-3. Enable payout broadcast only after that inspection, confirm both terminal
-   transfer outcomes in Nimiq Pay, then merge the approved upgrade into main.
+1. Publish the isolated upgrade branch without merging it.
+2. Run the physical two-wallet entitlement snapshot on LAN port `3411`.
+3. After explicit approval, broadcast the Testnet payouts, verify finality,
+   merge the exact approved branch into `main`, and deploy that SHA.

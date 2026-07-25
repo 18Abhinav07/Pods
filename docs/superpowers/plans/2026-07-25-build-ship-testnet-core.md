@@ -242,3 +242,22 @@ Use the product and audited Clock command only.
 - Appeals, disputes, or peer voting.
 - Mainnet, USDT, or mixed-currency Pods.
 - Trustless escrow or a new custody architecture.
+
+## Automated checkpoint
+
+Implementation commit
+`51a4b91a0c489b578dcab1f2de21e771faae0ae8` completes Tasks 1 through 6.
+
+- `pnpm check`: PASS.
+- Unit and component tests: 699 PASS.
+- PostgreSQL integration tests: 94 PASS.
+- Funding and cancellation mobile matrix: 4 of 4 PASS.
+- Settlement and restoration mobile matrix: 4 of 4 PASS.
+- Independent review: no remaining Critical or Important implementation
+  finding.
+- Payout broadcast: disabled.
+- Main merge and Railway deployment: not performed.
+
+Task 7 remains the required physical Nimiq Pay gate. Task 8 must not proceed
+past branch publication until the two-wallet entitlement snapshot is inspected
+and explicitly approved.

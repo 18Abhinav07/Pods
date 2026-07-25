@@ -15,7 +15,7 @@
   z-index: 10;
   display: grid;
   height: 76px;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr) 44px;
   align-items: center;
   gap: 12px;
   padding-inline: 16px;
@@ -41,21 +41,12 @@
   transform: scale(0.94);
 }
 
-.backAction {
-  grid-column: 1;
-}
-
 .titleGroup {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
   display: grid;
-  width: min(calc(100% - 152px), 280px);
+  min-width: 0;
   align-content: center;
-  transform: translateX(-50%);
-  text-align: center;
-  pointer-events: none;
+  grid-column: 1;
+  text-align: left;
 }
 
 .titleGroup h1,
@@ -81,7 +72,7 @@
 
 .roomAction {
   position: relative;
-  grid-column: 3;
+  grid-column: 2;
   border-color: var(--color-ink);
   color: var(--color-paper);
   background: var(--color-ink);

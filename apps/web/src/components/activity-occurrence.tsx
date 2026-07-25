@@ -694,7 +694,6 @@ export function ActivityOccurrence(props: Props) {
           goal={goal}
           occurrenceOrdinal={props.occurrenceOrdinal}
           onDeliverableType={setDeliverableType}
-          onExit={() => setCommitmentView("entry")}
           onGoal={setGoal}
           onStep={setCommitmentStep}
           onTask={setTask}

@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type AppHeaderAction = {
   description: string;
@@ -94,7 +95,7 @@ export function AppHeaderMenu({
         <DotsThree aria-hidden="true" size={23} weight="bold" />
       </button>
 
-      {open ? (
+      {open ? createPortal(
         <div className="app-header-menu-layer" role="presentation">
           <button
             aria-hidden="true"
@@ -163,7 +164,8 @@ export function AppHeaderMenu({
               </Link>
             </nav>
           </section>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </>
   );

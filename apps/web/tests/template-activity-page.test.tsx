@@ -89,8 +89,8 @@ describe("template activity server page", () => {
       })
     }));
 
-    expect(screen.getByRole("link", { name: "Back to Today" }))
-      .toHaveAttribute("href", "/today");
+    expect(screen.queryByRole("link", { name: "Back to Today" }))
+      .not.toBeInTheDocument();
     const heading = screen.getByRole("heading", {
       name: "Read systems together"
     });

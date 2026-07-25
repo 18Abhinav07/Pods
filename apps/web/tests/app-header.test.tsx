@@ -21,7 +21,9 @@ describe("AppHeader", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Open page actions" }));
 
-    expect(screen.getByRole("dialog", { name: "Page actions" })).toBeVisible();
+    const dialog = screen.getByRole("dialog", { name: "Page actions" });
+    expect(dialog).toBeVisible();
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
     expect(screen.getByRole("link", { name: "Search people" })).toHaveAttribute(
       "href",
       "/people/search"

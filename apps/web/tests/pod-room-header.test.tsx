@@ -23,7 +23,9 @@ describe("PodRoomHeader", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Open Pod tools" }));
 
-    expect(screen.getByRole("dialog", { name: "Pod tools" })).toBeVisible();
+    const dialog = screen.getByRole("dialog", { name: "Pod tools" });
+    expect(dialog).toBeVisible();
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
     expect(screen.getByRole("link", { name: "Proofs" })).toHaveAttribute("href", "/pods/pod-1/activity");
     expect(screen.getByRole("link", { name: "Members" })).toHaveAttribute("href", "/pods/pod-1/members");
     expect(screen.getByRole("link", { name: "Contract" })).toHaveAttribute("href", "/pods/pod-1/rules");

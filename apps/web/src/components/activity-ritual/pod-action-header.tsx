@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChatCircleDots } from "@phosphor-icons/react";
+import { ChatCircleDots } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import styles from "./activity-ritual.module.css";
@@ -20,14 +20,6 @@ export function PodActionHeader({
 
   return (
     <header className={styles.actionHeader}>
-      <Link
-        aria-label="Back to Today"
-        className={`${styles.iconAction} ${styles.backAction}`}
-        href="/today"
-      >
-        <ArrowLeft aria-hidden="true" size={22} weight="bold" />
-      </Link>
-
       <div className={styles.titleGroup}>
         <h1>{podName}</h1>
         <p>

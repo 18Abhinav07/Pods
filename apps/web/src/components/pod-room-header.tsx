@@ -13,6 +13,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export function PodRoomHeader({
   isCreator,
@@ -109,7 +110,7 @@ export function PodRoomHeader({
           </button>
         </span>
       </header>
-      {toolsOpen ? (
+      {toolsOpen ? createPortal(
         <div className="pod-tools-layer">
           <button aria-hidden="true" className="pod-tools-backdrop" onClick={closeTools} tabIndex={-1} type="button" />
           <section aria-label="Pod tools" aria-modal="true" className="pod-tools-sheet" ref={toolsDialog} role="dialog" tabIndex={-1}>
@@ -140,7 +141,8 @@ export function PodRoomHeader({
             </nav>
             <button className="pod-share-action" onClick={() => void sharePod()} type="button"><ShareNetwork aria-hidden="true" size={20} weight="bold" /><span>{shareState || "Share Pod"}</span></button>
           </section>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </>
   );

@@ -154,7 +154,8 @@ describe("Build and Ship occurrence", () => {
       name: "How will the room know?"
     })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: /GitHub commit/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Previous" }));
 
     expect(screen.getByLabelText("Today I will"))
       .toHaveValue("Ship the complete mobile proof composer.");
@@ -341,6 +342,8 @@ describe("Build and Ship occurrence", () => {
       target: { value: "Shipped the complete participant activity screen and tests." }
     });
     fireEvent.click(screen.getByRole("button", { name: "Continue to evidence" }));
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Add artifact link" }));
     fireEvent.change(screen.getByLabelText("Public artifact URL"), {
       target: { value: "https://github.com/18Abhinav07/Pods/pull/42" }

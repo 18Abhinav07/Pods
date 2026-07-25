@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
   GitCommit,
@@ -56,7 +55,6 @@ export function CommitmentWizard({
   goal,
   occurrenceOrdinal,
   onDeliverableType,
-  onExit,
   onGoal,
   onStep,
   onTask,
@@ -76,7 +74,6 @@ export function CommitmentWizard({
   goal: string;
   occurrenceOrdinal: number;
   onDeliverableType: (value: BuildDeliverableType) => void;
-  onExit: () => void;
   onGoal: (value: string) => void;
   onStep: (value: number) => void;
   onTask: (value: string) => void;
@@ -102,14 +99,6 @@ export function CommitmentWizard({
 
   function advance() {
     onStep(Math.min(labels.length - 1, step + 1));
-  }
-
-  function back() {
-    if (step === 0) {
-      onExit();
-      return;
-    }
-    onStep(Math.max(0, step - 1));
   }
 
   return (
@@ -321,10 +310,15 @@ export function CommitmentWizard({
       </motion.section>
 
       <footer className={styles.wizardDock}>
-        <button className={styles.secondaryAction} onClick={back} type="button">
-          <ArrowLeft aria-hidden="true" size={18} />
-          Back
-        </button>
+        {step > 0 ? (
+          <button
+            className={styles.secondaryAction}
+            onClick={() => onStep(Math.max(0, step - 1))}
+            type="button"
+          >
+            Previous
+          </button>
+        ) : <span />}
         {step < 2 ? (
           <button
             className={styles.primaryAction}

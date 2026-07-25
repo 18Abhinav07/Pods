@@ -21,7 +21,7 @@ describe("PodActionHeader", () => {
     expect(headerSource().trimStart()).toMatch(/^"use client";/);
   });
 
-  it("keeps Today, occurrence context, and the live Pod room in one compact header", () => {
+  it("keeps occurrence context and the live Pod room without a redundant return arrow", () => {
     const { container } = render(
       <PodActionHeader
         occurrenceNumber={4}
@@ -31,23 +31,28 @@ describe("PodActionHeader", () => {
       />
     );
 
-    expect(screen.getByRole("link", { name: "Back to Today" }))
-      .toHaveAttribute("href", "/today");
+    expect(screen.queryByRole("link", { name: "Back to Today" }))
+      .not.toBeInTheDocument();
     const heading = screen.getByRole("heading", { name: "Morning Runners" });
     expect(heading).toBeVisible();
     expect(heading.nextElementSibling).toHaveTextContent("Fitness · Occurrence 04");
     expect(screen.getByRole("link", { name: "Open Morning Runners room" }))
       .toHaveAttribute("href", "/pods/pod-4/room");
     expect(screen.queryByText("Pod room")).not.toBeInTheDocument();
-    expect(container.querySelectorAll("svg")).toHaveLength(2);
+    expect(container.querySelectorAll("svg")).toHaveLength(1);
   });
 
-  it("owns the mobile dimensions, centered title, and live room treatment", () => {
+  it("owns the mobile dimensions, left-aligned title, and live room treatment", () => {
     const css = foundationCss();
+    const titleGroup = css.match(/\.titleGroup\s*\{([^}]+)\}/)?.[1] ?? "";
 
     expect(css).toMatch(/\.actionHeader\s*\{[\s\S]*height:\s*76px/);
     expect(css).toMatch(/\.iconAction\s*\{[\s\S]*width:\s*44px[\s\S]*height:\s*44px/);
-    expect(css).toMatch(/\.titleGroup\s*\{[\s\S]*left:\s*50%[\s\S]*translateX\(-50%\)/);
+    expect(css).toMatch(
+      /\.actionHeader\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*44px/
+    );
+    expect(titleGroup).toMatch(/text-align:\s*left/);
+    expect(titleGroup).not.toMatch(/left:\s*50%/);
     expect(css).toMatch(/\.roomAction\s*\{[\s\S]*background:\s*var\(--color-ink\)/);
     expect(css).toMatch(/\.roomStatusDot\s*\{[\s\S]*background:\s*var\(--activity-build\)/);
     expect(css).toMatch(/\.mobileContent\s*\{[\s\S]*overflow-y:\s*auto/);

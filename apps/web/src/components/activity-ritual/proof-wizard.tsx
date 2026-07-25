@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Check } from "@phosphor-icons/react";
+import { ArrowRight, Check } from "@phosphor-icons/react";
 import type { TemplateId } from "@pods/domain";
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
@@ -156,8 +156,7 @@ export function ProofWizard({
             onClick={() => onStep(Math.max(0, step - 1))}
             type="button"
           >
-            <ArrowLeft aria-hidden="true" size={18} />
-            Back
+            Previous
           </button>
         ) : <span />}
 

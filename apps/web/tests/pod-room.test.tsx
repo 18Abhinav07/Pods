@@ -475,6 +475,26 @@ describe("Pod room", () => {
     expect(send).toHaveClass("is-ready");
   });
 
+  it("keeps the canonical settlement action visible in an archived room", () => {
+    render(
+      <PodRoom
+        conversationId="room-1"
+        initialMessages={[]}
+        initialLastSequence={0}
+        isCreator={false}
+        podId="pod-1"
+        proofAction={{
+          href: "/pods/pod-1/settlement",
+          label: "View settlement"
+        }}
+        roomState="archived"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "View settlement" }))
+      .toHaveAttribute("href", "/pods/pod-1/settlement");
+  });
+
   it("lets the creator pin announcements and hide ordinary chat", async () => {
     render(
       <PodRoom

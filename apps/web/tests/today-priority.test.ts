@@ -64,6 +64,30 @@ describe("Phase 2 Today priority", () => {
     })).toMatchObject({ kind: "participant", podId: "funding" });
   });
 
+  it("keeps a payout exception ahead of passive activity", () => {
+    expect(chooseTodayEnrollmentAction({
+      activities: [{
+        podId: "activity",
+        occurrenceId: "occurrence-1",
+        action: "reviewing"
+      }],
+      participants: [{
+        podId: "payout",
+        podState: "final_review",
+        settlementMode: "proportional",
+        state: "active",
+        depositIntentId: "intent-1",
+        financial: {
+          settlementState: "executing",
+          entitlementState: "manual_review",
+          transferState: "manual_review"
+        }
+      }],
+      reviewPodId: null,
+      recruitPodId: null
+    })).toMatchObject({ kind: "participant", podId: "payout" });
+  });
+
   it("places participant funding recovery before creator review and recruiting", () => {
     expect(chooseTodayEnrollmentAction({
       participants: [{ podId: "funding", state: "funding_failed", depositIntentId: null }],

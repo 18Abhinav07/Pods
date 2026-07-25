@@ -11,8 +11,25 @@ export default async function PodTodayPage({ params }: { params: Promise<{ podId
   const room = await podsRepository.getWaitingRoomForUser({ userId: session.userId, podId });
   if (!room?.pod.contractData) notFound();
   const contract = room.pod.contractData;
-  if (room.pod.state === "active") {
+  const settlementViewer =
+    room.viewerRole === "creator" ||
+    room.membership?.state === "roster_locked" ||
+    room.membership?.state === "active";
+  if (settlementViewer && room.pod.state === "active") {
     redirect(`/pods/${podId}/room`);
+  }
+  if (
+    settlementViewer &&
+    (
+      room.pod.state === "final_review" ||
+      room.pod.state === "completed"
+    )
+  ) {
+    redirect(
+      contract.settlementMode === "proportional"
+        ? `/pods/${podId}/settlement`
+        : `/pods/${podId}/room`
+    );
   }
 
   return (

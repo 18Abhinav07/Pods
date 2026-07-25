@@ -69,6 +69,7 @@ export default async function SettlementPage({
       ) : creator?.settlement ? (
         <SettlementSummary
           entitlementCount={creator.entitlements.length}
+          entitlements={creator.entitlements}
           mode="creator"
           occurrenceCount={creator.occurrences.length}
           settlement={creator.settlement}

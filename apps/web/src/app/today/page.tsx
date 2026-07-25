@@ -36,7 +36,13 @@ export default async function TodayPage() {
   const pendingReview = creatorApplications.find(({ application, pod }) => application.state === "applied" && pod.state === "enrollment_open");
   const recruit = ownedPods.find((pod) => pod.state === "enrollment_open" && pod.contractData?.community.visibility === "public");
   const creatorFunding = ownedPods.find((pod) =>
-    ["cutoff_evaluating", "locked_scheduled", "active", "final_review", "completed", "cancelled_refunding", "cancelled"].includes(pod.state)
+    [
+      "cutoff_evaluating",
+      "locked_scheduled",
+      "active",
+      "final_review",
+      "cancelled_refunding"
+    ].includes(pod.state)
   );
   const activityActions = activities.map(({ pod, occurrence, commitment, submission }) => ({
     podId: pod.id,
@@ -52,11 +58,25 @@ export default async function TodayPage() {
   }));
   const action = chooseTodayEnrollmentAction({
     activities: activityActions,
-    participants: memberships.map(({ membership, pod }) => ({
+    participants: memberships.map(({
+      entitlement,
+      membership,
+      payoutTransfer,
+      pod,
+      settlement
+    }) => ({
       podId: pod.id,
       podState: pod.state as Exclude<PodState, "draft">,
+      ...(pod.contractData?.settlementMode
+        ? { settlementMode: pod.contractData.settlementMode }
+        : {}),
       state: membership.state,
-      depositIntentId: membership.depositIntentId
+      depositIntentId: membership.depositIntentId,
+      financial: {
+        settlementState: settlement?.state ?? null,
+        entitlementState: entitlement?.state ?? null,
+        transferState: payoutTransfer?.state ?? null
+      }
     })),
     creatorReviewPodId: creatorReview?.id ?? null,
     reviewPodId: pendingReview?.pod.id ?? null,
@@ -76,6 +96,11 @@ export default async function TodayPage() {
                 participantRecord.pod.contractData.settlementMode
             }
           : {}),
+        financial: {
+          settlementState: participantRecord?.settlement?.state ?? null,
+          entitlementState: participantRecord?.entitlement?.state ?? null,
+          transferState: participantRecord?.payoutTransfer?.state ?? null
+        },
         relationship: {
           kind: "member",
           state: action.state,
@@ -207,13 +232,24 @@ export default async function TodayPage() {
         <section className="also-moving">
           <div className="adaptive-section-heading"><h2>Also in motion</h2><Link href="/my-pods">View all</Link></div>
           <div className="moving-strip">
-            {otherPods.map(({ membership, pod }, visualIndex) => {
+            {otherPods.map(({
+              entitlement,
+              membership,
+              payoutTransfer,
+              pod,
+              settlement
+            }, visualIndex) => {
               const presentation = presentPodRelationship({
                 podId: pod.id,
                 podState: pod.state as Exclude<PodState, "draft">,
                 ...(pod.contractData?.settlementMode
                   ? { settlementMode: pod.contractData.settlementMode }
                   : {}),
+                financial: {
+                  settlementState: settlement?.state ?? null,
+                  entitlementState: entitlement?.state ?? null,
+                  transferState: payoutTransfer?.state ?? null
+                },
                 relationship: { kind: "member", state: membership.state, depositIntentId: membership.depositIntentId }
               });
               const otherMedia = mediaForTemplate(pod.templateId, visualIndex);

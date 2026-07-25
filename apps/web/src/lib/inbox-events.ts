@@ -37,6 +37,17 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
     const current = presentPodRelationship({
       podId: row.pod.id,
       podState: row.pod.state as Exclude<PodState, "draft">,
+      ...(row.pod.contractData?.settlementMode
+        ? { settlementMode: row.pod.contractData.settlementMode }
+        : {}),
+      financial: {
+        settlementState: null,
+        entitlementState: null,
+        transferState:
+          row.transfer?.type === "payout"
+            ? row.transfer.state
+            : null
+      },
       relationship: {
         kind: "member",
         state: row.membership.state,
@@ -174,7 +185,71 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
       }, row);
     }
 
-    if (row.transfer) {
+    if (row.transfer?.type === "payout") {
+      const settlementHref = `/pods/${row.pod.id}/settlement`;
+      addEvent(events, {
+        id: `payout-queued-${row.transfer.id}`,
+        title: "Payout queued",
+        detail: "Your final Testnet entitlement is ready for transfer.",
+        href: settlementHref,
+        occurredAt: row.transfer.createdAt,
+        tone: "neutral"
+      }, row);
+      if (row.transfer.state === "prepared") {
+        addEvent(events, {
+          id: `payout-prepared-${row.transfer.id}`,
+          title: "Payout prepared",
+          detail: "The signed transfer is stored and waiting for safe submission.",
+          href: settlementHref,
+          occurredAt: row.transfer.updatedAt,
+          tone: "neutral"
+        }, row);
+      }
+      if (row.transfer.state === "unknown") {
+        addEvent(events, {
+          id: `payout-unknown-${row.transfer.id}`,
+          title: "Payout confirmation delayed",
+          detail: "Pods is checking the persisted transaction hash before any retry.",
+          href: settlementHref,
+          occurredAt: row.transfer.updatedAt,
+          tone: "neutral"
+        }, row);
+      }
+      if (row.transfer.broadcastAt) {
+        addEvent(events, {
+          id: `payout-broadcast-${row.transfer.id}`,
+          title: "Payout submitted",
+          detail: "Your Testnet transfer is awaiting Nimiq finality.",
+          href: settlementHref,
+          occurredAt: row.transfer.broadcastAt,
+          tone: "neutral"
+        }, row);
+      }
+      if (row.transfer.confirmedAt) {
+        addEvent(events, {
+          id: `payout-confirmed-${row.transfer.id}`,
+          title: "Payout confirmed",
+          detail: "Your final Testnet transfer reached Nimiq finality.",
+          href: settlementHref,
+          occurredAt: row.transfer.confirmedAt,
+          tone: "positive"
+        }, row);
+      }
+      if (
+        ["retryable_failed", "mismatched", "late", "manual_review"].includes(
+          row.transfer.state
+        )
+      ) {
+        addEvent(events, {
+          id: `payout-review-${row.transfer.id}`,
+          title: "Payout needs review",
+          detail: "The settlement is preserved while operations review the transfer.",
+          href: settlementHref,
+          occurredAt: row.transfer.updatedAt,
+          tone: "attention"
+        }, row);
+      }
+    } else if (row.transfer) {
       addEvent(events, {
         id: `refund-queued-${row.transfer.id}`,
         title: "Refund queued",

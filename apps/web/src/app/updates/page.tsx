@@ -42,7 +42,7 @@ export default async function UpdatesPage() {
       ) : (
         <section className="neutral-empty entrance entrance-status">
           <span>No updates yet</span>
-          <p>Applications, funding, roster decisions, proof review, and refunds will be recorded here.</p>
+          <p>Applications, funding, roster decisions, proof review, and transfers will be recorded here.</p>
           <Link className="primary-action full-action" href="/discover">Discover public Pods</Link>
         </section>
       )}

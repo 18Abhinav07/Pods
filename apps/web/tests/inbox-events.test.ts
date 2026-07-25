@@ -111,4 +111,104 @@ describe("buildInboxEvents", () => {
       expect.objectContaining({ title, detail, occurredAt: reviewedAt })
     ]));
   });
+
+  it.each([
+    ["queued", "Payout queued"],
+    ["prepared", "Payout prepared"],
+    ["broadcast", "Payout submitted"],
+    ["unknown", "Payout confirmation delayed"],
+    ["confirmed", "Payout confirmed"],
+    ["manual_review", "Payout needs review"]
+  ] as const)(
+    "presents a %s payout as payout activity, never as a refund",
+    (state, title) => {
+      const now = new Date("2027-03-02T10:00:00.000Z");
+      const events = buildInboxEvents([{
+        pod: {
+          id: "pod-1",
+          state: state === "confirmed" ? "completed" : "final_review",
+          contractData: { activity: { name: "Build room" } }
+        },
+        membership: {
+          id: "membership-1",
+          admissionSource: "public_application",
+          state: "active",
+          depositIntentId: "intent-1",
+          acceptedAt: now,
+          updatedAt: now
+        },
+        application: null,
+        deposit: null,
+        submission: null,
+        transfer: {
+          id: "transfer-1",
+          type: "payout",
+          state,
+          createdAt: now,
+          updatedAt: now,
+          broadcastAt: state === "broadcast" || state === "confirmed" ? now : null,
+          confirmedAt: state === "confirmed" ? now : null
+        }
+      }] as Parameters<typeof buildInboxEvents>[0]);
+
+      expect(events).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          title,
+          href: "/pods/pod-1/settlement"
+        })
+      ]));
+      expect(events.map((event) => event.title).join(" ")).not.toMatch(/refund/i);
+    }
+  );
+
+  it("keeps historical accepted and credited events linked to the canonical settlement afterstate", () => {
+    const now = new Date("2027-03-02T10:00:00.000Z");
+    const events = buildInboxEvents([{
+      pod: {
+        id: "pod-1",
+        state: "final_review",
+        contractData: {
+          activity: { name: "Build room" },
+          settlementMode: "proportional"
+        }
+      },
+      membership: {
+        id: "membership-1",
+        admissionSource: "public_application",
+        state: "active",
+        depositIntentId: "intent-1",
+        acceptedAt: now,
+        updatedAt: now
+      },
+      application: {
+        id: "application-1",
+        state: "accepted_unfunded",
+        createdAt: now
+      },
+      deposit: {
+        id: "intent-1",
+        creditedAt: now
+      },
+      submission: null,
+      transfer: {
+        id: "transfer-1",
+        type: "payout",
+        state: "queued",
+        createdAt: now,
+        updatedAt: now,
+        broadcastAt: null,
+        confirmedAt: null
+      }
+    }] as Parameters<typeof buildInboxEvents>[0]);
+
+    expect(
+      events.filter((event) =>
+        event.title === "Application accepted" ||
+        event.title === "Commitment credited"
+      )
+    ).toEqual([
+      expect.objectContaining({ href: "/pods/pod-1/settlement" }),
+      expect.objectContaining({ href: "/pods/pod-1/settlement" })
+    ]);
+  });
 });

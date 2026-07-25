@@ -50,6 +50,16 @@ type CreatorProps = {
   settlement: SettlementHeader;
   occurrenceCount: number;
   entitlementCount: number;
+  entitlements: {
+    displayName: string;
+    handle: string;
+    state: SettlementEntitlementState;
+    principalLuna: number;
+    restorationLuna: number;
+    bonusLuna: number;
+    payoutLuna: number;
+    transferState: TransferLegState | null;
+  }[];
 };
 
 function outcomeLabel(state: SettlementOutcomeState) {
@@ -63,7 +73,17 @@ function transferLabel(state: TransferLegState) {
   if (state === "broadcast") return "Confirming on chain";
   if (state === "unknown") return "Checking chain";
   if (state === "confirmed") return "Confirmed";
-  return "Operations review";
+  if (state === "retryable_failed") return "Retry required";
+  if (state === "mismatched") return "Transfer mismatch";
+  if (state === "late") return "Late confirmation";
+  return "Manual review";
+}
+
+function entitlementLabel(state: SettlementEntitlementState) {
+  if (state === "transfer_queued") return "Transfer queued";
+  if (state === "transfer_confirmed") return "Transfer confirmed";
+  if (state === "no_transfer_required") return "No transfer required";
+  return "Manual review";
 }
 
 export function SettlementSummary(props: ParticipantProps | CreatorProps) {
@@ -85,6 +105,38 @@ export function SettlementSummary(props: ParticipantProps | CreatorProps) {
           <p>{props.occurrenceCount} frozen occurrences</p>
           <p>{props.settlement.state === "settled" ? "Transfers complete" : "Transfers in progress"}</p>
         </div>
+        <ol
+          aria-label="Participant entitlements"
+          className="settlement-entitlements"
+        >
+          {props.entitlements.map((entitlement) => (
+            <li key={entitlement.handle}>
+              <span className="settlement-entitlement-person">
+                <strong>{entitlement.displayName}</strong>
+                <small>@{entitlement.handle}</small>
+              </span>
+              <span className="settlement-entitlement-state">
+                <strong>
+                  {entitlement.transferState === "queued"
+                    ? entitlementLabel(entitlement.state)
+                    : entitlement.transferState
+                    ? transferLabel(entitlement.transferState)
+                    : entitlementLabel(entitlement.state)}
+                </strong>
+                <small>
+                  {nim(entitlement.principalLuna)} principal
+                  {entitlement.bonusLuna > 0
+                    ? ` + ${nim(entitlement.bonusLuna)} bonus`
+                    : ""}
+                  {entitlement.restorationLuna > 0
+                    ? ` + ${nim(entitlement.restorationLuna)} restored`
+                    : ""}
+                </small>
+              </span>
+              <strong>{nim(entitlement.payoutLuna)}</strong>
+            </li>
+          ))}
+        </ol>
       </section>
     );
   }
@@ -116,7 +168,7 @@ export function SettlementSummary(props: ParticipantProps | CreatorProps) {
         <strong>
           {props.transfer
             ? transferLabel(props.transfer.state)
-            : "No transfer required"}
+            : entitlementLabel(props.entitlement.state)}
         </strong>
         {props.transfer?.transactionHash ? (
           <code>{props.transfer.transactionHash}</code>

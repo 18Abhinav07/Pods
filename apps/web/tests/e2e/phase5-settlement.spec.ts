@@ -107,13 +107,14 @@ async function seedSettlement(input: {
   creatorUserId: string;
   approved: { userId: string; walletAddress: string };
   rejected: { userId: string; walletAddress: string };
+  firstOutcome?: "approved" | "rejected";
 }) {
   const podId = randomUUID();
   const occurrenceId = randomUUID();
   const contractHash = randomUUID();
   const now = new Date("2027-05-04T00:00:00.000Z");
   const contract: PublishedPodContract = {
-    version: 1,
+    version: 2,
     templateId: "build",
     evidenceMode: "per_occurrence_commitment",
     settlementMode: "proportional",
@@ -134,7 +135,8 @@ async function seedSettlement(input: {
       visibility: "public",
       minParticipants: 2,
       maxParticipants: 5,
-      applicationQuestions: []
+      applicationQuestions: [],
+      roomAudience: "public_read_only"
     },
     commitment: {
       lunaPerOccurrence: 10_000,
@@ -182,7 +184,8 @@ async function seedSettlement(input: {
       const membershipId = randomUUID();
       const intentId = randomUUID();
       const commitmentId = randomUUID();
-      const state = index === 0 ? "approved" : "rejected";
+      const state =
+        index === 0 ? input.firstOutcome ?? "approved" : "rejected";
       await pool.query(
         `INSERT INTO memberships (
            id, pod_id, user_id, admission_source, state, deposit_intent_id,
@@ -264,7 +267,9 @@ async function seedSettlement(input: {
           new Date("2027-05-04T00:00:00.000Z"),
           new Date("2027-05-04T12:00:00.000Z"),
           new Date("2027-05-03T13:00:00.000Z"),
-          index === 0 ? new Date("2027-05-03T13:00:00.000Z") : null
+          state === "approved"
+            ? new Date("2027-05-03T13:00:00.000Z")
+            : null
         ]
       );
     }
@@ -311,6 +316,24 @@ test("creator and participant settlement projections stay mobile and private", a
     await expect(
       creatorPage.getByText("2 participant entitlements")
     ).toBeVisible();
+    await expect(
+      creatorPage.getByText("Approved builder", { exact: true })
+    ).toBeVisible();
+    await expect(
+      creatorPage.getByText("Rejected builder", { exact: true })
+    ).toBeVisible();
+    await expect(
+      creatorPage.getByRole("list", { name: "Participant entitlements" })
+    ).not.toContainText("NQ");
+
+    await creatorPage.goto(`/pods/${fixture.podId}/admin`);
+    await expect(
+      creatorPage.getByRole("link", { name: "Open settlement" })
+    ).toHaveAttribute("href", `/pods/${fixture.podId}/settlement`);
+    await creatorPage.goto(`/pods/${fixture.podId}/room`);
+    await expect(
+      creatorPage.getByRole("link", { name: "View settlement" })
+    ).toHaveAttribute("href", `/pods/${fixture.podId}/settlement`);
 
     const approvedPage = await approvedContext.newPage();
     await approvedPage.goto(`/pods/${fixture.podId}/settlement`);
@@ -322,6 +345,34 @@ test("creator and participant settlement projections stay mobile and private", a
     ).toHaveText("0.2 NIM");
     await expect(approvedPage.getByText("Queued", { exact: true })).toBeVisible();
 
+    await approvedPage.goto("/today");
+    await expect(approvedPage.getByText("Payout queued", { exact: true }))
+      .toBeVisible();
+    await expect(
+      approvedPage.getByRole("link", { name: /Track payout/ })
+    ).toHaveAttribute("href", `/pods/${fixture.podId}/settlement`);
+
+    await approvedPage.goto("/my-pods");
+    await expect(approvedPage.getByText("Payout queued", { exact: true }))
+      .toBeVisible();
+    await expect(
+      approvedPage.getByRole("link", { name: /Mobile settlement proof/ })
+    ).toHaveAttribute("href", `/pods/${fixture.podId}/settlement`);
+
+    await approvedPage.goto("/updates");
+    await expect(approvedPage.getByText("Payout queued", { exact: true }))
+      .toBeVisible();
+    await expect(
+      approvedPage.getByRole("link", { name: /Payout queued/ })
+    ).toHaveAttribute("href", `/pods/${fixture.podId}/settlement`);
+
+    await approvedPage.goto(`/pods/${fixture.podId}/room`);
+    await expect(approvedPage.getByText("Final review", { exact: true }))
+      .toBeVisible();
+    await expect(
+      approvedPage.getByRole("link", { name: "View settlement" })
+    ).toHaveAttribute("href", `/pods/${fixture.podId}/settlement`);
+
     const rejectedPage = await rejectedContext.newPage();
     await rejectedPage.goto(`/pods/${fixture.podId}/settlement`);
     await expect(rejectedPage.getByText("Rejected", { exact: true })).toBeVisible();
@@ -329,9 +380,69 @@ test("creator and participant settlement projections stay mobile and private", a
       rejectedPage.getByText("No transfer required", { exact: true })
     ).toBeVisible();
     await expect(rejectedPage.locator("body")).not.toContainText("NQ");
+
+    const visitorContext = await browser.newContext();
+    try {
+      const visitorPage = await visitorContext.newPage();
+      await visitorPage.goto(`/pods/${fixture.podId}/room`);
+      await expect(visitorPage.getByText("Read-only visitor")).toBeVisible();
+      await expect(
+        visitorPage.getByRole("heading", {
+          name: "Mobile settlement proof"
+        })
+      ).toBeVisible();
+      await expect(visitorPage.locator("body")).not.toContainText("NQ");
+      await expect(visitorPage.locator("body")).not.toContainText("0.2 NIM");
+    } finally {
+      await visitorContext.close();
+    }
   } finally {
     await creatorContext.close();
     await approvedContext.close();
     await rejectedContext.close();
+  }
+});
+
+test("zero-recipient restoration stays conserved and visible to each participant", async ({
+  browser
+}) => {
+  const creatorContext = await browser.newContext();
+  const firstContext = await browser.newContext();
+  const secondContext = await browser.newContext();
+  try {
+    const creator = await authenticate(
+      creatorContext,
+      "Restoration creator"
+    );
+    const first = await authenticate(firstContext, "Restored builder one");
+    const second = await authenticate(secondContext, "Restored builder two");
+    const fixture = await seedSettlement({
+      creatorUserId: creator.userId,
+      approved: first,
+      rejected: second,
+      firstOutcome: "rejected"
+    });
+
+    const creatorPage = await creatorContext.newPage();
+    await creatorPage.goto(`/pods/${fixture.podId}/settlement`);
+    await expect(creatorPage.getByText("Treasury conserved")).toBeVisible();
+    await expect(
+      creatorPage.getByRole("list", { name: "Participant entitlements" })
+    ).toContainText("0.1 NIM");
+
+    for (const context of [firstContext, secondContext]) {
+      const page = await context.newPage();
+      await page.goto(`/pods/${fixture.podId}/settlement`);
+      await expect(
+        page.locator(".settlement-balance > strong")
+      ).toHaveText("0.1 NIM");
+      await expect(page.getByText("0.1 NIM restored")).toBeVisible();
+      await expect(page.getByText("Queued", { exact: true })).toBeVisible();
+      await expect(page.locator("body")).not.toContainText("NQ");
+    }
+  } finally {
+    await creatorContext.close();
+    await firstContext.close();
+    await secondContext.close();
   }
 });

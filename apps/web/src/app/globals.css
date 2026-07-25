@@ -2605,9 +2605,10 @@ button.secondary-action {
 .composer-action-sheet a:active { transform: scale(.97); }
 .composer-action-sheet a span { color: var(--theme-action, #5e64a3); font: 850 6px/1 "Fira Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
 .composer-action-sheet a strong { font-size: 8px; }
-.room-archive-state { display: grid; gap: 4px; padding: 16px; border: 1px dashed rgba(31,35,72,.14); border-radius: 18px; color: #77736c; background: rgba(239,238,232,.66); }
-.room-archive-state strong { color: var(--ink); font-size: 10px; }
-.room-archive-state span { font-size: 8px; }
+.room-archive-state { display: grid; gap: 5px; padding: 16px; border: 1px solid rgba(31,35,72,.09); border-radius: 18px; color: #77736c; background: rgba(239,238,232,.66); }
+.room-archive-state strong { color: var(--ink); font-size: .86rem; }
+.room-archive-state span { font-size: .74rem; line-height: 1.45; }
+.room-archive-state a { display: inline-flex; width: fit-content; min-height: 38px; align-items: center; margin-top: 7px; padding: 0 14px; border-radius: 999px; color: var(--theme-deep, #242823); background: var(--theme-accent, #d9ed72); font-size: .76rem; font-weight: 850; text-decoration: none; }
 .pod-reference-intro { padding: 35px 3px 20px; }
 .pod-reference-intro > span { color: #5e64a3; }
 .pod-reference-intro h1 { max-width: 380px; margin: 8px 0 5px; font-size: 35px; line-height: .98; letter-spacing: -.06em; }
@@ -4375,6 +4376,56 @@ button.secondary-action {
 
 .settlement-facts p:last-child {
   border-bottom: 0;
+}
+
+.settlement-entitlements {
+  margin: 0;
+  padding: 0 24px 12px;
+  list-style: none;
+}
+
+.settlement-entitlements li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 16px;
+  align-items: end;
+  padding: 18px 0;
+  border-top: 1px solid rgba(20, 28, 22, 0.08);
+}
+
+.settlement-entitlements li > strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 0.9rem;
+  letter-spacing: -0.02em;
+}
+
+.settlement-entitlement-person,
+.settlement-entitlement-state {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.settlement-entitlement-person strong {
+  overflow: hidden;
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settlement-entitlement-person small,
+.settlement-entitlement-state small {
+  color: rgba(19, 25, 20, 0.48);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.settlement-entitlement-state strong {
+  color: rgba(19, 25, 20, 0.72);
+  font-size: 0.76rem;
 }
 
 .settlement-pending {

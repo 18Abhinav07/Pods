@@ -90,6 +90,15 @@ async function authenticate(context: BrowserContext) {
     }
   });
   expect(verifyResponse.ok()).toBe(true);
+  await phase3Repository.saveProfile(await userIdForWallet(walletAddress), {
+    handle: `phase3_${randomUUID().replaceAll("-", "").slice(0, 12)}`,
+    displayName: "Phase 3 builder",
+    bio: "",
+    avatar: { kind: "preset", preset: "indigo" },
+    visibility: "private",
+    dmPolicy: "friends",
+    activityStatusVisible: false
+  });
   return walletAddress;
 }
 
@@ -118,7 +127,8 @@ async function publishAndAccept(creatorContext: BrowserContext, memberContext: B
       visibility: "public",
       minParticipants: 2,
       maxParticipants: 4,
-      applicationQuestions: ["What will you ship?"]
+      applicationQuestions: ["What will you ship?"],
+      roomAudience: "members_only"
     }],
     ["commitment", { nimPerOccurrence: "0.1" }]
   ] as const) {
@@ -182,7 +192,8 @@ async function publishCutoffPod(input: {
       visibility: "public",
       minParticipants: input.minParticipants,
       maxParticipants: input.maxParticipants,
-      applicationQuestions: ["What will you ship?"]
+      applicationQuestions: ["What will you ship?"],
+      roomAudience: "members_only"
     }],
     ["commitment", { nimPerOccurrence: "0.1" }]
   ] as const) {
@@ -243,6 +254,10 @@ async function creditCutoffMember(input: {
 }) {
   const now = new Date();
   const transactionHash = randomBytes(32).toString("hex");
+  const pod = await phase3Repository.getPublicPod(input.podId, now);
+  if (!pod?.contractHash) {
+    throw new Error("Published cutoff Pod contract was not found");
+  }
   const intent = await phase3Repository.createDepositIntent({
     podId: input.podId,
     userId: input.userId,
@@ -250,6 +265,8 @@ async function creditCutoffMember(input: {
     treasuryAddress: "NQ41 ENPQ 41CH URE0 BQ41 N6XJ RUFN JPE7 4U0A",
     network: "testnet",
     reference: `pods-${randomBytes(12).toString("hex")}`,
+    acceptedContractHash: pod.contractHash,
+    settlementDisclosureAccepted: true,
     now
   });
   await phase3Repository.recordDepositWalletAttempt({
@@ -336,11 +353,10 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     expect(await memberPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const commitButton = memberPage.getByRole("button", { name: "Commit 0.5 NIM" });
     await expect(commitButton).toBeDisabled();
-    await memberPage.getByRole("checkbox", { name: /I accept the frozen terms/ }).check();
+    await memberPage.getByRole("checkbox", { name: /I accept this contract hash/ }).check();
     await commitButton.click();
     await expect(memberPage.locator(".funding-error")).toContainText("Wallet closed for test");
     await expect(commitButton).toHaveText("Commit 0.5 NIM");
-    await memberPage.waitForLoadState("networkidle");
 
     const pool = databasePool();
     try {
@@ -360,8 +376,10 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     await memberPage.goto(`${baseUrl}/discover?template=build`);
     const recoveryCard = memberPage.locator(".public-pod-card").filter({ hasText: "Fund Pods" });
     await expect(recoveryCard.getByText("Funding needs attention")).toBeVisible();
-    await expect(recoveryCard.getByRole("link", { name: "Retry funding" })).toBeVisible();
-    await memberPage.waitForLoadState("networkidle");
+    await expect(recoveryCard.getByRole("link")).toHaveAttribute(
+      "href",
+      `/pods/${podId}/fund`
+    );
     await memberPage.goto(`${baseUrl}/today`);
     await expect(memberPage.getByRole("heading", { name: "Your funding attempt did not complete." })).toBeVisible();
     await memberPage.getByRole("link", { name: "Retry funding" }).click();
@@ -369,7 +387,7 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     await memberPage.evaluate(() => {
       (window as typeof window & { __podsPaymentMode?: "reject" | "success" }).__podsPaymentMode = "success";
     });
-    await memberPage.getByRole("checkbox", { name: /I accept the frozen terms/ }).check();
+    await memberPage.getByRole("checkbox", { name: /I accept this contract hash/ }).check();
     await memberPage.getByRole("button", { name: "Commit 0.5 NIM" }).click();
     await expect(memberPage).toHaveURL(new RegExp(`/pods/${podId}/fund/status\\?intent=`));
     await expect(memberPage.getByRole("status")).toContainText("Transaction submitted");
@@ -491,9 +509,11 @@ test("audited cutoff connects roster lock, exclusion, cancellation, and refund r
     await includedPage.goto(`${baseUrl}/today`);
     await expect(includedPage.getByRole("heading", { name: "You are part of this Pod." })).toBeVisible();
     await includedPage.getByRole("link", { name: "Open Pod" }).click();
-    await expect(includedPage).toHaveURL(`${baseUrl}/pods/${capacityPodId}/today`);
-    await expect(includedPage.getByText("Place secured")).toBeVisible();
-    await expect(includedPage.getByText("2 confirmed")).toBeVisible();
+    await expect(includedPage).toHaveURL(`${baseUrl}/pods/${capacityPodId}/room`);
+    await expect(includedPage.getByRole("region", { name: "Current Pod activity" })).toContainText(
+      "Activity live"
+    );
+    await expect(includedPage.getByText("2 members")).toBeVisible();
 
     const excludedPage = memberContexts[2]!.page;
     await excludedPage.goto(`${baseUrl}/pods/${capacityPodId}/today`);

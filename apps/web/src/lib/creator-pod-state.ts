@@ -1,7 +1,14 @@
 import type { PodState, SettlementMode } from "@pods/domain";
 
 export type CreatorPodAdminAction = {
-  kind: "review" | "room" | "activity" | "funding" | "rules" | "draft";
+  kind:
+    | "review"
+    | "room"
+    | "activity"
+    | "funding"
+    | "settlement"
+    | "rules"
+    | "draft";
   label: string;
   href: string;
   emphasis: "primary" | "secondary";
@@ -258,13 +265,28 @@ export function presentCreatorPodState(input: {
               ? "Resolve the remaining proofs before the final activity record closes."
               : `${pendingReviewCount} proof${pendingReviewCount === 1 ? "" : "s"} waiting before the final activity record closes.`
             : "This legacy Pod uses Pods Team review. Creator review actions are unavailable.",
-          actions: commandActions({
-            podId: input.podId,
-            verifier,
-            ...(pendingReviewCount === undefined
-              ? {}
-              : { pendingReviewCount })
-          })
+          actions:
+            proportional && !hasPendingReviews
+              ? [
+                  {
+                    kind: "settlement",
+                    label: "Open settlement",
+                    href: `/pods/${input.podId}/settlement`,
+                    emphasis: "primary"
+                  },
+                  ...commandActions({
+                    podId: input.podId,
+                    verifier,
+                    pendingReviewCount: 0
+                  })
+                ]
+              : commandActions({
+                  podId: input.podId,
+                  verifier,
+                  ...(pendingReviewCount === undefined
+                    ? {}
+                    : { pendingReviewCount })
+                })
         }
       };
     }
@@ -289,7 +311,7 @@ export function presentCreatorPodState(input: {
             ...(proportional
               ? [
                   {
-                    kind: "funding" as const,
+                    kind: "settlement" as const,
                     label: "View settlement",
                     href: `/pods/${input.podId}/settlement`,
                     emphasis: "primary" as const

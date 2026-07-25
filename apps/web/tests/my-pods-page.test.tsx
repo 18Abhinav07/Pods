@@ -24,7 +24,29 @@ vi.mock("../src/lib/server-db", () => ({
       contractData: { activity: { name: "Reading archive" } },
       draftData: {}
     }]),
-    listMembershipsForUser: vi.fn(async () => [])
+    listMembershipsForUser: vi.fn(async () => [{
+      pod: {
+        id: "pod-settling",
+        state: "final_review",
+        templateId: "build",
+        contractData: {
+          activity: { name: "Settlement build" },
+          settlementMode: "proportional"
+        }
+      },
+      membership: {
+        id: "membership-settling",
+        state: "active",
+        depositIntentId: "intent-1"
+      },
+      settlement: { state: "executing" },
+      entitlement: { state: "transfer_queued", payoutLuna: 20_000 },
+      payoutTransfer: {
+        type: "payout",
+        state: "queued",
+        amountLuna: 20_000
+      }
+    }])
   }
 }));
 
@@ -40,6 +62,9 @@ describe("MyPodsPage creator routing", () => {
     expect(screen.getByRole("link", { name: /Reading archive/i }))
       .toHaveAttribute("href", "/pods/pod-completed/room");
     expect(screen.getByText("Completed")).toBeVisible();
+    expect(screen.getByRole("link", { name: /Settlement build/i }))
+      .toHaveAttribute("href", "/pods/pod-settling/settlement");
+    expect(screen.getByText("Payout queued")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Create a Pod" }))
       .not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Open page actions" }));

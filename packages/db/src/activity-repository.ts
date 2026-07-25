@@ -1306,7 +1306,7 @@ export function createActivityMethods(database: PodsDatabase) {
             eq(memberships.userId, input.userId),
             eq(memberships.podId, input.podId),
             eq(memberships.state, "active"),
-            eq(pods.state, "active")
+            inArray(pods.state, ["active", "final_review", "completed"])
           )
         );
       if (!base) return null;

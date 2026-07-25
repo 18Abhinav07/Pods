@@ -439,8 +439,84 @@ describe("Phase 5 settlement persistence", () => {
       }
     });
     expect(creator?.entitlements).toHaveLength(2);
+    expect(creator?.entitlements).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        displayName: "approved_member",
+        handle: expect.stringContaining("approved_member_"),
+        payoutLuna: 20_000,
+        transferState: "queued"
+      }),
+      expect.objectContaining({
+        displayName: "rejected_member",
+        handle: expect.stringContaining("rejected_member_"),
+        payoutLuna: 0,
+        transferState: null
+      })
+    ]));
     expect(JSON.stringify(participant)).not.toMatch(/wallet/i);
     expect(JSON.stringify(creator)).not.toMatch(/wallet/i);
+  });
+
+  it("keeps the frozen participant schedule available through final review", async () => {
+    const fixture = await seedApprovedAndRejectedPod();
+    await repository.finalizePodSettlement({
+      podId: fixture.podId,
+      now: fixture.now
+    });
+
+    const schedule = await repository.listActivityScheduleForMember({
+      podId: fixture.podId,
+      userId: fixture.approvedUserId
+    });
+
+    expect(schedule).toHaveLength(1);
+    expect(schedule?.[0]).toMatchObject({
+      occurrence: { ordinal: 1 },
+      commitment: { task: "Ship settlement outcome 1" },
+      submission: { state: "approved" }
+    });
+  });
+
+  it("projects the participant payout afterstate into private membership and Updates reads", async () => {
+    const fixture = await seedApprovedAndRejectedPod();
+    await repository.finalizePodSettlement({
+      podId: fixture.podId,
+      now: fixture.now
+    });
+
+    const memberships = await repository.listMembershipsForUser(
+      fixture.approvedUserId
+    );
+    const membership = memberships.find(
+      ({ pod }) => pod.id === fixture.podId
+    );
+    expect(membership).toMatchObject({
+      settlement: { state: "executing" },
+      entitlement: {
+        state: "transfer_queued",
+        payoutLuna: 20_000
+      },
+      payoutTransfer: {
+        type: "payout",
+        state: "queued",
+        amountLuna: 20_000
+      }
+    });
+
+    const timeline = await repository.listInboxTimelineForUser(
+      fixture.approvedUserId
+    );
+    expect(timeline).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        transfer: expect.objectContaining({
+          type: "payout",
+          state: "queued"
+        })
+      })
+    ]));
+    expect(JSON.stringify(membership)).not.toMatch(
+      /recipientWallet|rawTransactionHex/
+    );
   });
 
   it("persists immutable payout attempts and completes the Pod only after confirmation", async () => {
@@ -602,6 +678,37 @@ describe("Phase 5 settlement persistence", () => {
 
     const after = await repository.listSettlementReadyPods(fixture.now);
     expect(after).not.toContainEqual({ id: fixture.podId });
+  });
+
+  it("rejects creator membership before any entitlement can be calculated", async () => {
+    const fixture = await seedApprovedAndRejectedPod();
+    const pool = new Pool({ connectionString: databaseUrl });
+    try {
+      const pod = await pool.query<{ contract_hash: string }>(
+        "SELECT contract_hash FROM pods WHERE id = $1",
+        [fixture.podId]
+      );
+      await pool.query(
+        `INSERT INTO memberships (
+           id, pod_id, user_id, admission_source, state, deposit_intent_id,
+           accepted_contract_hash, accepted_at, created_at, updated_at
+         ) VALUES ($1, $2, $3, 'public_application', 'active', NULL, $4, $5, $5, $5)`,
+        [
+          randomUUID(),
+          fixture.podId,
+          fixture.creatorUserId,
+          pod.rows[0]!.contract_hash,
+          fixture.now
+        ]
+      );
+    } finally {
+      await pool.end();
+    }
+
+    await expect(repository.finalizePodSettlement({
+      podId: fixture.podId,
+      now: fixture.now
+    })).rejects.toThrow("Creator membership requires operations review");
   });
 
   it("rejects a funded roster with an extra deposit credit movement", async () => {

@@ -7,6 +7,10 @@ import {
   presentCreatorPodState,
   type CreatorPodPresentation
 } from "./creator-pod-state";
+import {
+  deriveCoreLifecycle,
+  type ParticipantFinancialSnapshot
+} from "./core-lifecycle";
 
 export { presentCreatorPodState };
 export type { CreatorPodPresentation };
@@ -219,6 +223,7 @@ export function presentPodRelationship(input: {
   podId: string;
   podState?: Exclude<PodState, "draft"> | undefined;
   settlementMode?: SettlementMode;
+  financial?: ParticipantFinancialSnapshot;
   relationship: PodRelationship;
 }): PodRelationshipPresentation {
   if (input.relationship.kind === "visitor") {
@@ -266,6 +271,100 @@ export function presentPodRelationship(input: {
       todayTitle: "Your public Pod is ready to grow.",
       todayDetail: "Review applications and share the frozen public contract."
     };
+  }
+
+  if (input.podState) {
+    const lifecycle = deriveCoreLifecycle({
+      podState: input.podState,
+      ...(input.settlementMode
+        ? { settlementMode: input.settlementMode }
+        : {}),
+      ...(input.financial ? { financial: input.financial } : {})
+    });
+    if (lifecycle.stage === "payout_queued") {
+      return {
+        statusLabel: "Payout queued",
+        statusDetail: "Your Testnet entitlement is waiting for transfer",
+        actionLabel: "Track payout",
+        href: `/pods/${input.podId}/settlement`,
+        tone: "pending",
+        todayPriority: 15,
+        todayEyebrow: "Payout queued",
+        todayTitle: "Your Testnet entitlement is ready.",
+        todayDetail: "Track the payout worker from the canonical settlement."
+      };
+    }
+    if (lifecycle.stage === "payout_confirming") {
+      const transferState = input.financial?.transferState;
+      const confirmingCopy =
+        transferState === "prepared"
+          ? {
+              statusDetail: "Transfer prepared and waiting for safe submission",
+              todayTitle: "Your Testnet payout is prepared.",
+              todayDetail: "The signed transfer is stored before it can be submitted safely."
+            }
+          : transferState === "unknown"
+            ? {
+                statusDetail: "Confirmation is delayed while Pods checks the transaction hash",
+                todayTitle: "Your Testnet transfer status is being reconciled.",
+                todayDetail: "Pods is checking the persisted hash before any retry."
+              }
+            : {
+                statusDetail: "Transfer submitted and awaiting Nimiq finality",
+                todayTitle: "Your Testnet transfer is on chain.",
+                todayDetail: "Track the transaction until Nimiq finality is confirmed."
+              };
+      return {
+        statusLabel: "Payout confirming",
+        statusDetail: confirmingCopy.statusDetail,
+        actionLabel: "Track payout",
+        href: `/pods/${input.podId}/settlement`,
+        tone: "pending",
+        todayPriority: 15,
+        todayEyebrow: "Payout confirming",
+        todayTitle: confirmingCopy.todayTitle,
+        todayDetail: confirmingCopy.todayDetail
+      };
+    }
+    if (lifecycle.stage === "transfer_attention") {
+      return {
+        statusLabel: "Transfer needs review",
+        statusDetail: "The payout is paused for operations review",
+        actionLabel: "View transfer",
+        href: `/pods/${input.podId}/settlement`,
+        tone: "attention",
+        todayPriority: 2,
+        todayEyebrow: "Transfer needs review",
+        todayTitle: "Your payout needs operations attention.",
+        todayDetail: "The settlement is preserved while the transfer is reviewed."
+      };
+    }
+    if (lifecycle.stage === "no_transfer_required") {
+      return {
+        statusLabel: "No transfer required",
+        statusDetail: "This outcome has no positive Testnet entitlement",
+        actionLabel: "View settlement",
+        href: `/pods/${input.podId}/settlement`,
+        tone: "closed",
+        todayPriority: null,
+        todayEyebrow: "Settlement recorded",
+        todayTitle: "No Testnet transfer is due.",
+        todayDetail: "Your final occurrence outcomes remain available in settlement."
+      };
+    }
+    if (lifecycle.stage === "payout_confirmed") {
+      return {
+        statusLabel: "Payout confirmed",
+        statusDetail: "Your Testnet transfer reached finality",
+        actionLabel: "View settlement",
+        href: `/pods/${input.podId}/settlement`,
+        tone: "closed",
+        todayPriority: null,
+        todayEyebrow: "Payout confirmed",
+        todayTitle: "Your Testnet payout is complete.",
+        todayDetail: "The final transaction receipt remains available in settlement."
+      };
+    }
   }
 
   if (

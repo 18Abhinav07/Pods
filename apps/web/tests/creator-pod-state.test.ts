@@ -116,6 +116,25 @@ describe("presentCreatorPodState", () => {
       .toBe(false);
   });
 
+  it("routes a proportional final-review creator directly into settlement once reviews are clear", () => {
+    const presentation = presentCreatorPodState({
+      podId: "pod-1",
+      state: "final_review",
+      settlementMode: "proportional",
+      verifier: "creator",
+      pendingReviewCount: 0
+    });
+
+    expect(presentation.admin.actions[0]).toEqual({
+      kind: "settlement",
+      label: "Open settlement",
+      href: "/pods/pod-1/settlement",
+      emphasis: "primary"
+    });
+    expect(presentation.admin.actions.some(({ kind }) => kind === "review"))
+      .toBe(false);
+  });
+
   it.each(["cancelled_refunding", "cancelled"] as const)(
     "never exposes creator review from %s",
     (state) => {

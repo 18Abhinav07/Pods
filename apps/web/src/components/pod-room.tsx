@@ -652,7 +652,13 @@ export function PodRoom({
         </div>
       ) : null}
       {roomState === "archived" ? (
-        <div className="room-archive-state"><strong>This room is a read-only archive.</strong><span>All frozen Pod and financial history remains available.</span></div>
+        <div className="room-archive-state">
+          <strong>This room is a read-only archive.</strong>
+          <span>All frozen Pod and financial history remains available.</span>
+          {proofAction ? (
+            <Link href={proofAction.href}>{proofAction.label}</Link>
+          ) : null}
+        </div>
       ) : (
         <form className="room-composer is-bottom-attached" aria-label="Send a room message" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
           {replyTo ? (

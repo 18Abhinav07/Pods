@@ -43,7 +43,13 @@ export default async function MyPodsPage() {
     podsRepository.listMembershipsForUser(session.userId)
   ]);
   const ownedItems = ownedPods.map(ownerItem);
-  const joinedItems: MyPodListItem[] = joinedRecords.map(({ membership, pod }) => {
+  const joinedItems: MyPodListItem[] = joinedRecords.map(({
+    entitlement,
+    membership,
+    payoutTransfer,
+    pod,
+    settlement
+  }) => {
     const template = templateContracts.find((item) => item.id === pod.templateId);
     const presentation = presentPodRelationship({
       podId: pod.id,
@@ -51,6 +57,11 @@ export default async function MyPodsPage() {
       ...(pod.contractData?.settlementMode
         ? { settlementMode: pod.contractData.settlementMode }
         : {}),
+      financial: {
+        settlementState: settlement?.state ?? null,
+        entitlementState: entitlement?.state ?? null,
+        transferState: payoutTransfer?.state ?? null
+      },
       relationship: {
         kind: "member",
         state: membership.state,

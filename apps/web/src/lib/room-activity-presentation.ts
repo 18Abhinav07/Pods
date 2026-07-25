@@ -1,4 +1,4 @@
-import type { EvidenceMode } from "@pods/domain";
+import type { EvidenceMode, PodState, SettlementMode } from "@pods/domain";
 
 type ScheduleRow = {
   occurrence: {
@@ -12,7 +12,14 @@ type ScheduleRow = {
 };
 
 export type RoomActivityPresentation = {
-  mode: "lock" | "add" | "continue" | "view" | "upcoming" | "complete";
+  mode:
+    | "lock"
+    | "add"
+    | "continue"
+    | "view"
+    | "upcoming"
+    | "complete"
+    | "settlement";
   href: string;
   label: string;
   stateLabel: string;
@@ -35,15 +42,36 @@ export function presentRoomActivitySchedule({
   podId,
   now,
   rows,
-  evidenceMode = "per_occurrence_commitment"
+  evidenceMode = "per_occurrence_commitment",
+  podState,
+  settlementMode
 }: {
   podId: string;
   now: Date;
   rows: ScheduleRow[];
   evidenceMode?: EvidenceMode;
+  podState?: PodState;
+  settlementMode?: SettlementMode;
 }): RoomActivityPresentation {
   const ordered = [...rows].sort((first, second) => first.occurrence.ordinal - second.occurrence.ordinal);
   const total = ordered.length;
+  const completed = {
+    progressLabel: `${total} of ${total} occurrences finished`,
+    targetAt: null,
+    targetLabel: null
+  } as const;
+  if (
+    settlementMode === "proportional" &&
+    (podState === "final_review" || podState === "completed")
+  ) {
+    return {
+      ...completed,
+      mode: "settlement",
+      href: `/pods/${podId}/settlement`,
+      label: "View settlement",
+      stateLabel: podState === "completed" ? "Completed" : "Final review"
+    };
+  }
   const open = ordered.find(({ occurrence }) =>
     occurrence.opensAt.getTime() <= now.getTime() && occurrence.closesAt.getTime() > now.getTime()
   );
@@ -100,12 +128,10 @@ export function presentRoomActivitySchedule({
   }
 
   return {
+    ...completed,
     mode: "complete",
     href: `/pods/${podId}/activity`,
     label: "Schedule complete",
-    stateLabel: "Schedule complete",
-    progressLabel: `${total} of ${total} occurrences finished`,
-    targetAt: null,
-    targetLabel: null
+    stateLabel: "Schedule complete"
   };
 }

@@ -12,7 +12,18 @@ import { and, asc, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import * as schema from "./schema";
-import { applications, friendships, invitations, memberships, occurrences, pods, profiles } from "./schema";
+import {
+  applications,
+  friendships,
+  invitations,
+  memberships,
+  occurrences,
+  pods,
+  profiles,
+  settlementEntitlements,
+  settlementRuns,
+  transferLegs
+} from "./schema";
 
 export type PodsDatabase = NodePgDatabase<typeof schema>;
 
@@ -603,12 +614,59 @@ export function createEnrollmentMethods(database: PodsDatabase) {
     },
 
     async listMembershipsForUser(userId: string) {
-      return database
-        .select({ membership: memberships, pod: pods })
+      const rows = await database
+        .select({
+          membership: memberships,
+          pod: pods,
+          settlementState: settlementRuns.state,
+          entitlementState: settlementEntitlements.state,
+          entitlementPayoutLuna: settlementEntitlements.payoutLuna,
+          payoutTransferType: transferLegs.type,
+          payoutTransferState: transferLegs.state,
+          payoutTransferAmountLuna: transferLegs.amountLuna
+        })
         .from(memberships)
         .innerJoin(pods, eq(memberships.podId, pods.id))
+        .leftJoin(
+          settlementEntitlements,
+          eq(settlementEntitlements.membershipId, memberships.id)
+        )
+        .leftJoin(
+          settlementRuns,
+          eq(settlementRuns.id, settlementEntitlements.settlementRunId)
+        )
+        .leftJoin(
+          transferLegs,
+          and(
+            eq(
+              transferLegs.settlementEntitlementId,
+              settlementEntitlements.id
+            ),
+            eq(transferLegs.type, "payout")
+          )
+        )
         .where(eq(memberships.userId, userId))
         .orderBy(desc(memberships.updatedAt));
+      return rows.map((row) => ({
+        membership: row.membership,
+        pod: row.pod,
+        settlement: row.settlementState
+          ? { state: row.settlementState }
+          : null,
+        entitlement: row.entitlementState
+          ? {
+              state: row.entitlementState,
+              payoutLuna: row.entitlementPayoutLuna
+            }
+          : null,
+        payoutTransfer: row.payoutTransferState && row.payoutTransferType
+          ? {
+              type: row.payoutTransferType,
+              state: row.payoutTransferState,
+              amountLuna: row.payoutTransferAmountLuna
+            }
+          : null
+      }));
     }
   };
 }

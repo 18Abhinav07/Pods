@@ -19,7 +19,7 @@ Pods serves people joining or running small accountability communities inside Ni
 
 ## Product Purpose
 
-Pods turns recurring real-world activity into a clear, NIM-backed commitment lifecycle. A successful interface always answers three questions: what state am I in, what happens next, and what does that mean for my committed NIM? The Cycle I product must demonstrate this lifecycle end to end with real wallets, frozen terms, centralized Pods-team verification, and deterministic settlement behavior.
+Pods turns recurring real-world activity into a clear, NIM-backed commitment lifecycle. A successful interface always answers three questions: what state am I in, what happens next, and what does that mean for my committed NIM? The Cycle I product must demonstrate this lifecycle end to end with real wallets, frozen terms, disclosed creator verification, and deterministic settlement behavior. The creator reviews proof but does not fund and cannot receive participant funds.
 
 ## Brand Personality
 

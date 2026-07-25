@@ -1,12 +1,20 @@
-import type { MembershipState, PodState, TemplateId } from "@pods/domain";
+import type {
+  MembershipState,
+  PodState,
+  SettlementMode,
+  TemplateId
+} from "@pods/domain";
 
 import { presentPodRelationship } from "./participant-pod-state";
+import type { ParticipantFinancialSnapshot } from "./core-lifecycle";
 
 export type TodayParticipant = {
   podId: string;
   state: MembershipState;
   podState?: Exclude<PodState, "draft"> | undefined;
+  settlementMode?: SettlementMode;
   depositIntentId: string | null;
+  financial?: ParticipantFinancialSnapshot;
 };
 
 export type TodayActivityAction =
@@ -79,6 +87,10 @@ export function chooseTodayEnrollmentAction(input: {
       priority: presentPodRelationship({
         podId: candidate.podId,
         podState: candidate.podState,
+        ...(candidate.settlementMode
+          ? { settlementMode: candidate.settlementMode }
+          : {}),
+        ...(candidate.financial ? { financial: candidate.financial } : {}),
         relationship: {
           kind: "member",
           state: candidate.state,
@@ -95,6 +107,10 @@ export function chooseTodayEnrollmentAction(input: {
     ? presentPodRelationship({
         podId: participant.podId,
         podState: participant.podState,
+        ...(participant.settlementMode
+          ? { settlementMode: participant.settlementMode }
+          : {}),
+        ...(participant.financial ? { financial: participant.financial } : {}),
         relationship: {
           kind: "member",
           state: participant.state,

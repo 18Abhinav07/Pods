@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import type { PodState } from "@pods/domain";
 
 import { PodOccurrenceStrip } from "../../../../components/pod-occurrence-strip";
 import { PodRoom, type RoomMessage } from "../../../../components/pod-room";
@@ -123,22 +124,44 @@ async function loadPodRoom(userId: string, podId: string) {
   const canReviewProofs =
     waitingRoom.viewerRole === "creator" &&
     verifierAuthority?.effectiveVerifier === "creator";
+  const contract = waitingRoom.pod.contractData;
+  const settlementAfterstate =
+    contract.settlementMode === "proportional" &&
+    (
+      waitingRoom.pod.state === "final_review" ||
+      waitingRoom.pod.state === "completed"
+    );
   const schedule = waitingRoom.viewerRole === "participant"
     ? await podsRepository.listActivityScheduleForMember({ userId, podId })
     : null;
-  const proofAction = schedule && schedule.length > 0
-    ? presentRoomActivitySchedule({
-        podId,
-        now,
-        rows: schedule,
-        evidenceMode: waitingRoom.pod.contractData.evidenceMode
-      })
+  const proofAction = settlementAfterstate
+    ? {
+        mode: "settlement" as const,
+        href: `/pods/${podId}/settlement`,
+        label: "View settlement",
+        stateLabel:
+          waitingRoom.pod.state === "completed"
+            ? "Completed"
+            : "Final review",
+        progressLabel: `${contract.commitment.occurrenceCount} of ${contract.commitment.occurrenceCount} occurrences finished`,
+        targetAt: null,
+        targetLabel: null
+      }
+    : schedule && schedule.length > 0
+      ? presentRoomActivitySchedule({
+          podId,
+          now,
+          rows: schedule,
+          evidenceMode: contract.evidenceMode,
+          podState: waitingRoom.pod.state as PodState,
+          settlementMode: contract.settlementMode
+        })
     : {
         mode: "browse" as const,
         href: `/pods/${podId}/activity`,
         label: "View proofs",
         stateLabel: "Activity live",
-        progressLabel: `${waitingRoom.pod.contractData.commitment.occurrenceCount} scheduled occurrences`,
+        progressLabel: `${contract.commitment.occurrenceCount} scheduled occurrences`,
         targetAt: null,
         targetLabel: null
       };

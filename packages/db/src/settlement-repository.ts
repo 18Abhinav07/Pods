@@ -13,6 +13,7 @@ import {
   memberships,
   occurrences,
   pods,
+  profiles,
   settlementEntitlements,
   settlementOccurrences,
   settlementOutcomes,
@@ -190,11 +191,26 @@ export function createSettlementMethods(database: PodsDatabase) {
             settlementEntitlements.provisionalForfeitureLuna,
           restorationLuna: settlementEntitlements.restorationLuna,
           bonusLuna: settlementEntitlements.bonusLuna,
-          payoutLuna: settlementEntitlements.payoutLuna
+          payoutLuna: settlementEntitlements.payoutLuna,
+          handle: profiles.handle,
+          displayName: profiles.displayName,
+          transferState: transferLegs.state
         })
         .from(settlementEntitlements)
+        .innerJoin(
+          memberships,
+          eq(settlementEntitlements.membershipId, memberships.id)
+        )
+        .innerJoin(profiles, eq(memberships.userId, profiles.userId))
+        .leftJoin(
+          transferLegs,
+          eq(
+            transferLegs.settlementEntitlementId,
+            settlementEntitlements.id
+          )
+        )
         .where(eq(settlementEntitlements.settlementRunId, settlement.id))
-        .orderBy(asc(settlementEntitlements.membershipId));
+        .orderBy(asc(profiles.displayName), asc(settlementEntitlements.membershipId));
       return {
         pod,
         settlement,

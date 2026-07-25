@@ -130,4 +130,46 @@ describe("presentRoomActivitySchedule", () => {
       targetAt: null
     });
   });
+
+  it("routes a closed proportional Pod from the room into settlement", () => {
+    const afterClose = new Date("2027-04-06T00:00:00.000Z");
+    expect(presentRoomActivitySchedule({
+      podId: "pod-1",
+      now: afterClose,
+      rows: [{
+        ...base,
+        commitment: { id: "commitment-1" },
+        submission: { id: "submission-1", state: "approved" }
+      }],
+      podState: "final_review",
+      settlementMode: "proportional"
+    } as Parameters<typeof presentRoomActivitySchedule>[0])).toMatchObject({
+      mode: "settlement",
+      label: "View settlement",
+      stateLabel: "Final review",
+      href: "/pods/pod-1/settlement",
+      progressLabel: "1 of 1 occurrences finished",
+      targetAt: null
+    });
+  });
+
+  it("treats the persisted final-review state as authoritative over schedule timing", () => {
+    expect(presentRoomActivitySchedule({
+      podId: "pod-1",
+      now,
+      rows: [{
+        ...base,
+        commitment: { id: "commitment-1" },
+        submission: { id: "submission-1", state: "approved" }
+      }],
+      podState: "final_review",
+      settlementMode: "proportional"
+    })).toMatchObject({
+      mode: "settlement",
+      label: "View settlement",
+      stateLabel: "Final review",
+      href: "/pods/pod-1/settlement",
+      targetAt: null
+    });
+  });
 });

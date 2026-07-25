@@ -9,16 +9,17 @@ tags: [pods, mini-app, nimiq, hackathon]
 
 Pods is a NIM-backed group activity accountability Mini App for Nimiq Pay.
 Participants join a focused community, commit NIM upfront, submit evidence for
-scheduled activities, and receive a deterministic settlement after centralized
-Pods-team review.
+scheduled activities, and receive a deterministic settlement after disclosed
+creator review.
 
 ## Current status
 
-Phases 0 through 3 are physically approved. Phase 4 now implements the first
-complete Build & Ship activity journey: occurrence activation, immutable task
-commitment, private evidence, centralized Pods-team review, manual approval,
-and connected participant projections. All automated Phase 4 gates pass. The
-real Nimiq Pay activity walkthrough is the remaining Phase 4 approval gate.
+The Build and Ship Testnet journey is implemented from public enrollment and
+upfront funding through occurrence commitments, creator-reviewed proof,
+deterministic proportional settlement, and durable payout tracking. The
+automated repository and mobile-browser gates pass. Treasury payout broadcast
+remains disabled until the physical two-wallet Nimiq Pay settlement snapshot
+is inspected and explicitly approved.
 
 ## Local development
 
@@ -41,10 +42,11 @@ Open the printed LAN URL through Nimiq Pay Custom URL on a device connected to
 the same Wi-Fi network.
 
 The web process reads only the Testnet treasury address. The worker reads the
-ignored local treasury configuration, watches Nimiq RPC, and is the only
-process allowed to finalize deposits, credit the ledger, apply cutoff, and sign
-refunds. Signed refund bytes are persisted before broadcast and ambiguous
-transfers are reconciled by hash before any retry.
+protected treasury signer, watches Nimiq RPC, and is the only process allowed
+to finalize deposits, credit the ledger, apply cutoff, calculate automatic
+settlement, or prepare financial transfers. Signed transfer bytes are
+persisted before broadcast and ambiguous transfers are reconciled by hash
+before any retry.
 
 ## Phase 0 outbound preflight
 
@@ -69,8 +71,9 @@ up the persisted hash. It never broadcasts again.
 
 ## Trust boundary
 
-Cycle I is custodial and centrally reviewed. It is not trustless, non-custodial,
-or production-scale.
+Cycle I is custodial and creator-reviewed. The creator does not fund and cannot
+receive participant funds. It is not trustless, non-custodial, or
+production-scale.
 
 ## Project references
 
@@ -79,6 +82,8 @@ or production-scale.
 - [[validation/phase-3a-results|Phase 3A physical funding result]]
 - [[validation/phase-3b-results|Phase 3B cutoff and refund gate]]
 - [[validation/phase-4-results|Phase 4 activity gate]]
+- [[validation/phase-5-results|Testnet settlement and payout gate]]
+- [[docs/superpowers/plans/2026-07-25-build-ship-testnet-core|Build and Ship core completion plan]]
 - [[docs/design-reference/README|Locked design references]]
 
 Licensed under the MIT License.

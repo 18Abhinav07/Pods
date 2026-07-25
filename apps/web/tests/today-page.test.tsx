@@ -61,6 +61,55 @@ describe("TodayPage wallet identity", () => {
     expect(screen.queryByText("Open funding overview")).not.toBeInTheDocument();
   });
 
+  it("does not turn a completed creator Pod into current Today work", async () => {
+    repositoryMocks.listPodsForOwner.mockResolvedValue([{
+      id: "pod-completed",
+      state: "completed",
+      templateId: "build",
+      contractData: {
+        activity: { name: "Finished build" },
+        settlementMode: "proportional"
+      }
+    }]);
+
+    render(await TodayPage());
+
+    expect(screen.getByRole("link", { name: "Discover public Pods" }))
+      .toHaveAttribute("href", "/discover");
+    expect(screen.queryByText("Finished build")).not.toBeInTheDocument();
+  });
+
+  it("uses the participant payout afterstate as the Today action", async () => {
+    repositoryMocks.listMembershipsForUser.mockResolvedValue([{
+      pod: {
+        id: "pod-settling",
+        state: "final_review",
+        templateId: "build",
+        contractData: {
+          activity: { name: "Settlement build" },
+          settlementMode: "proportional"
+        }
+      },
+      membership: {
+        state: "active",
+        depositIntentId: "intent-1"
+      },
+      settlement: { state: "executing" },
+      entitlement: { state: "transfer_queued", payoutLuna: 20_000 },
+      payoutTransfer: {
+        type: "payout",
+        state: "queued",
+        amountLuna: 20_000
+      }
+    }]);
+
+    render(await TodayPage());
+
+    expect(screen.getByText("Payout queued")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Track payout" }))
+      .toHaveAttribute("href", "/pods/pod-settling/settlement");
+  });
+
   it("uses one aggregate lookup for the first creator-verifier Pod with pending proofs", async () => {
     repositoryMocks.listPodsForOwner.mockResolvedValue([
       {

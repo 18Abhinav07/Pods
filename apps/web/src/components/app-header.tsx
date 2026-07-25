@@ -1,9 +1,11 @@
 import type { ProfileAvatar as ProfileAvatarType } from "@pods/domain";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
+import {
+  AppHeaderMenu,
+  type AppHeaderAction
+} from "./app-header-menu";
 import { ProfileAvatar } from "./profile-avatar";
-import { TestnetMark } from "./testnet-mark";
 
 export function AppHeader({
   profile,
@@ -14,7 +16,7 @@ export function AppHeader({
 }: {
   profile: { displayName: string; avatar: ProfileAvatarType };
   unreadUpdates?: number;
-  action?: ReactNode;
+  action?: AppHeaderAction;
   title?: string;
   showPeopleSearch?: boolean;
 }) {
@@ -29,22 +31,13 @@ export function AppHeader({
             pods
           </Link>
         )}
-        <TestnetMark />
       </div>
       <div className="social-topbar-actions">
-        {action}
-        {showPeopleSearch ? (
-          <Link className="topbar-icon" href="/people/search" aria-label="Search people">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <circle cx="10.8" cy="10.8" r="5.8" />
-              <path d="m15.3 15.3 4.2 4.2" />
-            </svg>
-          </Link>
-        ) : null}
-        <Link className="update-bell" href="/updates" aria-label="Open updates">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6.5 16.5h11l-1.2-1.8V10a4.3 4.3 0 0 0-8.6 0v4.7l-1.2 1.8Z" /><path d="M10 19h4" /></svg>
-          {unreadUpdates > 0 ? <span>{Math.min(unreadUpdates, 99)}</span> : null}
-        </Link>
+        <AppHeaderMenu
+          showPeopleSearch={showPeopleSearch}
+          unreadUpdates={unreadUpdates}
+          {...(action ? { action } : {})}
+        />
         <Link className="profile-entry" href="/profile" aria-label="Open wallet profile">
           <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} size="small" />
         </Link>

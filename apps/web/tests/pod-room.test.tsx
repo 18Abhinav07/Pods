@@ -661,6 +661,8 @@ describe("Pod room", () => {
       .toHaveAttribute("href", "https://github.com/18Abhinav07/Pods/pull/8");
     expect(screen.getByRole("link", { name: "Open public artifact" }))
       .toHaveAttribute("data-room-public-artifact");
-    expect(screen.getByText("Public link")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Open public artifact" }))
+      .toHaveAttribute("data-artifact-card");
+    expect(screen.getByText("github.com")).toBeVisible();
   });
 });

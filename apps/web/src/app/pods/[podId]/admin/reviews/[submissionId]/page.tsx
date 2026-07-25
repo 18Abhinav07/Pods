@@ -3,8 +3,8 @@ import { templateContracts } from "@pods/domain";
 import { notFound } from "next/navigation";
 
 import styles from "../../../../../../components/activity-ritual/activity-ritual.module.css";
+import { ArtifactLinkCard } from "../../../../../../components/artifact-link-card";
 import { PodActionHeader } from "../../../../../../components/activity-ritual/pod-action-header";
-import { RitualIcon } from "../../../../../../components/activity-ritual/ritual-icon";
 import { CreatorReviewForm } from "../../../../../../components/creator-review-form";
 import { CreatorReviewEvidence } from "../../../../../../components/creator-review-evidence";
 import { ProfileAvatar } from "../../../../../../components/profile-avatar";
@@ -146,20 +146,12 @@ export default async function CreatorReviewWorkspacePage({
               </div>
             </div>
             {evidence.artifact ? (
-              <a
-                aria-label={evidence.artifact.label}
-                className={styles.artifactAction}
-                data-artifact-action
+              <ArtifactLinkCard
+                artifactAction
+                context="Public artifact"
                 href={evidence.artifact.href}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span>
-                  <small>Public artifact</small>
-                  <strong>{evidence.artifact.label}</strong>
-                </span>
-                <RitualIcon name="external" size={19} />
-              </a>
+                label={evidence.artifact.label}
+              />
             ) : null}
           </section>
 

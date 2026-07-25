@@ -79,6 +79,9 @@ describe("PublicVisitorRoom", () => {
     expect(screen.getByText("Publish the visitor room")).toBeVisible();
     expect(screen.getByText("Support 3")).toBeVisible();
     expect(screen.getByText("Visitors can watch, not participate")).toBeVisible();
+    const artifact = screen.getByRole("link", { name: "Open public artifact" });
+    expect(artifact).toHaveAttribute("data-artifact-card");
+    expect(artifact).toHaveTextContent("example.com");
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Support/i })).not.toBeInTheDocument();
   });

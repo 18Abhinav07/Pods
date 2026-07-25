@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { mediaForTemplate } from "../lib/template-presentation";
 import { presentTemplateEvidence } from "../lib/template-evidence-presentation";
+import { ArtifactLinkCard } from "./artifact-link-card";
 import { ProfileAvatar as Avatar } from "./profile-avatar";
 
 export type PublicVisitorMessage = {
@@ -94,9 +95,11 @@ function PublicActivityEvidence({
         <p key={row.label}><span>{row.label}</span>{row.value}</p>
       ))}
       {presentation.artifact ? (
-        <a href={presentation.artifact.href} rel="noopener noreferrer" target="_blank">
-          {presentation.artifact.label}
-        </a>
+        <ArtifactLinkCard
+          context="Public artifact"
+          href={presentation.artifact.href}
+          label={presentation.artifact.label}
+        />
       ) : null}
     </div>
   );

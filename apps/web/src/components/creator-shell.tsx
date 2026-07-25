@@ -1,8 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { TestnetMark } from "./testnet-mark";
-
 const steps = ["Template", "Activity", "Community", "Commitment", "Review"] as const;
 
 export function CreatorShell({
@@ -21,13 +19,10 @@ export function CreatorShell({
   return (
     <main className="app-shell creator-shell adaptive-creator-shell">
       <header className="app-topbar entrance entrance-topbar">
-        <div className="brand-runtime">
-          <Link className="wordmark" href="/today" aria-label="Pods Today">
-            <span className="pod-mark" aria-hidden="true" />
-            pods
-          </Link>
-          <TestnetMark />
-        </div>
+        <Link className="wordmark" href="/today" aria-label="Pods Today">
+          <span className="pod-mark" aria-hidden="true" />
+          pods
+        </Link>
         <Link className="quiet-link" href="/my-pods">Save and exit</Link>
       </header>
       <nav className="wizard-progress entrance entrance-hero" aria-label="Pod creation progress">

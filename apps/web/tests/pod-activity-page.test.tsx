@@ -75,6 +75,9 @@ describe("PodActivityPage", () => {
     expect(screen.queryByText(/Phase 4 Build Lab/)).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Pod-shared proof from Ryuk" }))
       .toHaveAttribute("src", "/api/pods/pod-1/submissions/submission-1/shared-evidence");
+    const artifact = screen.getByRole("link", { name: "Open public artifact" });
+    expect(artifact).toHaveAttribute("data-artifact-card");
+    expect(artifact).toHaveTextContent("example.com");
   });
 
   it("passes bounded member filters to the group-safe repository", async () => {

@@ -73,7 +73,12 @@ export default async function MyPodsPage() {
   return (
     <main className="app-shell adaptive-my-pods">
       <AppHeader
-        action={<Link aria-label="Create a Pod" className="new-pod-button" href="/pods/create/template"><span aria-hidden="true">+</span></Link>}
+        action={{
+          description: "Start a new accountability activity",
+          href: "/pods/create/template",
+          kind: "create",
+          label: "Create a Pod"
+        }}
         profile={profileForSession(session)}
         title="My Pods"
       />

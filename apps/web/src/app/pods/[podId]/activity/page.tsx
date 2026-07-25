@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AppHeader } from "../../../../components/app-header";
+import { ArtifactLinkCard } from "../../../../components/artifact-link-card";
 import { ProfileAvatar } from "../../../../components/profile-avatar";
 import { profileForSession } from "../../../../lib/profile-presentation";
 import { podsRepository } from "../../../../lib/server-db";
@@ -138,9 +139,11 @@ export default async function PodActivityPage({
                   <p>Proof details were kept private by this participant.</p>
                 )}
                 {presentation.artifact ? (
-                  <a href={presentation.artifact.href} rel="noreferrer" target="_blank">
-                    {presentation.artifact.label}
-                  </a>
+                  <ArtifactLinkCard
+                    context="Public artifact"
+                    href={presentation.artifact.href}
+                    label={presentation.artifact.label}
+                  />
                 ) : null}
               </div>
             </article>

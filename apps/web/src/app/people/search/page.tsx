@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { AppHeader } from "../../../components/app-header";
 import { PublicProfileCard } from "../../../components/public-profile-card";
 import { profileForSession } from "../../../lib/profile-presentation";
@@ -24,7 +22,12 @@ export default async function PeopleSearchPage({
         profile={profileForSession(session)}
         title="Find people"
         showPeopleSearch={false}
-        action={<Link className="text-header-action" href="/profile">Done</Link>}
+        action={{
+          description: "Return to your profile",
+          href: "/profile",
+          kind: "done",
+          label: "Done"
+        }}
       />
       <form className="people-search-form" action="/people/search" method="get" role="search">
         <label htmlFor="people-query">Search by name or handle</label>

@@ -7,6 +7,10 @@ const css = () => readFileSync(
   resolve(process.cwd(), "src/components/activity-ritual/activity-ritual.module.css"),
   "utf8"
 );
+const designSystemCss = () => readFileSync(
+  resolve(process.cwd(), "src/app/design-system.css"),
+  "utf8"
+);
 
 describe("activity ritual quality contract", () => {
   it("gives every proof and creator input a visible keyboard focus treatment", () => {
@@ -36,5 +40,18 @@ describe("activity ritual quality contract", () => {
       expect(block, `${className} CSS block`).not.toBe("");
       expect(block, className).not.toMatch(/border-left/);
     }
+  });
+
+  it("keeps authoritative room activity content inset from the card edge", () => {
+    const source = css();
+    const block = source.match(/\.roomActivityArtifact\s*\{([^}]+)\}/)?.[1] ?? "";
+
+    expect(block).toMatch(/padding:\s*12px 14px 14px/);
+  });
+
+  it("keeps legacy proof links from overriding structured artifact cards", () => {
+    expect(designSystemCss()).toContain(
+      ".proof-history-copy a:not([data-artifact-card])"
+    );
   });
 });

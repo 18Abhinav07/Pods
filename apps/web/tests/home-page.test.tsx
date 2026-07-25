@@ -158,6 +158,6 @@ describe("HomePage", () => {
     expect(footerCard).toBeInTheDocument();
     expect(footerWordmark).toHaveTextContent("pods");
     expect(footerCard).not.toContainElement(footerWordmark);
-    expect(screen.getAllByText("Testnet beta")).toHaveLength(2);
+    expect(screen.getAllByText("Testnet beta")).toHaveLength(1);
   });
 });

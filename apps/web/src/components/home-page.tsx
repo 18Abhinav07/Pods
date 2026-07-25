@@ -216,7 +216,6 @@ export function HomePage() {
             <span className="pod-mark" />
           </div>
           <p>Small commitments become visible momentum.</p>
-          <TestnetMark inverse />
           <small>pods · a Nimiq Pay Mini App</small>
         </div>
         <strong className="atlas-footer-wordmark">pods</strong>

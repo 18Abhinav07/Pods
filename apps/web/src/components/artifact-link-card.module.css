@@ -1,0 +1,100 @@
+.card {
+  display: grid;
+  width: 100%;
+  min-height: 64px;
+  grid-template-columns: 38px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 11px;
+  padding: 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  text-decoration: none;
+  transition:
+    transform var(--motion-tactile) var(--ease-premium),
+    background-color var(--motion-tactile) var(--ease-premium);
+}
+
+.card:active {
+  transform: scale(0.985);
+}
+
+.leading,
+.trailing {
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+}
+
+.leading {
+  width: 38px;
+  height: 38px;
+  color: var(--activity-build-deep);
+  background: var(--activity-build);
+}
+
+.trailing {
+  width: 34px;
+  height: 34px;
+  color: var(--color-muted);
+  background: var(--color-soft);
+  transition: transform var(--motion-tactile) var(--ease-premium);
+}
+
+.card:active .trailing {
+  transform: translate(1px, -1px);
+}
+
+.copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.copy small {
+  color: var(--color-muted);
+  font: 700 9px/1 var(--font-mono);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.copy strong {
+  overflow: hidden;
+  font: 750 13px/1.2 var(--font-sans);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inverse {
+  border-color: color-mix(in srgb, currentColor 16%, transparent);
+  color: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 6%, transparent);
+}
+
+.inverse .copy small {
+  color: color-mix(in srgb, currentColor 56%, transparent);
+}
+
+.inverse .trailing {
+  color: var(--theme-deep, var(--color-ink));
+  background: var(--theme-accent, var(--activity-build));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    background: color-mix(in srgb, var(--activity-build) 8%, var(--color-surface));
+    transform: translateY(-1px);
+  }
+
+  .inverse:hover {
+    background: color-mix(in srgb, var(--color-surface) 10%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .trailing {
+    transition: none;
+  }
+}

@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { ProfileOnboardingForm } from "./profile-onboarding-form";
+import { TestnetMark } from "./testnet-mark";
 import { WalletSessionSwitcher } from "./wallet-session-switcher";
 
 type SettingsView = "menu" | "edit" | "wallet";
@@ -134,6 +135,10 @@ export function ProfileSettingsSheet({
 
             {view === "wallet" ? (
               <div className="profile-settings-wallet">
+                <div className="profile-network-status">
+                  <span>Current network</span>
+                  <TestnetMark />
+                </div>
                 <span>Connected Nimiq wallet</span>
                 <code>{walletAddress}</code>
                 <p>This address is only visible to you and the financial services that require it.</p>

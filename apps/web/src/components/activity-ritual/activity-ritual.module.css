@@ -2168,8 +2168,8 @@
 .roomActivityArtifact {
   display: grid;
   gap: 11px;
-  margin-top: 6px;
-  padding: 12px 0 2px;
+  margin-top: 0;
+  padding: 12px 14px 14px;
   border-top: 1px solid color-mix(in srgb, var(--theme-accent, var(--activity-build)) 28%, var(--color-line));
 }
 

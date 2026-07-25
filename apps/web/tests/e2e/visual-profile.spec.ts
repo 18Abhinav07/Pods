@@ -3,13 +3,21 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 import { KeyPair, PrivateKey } from "@nimiq/core";
-import { expect, test, type BrowserContext } from "@playwright/test";
+import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3410";
 const databaseUrl = process.env.DATABASE_URL ?? "postgresql://pods:pods-local-only@127.0.0.1:54329/pods";
 const signedMessagePrefix = "\x16Nimiq Signed Message:\n";
 const testWallets = new Set<string>();
 const testPodIds = new Set<string>();
+
+async function expectNoHorizontalOverflow(page: Page) {
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth
+    )
+  ).toBe(true);
+}
 
 type QueryResult = { rows: Array<Record<string, unknown>> };
 type DatabasePool = {
@@ -91,7 +99,7 @@ async function seedActiveBuildPod(walletAddress: string) {
       },
       community: { visibility: "public", minParticipants: 1, maxParticipants: 5, applicationQuestions: [] },
       commitment: { lunaPerOccurrence: 10_000, occurrenceCount: 1, totalLuna: 10_000 },
-      verification: { verifier: "pods_team", targetReviewHours: 12, timeoutProtectionHours: 24 }
+      verification: { verifier: "creator", targetReviewHours: 12, timeoutProtectionHours: 24 }
     };
     await pool.query(
       `INSERT INTO pods (id, creator_user_id, state, template_id, draft_data, contract_data, contract_hash, published_at, created_at, updated_at)
@@ -286,7 +294,7 @@ test("captures a two-wallet message request and direct conversation", async ({ b
     await recipientPage.getByRole("button", { name: "Reply", exact: true }).click();
     await expect(recipientPage.locator(".reply-context")).toContainText(introduction);
     await recipientPage.getByRole("textbox", { name: "Message" }).fill("Absolutely. The direct thread is ready too.");
-    await expect(recipientPage.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(24, 121, 92)");
+    await expect(recipientPage.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(217, 237, 114)");
     await recipientPage.screenshot({ path: testInfo.outputPath("dm-reply-composer.png") });
     await recipientPage.getByRole("button", { name: "Send message" }).click();
     await expect(recipientPage.getByText("Absolutely. The direct thread is ready too.")).toBeVisible();
@@ -388,41 +396,53 @@ test("captures a single meaningful Today action", async ({ context, page }, test
 
   await page.goto("/today");
   await expect(page.getByRole("link", { name: /Lock today's task/ })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByText(/Pod connection/)).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Open", exact: true })).toHaveCount(0);
   await page.waitForTimeout(700);
   await page.screenshot({ path: testInfo.outputPath("today-action.png"), fullPage: true });
 
   await page.getByRole("link", { name: /Lock today's task/ }).click();
-  await expect(page.getByRole("button", { name: "Lock this task" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start commitment" })).toBeVisible();
   await page.waitForTimeout(350);
   await page.screenshot({ path: testInfo.outputPath("commitment-guided.png"), fullPage: true });
-  await page.getByLabel("Today's task").fill("Ship the mobile room composer and proof entry flow.");
-  await page.getByRole("button", { name: "Lock this task" }).click();
-  await expect(page.getByLabel("Result summary")).toBeVisible();
+  await page.getByRole("button", { name: "Start commitment" }).click();
+  await page.getByLabel("Today I will").fill("Ship the mobile room composer and proof entry flow.");
+  await page.getByRole("button", { name: "Choose proof" }).click();
+  await page.getByRole("radio", { name: "GitHub pull request" }).check();
+  await page.getByRole("button", { name: "Review commitment" }).click();
   await expect(page.getByText("Activity slice")).toBeVisible();
-  await expect(page.getByText("Your full Testnet principal remains returnable.")).toBeVisible();
+  await expect(page.getByText("0.1 NIM")).toBeVisible();
   await expect(page.getByText("At risk")).toHaveCount(0);
+  await page.getByRole("button", { name: "Lock this commitment" }).click();
+  await expect(page.getByRole("heading", { name: "Commitment locked." })).toBeVisible();
+  await page.getByRole("button", { name: "Continue to proof" }).click();
+  await expect(page.getByLabel("Result summary")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await page.waitForTimeout(400);
   await page.screenshot({ path: testInfo.outputPath("proof-entry.png"), fullPage: true });
 
   await page.getByLabel("Result summary").fill("Shipped the mobile room composer and restored the complete proof entry path.");
+  await page.getByRole("button", { name: "Continue to evidence" }).click();
+  await page.getByRole("button", { name: "Add artifact link" }).click();
   await page.getByLabel("Public artifact URL").fill("https://github.com/18Abhinav07/Pods/pull/42");
-  await page.getByRole("radio", { name: /Share with Pod/ }).check();
-  await page.getByRole("button", { name: "Add evidence" }).click();
-  await expect(page.getByRole("button", { name: /Image/ })).toBeVisible();
-  await page.locator("#evidence-image").setInputFiles(path.resolve(process.cwd(), "public/media/build-proof.jpg"));
+  await page.getByLabel("Choose evidence image").setInputFiles(path.resolve(process.cwd(), "public/media/build-proof.jpg"));
   await expect(page.getByText("Image secured")).toBeVisible({ timeout: 15_000 });
   await page.screenshot({ path: testInfo.outputPath("proof-added.png"), fullPage: true });
-  await page.getByRole("button", { name: "Review and submit" }).click();
-  await expect(page.getByRole("link", { name: "View submission" })).toBeVisible();
+  await page.getByRole("button", { name: "Continue to visibility" }).click();
+  await page.getByRole("button", { name: "Review submission" }).click();
+  await page.getByRole("button", { name: "Submit to creator" }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/pods/${podId}/submissions/[0-9a-f-]+$`)
+  );
+  await expect(page.getByRole("heading", { name: "Creator review in progress" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("proof-submitted.png"), fullPage: true });
-  await page.getByRole("link", { name: "View submission" }).click();
   await expect(page.getByRole("region", { name: "Review timeline" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("submission-detail.png"), fullPage: true });
 
   await page.goto(`/pods/${podId}/room`);
   await expect(page.getByRole("heading", { name: "Pods Build Room" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByRole("link", { name: "Back to My Pods" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Pod tools" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Pod sections" })).toHaveCount(0);
@@ -466,7 +486,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await page.getByRole("button", { name: "Reply", exact: true }).click();
   await expect(page.locator(".reply-context")).toContainText(roomMessage);
   await page.getByRole("textbox", { name: "Message" }).fill("The reply interaction is ready for the room.");
-  await expect(page.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(24, 121, 92)");
+  await expect(page.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(217, 237, 114)");
   await page.screenshot({ path: testInfo.outputPath("room-reply-composer.png") });
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("The reply interaction is ready for the room.")).toBeVisible();
@@ -488,6 +508,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await approveVisualSubmission(occurrenceId);
   await page.goto(`/pods/${podId}/activity`);
   await expect(page.getByRole("searchbox", { name: "Search proofs by member" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByText("Ari")).toBeVisible();
   await expect(page.getByText(`@${handle}`)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Ship the mobile room composer and proof entry flow." })).toBeVisible();
@@ -497,6 +518,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
 
   await page.goto(`/pods/${podId}/members`);
   await expect(page.getByRole("heading", { name: /\d+ people/ })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByText("Ari")).toBeVisible();
   await expect(page.getByRole("link", { name: /Ari/ })).toHaveAttribute("href", `/u/${handle}`);
   await page.waitForTimeout(450);
@@ -504,17 +526,20 @@ test("captures a single meaningful Today action", async ({ context, page }, test
 
   await page.goto(`/pods/${podId}/rules`);
   await expect(page.getByRole("heading", { name: "Pods Build Room" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await page.waitForTimeout(450);
   await page.screenshot({ path: testInfo.outputPath("pod-contract.png"), fullPage: true });
 
   await page.goto("/updates");
   await expect(page.getByRole("heading", { name: "Updates" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByText("Occurrence approved")).toBeVisible();
   await page.waitForTimeout(450);
   await page.screenshot({ path: testInfo.outputPath("updates-approved.png"), fullPage: true });
 
   await page.goto("/my-pods");
   await expect(page.getByRole("heading", { name: "My Pods" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByText("Pods Build Room")).toBeVisible();
   await page.waitForTimeout(650);
   const podThumbnail = await page.locator(".my-pod-thumbnail").boundingBox();
@@ -523,9 +548,14 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   expect(podThumbnail?.height).toBeLessThanOrEqual(60);
   await expect(page.getByRole("link", { name: /Pods Build Room/ })).toHaveAttribute("href", `/pods/${podId}/room`);
   await page.screenshot({ path: testInfo.outputPath("my-pods.png"), fullPage: true });
+  await page.getByRole("button", { name: "Open page actions" }).click();
+  await expect(page.getByRole("dialog", { name: "Page actions" })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("my-pods-actions.png") });
+  await page.getByRole("button", { name: "Close page actions" }).last().click();
 
   await page.goto("/messages");
   await expect(page.getByRole("heading", { name: "Messages" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByRole("link", { name: "People", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Requests", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: /Pods Build Room/ })).toHaveCount(0);
@@ -535,6 +565,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await preparePodForDiscover(podId);
   await page.goto("/discover");
   await expect(page.getByRole("heading", { name: "Discover" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
   await expect(page.getByRole("navigation", { name: "Discover sections" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "People", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Following", exact: true })).toHaveCount(0);

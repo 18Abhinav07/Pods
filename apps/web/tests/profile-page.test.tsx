@@ -127,6 +127,16 @@ describe("ProfilePage", () => {
     });
   });
 
+  it("keeps the Testnet status inside wallet settings instead of global headers", async () => {
+    render(await ProfilePage());
+
+    expect(screen.queryByText("Testnet beta")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Open profile settings" }));
+    await userEvent.click(screen.getByRole("button", { name: "Wallet and session" }));
+
+    expect(screen.getByText("Testnet beta")).toBeVisible();
+  });
+
   it("shows progress while saving an edit and closes the sheet after success", async () => {
     let resolveSave!: (response: Response) => void;
     const saveResponse = new Promise<Response>((resolve) => {

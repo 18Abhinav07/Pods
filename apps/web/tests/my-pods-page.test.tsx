@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -40,6 +40,9 @@ describe("MyPodsPage creator routing", () => {
     expect(screen.getByRole("link", { name: /Reading archive/i }))
       .toHaveAttribute("href", "/pods/pod-completed/room");
     expect(screen.getByText("Completed")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Create a Pod" }))
+      .not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open page actions" }));
     expect(screen.getByRole("link", { name: "Create a Pod" }))
       .toHaveAttribute("href", "/pods/create/template");
   });

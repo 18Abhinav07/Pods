@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { ConnectClient } from "../../components/connect-client";
-import { TestnetMark } from "../../components/testnet-mark";
 import { safeReturnTarget } from "../../lib/auth";
 import { podsRepository } from "../../lib/server-db";
 import { getCurrentSession } from "../../lib/session";
@@ -32,7 +31,6 @@ export default async function ConnectPage({
             <span className="pod-mark" aria-hidden="true" />
             pods
           </Link>
-          <TestnetMark />
         </div>
       </header>
       <section className="connection-stage entrance entrance-hero">

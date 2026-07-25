@@ -8,7 +8,6 @@ import type {
   TemplateId
 } from "@pods/domain";
 import {
-  ArrowUpRight,
   DotsThree,
   Lightning,
   PaperPlaneRight,
@@ -28,6 +27,7 @@ import {
   MessageReplyPreviewView,
   unavailableReplyPreview
 } from "./message-reply-preview";
+import { ArtifactLinkCard } from "./artifact-link-card";
 import styles from "./activity-ritual/activity-ritual.module.css";
 import { ProfileAvatar } from "./profile-avatar";
 
@@ -113,20 +113,13 @@ function RoomActivityEvidence({
         </p>
       ))}
       {presentation.artifact ? (
-        <a
-          aria-label={presentation.artifact.label}
-          className={styles.roomArtifactLink}
-          data-room-public-artifact
+        <ArtifactLinkCard
+          context="Public artifact"
           href={presentation.artifact.href}
-          rel="noreferrer"
-          target="_blank"
-        >
-          <span>
-            <small>Public link</small>
-            <strong>{presentation.artifact.label}</strong>
-          </span>
-          <ArrowUpRight aria-hidden="true" size={16} weight="bold" />
-        </a>
+          label={presentation.artifact.label}
+          roomPublicArtifact
+          tone="inverse"
+        />
       ) : null}
     </div>
   );

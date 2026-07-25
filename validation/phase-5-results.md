@@ -3,7 +3,7 @@ created: 2026-07-24
 project: pods
 ecosystem: nimiq
 tags: [validation, phase-5, settlement, payout, testnet]
-status: physical-testnet-pass-release-pending
+status: railway-testnet-core-live-broadcast-off
 ---
 
 # Phase 5 Settlement and Payout Gate
@@ -16,13 +16,16 @@ Related: [[HANDOFF]] |
 
 `AUTOMATED, MOBILE BROWSER, AND PHYSICAL NIMIQ PAY PASS`
 
-`RAILWAY RELEASE PENDING`
+`RAILWAY TESTNET CORE LIVE`
+
+`AUTOMATIC PAYOUT BROADCAST DISABLED PENDING EXPLICIT AUTHORIZATION`
 
 The current Build and Ship lifecycle candidate implements consistent private
 financial projections from funding through settlement and payout tracking. No
 Mainnet behavior is authorized. The physical Testnet gate broadcast only the
 explicitly approved participant payouts, verified their finality, and disabled
-local payout broadcasting again.
+local payout broadcasting again. The same core is now deployed to Railway with
+automatic payout broadcasting still disabled.
 
 ## 25 July core completion candidate
 
@@ -63,8 +66,9 @@ The final mobile browser matrix passed:
   and zero-recipient restoration: 4 of 4 across Mobile Safari and Android
   Chromium.
 
-This candidate has not been merged into `main` or deployed. The remaining gate
-is the exact-SHA Railway release and remote Nimiq Pay smoke verification.
+This candidate is merged into `main`, pushed, and deployed to both Railway
+services. The remaining gates are explicit authorization for persistent
+automatic Testnet payout broadcasting and a remote Nimiq Pay smoke journey.
 
 ## Prior Testnet release hardening and staged deployment
 
@@ -222,15 +226,27 @@ The underfilled cancellation path also passed independently: the only funded
 participant received the exact 10,000 Luna refund and the unfunded participant
 received no transfer.
 
-## Release boundary
+## Railway release
 
-- Current physically approved candidate commit:
-  `c19c7de6e00bdea8510d3edb6328614b8de26d69`.
-- The current candidate is isolated from `main` and has not been deployed.
-- Local Testnet payout broadcast is disabled after the approved gate.
+- GitHub `main` and `upgrade/build-ship-testnet-core` contain the physically
+  approved release through
+  `06ccae8f4da4927eb9f7d0293eb553615eaaae3f`.
+- Web deployment `ad16e9f3-5acf-444b-9604-1b7da1485e82`: `SUCCESS`.
+- Worker deployment `0f2b94d7-fdf9-41fd-b742-2df303ffb4d7`: `SUCCESS`.
+- Live web readiness reports configuration, database, evidence storage, and
+  schema `ready`, runtime `06ccae8f4da4`, and schema
+  `0017_robust_loners`.
+- The worker deployment passed Railway's `/health/ready` gate on the exact
+  source commit.
+- Railway runs Nimiq Testnet with public deposits, proportional publication,
+  settlement, cancellation refunds, and the financial incident circuit
+  breaker configured.
+- The worker treasury address and private signer are present; the private
+  signer is absent from the web service.
+- The pre-enable production safety audit found two confirmed historical
+  refunds, zero open payouts, zero open refunds, zero payout exceptions, one
+  active Pod, and zero settlement runs.
+- `PODS_PAYOUT_BROADCAST_ENABLED=false` remains confirmed on web and worker.
+- Enabling persistent automatic payout broadcasting was not attempted after
+  the authorization boundary was enforced.
 - No Mainnet transaction was prepared or broadcast.
-- Railway still runs `d3ba7d7d749886c2024ae4c531d827da761e4f10`
-  with Testnet payout broadcasting disabled.
-- Production payout broadcasting may be enabled only after the exact candidate
-  SHA is deployed to both services, both readiness checks pass, and the
-  production transfer queue is inspected.

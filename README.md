@@ -20,8 +20,10 @@ deterministic proportional settlement, and durable payout tracking. The
 automated repository, mobile-browser, cancellation-refund, and physical
 two-wallet payout gates pass. The verified physical lifecycle conserved the
 complete 0.6 NIM pool, finalized both participant payouts, transferred nothing
-to the creator, and remained idempotent on later worker cycles. Railway release
-and remote smoke verification remain pending.
+to the creator, and remained idempotent on later worker cycles. The verified
+core is deployed on Railway. Automatic Testnet payout broadcasting remains
+disabled until its persistent production capability is explicitly authorized;
+the remote Nimiq Pay smoke journey also remains.
 
 ## Local development
 

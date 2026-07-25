@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-25 20:52
+last-updated: 2026-07-25 21:20
 last-agent: codex
 mode: HACKATHON
 ---
@@ -9,51 +9,50 @@ mode: HACKATHON
 
 Related: [[README]] |
 [[sessions/2026-07-25-codex-hackathon]] |
-[[docs/superpowers/plans/2026-07-25-build-ship-testnet-core]]
+[[validation/phase-5-results]]
 
 ## State
 
-The complete physical Nimiq Testnet gate is PASS on
-`upgrade/build-ship-testnet-core`: funding, roster lock, three activity
-occurrences, missed proof, zero-recipient restoration, proportional settlement,
-real payouts, macro-block finality, and retry idempotency all matched the
-approved contract.
+The physically verified Build and Ship Testnet core is merged into `main`,
+pushed to GitHub, and deployed to both Railway services. Automated Testnet
+payout broadcasting remains disabled because persistent production financial
+authorization has not yet been given.
 
 ## In Progress (resume here)
 
-- Task: run the release gate on the exact approved branch, then merge and deploy
-  only if it remains green.
-- Branch: `upgrade/build-ship-testnet-core`.
-- Implementation commit: `c19c7de6e00bdea8510d3edb6328614b8de26d69`.
-- Local web: port `3411`, ready.
-- Local worker: port `3412`, ready, payout broadcasting disabled.
-- Terminal physical Pod: `5638572a-7e78-4258-bf03-e6527846e187`.
-- User 1 payout: 40,000 Luna, transaction
-  `55b86a13fdbe8c71cb7bb8749f0b0b679c8836d753c868e68f1514268a84e8c1`,
-  finalized at block `6959461`.
-- User 2 payout: 20,000 Luna, transaction
-  `e2bae3f34f81763e9423cb4ce3b07f8a68171e8018d11835f57212bf120cecdf`,
-  finalized at block `6959462`.
-- Terminal state: Pod `completed`, settlement `settled`, two confirmed payout
-  legs totaling 60,000 Luna, zero open payouts/refunds, zero creator transfers,
-  and exactly two total broadcast attempts.
+- GitHub `main` and `upgrade/build-ship-testnet-core` contain the approved
+  release through `06ccae8f4da4927eb9f7d0293eb553615eaaae3f`.
+- Web deployment `ad16e9f3-5acf-444b-9604-1b7da1485e82`: `SUCCESS`.
+- Worker deployment `0f2b94d7-fdf9-41fd-b742-2df303ffb4d7`: `SUCCESS`.
+- Live web readiness: configuration, database, evidence storage, and schema
+  `ready`; runtime release `06ccae8f4da4`, schema `0017_robust_loners`.
+- Railway uses Nimiq Testnet, public proportional settlement, and an available
+  worker-only treasury signer.
+- Production safety audit before payout enablement: two historical refunds
+  confirmed, zero open payouts, zero open refunds, zero payout exceptions, one
+  active Pod, and zero settlement runs.
+- `PODS_PAYOUT_BROADCAST_ENABLED=false` on web and worker.
+- `PODS_FINANCIAL_INCIDENT_PAUSED=false` on web and worker.
 
 ## Open Errors / Blockers
 
-- Release gate, merge, push, and Railway deployment have not run yet.
-- One integration-suite teardown deletes memberships before their referenced
-  ledger rows; all 14 assertions pass before that cleanup-only FK failure.
+- Persistent automatic Testnet payout broadcasting requires Abhinav to
+  explicitly authorize setting `PODS_PAYOUT_BROADCAST_ENABLED=true` on the
+  Railway Pods web and worker services.
+- A remote Nimiq Pay wallet smoke journey against Railway remains.
 - Mainnet configuration and transactions remain unauthorized.
 
 ## Git State
 
-- `HANDOFF.md` is modified and uncommitted.
-- Base `main` and `origin/main`: `d3ba7d7d749886c2024ae4c531d827da761e4f10`.
-- The root/main worktree is untouched.
+- Current worktree: clean `main` before this release-record update.
+- The older root worktree remains on `phase/04-activity` and was not modified.
+- The Phase 5 integration teardown now removes generated ledger rows and Pods
+  before generated users. The complete merged release gate passed with 699
+  unit/component tests and 94 integration tests.
 
 ## Next 3 Tasks
 
-1. Run the full release gate on `upgrade/build-ship-testnet-core`.
-2. Merge the approved branch into `main` and push the exact resulting SHA.
-3. Deploy matching web and worker revisions to Railway, then verify readiness,
-   runtime SHA, and one remote Nimiq Pay smoke journey.
+1. Obtain explicit production authorization, enable Testnet payout broadcast,
+   and verify both replacement deployments plus the unchanged empty queue.
+2. Complete one remote Nimiq Pay smoke journey against Railway.
+3. Create the next UI and UX upgrade branch from the final remote `main`.

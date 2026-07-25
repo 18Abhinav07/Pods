@@ -49,9 +49,10 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 
 ## In Progress
 
-- Run the release gate on the exact approved upgrade branch.
-- Merge and deploy only after that gate remains green.
-- `main` and Railway remain unchanged.
+- Obtain explicit authorization before enabling persistent automatic Testnet
+  payout broadcasting.
+- Complete a remote Nimiq Pay smoke journey.
+- Start UI and UX work from the final remote `main`.
 
 ## Errors
 
@@ -62,3 +63,21 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
   teardown hit a foreign-key error because it deletes memberships before
   referenced ledger rows. Guarded cleanup removed only generated NQTEST data;
   this did not affect settlement math or the physical Pod.
+
+## Railway Release
+
+- Fixed the Phase 5 test teardown to remove generated ledger rows and Pods
+  before generated users.
+- The complete candidate and merged-main gates both passed with 699
+  unit/component tests, 94 PostgreSQL integration tests, and both production
+  builds.
+- GitHub `main` advanced through `06ccae8`.
+- Railway web deployment `ad16e9f3-5acf-444b-9604-1b7da1485e82` succeeded.
+- Railway worker deployment `0f2b94d7-fdf9-41fd-b742-2df303ffb4d7`
+  succeeded.
+- Live web readiness reports the exact release, healthy database and storage,
+  and schema `0017_robust_loners`.
+- The production transfer audit found zero open payouts, zero open refunds,
+  zero payout exceptions, and no settlement runs.
+- Automatic payout broadcasting remains disabled pending explicit production
+  authorization.

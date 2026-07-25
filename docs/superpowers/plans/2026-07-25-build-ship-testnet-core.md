@@ -261,8 +261,16 @@ Implementation commit
   from a conserved 60,000 Luna pool.
 - Local payout broadcast: disabled again after exact finality and idempotency
   verification.
-- Main merge and Railway deployment: not performed.
+- Main merge and GitHub push: PASS.
+- Railway web and worker deployment: PASS.
+- Production transfer safety audit: PASS with zero open or exceptional payout
+  legs and zero open refund legs.
+- Persistent automatic Testnet payout broadcast: disabled pending explicit
+  production authorization.
+- Remote Nimiq Pay smoke journey: pending.
 
 Task 7 is complete. Abhinav inspected and approved the immutable two-wallet
 entitlement snapshot before both Testnet payouts were broadcast and finalized.
-Task 8 is now authorized and remains the only release task.
+Task 8 is complete through exact-SHA merge, push, deploy, readiness, and
+production queue inspection. Persistent payout enablement and the remote wallet
+smoke remain separate final release gates.

@@ -255,9 +255,14 @@ Implementation commit
 - Settlement and restoration mobile matrix: 4 of 4 PASS.
 - Independent review: no remaining Critical or Important implementation
   finding.
-- Payout broadcast: disabled.
+- Physical Nimiq Pay gate: PASS.
+- Physical cancellation refund: PASS.
+- Physical proportional payout: PASS with 40,000 and 20,000 Luna entitlements
+  from a conserved 60,000 Luna pool.
+- Local payout broadcast: disabled again after exact finality and idempotency
+  verification.
 - Main merge and Railway deployment: not performed.
 
-Task 7 remains the required physical Nimiq Pay gate. Task 8 must not proceed
-past branch publication until the two-wallet entitlement snapshot is inspected
-and explicitly approved.
+Task 7 is complete. Abhinav inspected and approved the immutable two-wallet
+entitlement snapshot before both Testnet payouts were broadcast and finalized.
+Task 8 is now authorized and remains the only release task.

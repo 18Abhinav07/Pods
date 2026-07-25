@@ -21,6 +21,17 @@ Pods serves people joining or running small accountability communities inside Ni
 
 Pods turns recurring real-world activity into a clear, NIM-backed commitment lifecycle. A successful interface always answers three questions: what state am I in, what happens next, and what does that mean for my committed NIM? The Cycle I product must demonstrate this lifecycle end to end with real wallets, frozen terms, disclosed creator verification, and deterministic settlement behavior. The creator reviews proof but does not fund and cannot receive participant funds.
 
+## Verified Testnet Boundary
+
+The Build and Ship lifecycle has passed a physical two-wallet Nimiq Pay gate
+covering funding, roster lock, three scheduled occurrences, creator review,
+missed proof, zero-recipient restoration, deterministic proportional
+settlement, real participant payouts, macro-block finality, and retry
+idempotency. The creator received no participant funds. Fitness, Reading,
+Study, and Practice and Create reuse the same financial engine but do not yet
+have equivalent physical template certification. Mainnet, USDT, appeals,
+disputes, and trustless escrow remain outside this release.
+
 ## Brand Personality
 
 Earned, assured, and kinetic. Pods should feel premium and motivating without resembling a casino, trading terminal, or generic fitness tracker. Motion confirms progress and state changes; it never delays the task.

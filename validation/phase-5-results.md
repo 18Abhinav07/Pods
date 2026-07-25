@@ -3,7 +3,7 @@ created: 2026-07-24
 project: pods
 ecosystem: nimiq
 tags: [validation, phase-5, settlement, payout, testnet]
-status: local-candidate-broadcast-off-physical-pending
+status: physical-testnet-pass-release-pending
 ---
 
 # Phase 5 Settlement and Payout Gate
@@ -14,14 +14,15 @@ Related: [[HANDOFF]] |
 
 ## Current verdict
 
-`CURRENT AUTOMATED AND MOBILE BROWSER CANDIDATE PASS`
+`AUTOMATED, MOBILE BROWSER, AND PHYSICAL NIMIQ PAY PASS`
 
-`PHYSICAL NIMIQ PAY PAYOUT PENDING`
+`RAILWAY RELEASE PENDING`
 
 The current Build and Ship lifecycle candidate implements consistent private
 financial projections from funding through settlement and payout tracking. No
-Mainnet behavior is authorized. Payout broadcast remains disabled, and no
-automated test broadcast a treasury transaction.
+Mainnet behavior is authorized. The physical Testnet gate broadcast only the
+explicitly approved participant payouts, verified their finality, and disabled
+local payout broadcasting again.
 
 ## 25 July core completion candidate
 
@@ -63,8 +64,7 @@ The final mobile browser matrix passed:
   Chromium.
 
 This candidate has not been merged into `main` or deployed. The remaining gate
-is the physical two-participant Nimiq Pay walkthrough with payout broadcasting
-off until the immutable entitlement snapshot is inspected and approved.
+is the exact-SHA Railway release and remote Nimiq Pay smoke verification.
 
 ## Prior Testnet release hardening and staged deployment
 
@@ -191,29 +191,46 @@ the private key or raw signed bytes.
 - Signed transactions: 2.
 - Broadcasts: 0.
 
-## Physical gate still required
+## Physical Testnet gate
 
-This gate requires one creator wallet and two participant wallets in Nimiq Pay:
+The complete physical gate passed with Pod
+`5638572a-7e78-4258-bf03-e6527846e187`.
 
-1. Publish a proportional Testnet Pod with two funded participants.
-2. Reach roster lock and complete the frozen occurrence matrix.
-3. Manually approve one participant and reject or miss the other.
-4. Finalize settlement and verify the deterministic bonus before broadcast.
-5. Run the worker with the protected Testnet treasury.
-6. Confirm both positive payout legs, or the positive leg plus one
-   `no_transfer_required` entitlement when a member settles to zero.
-7. Reopen each participant settlement page and verify its persisted hash and
-   terminal state.
-8. Confirm the ledger still conserves the exact frozen deposit total and the
-   creator receives zero participant funds.
+- Two participants each funded 0.3 Testnet NIM.
+- Occurrence 1 settled approved/approved.
+- Occurrence 2 settled approved/missed.
+- Occurrence 3 settled missed/missed after User 1 locked a commitment without
+  submitting proof.
+- Day 3 correctly closed with no bonus recipient and restored both missed
+  slices to their original owners.
+- The immutable settlement conserved exactly 60,000 Luna.
+- Abhinav inspected and explicitly approved entitlements of 40,000 Luna for
+  User 1 and 20,000 Luna for User 2 before broadcast.
+- User 1 transaction
+  `55b86a13fdbe8c71cb7bb8749f0b0b679c8836d753c868e68f1514268a84e8c1`
+  executed successfully and finalized at Testnet block `6959461`.
+- User 2 transaction
+  `e2bae3f34f81763e9423cb4ce3b07f8a68171e8018d11835f57212bf120cecdf`
+  executed successfully and finalized at Testnet block `6959462`.
+- Terminal state is Pod `completed`, settlement `settled`, two confirmed
+  entitlements, two payout ledger rows totaling 60,000 Luna, zero open payout
+  or refund legs, and zero creator transfers.
+- A later broadcast-disabled worker cycle preserved exactly two transfer
+  attempts and two confirmed payout rows, proving idempotency.
 
-The phase remains physically pending until Abhinav approves this walkthrough.
+The underfilled cancellation path also passed independently: the only funded
+participant received the exact 10,000 Luna refund and the unfunded participant
+received no transfer.
 
 ## Release boundary
 
-- Current automated-green implementation commit:
-  `51a4b91a0c489b578dcab1f2de21e771faae0ae8`.
+- Current physically approved candidate commit:
+  `c19c7de6e00bdea8510d3edb6328614b8de26d69`.
 - The current candidate is isolated from `main` and has not been deployed.
-- Testnet payout broadcast remains disabled.
+- Local Testnet payout broadcast is disabled after the approved gate.
 - No Mainnet transaction was prepared or broadcast.
-- The deployed staged release remains unchanged until physical approval.
+- Railway still runs `d3ba7d7d749886c2024ae4c531d827da761e4f10`
+  with Testnet payout broadcasting disabled.
+- Production payout broadcasting may be enabled only after the exact candidate
+  SHA is deployed to both services, both readiness checks pass, and the
+  production transfer queue is inspected.

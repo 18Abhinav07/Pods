@@ -17,9 +17,11 @@ creator review.
 The Build and Ship Testnet journey is implemented from public enrollment and
 upfront funding through occurrence commitments, creator-reviewed proof,
 deterministic proportional settlement, and durable payout tracking. The
-automated repository and mobile-browser gates pass. Treasury payout broadcast
-remains disabled until the physical two-wallet Nimiq Pay settlement snapshot
-is inspected and explicitly approved.
+automated repository, mobile-browser, cancellation-refund, and physical
+two-wallet payout gates pass. The verified physical lifecycle conserved the
+complete 0.6 NIM pool, finalized both participant payouts, transferred nothing
+to the creator, and remained idempotent on later worker cycles. Railway release
+and remote smoke verification remain pending.
 
 ## Local development
 

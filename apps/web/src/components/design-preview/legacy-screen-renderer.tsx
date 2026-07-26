@@ -31,10 +31,9 @@ import {
   Wallet,
   X
 } from "@phosphor-icons/react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
 
+import type { ScenarioId, SelectedEntities } from "./model";
 import styles from "./native-momentum-prototype.module.css";
 
 export type NativeMomentumPreviewPod = {
@@ -150,6 +149,12 @@ type ScreenId =
   | "create-review";
 
 export type LegacyScreenId = ScreenId;
+
+type LegacyNavigate = (
+  screen: ScreenId,
+  actor?: ActorId,
+  selected?: Partial<SelectedEntities>
+) => void;
 
 type ScreenDefinition = {
   id: ScreenId;
@@ -583,7 +588,7 @@ function DiscoverScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -604,7 +609,9 @@ function DiscoverScreen({
           {data.pods.map((pod, index) => (
             <PodRow
               key={pod.id}
-              onClick={() => navigate(index === 0 ? "pod-preview" : "pod-preview")}
+              onClick={() =>
+                navigate("pod-preview", undefined, { podId: pod.id })
+              }
               pod={pod}
               relationship={pod.stage === "live" ? "Live now · Visitor room open" : `Apply · ${pod.maxParticipants} places`}
             />
@@ -1462,7 +1469,7 @@ function ApplicationsScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1478,7 +1485,17 @@ function ApplicationsScreen({
             </div>
             <p>{person.bio}</p>
             <DisclosureRow icon={<FileText size={18} />} label="Application answers" value={index === 0 ? "2 thoughtful responses" : "1 response"} />
-            <PrimaryButton icon={false}>Accept applicant</PrimaryButton>
+            <PrimaryButton
+              icon={false}
+              onClick={() =>
+                navigate("applications", undefined, {
+                  applicationId: `application-${person.handle}`,
+                  personHandle: person.handle
+                })
+              }
+            >
+              Accept applicant
+            </PrimaryButton>
           </article>
         ))}
       </ScreenBody>
@@ -1534,7 +1551,7 @@ function ReviewQueueScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1546,7 +1563,16 @@ function ReviewQueueScreen({
         </section>
         <div className={styles.reviewQueue}>
           {data.people.map((person, index) => (
-            <button key={person.handle} onClick={() => navigate("review-proof")} type="button">
+            <button
+              key={person.handle}
+              onClick={() =>
+                navigate("review-proof", undefined, {
+                  personHandle: person.handle,
+                  submissionId: `submission-${person.handle}`
+                })
+              }
+              type="button"
+            >
               <PreviewAvatar name={person.avatarSeed} />
               <span><small>Occurrence {index + 1}</small><strong>{person.displayName}</strong><p>{index === 0 ? "Ship the compact room and proof flow" : "Publish the funding-state audit"}</p></span>
               <time>{index === 0 ? "46m" : "3h"}</time>
@@ -1640,7 +1666,7 @@ function PrivateProfileScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1667,7 +1693,15 @@ function PrivateProfileScreen({
         />
         <div className={styles.avatarRail}>
           {data.people.map((person) => (
-            <button key={person.handle} onClick={() => navigate("public-profile")} type="button">
+            <button
+              key={person.handle}
+              onClick={() =>
+                navigate("public-profile", undefined, {
+                  personHandle: person.handle
+                })
+              }
+              type="button"
+            >
               <PreviewAvatar name={person.avatarSeed} />
               <span>{person.displayName.split(" ")[0]}</span>
             </button>
@@ -1722,7 +1756,7 @@ function PeopleSearchScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1736,7 +1770,15 @@ function PeopleSearchScreen({
         <SectionHeading eyebrow="Database profiles" title={`${data.people.length} people`} />
         <div className={styles.personList}>
           {data.people.map((person) => (
-            <PersonRow key={person.handle} onClick={() => navigate("public-profile")} person={person} />
+            <PersonRow
+              key={person.handle}
+              onClick={() =>
+                navigate("public-profile", undefined, {
+                  personHandle: person.handle
+                })
+              }
+              person={person}
+            />
           ))}
         </div>
         <p className={styles.privacyFootnote}>Only opted-in public profiles appear in search.</p>
@@ -1847,12 +1889,12 @@ function TransferQueueScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const rows = [
-    { pod: data.pods[0]?.name ?? "Pods in Pods", state: "Unknown", tone: "warning" as const, amount: data.finance.payoutNim, age: "4m" },
-    { pod: "Night Run Club", state: "Retry required", tone: "danger" as const, amount: 0.2, age: "18m" },
-    { pod: "Reading Reset", state: "Late", tone: "warning" as const, amount: 0.1, age: "1h" }
+    { id: "transfer-unknown", pod: data.pods[0]?.name ?? "Pods in Pods", state: "Unknown", tone: "warning" as const, amount: data.finance.payoutNim, age: "4m" },
+    { id: "transfer-retry", pod: "Night Run Club", state: "Retry required", tone: "danger" as const, amount: 0.2, age: "18m" },
+    { id: "transfer-late", pod: "Reading Reset", state: "Late", tone: "warning" as const, amount: 0.1, age: "1h" }
   ];
   return (
     <MobileScreen>
@@ -1865,7 +1907,13 @@ function TransferQueueScreen({
         </div>
         <div className={styles.opsList}>
           {rows.map((row) => (
-            <button key={`${row.pod}-${row.state}`} onClick={() => navigate("transfer-detail")} type="button">
+            <button
+              key={row.id}
+              onClick={() =>
+                navigate("transfer-detail", undefined, { transferId: row.id })
+              }
+              type="button"
+            >
               <span><StatusPill tone={row.tone}>{row.state}</StatusPill><strong>{row.pod}</strong><small>{formatNim(row.amount)} · Payout leg</small></span>
               <time>{row.age}</time>
               <CaretRight size={16} weight="bold" />
@@ -2260,16 +2308,20 @@ function CreateReviewScreen({
   );
 }
 
-export function LegacyScreenRenderer({
+function LegacyScreenContent({
   data,
   screen,
-  navigate
+  navigate,
+  selected
 }: {
   data: NativeMomentumPreviewData;
   screen: ScreenId;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
+  selected: SelectedEntities;
 }) {
-  const pod = data.pods[0] ?? {
+  const pod = data.pods.find((candidate) => candidate.id === selected.podId)
+    ?? data.pods[0]
+    ?? {
     id: "preview-pod",
     name: "Pods in Pods",
     purpose: "Build the accountability product in public with the team.",
@@ -2289,7 +2341,9 @@ export function LegacyScreenRenderer({
     avatarSeed: "Ari Vale",
     bio: "Shipping small products with careful craft."
   };
-  const person = data.people[1] ?? creator;
+  const person = data.people.find(
+    (candidate) => candidate.handle === selected.personHandle
+  ) ?? data.people[1] ?? creator;
 
   switch (screen) {
     case "discover": return <DiscoverScreen data={data} navigate={navigate} />;
@@ -2344,139 +2398,54 @@ export function LegacyScreenRenderer({
   }
 }
 
-export function LegacyNativeMomentumPrototype({
-  data
+export function LegacyScreenRenderer({
+  data,
+  screen,
+  navigate,
+  selected,
+  scenario
 }: {
   data: NativeMomentumPreviewData;
+  screen: LegacyScreenId;
+  navigate: LegacyNavigate;
+  selected: SelectedEntities;
+  scenario: ScenarioId;
 }) {
-  const reducedMotion = useReducedMotion();
-  const [actor, setActor] = useState<ActorId>("visitor");
-  const [screen, setScreen] = useState<ScreenId>("discover");
-  const activeActor = useMemo(
-    () => actorDefinitions.find((definition) => definition.id === actor) ?? actorDefinitions[0]!,
-    [actor]
+  const selectedPerson = data.people.find(
+    (candidate) => candidate.handle === selected.personHandle
   );
-  const activeScreen = activeActor.screens.find((definition) => definition.id === screen)
-    ?? activeActor.screens[0]!;
-
-  function selectActor(nextActor: ActorId) {
-    const definition = actorDefinitions.find((item) => item.id === nextActor);
-    if (!definition) return;
-    setActor(nextActor);
-    setScreen(definition.screens[0]!.id);
-  }
-
-  function navigate(nextScreen: ScreenId, nextActor?: ActorId) {
-    if (nextActor) {
-      setActor(nextActor);
-      setScreen(nextScreen);
-      return;
-    }
-    const owner = actorDefinitions.find((definition) =>
-      definition.screens.some((candidate) => candidate.id === nextScreen)
-    );
-    if (owner && !activeActor.screens.some((candidate) => candidate.id === nextScreen)) {
-      setActor(owner.id);
-    }
-    setScreen(nextScreen);
-  }
+  const selectedPod = data.pods.find(
+    (candidate) => candidate.id === selected.podId
+  );
+  const selectedData = {
+    ...data,
+    people: selectedPerson
+      ? [
+          selectedPerson,
+          ...data.people.filter(
+            (candidate) => candidate.handle !== selectedPerson.handle
+          )
+        ]
+      : data.people,
+    pods: selectedPod
+      ? [
+          selectedPod,
+          ...data.pods.filter((candidate) => candidate.id !== selectedPod.id)
+        ]
+      : data.pods
+  };
 
   return (
-    <main className={styles.prototypeShell}>
-      <aside className={styles.prototypeSidebar}>
-        <div className={styles.prototypeBrand}>
-          <span className={styles.previewWordmark}><i />pods</span>
-          <StatusPill tone="live">Native Momentum</StatusPill>
-        </div>
-        <div className={styles.prototypeIntro}>
-          <span>Interactive visual system</span>
-          <h1>Every Pods flow, redesigned.</h1>
-          <p>Independent screens use current database content where available. Buttons move through the visual flow without mutating product state.</p>
-        </div>
-        <nav aria-label="Preview actors" className={styles.actorNav}>
-          {actorDefinitions.map((definition) => (
-            <button
-              aria-label={definition.label}
-              aria-current={actor === definition.id ? "page" : undefined}
-              key={definition.id}
-              onClick={() => selectActor(definition.id)}
-              type="button"
-            >
-              <span>{definition.label}</span>
-              <small>{definition.screens.length} screens</small>
-              <CaretRight size={16} weight="bold" />
-            </button>
-          ))}
-        </nav>
-        <div className={styles.dataStatus}>
-          <i className={data.databaseStatus === "connected" ? styles.dataLive : ""} />
-          <span>
-            <strong>{data.databaseStatus === "connected" ? "Live database preview" : "Representative preview data"}</strong>
-            <small>{data.pods.length} Pods · {data.people.length} profiles · {data.roomEntries.length} room events</small>
-          </span>
-        </div>
-      </aside>
-
-      <section className={styles.prototypeStage}>
-        <header className={styles.stageHeader}>
-          <div><span>{activeActor.label} flow</span><h2>{activeScreen.label}</h2></div>
-          <p>{activeScreen.note}</p>
-        </header>
-        <nav aria-label={`${activeActor.label} screens`} className={styles.screenRail}>
-          {activeActor.screens.map((definition, index) => (
-            <button
-              aria-label={definition.label}
-              aria-current={definition.id === screen ? "page" : undefined}
-              key={definition.id}
-              onClick={() => setScreen(definition.id)}
-              type="button"
-            >
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              {definition.label}
-            </button>
-          ))}
-        </nav>
-        <div className={styles.deviceStage}>
-          <div className={styles.deviceFrame}>
-            <div className={styles.deviceStatus}><span>9:41</span><i /><b /></div>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                animate={{ opacity: 1, x: 0 }}
-                className={styles.screenMotion}
-                data-preview-label={activeScreen.label}
-                exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -10 }}
-                initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 12 }}
-                key={`${actor}-${screen}`}
-                transition={{ duration: reducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <LegacyScreenRenderer data={data} navigate={navigate} screen={screen} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-      </section>
-
-      <aside className={styles.flowInspector}>
-        <div>
-          <span>Actor contract</span>
-          <h2>{activeActor.label}</h2>
-          <p>{activeActor.description}</p>
-        </div>
-        <ol>
-          {activeActor.screens.map((definition, index) => (
-            <li className={definition.id === screen ? styles.flowStepActive : ""} key={definition.id}>
-              <button onClick={() => setScreen(definition.id)} type="button">
-                <i>{String(index + 1).padStart(2, "0")}</i>
-                <span><strong>{definition.label}</strong><small>{definition.note}</small></span>
-              </button>
-            </li>
-          ))}
-        </ol>
-        <section className={styles.prototypeRules}>
-          <span>Visual contract</span>
-          <p>One primary action. One enclosing surface. Secondary detail in disclosures. Motion only for state, navigation, and feedback.</p>
-        </section>
-      </aside>
-    </main>
+    <div
+      data-preview-scenario={scenario}
+      data-testid="legacy-scenario-renderer"
+    >
+      <LegacyScreenContent
+        data={selectedData}
+        navigate={navigate}
+        screen={screen}
+        selected={selected}
+      />
+    </div>
   );
 }

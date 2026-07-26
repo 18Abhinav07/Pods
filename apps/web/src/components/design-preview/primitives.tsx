@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowRight, Check, ImageSquare, UploadSimple } from "@phosphor-icons/react";
+import {
+  ArrowRight,
+  Check,
+  Clock,
+  ImageSquare,
+  UploadSimple,
+  X
+} from "@phosphor-icons/react";
 import { useId, type ReactNode } from "react";
 
 import styles from "./prototype.module.css";
@@ -217,6 +224,7 @@ export function FinancialReceipt({
   currency: "NIM";
 }) {
   const total = Number((occurrenceCount * amountPerOccurrence).toFixed(5));
+  const totalLabel = `${formatAmount(total)} ${currency}`;
   return (
     <dl className={styles.financialReceipt}>
       <div>
@@ -228,9 +236,7 @@ export function FinancialReceipt({
       </div>
       <div>
         <dt>Maximum upfront</dt>
-        <dd>
-          Maximum upfront: {formatAmount(total)} {currency}
-        </dd>
+        <dd>{totalLabel}</dd>
       </div>
     </dl>
   );
@@ -277,6 +283,14 @@ export function OutcomeStrip({
   tone: "success" | "pending" | "danger" | "neutral";
   detail?: string;
 }) {
+  const terminalIcon =
+    tone === "danger" ? (
+      <X aria-hidden="true" size={24} weight="bold" />
+    ) : tone === "success" ? (
+      <Check aria-hidden="true" size={24} weight="bold" />
+    ) : (
+      <Clock aria-hidden="true" size={24} weight="bold" />
+    );
   return (
     <div className={styles.outcomeStrip} data-tone={tone} role="status">
       <i aria-hidden="true" />
@@ -331,10 +345,23 @@ export function TerminalOutcome({
   tone: "success" | "danger" | "neutral";
   action?: Action;
 }) {
+  const terminalIcon =
+    tone === "danger" ? (
+      <X aria-hidden="true" size={20} weight="bold" />
+    ) : tone === "success" ? (
+      <Check aria-hidden="true" size={20} weight="bold" />
+    ) : (
+      <Clock aria-hidden="true" size={20} weight="bold" />
+    );
+
   return (
     <section className={styles.terminalOutcome} data-tone={tone} role="status">
-      <span className={styles.terminalMark} aria-hidden="true">
-        <Check size={24} weight="bold" />
+      <span
+        aria-hidden="true"
+        className={styles.terminalMark}
+        data-testid={`terminal-icon-${tone}`}
+      >
+        {terminalIcon}
       </span>
       <div>
         <h2>{heading}</h2>

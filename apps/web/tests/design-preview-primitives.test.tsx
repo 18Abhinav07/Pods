@@ -113,7 +113,12 @@ describe("design preview primitives", () => {
       "/media/nimiq-signet.svg"
     );
     expect(screen.getByText("3 occurrences x 0.1 NIM")).toBeVisible();
-    expect(screen.getByText("Maximum upfront: 0.3 NIM")).toBeVisible();
+    const receipt = screen.getByText("Maximum upfront").closest("dl");
+    expect(receipt).not.toBeNull();
+    expect(within(receipt!).getByText("0.3 NIM")).toBeVisible();
+    expect(
+      within(receipt!).queryByText("Maximum upfront: 0.3 NIM")
+    ).not.toBeInTheDocument();
   });
 
   it("communicates transfer progress and outcome without relying on color", () => {
@@ -164,6 +169,19 @@ describe("design preview primitives", () => {
     expect(onConsentChange).toHaveBeenCalledWith(true);
     expect(screen.getByRole("status")).toHaveTextContent("Payout confirmed");
     expect(screen.getByRole("button", { name: "Open Pod archive" })).toBeVisible();
+  });
+
+  it("uses a destructive icon for a destructive terminal outcome", () => {
+    render(
+      <TerminalOutcome
+        heading="Payout needs attention"
+        message="Operations must reconcile this transfer."
+        tone="danger"
+      />
+    );
+
+    expect(screen.getByTestId("terminal-icon-danger")).toBeVisible();
+    expect(screen.queryByTestId("terminal-icon-success")).not.toBeInTheDocument();
   });
 
   it("offers photo upload as a real button with clear formats", () => {

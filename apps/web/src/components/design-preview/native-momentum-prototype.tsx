@@ -9,6 +9,7 @@ import {
 import type {
   NativeMomentumPreviewData,
   PreviewActorId,
+  SelectedEntities,
   ScreenId
 } from "./model";
 import {
@@ -188,8 +189,15 @@ export function NativeMomentumPrototype({
     dispatch({ type: "open-screen", screen });
   }
 
-  function navigateFromScreen(nextScreen: LegacyScreenId) {
+  function navigateFromScreen(
+    nextScreen: LegacyScreenId,
+    _actor?: unknown,
+    selected?: Partial<SelectedEntities>
+  ) {
     const destination = nextScreen as ScreenId;
+    if (selected) {
+      dispatch({ type: "select-entities", selected });
+    }
     const transition = findTransitionTo(state, destination);
     if (transition) {
       dispatch({ type: "run-transition", actionId: transition.actionId });
@@ -211,7 +219,9 @@ export function NativeMomentumPrototype({
       <LegacyScreenRenderer
         data={data}
         navigate={navigateFromScreen}
+        scenario={state.scenario}
         screen={legacyScreen(activeScreen)}
+        selected={state.selected}
       />
     </PrototypeShell>
   );

@@ -153,4 +153,62 @@ describe("NativeMomentumPrototype", () => {
     expect(screen.getByRole("button", { name: "Transfer detail" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Public safety" })).toBeVisible();
   });
+
+  it("opens the exact non-first Pod selected from discovery", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open Night Run Club" })
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Night Run Club" })
+      ).toBeVisible()
+    );
+  });
+
+  it("opens the exact non-first person selected from search", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Social" }));
+    fireEvent.click(screen.getByRole("button", { name: "People search" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Find people" })
+      ).toBeVisible()
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Noah Mercer/ }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Noah Mercer" })
+      ).toBeVisible()
+    );
+    expect(
+      screen.getByRole("heading", { level: 1, name: "@noahmercer" })
+    ).toBeVisible();
+  });
+
+  it("renders the selected scenario at its registered state", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Visual state" }), {
+      target: { value: "wrong-network" }
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Wallet Confirmation" })
+      ).toBeVisible()
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("legacy-scenario-renderer")).toHaveAttribute(
+        "data-preview-scenario",
+        "wrong-network"
+      )
+    );
+  });
 });

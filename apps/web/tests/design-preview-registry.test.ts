@@ -8,9 +8,9 @@ import {
   dispatchPreviewAction,
   getAvailableTransitions
 } from "../src/components/design-preview/registry";
-import type {
-  ActivityOutcome,
-  PodLifecycle,
+import {
+  POD_LIFECYCLE,
+  type ActivityOutcome,
   PreviewActorId,
   PreviewState
 } from "../src/components/design-preview/model";
@@ -126,16 +126,6 @@ describe("design preview journey registry", () => {
   });
 
   it("uses final_review then completed as the Pod lifecycle", () => {
-    const validLifecycle: PodLifecycle[] = [
-      "draft",
-      "enrollment_open",
-      "funding",
-      "waiting",
-      "active",
-      "final_review",
-      "completed",
-      "cancelled"
-    ];
     const validOutcomes: ActivityOutcome[] = [
       "approved",
       "rejected",
@@ -146,7 +136,7 @@ describe("design preview journey registry", () => {
       ACTOR_DEFINITIONS
     ) as PreviewActorId[];
 
-    expect(validLifecycle).toEqual([
+    expect(POD_LIFECYCLE).toEqual([
       "draft",
       "enrollment_open",
       "funding",
@@ -163,5 +153,91 @@ describe("design preview journey registry", () => {
       "missed"
     ]);
     expect(allActors).toContain("waiting-member");
+  });
+
+  it("advances lifecycle actors without changing the signed-in viewer", () => {
+    const viewer = {
+      id: "viewer-1",
+      displayName: "Ryuk",
+      handle: "ryuk"
+    };
+    let state: PreviewState = {
+      ...createInitialPreviewState(viewer),
+      actor: "applicant",
+      screen: "application-pending"
+    };
+
+    for (const actionId of ["accepted", "review-contract"]) {
+      state = dispatchPreviewAction(state, {
+        type: "run-transition",
+        actionId
+      });
+    }
+    expect(state).toMatchObject({
+      actor: "accepted-member",
+      screen: "frozen-contract",
+      viewer
+    });
+
+    for (const actionId of [
+      "accept-contract",
+      "continue",
+      "confirm",
+      "submitted",
+      "observed",
+      "finalized",
+      "credited",
+      "wait-cutoff"
+    ]) {
+      state = dispatchPreviewAction(state, {
+        type: "run-transition",
+        actionId
+      });
+    }
+    expect(state).toMatchObject({
+      actor: "waiting-member",
+      screen: "funding-waiting",
+      viewer
+    });
+
+    for (const actionId of ["cutoff-locked", "enter-room"]) {
+      state = dispatchPreviewAction(state, {
+        type: "run-transition",
+        actionId
+      });
+    }
+    expect(state).toMatchObject({
+      actor: "participant",
+      screen: "pod-room",
+      viewer
+    });
+  });
+
+  it("enters Today as the same signed-in viewer after onboarding", () => {
+    const state: PreviewState = {
+      ...createInitialPreviewState(),
+      actor: "onboarding",
+      screen: "setup-complete"
+    };
+
+    const next = dispatchPreviewAction(state, {
+      type: "run-transition",
+      actionId: "enter"
+    });
+
+    expect(next.actor).toBe("participant");
+    expect(next.screen).toBe("today");
+    expect(next.viewer).toEqual(state.viewer);
+  });
+
+  it("moves scenario selection to its registered inspection screen", () => {
+    const next = dispatchPreviewAction(createInitialPreviewState(), {
+      type: "set-scenario",
+      scenario: "wrong-network"
+    });
+
+    expect(next.scenario).toBe("wrong-network");
+    expect(next.actor).toBe("accepted-member");
+    expect(next.screen).toBe("wallet-confirmation");
   });
 });

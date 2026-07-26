@@ -8,6 +8,7 @@ import {
   type ScreenId,
   type VisualMutation
 } from "./model";
+import { stateForScenario } from "./scenarios";
 
 export type ScreenDefinition = {
   id: ScreenId;
@@ -28,6 +29,7 @@ export type TransitionDefinition = {
   actionId: string;
   to: ScreenId;
   allowedActors: readonly PreviewActorId[];
+  destinationActor?: PreviewActorId;
   guard?: (state: PreviewState) => boolean;
   mutation?: VisualMutation;
 };
@@ -269,9 +271,16 @@ function transition(
   from: ScreenId,
   actionId: string,
   to: ScreenId,
-  allowedActors: readonly PreviewActorId[]
+  allowedActors: readonly PreviewActorId[],
+  destinationActor?: PreviewActorId
 ): TransitionDefinition {
-  return { from, actionId, to, allowedActors };
+  return {
+    from,
+    actionId,
+    to,
+    allowedActors,
+    ...(destinationActor ? { destinationActor } : {})
+  };
 }
 
 export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
@@ -287,7 +296,7 @@ export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
   transition("photo-source", "continue", "photo-crop", ["onboarding"]),
   transition("photo-crop", "continue", "profile-privacy", ["onboarding"]),
   transition("profile-privacy", "complete", "setup-complete", ["onboarding"]),
-  transition("setup-complete", "enter", "today", ["onboarding"]),
+  transition("setup-complete", "enter", "today", ["onboarding"], "participant"),
   transition("discover", "open-pod", "pod-preview", ["visitor", "participant"]),
   transition("pod-preview", "watch", "visitor-room", ["visitor", "participant"]),
   transition("visitor-room", "open-proof", "public-proof", ["visitor", "participant"]),
@@ -298,7 +307,13 @@ export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
   transition("application-pending", "accepted", "application-accepted", ["applicant"]),
   transition("application-pending", "declined", "application-declined", ["applicant"]),
   transition("application-pending", "expired", "application-expired", ["applicant"]),
-  transition("application-accepted", "review-contract", "frozen-contract", ["applicant", "accepted-member"]),
+  transition(
+    "application-accepted",
+    "review-contract",
+    "frozen-contract",
+    ["applicant", "accepted-member"],
+    "accepted-member"
+  ),
   transition("frozen-contract", "accept-contract", "funding-summary", ["accepted-member"]),
   transition("funding-summary", "continue", "funding-consent", ["accepted-member"]),
   transition("funding-consent", "confirm", "wallet-confirmation", ["accepted-member"]),
@@ -306,9 +321,21 @@ export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
   transition("transaction-submitted", "observed", "chain-observed", ["accepted-member"]),
   transition("chain-observed", "finalized", "funding-finalized", ["accepted-member"]),
   transition("funding-finalized", "credited", "funding-credited", ["accepted-member"]),
-  transition("funding-credited", "wait-cutoff", "funding-waiting", ["accepted-member", "waiting-member"]),
+  transition(
+    "funding-credited",
+    "wait-cutoff",
+    "funding-waiting",
+    ["accepted-member", "waiting-member"],
+    "waiting-member"
+  ),
   transition("funding-waiting", "cutoff-locked", "roster-locked", ["waiting-member"]),
-  transition("roster-locked", "enter-room", "pod-room", ["waiting-member", "participant"]),
+  transition(
+    "roster-locked",
+    "enter-room",
+    "pod-room",
+    ["waiting-member", "participant"],
+    "participant"
+  ),
   transition("today", "start-commitment", "commitment", ["participant"]),
   transition("commitment", "continue", "proof-type", ["participant"]),
   transition("proof-type", "continue", "proof-evidence", ["participant"]),
@@ -324,6 +351,10 @@ export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
   transition("payout-submitted", "confirming", "payout-confirming", ["participant"]),
   transition("payout-confirming", "confirmed", "payout-paid", ["participant"]),
   transition("payout-paid", "open-archive", "completed-archive", ["participant"]),
+  transition("private-profile", "find-people", "people-search", ["social"]),
+  transition("people-search", "open-person", "public-profile", ["social"]),
+  transition("public-profile", "message", "direct-message", ["social"]),
+  transition("messages", "open-message", "direct-message", ["social"]),
   transition("refund-reason", "queue", "refund-queued", ["waiting-member", "participant"]),
   transition("refund-queued", "prepared", "refund-prepared", ["waiting-member", "participant"]),
   transition("refund-prepared", "submitted", "refund-submitted", ["waiting-member", "participant"]),
@@ -440,13 +471,17 @@ export function dispatchPreviewAction(
         (candidate) => candidate.actionId === action.actionId
       );
       if (!transition) return state;
-      const next = { ...state, screen: transition.to };
+      const next = {
+        ...state,
+        screen: transition.to,
+        actor: transition.destinationActor ?? state.actor
+      };
       return transition.mutation
         ? applyVisualMutation(next, transition.mutation)
         : next;
     }
     case "set-scenario":
-      return { ...state, scenario: action.scenario };
+      return stateForScenario(state, action.scenario);
     case "select-entities":
       return {
         ...state,

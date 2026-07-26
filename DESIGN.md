@@ -2,43 +2,42 @@
 name: Pods
 description: Activity-led accountability that makes committed momentum feel visible and social.
 colors:
-  canvas: "#F3F1E9"
-  paper: "#FAF9F4"
-  surface: "#FFFDF8"
-  ink: "#20241F"
-  muted: "#686B64"
-  line: "#DCDDD5"
+  canvas: "#F8F9F5"
+  paper: "#FEFFF9"
+  surface: "#F1F3EF"
+  ink: "#1D211D"
+  muted: "#687069"
   momentum: "#D9ED72"
-  momentum-deep: "#252B24"
-  night: "#FA7448"
-  night-deep: "#12141C"
-  ritual: "#AEB8F0"
-  ritual-deep: "#34335A"
-  success: "#18795C"
-  warning: "#956400"
-  danger: "#B42318"
+  momentum-soft: "#F1F7CF"
+  fitness: "#F2A84A"
+  reading: "#D9A6B8"
+  study: "#69BDB2"
+  create: "#82ABD4"
+  success: "#2A725B"
+  warning: "#A36C24"
+  danger: "#A34A42"
 typography:
   activity-display:
     fontFamily: "Mulish Variable, Mulish, system-ui, sans-serif"
-    fontSize: "2.75rem"
+    fontSize: "2.5rem"
     fontWeight: 800
     lineHeight: 0.94
     letterSpacing: "-0.055em"
   page-heading:
     fontFamily: "Mulish Variable, Mulish, system-ui, sans-serif"
-    fontSize: "1.75rem"
+    fontSize: "1.875rem"
     fontWeight: 800
     lineHeight: 1.05
     letterSpacing: "-0.035em"
   title:
     fontFamily: "Mulish Variable, Mulish, system-ui, sans-serif"
-    fontSize: "1.125rem"
+    fontSize: "1rem"
     fontWeight: 800
     lineHeight: 1.2
     letterSpacing: "-0.02em"
   body:
     fontFamily: "Mulish Variable, Mulish, system-ui, sans-serif"
-    fontSize: "1rem"
+    fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.5
     letterSpacing: "normal"
@@ -49,43 +48,47 @@ typography:
     lineHeight: 1.2
     letterSpacing: "0.07em"
 rounded:
-  control: "14px"
-  panel: "20px"
-  media: "28px"
+  control: "16px"
+  panel: "22px"
+  row: "18px"
+  media: "30px"
   pill: "999px"
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "16px"
-  lg: "24px"
-  xl: "32px"
+  micro: "6px"
+  control: "12px"
+  card: "14px"
+  inset: "20px"
+  group: "24px"
+  section: "32px"
+  hero: "40px"
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.surface}"
+    backgroundColor: "{colors.momentum}"
+    textColor: "{colors.ink}"
     typography: "{typography.body}"
     rounded: "{rounded.control}"
-    padding: "14px 18px"
-    height: "48px"
+    padding: "16px 18px"
+    height: "56px"
   button-activity:
     backgroundColor: "{colors.momentum}"
-    textColor: "{colors.momentum-deep}"
+    textColor: "{colors.ink}"
     typography: "{typography.body}"
     rounded: "{rounded.control}"
-    padding: "14px 18px"
-    height: "48px"
+    padding: "16px 18px"
+    height: "56px"
   input:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     typography: "{typography.body}"
     rounded: "{rounded.control}"
     padding: "14px 16px"
-    height: "50px"
-  pod-card:
-    backgroundColor: "{colors.momentum-deep}"
-    textColor: "{colors.surface}"
+    height: "52px"
+  decision-card:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
     rounded: "{rounded.media}"
-    padding: "0px"
+    padding: "18px"
+    boxShadow: "0 18px 48px -24px rgba(29,33,29,.20), 0 5px 14px -10px rgba(29,33,29,.12)"
 ---
 
 # Design System: Pods
@@ -96,12 +99,12 @@ components:
 
 Pods is a mobile product used inside Nimiq Pay while someone is deciding what to join, checking what they owe today, or encouraging people already moving with them. The interface should feel like a living activity journal with financial clarity underneath it. Photography and motion create emotional energy. Controls remain familiar, restrained, and easy to operate with one hand.
 
-The system is minimal in content and rich in atmosphere. One screen presents one dominant task. Activity identity earns cinematic media, while account, money, and review screens use the calm neutral shell. Pods rejects crypto casino visuals, generic navy and gold fintech luxury, repetitive card grids, decorative glass, gradient text, and motion without state meaning.
+The system is minimal in content and rich in atmosphere. One screen presents one dominant task. Activity identity earns cinematic media, while account, money, and review screens use a visually white shell. The off-black entry is the only globally dark scene. Pods rejects crypto casino visuals, generic navy and gold fintech luxury, repetitive card grids, decorative glass, gradient text, visible separator-line layouts, and motion without state meaning.
 
 **Key Characteristics:**
 
 - Activity-led media with template-specific art direction.
-- Warm neutral account shell with no global blue accent.
+- Visually white account shell with no washed beige overlay and no global blue accent.
 - One dominant action and one clear state per screen.
 - Progressive disclosure for cadence, commitment, and contract details.
 - Familiar mobile navigation, inputs, lists, and chat behavior.
@@ -109,31 +112,33 @@ The system is minimal in content and rich in atmosphere. One screen presents one
 
 ## Colors
 
-The palette is warm and grounded globally, then becomes committed only inside the active activity context.
+The palette is bright and assured globally, then becomes contextual only inside the active activity.
 
 ### Primary
 
-- **Grounded Ink** (`#20241F`): Global primary actions, selected navigation, body emphasis, and structural controls.
-- **Warm Paper** (`#FAF9F4`): Main mobile canvas and calm utility surfaces.
+- **Grounded Ink** (`#1D211D`): Global structure, text, and dark action details.
+- **Momentum Lime** (`#D9ED72`): Global primary actions and selected decisions.
+- **Visual White** (`#FEFFF9`): Raised surfaces within the authenticated mobile shell.
 
 ### Secondary
 
-- **Momentum Lime** (`#D9ED72`): Build and creative momentum, live state, and earned completion.
-- **Night Run Coral** (`#FA7448`): Fitness and physical intensity.
-- **Ritual Lavender** (`#AEB8F0`): Reading, study, and quiet practice.
+- **Fitness Orange** (`#F2A84A`): Physical intensity and movement context.
+- **Reading Rose** (`#D9A6B8`): Reading and reflective context.
+- **Study Teal** (`#69BDB2`): Focus and learning context.
+- **Create Blue** (`#82ABD4`): Practice and creative work context.
 
 ### Tertiary
 
-- **Verified Green** (`#18795C`): Completed, secured, and approved states only.
-- **Review Amber** (`#956400`): Pending review and attention states.
-- **Consequence Red** (`#B42318`): Rejection, destructive action, and unrecoverable failure.
+- **Verified Green** (`#2A725B`): Completed, secured, and approved states only.
+- **Review Amber** (`#A36C24`): Pending review and attention states.
+- **Consequence Red** (`#A34A42`): Rejection, destructive action, and unrecoverable failure.
 
 ### Neutral
 
-- **Canvas Sand** (`#F3F1E9`): Outer background and section rhythm.
-- **Surface Ivory** (`#FFFDF8`): Inputs, sheets, list rows, and readable overlays.
-- **Quiet Graphite** (`#686B64`): Supporting copy that still meets contrast requirements.
-- **Soft Rule** (`#DCDDD5`): Dividers and control outlines.
+- **Canvas White** (`#F8F9F5`): Authenticated mobile canvas.
+- **Raised White** (`#FEFFF9`): Decision and financial cards.
+- **Soft Surface** (`#F1F3EF`): Inputs, grouped controls, and restrained status backgrounds.
+- **Quiet Graphite** (`#687069`): Supporting copy that still meets contrast requirements.
 
 **The Context Color Rule.** Activity colors never become the global app chrome. They belong to the active Pod, its media, its status, and its action moment.
 
@@ -149,11 +154,13 @@ The palette is warm and grounded globally, then becomes committed only inside th
 
 ### Hierarchy
 
-- **Activity Display** (800, 44px, 0.94): Pod names over media and earned outcome moments only.
-- **Page Heading** (800, 28px, 1.05): Utility page identity such as Messages, Profile, and My Pods.
-- **Title** (800, 18px, 1.2): List groups, conversation names, and next actions.
-- **Body** (500, 16px, 1.5): All readable prose and every input, textarea, and select value.
-- **Label** (700, 12px, 0.07em, uppercase): Short metadata only. Never use labels for paragraphs.
+- **Outcome Display** (800, 40px/40px): Money and terminal outcomes only.
+- **Screen Heading** (800, 30px/31px): One route identity.
+- **Section Heading** (800, 22px/25px): A major content group.
+- **Card Title** (800, 16px/21px): Decisions and next actions.
+- **Body** (500, 14px/20px): Readable prose. Interactive form values remain at least 16px.
+- **Supporting** (600, 12px/17px): Secondary context.
+- **Metadata** (700, 10px/13px, uppercase): Compact occurrence and financial labels only.
 
 **The One Headline Rule.** A screen may have one prominent heading. Tabs, cards, and empty states do not compete with it using another oversized slogan.
 
@@ -161,41 +168,42 @@ The palette is warm and grounded globally, then becomes committed only inside th
 
 ## Elevation
 
-Pods is layered through media, tonal separation, and overlap. Shadows are ambient and rare. Static list rows remain flat. Floating elevation is reserved for the bottom navigation, chat composer, disclosure sheet, and an active media card.
+Pods is layered through white space, activity media, and restrained elevation. Raised decision and financial cards use one diffuse tinted shadow. Static text groups remain unboxed. Cards never touch and are never nested.
 
 ### Shadow Vocabulary
 
-- **Media Lift** (`0 24px 60px rgba(32,36,31,0.16)`): Featured activity media only.
-- **Floating Control** (`0 12px 32px rgba(32,36,31,0.12)`): Bottom navigation, composer, and disclosure sheet.
-- **State Focus** (`0 0 0 3px rgba(32,36,31,0.16)`): Keyboard focus and selected controls.
+- **Raised Card** (`0 18px 48px -24px rgba(29,33,29,0.20), 0 5px 14px -10px rgba(29,33,29,0.12)`): Decision and financial cards.
+- **Floating Control** (`0 12px 32px rgba(29,33,29,0.12)`): Bottom navigation, composer, and disclosure sheet.
+- **State Focus** (`0 0 0 3px rgba(29,33,29,0.20)`): Keyboard focus and selected controls.
 
-**The Flat By Default Rule.** A surface does not receive a shadow merely because it is rounded. Shadows communicate active elevation or interaction.
+**The Negative Space Rule.** Do not introduce a card where spacing and typography are enough.
 
 ## Components
 
 ### Buttons
 
-- **Shape:** 14px radius, at least 48px tall, and at least 44px wide.
-- **Primary:** Grounded Ink with Surface Ivory text. Full width only when the action truly owns the screen.
-- **Activity:** Current activity accent with its matching deep text color.
+- **Shape:** 16px radius, at least 48px tall, and at least 44px wide.
+- **Primary:** Momentum Lime with Grounded Ink text. Full width only when the action truly owns the screen.
+- **Activity:** Current activity accent with Grounded Ink text.
 - **Hover / Focus:** Slight tonal shift, visible 3px focus ring, and a 140ms opacity or transform response.
-- **Secondary:** Transparent or Surface Ivory with a Soft Rule outline. Never a second filled accent beside the primary action.
+- **Secondary:** Soft Surface or transparent. Never a second filled accent beside the primary action.
 
 ### Chips
 
 - **Style:** Compact filter or status only, 44px minimum touch height when interactive.
-- **State:** Grounded Ink selected, transparent unselected. Activity color may identify a non-interactive status.
+- **State:** Momentum Lime selected, transparent unselected. Activity color may identify a non-interactive status.
 
 ### Cards / Containers
 
-- **Corner Style:** 28px for media, 20px for sheets, and 14px for controls.
-- **Background:** Cards are used only when grouping is necessary. Lists use dividers instead of nested cards.
-- **Shadow Strategy:** Flat by default. Media and floating controls may use approved elevation.
-- **Internal Padding:** 16px utility, 20px sheet, 24px feature.
+- **Corner Style:** 30px for media, 22px for decision and financial cards, 18px for rows, and 16px for controls.
+- **Background:** Cards are used only when grouping or decision hierarchy is necessary. Visible separator-line layouts are not used.
+- **Shadow Strategy:** Use the single Raised Card shadow. Never stack elevated cards.
+- **Internal Padding:** 18px card, 20px screen inset, and 24px feature.
+- **Spacing:** 14px between cards, at least 24px before a fixed action dock, and at least 116px scroll clearance behind the dock.
 
 ### Inputs / Fields
 
-- **Style:** Surface Ivory, Soft Rule stroke, 14px radius, 16px text, and 50px minimum height.
+- **Style:** Raised White or Soft Surface, no decorative stroke, 16px radius, 16px text, and 52px minimum height.
 - **Focus:** Grounded Ink border and State Focus ring. Never remove focus without an equivalent.
 - **Error / Disabled:** Consequence Red plus a text explanation. Disabled state keeps readable contrast.
 
@@ -227,8 +235,9 @@ Pods is layered through media, tonal separation, and overlap. Shadows are ambien
 - **Do** use 16px text in every form control and 44px interactive targets.
 - **Do** reveal contract details progressively through a clear information control.
 - **Do** give all five templates distinct visual identities.
-- **Do** use transform and opacity for 140 to 240ms state transitions with exponential easing.
+- **Do** use transform and opacity with the approved scale: 140ms press, 220ms selection, 280ms sheet, 320ms screen, 420ms progression, and 520ms completion.
 - **Do** keep financial, review, and privacy outcomes explicit in text.
+- **Do** validate fluid portrait widths from 320px through 430px, keyboard-open states, safe areas, text scaling, and a functional landscape fallback.
 
 ### Don't:
 
@@ -241,4 +250,5 @@ Pods is layered through media, tonal separation, and overlap. Shadows are ambien
 - **Don't** repeat a progress label as the screen eyebrow or repeat a heading in its supporting copy.
 - **Don't** place oversized campaign slogans on Profile, Messages, My Pods, or other task screens.
 - **Don't** make every section a rounded card or nest cards inside cards.
+- **Don't** use visible separator-line layouts or let two raised cards touch.
 - **Don't** disable pinch zoom to hide undersized form controls.

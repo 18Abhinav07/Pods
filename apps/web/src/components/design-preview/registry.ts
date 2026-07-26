@@ -1,4 +1,5 @@
 import {
+  PREVIEW_FIXTURE_PROFILE,
   PREVIEW_ACTOR_IDS,
   SCREEN_IDS,
   type PreviewAction,
@@ -341,6 +342,13 @@ export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
   transition("visitor-room", "open-proof", "public-proof", ["visitor", "participant"]),
   transition("public-pod-details", "apply", "application", ["visitor"]),
   transition(
+    "invite",
+    "accept-invite",
+    "funding-summary",
+    ["visitor"],
+    "accepted-member"
+  ),
+  transition(
     "application",
     "submit",
     "application-submitted",
@@ -429,11 +437,7 @@ export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
   transition("transfer-retryable", "replace", "replacement-attempt", ["operations"])
 ];
 
-const defaultViewer: PreviewViewer = {
-  id: "viewer-preview",
-  displayName: "Ryuk",
-  handle: "ryuk"
-};
+const defaultViewer: PreviewViewer = PREVIEW_FIXTURE_PROFILE;
 
 export function createInitialPreviewState(
   viewer: PreviewViewer = defaultViewer

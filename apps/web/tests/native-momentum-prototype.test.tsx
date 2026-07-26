@@ -118,9 +118,21 @@ describe("NativeMomentumPrototype", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Open preview controls" })
     );
+    const trigger = screen.getByRole("button", {
+      name: "Open preview controls"
+    });
     const companion = screen.getByRole("dialog", {
       name: "Preview controls"
     });
+    const closeButton = within(companion).getByRole("button", {
+      name: "Close preview controls"
+    });
+    expect(closeButton).toHaveFocus();
+    fireEvent.keyDown(companion, { key: "Tab", shiftKey: true });
+    const companionButtons = within(companion).getAllByRole("button");
+    expect(companionButtons.at(-1)).toHaveFocus();
+    fireEvent.keyDown(companion, { key: "Tab" });
+    expect(closeButton).toHaveFocus();
     expect(
       within(companion).getByRole("group", { name: "Preview actor" })
     ).toBeVisible();
@@ -134,8 +146,47 @@ describe("NativeMomentumPrototype", () => {
     expect(
       screen.getByRole("heading", { name: "Creator journey" })
     ).toBeVisible();
+    fireEvent.keyDown(companion, { key: "Escape" });
+    expect(
+      screen.queryByRole("dialog", { name: "Preview controls" })
+    ).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
     }
   );
+
+  it("does not expose a participant product action that sets proof approval", () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Participant" }));
+    fireEvent.click(screen.getByRole("button", { name: "Under review" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Preview approved state" })
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Track review status" })
+    );
+    expect(
+      screen.getByRole("heading", { name: "Creator Reviewing" })
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Proof Approved" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("accepts a private invitation into the accepted-member funding contract", () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Invite" }));
+    fireEvent.click(screen.getByRole("button", { name: "Accept and continue" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Accepted journey" })
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Funding" })
+    ).toBeVisible();
+  });
 
   it("renders wallet signature and onboarding completion handoffs", async () => {
     render(<NativeMomentumPrototype data={previewData} />);
@@ -284,6 +335,60 @@ describe("NativeMomentumPrototype", () => {
     expect(screen.queryByText("Real Builder")).not.toBeInTheDocument();
     expect(screen.getByText("Noah Mercer")).toBeVisible();
     expect(screen.getByText("Simulated journey actors")).toBeVisible();
+  });
+
+  it("never promotes live profiles into the viewer, funding, or private-message fixtures", async () => {
+    const liveData = {
+      ...previewData,
+      viewer: {
+        displayName: "Live Database Viewer",
+        handle: "livedatabaseviewer",
+        avatarSeed: "Live Database Viewer"
+      },
+      people: [
+        {
+          displayName: "Real Builder",
+          handle: "realbuilder",
+          avatarSeed: "Real Builder",
+          bio: "This is a live public profile.",
+          source: "live" as const
+        }
+      ]
+    } as NativeMomentumPreviewData;
+    render(<NativeMomentumPrototype data={liveData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Participant" }));
+    expect(screen.getByText(/Good evening, Kai/)).toBeVisible();
+    expect(screen.queryByText(/Live Database Viewer/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Creator" }));
+    fireEvent.click(screen.getByRole("button", { name: "Funding" }));
+    await waitFor(() => expect(screen.getByText("Ari Vale")).toBeVisible());
+    expect(screen.queryByText("Real Builder")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Social" }));
+    const socialScreens = screen.getByRole("navigation", {
+      name: "Social screens"
+    });
+    fireEvent.click(
+      within(socialScreens).getByRole("button", { name: "Messages" })
+    );
+    await waitFor(() => expect(screen.getByText("Noah Mercer")).toBeVisible());
+    expect(screen.queryByText("Real Builder")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(socialScreens).getByRole("button", { name: "Requests" })
+    );
+    expect(screen.getByText("Ari Vale")).toBeVisible();
+    expect(screen.queryByText("Real Builder")).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(socialScreens).getByRole("button", { name: "Direct message" })
+    );
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Ari Vale" })
+    ).toBeVisible();
+    expect(screen.queryByText("Real Builder")).not.toBeInTheDocument();
   });
 
   it("walks through the participant commitment and proof flow using prototype actions", async () => {

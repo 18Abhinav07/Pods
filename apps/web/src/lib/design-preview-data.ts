@@ -4,6 +4,7 @@ import type {
   NativeMomentumPreviewPod,
   NativeMomentumRoomEntry
 } from "../components/design-preview/native-momentum-prototype";
+import { PREVIEW_FIXTURE_PROFILE } from "../components/design-preview/model";
 import { podsRepository } from "./server-db";
 
 const fallbackPeople: NativeMomentumPreviewPerson[] = [
@@ -244,9 +245,9 @@ function connectedData(
     databaseStatus: "connected",
     generatedAt: new Date().toISOString(),
     viewer: {
-      displayName: mergedPeople[0]?.displayName ?? "Abhinav",
-      handle: mergedPeople[0]?.handle ?? "ryuk",
-      avatarSeed: mergedPeople[0]?.avatarSeed ?? "Abhinav"
+      displayName: PREVIEW_FIXTURE_PROFILE.displayName,
+      handle: PREVIEW_FIXTURE_PROFILE.handle,
+      avatarSeed: PREVIEW_FIXTURE_PROFILE.avatarSeed
     },
     pods: mergedPods,
     people: mergedPeople,
@@ -266,9 +267,9 @@ function fallbackData(): NativeMomentumPreviewData {
     databaseStatus: "fallback",
     generatedAt: new Date().toISOString(),
     viewer: {
-      displayName: "Abhinav",
-      handle: "ryuk",
-      avatarSeed: "Abhinav"
+      displayName: PREVIEW_FIXTURE_PROFILE.displayName,
+      handle: PREVIEW_FIXTURE_PROFILE.handle,
+      avatarSeed: PREVIEW_FIXTURE_PROFILE.avatarSeed
     },
     pods: fallbackPods,
     people: fallbackPeople,

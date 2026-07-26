@@ -4,16 +4,17 @@ import { useReducer } from "react";
 
 import {
   LegacyScreenRenderer,
+  type LegacyProductDestination,
   type LegacyScreenId
 } from "./legacy-screen-renderer";
-import type {
-  NativeMomentumPreviewData,
-  PreviewActorId,
-  SelectedEntities,
-  ScreenId
+import {
+  PREVIEW_FIXTURE_PROFILE,
+  type NativeMomentumPreviewData,
+  type PreviewActorId,
+  type SelectedEntities,
+  type ScreenId
 } from "./model";
 import {
-  ACTOR_DEFINITIONS,
   createInitialPreviewState,
   dispatchPreviewAction,
   findTransitionTo,
@@ -29,89 +30,29 @@ export type {
   NativeMomentumRoomEntry
 } from "./model";
 
-const LEGACY_SCREEN_IDS = new Set<LegacyScreenId>([
-  "discover",
-  "pod-preview",
-  "visitor-room",
-  "public-proof",
-  "apply",
-  "invite",
-  "invalid-invite",
-  "today",
-  "my-pods",
-  "funding",
-  "waiting",
-  "room",
-  "commitment",
-  "proof-type",
-  "proof-evidence",
-  "proof-review",
-  "submission-review",
-  "submission-approved",
-  "proof-approved",
-  "proof-rejected",
-  "refund",
-  "settlement",
-  "updates",
-  "members",
-  "rules",
-  "command-center",
-  "applications",
-  "application-detail",
-  "creator-funding",
-  "review-queue",
-  "review-proof",
-  "creator-settlement",
-  "private-profile",
-  "public-profile",
-  "people-search",
-  "messages",
-  "requests",
-  "direct-message",
-  "transfer-queue",
-  "transfer-detail",
-  "public-safety",
-  "landing",
-  "connect",
-  "signature-waiting",
-  "setup-complete",
-  "profile-identity",
-  "profile-avatar",
-  "profile-privacy",
-  "create-template",
-  "create-activity",
-  "create-community",
-  "create-commitment",
-  "create-review"
-]);
-
-const LEGACY_TO_CANONICAL: Partial<Record<LegacyScreenId, ScreenId>> = {
-  "pod-preview": "public-pod-details",
-  apply: "application",
-  funding: "funding-summary",
-  waiting: "funding-waiting",
-  room: "pod-room",
-  "submission-approved": "proof-approved",
-  refund: "refund-reason",
-  settlement: "settlement-calculated",
-  "command-center": "creator-command-center",
-  "creator-funding": "creator-roster",
-  "creator-settlement": "creator-final-review"
-};
-
-const LEGACY_FALLBACKS: Partial<Record<ScreenId, LegacyScreenId>> = {
-  "signature-waiting": "connect",
+export const CANONICAL_TO_LEGACY_SCREEN = {
+  landing: "landing",
+  connect: "connect",
+  "signature-waiting": "signature-waiting",
   "signature-error": "connect",
+  "profile-identity": "profile-identity",
+  "profile-avatar": "profile-avatar",
   "photo-source": "profile-avatar",
   "photo-crop": "profile-avatar",
-  "setup-complete": "profile-privacy",
+  "profile-privacy": "profile-privacy",
+  "setup-complete": "setup-complete",
+  discover: "discover",
   "public-pod-details": "pod-preview",
+  "visitor-room": "visitor-room",
+  "public-proof": "public-proof",
   application: "apply",
   "application-submitted": "apply",
   "application-pending": "apply",
   "application-declined": "apply",
   "application-expired": "apply",
   "application-accepted": "apply",
+  invite: "invite",
+  "invalid-invite": "invalid-invite",
   "frozen-contract": "rules",
   "funding-summary": "funding",
   "funding-consent": "funding",
@@ -128,10 +69,17 @@ const LEGACY_FALLBACKS: Partial<Record<ScreenId, LegacyScreenId>> = {
   "refund-submitted": "refund",
   "refund-confirming": "refund",
   "refund-confirmed": "refund",
+  today: "today",
+  "my-pods": "my-pods",
   "pod-room": "room",
+  commitment: "commitment",
+  "proof-type": "proof-type",
+  "proof-evidence": "proof-evidence",
+  "proof-review": "proof-review",
+  "submission-review": "submission-review",
   "creator-reviewing": "submission-review",
-  "proof-approved": "submission-approved",
-  "proof-rejected": "submission-review",
+  "proof-approved": "proof-approved",
+  "proof-rejected": "proof-rejected",
   "proof-timeout-protected": "submission-review",
   "proof-missed": "submission-review",
   "final-review": "settlement",
@@ -142,14 +90,29 @@ const LEGACY_FALLBACKS: Partial<Record<ScreenId, LegacyScreenId>> = {
   "payout-confirming": "settlement",
   "payout-paid": "settlement",
   "completed-archive": "settlement",
+  updates: "updates",
+  members: "members",
+  rules: "rules",
   "creator-command-center": "command-center",
+  applications: "applications",
+  "application-detail": "application-detail",
   "creator-roster": "creator-funding",
+  "review-queue": "review-queue",
+  "review-proof": "review-proof",
   "creator-final-review": "creator-settlement",
   "settlement-calculating": "creator-settlement",
   "payouts-processing": "creator-settlement",
   "operations-blocked": "creator-settlement",
   "archive-controls": "creator-settlement",
+  "private-profile": "private-profile",
   "edit-profile": "private-profile",
+  "public-profile": "public-profile",
+  "people-search": "people-search",
+  messages: "messages",
+  requests: "requests",
+  "direct-message": "direct-message",
+  "transfer-queue": "transfer-queue",
+  "transfer-detail": "transfer-detail",
   "chain-lookup": "transfer-detail",
   "transfer-confirmed": "transfer-detail",
   "transfer-retryable": "transfer-detail",
@@ -157,18 +120,39 @@ const LEGACY_FALLBACKS: Partial<Record<ScreenId, LegacyScreenId>> = {
   "transfer-late": "transfer-detail",
   "transfer-manual-review": "transfer-detail",
   "replacement-attempt": "transfer-detail",
+  "public-safety": "public-safety",
+  "create-template": "create-template",
+  "create-activity": "create-activity",
+  "create-community": "create-community",
+  "create-commitment": "create-commitment",
+  "create-review": "create-review",
   publishing: "create-review",
   "published-success": "create-review"
+} satisfies Record<ScreenId, LegacyScreenId>;
+
+const LEGACY_TO_CANONICAL: Partial<
+  Record<LegacyProductDestination, ScreenId>
+> = {
+  "pod-preview": "public-pod-details",
+  apply: "application",
+  funding: "funding-summary",
+  waiting: "funding-waiting",
+  room: "pod-room",
+  "submission-approved": "proof-approved",
+  refund: "refund-reason",
+  settlement: "settlement-calculated",
+  "command-center": "creator-command-center",
+  "creator-funding": "creator-roster",
+  "creator-settlement": "creator-final-review"
 };
 
 function legacyScreen(screen: ScreenId): LegacyScreenId {
-  if (LEGACY_SCREEN_IDS.has(screen as LegacyScreenId)) {
-    return screen as LegacyScreenId;
-  }
-  return LEGACY_FALLBACKS[screen] ?? "discover";
+  return CANONICAL_TO_LEGACY_SCREEN[screen];
 }
 
-function canonicalScreen(screen: LegacyScreenId): ScreenId | undefined {
+function canonicalScreen(
+  screen: LegacyProductDestination
+): ScreenId | undefined {
   const mapped = LEGACY_TO_CANONICAL[screen];
   if (mapped) return mapped;
   return screen in SCREEN_REGISTRY ? (screen as ScreenId) : undefined;
@@ -179,19 +163,29 @@ export function NativeMomentumPrototype({
 }: {
   data: NativeMomentumPreviewData;
 }) {
+  const previewData: NativeMomentumPreviewData = {
+    ...data,
+    viewer: {
+      displayName: PREVIEW_FIXTURE_PROFILE.displayName,
+      handle: PREVIEW_FIXTURE_PROFILE.handle,
+      avatarSeed: PREVIEW_FIXTURE_PROFILE.avatarSeed
+    }
+  };
   const [state, dispatch] = useReducer(
     dispatchPreviewAction,
     undefined,
     () =>
       ({
         ...createInitialPreviewState({
-        id: `preview-${data.viewer.handle}`,
-        displayName: data.viewer.displayName,
-        handle: data.viewer.handle
+        id: PREVIEW_FIXTURE_PROFILE.id,
+        displayName: PREVIEW_FIXTURE_PROFILE.displayName,
+        handle: PREVIEW_FIXTURE_PROFILE.handle
         }),
         selected: {
-          ...(data.pods[0] ? { podId: data.pods[0].id } : {}),
-          ...(data.people[0] ? { personHandle: data.people[0].handle } : {})
+          ...(previewData.pods[0] ? { podId: previewData.pods[0].id } : {}),
+          ...(previewData.people[0]
+            ? { personHandle: previewData.people[0].handle }
+            : {})
         }
       })
   );
@@ -208,38 +202,26 @@ export function NativeMomentumPrototype({
   }
 
   function navigateFromScreen(
-    nextScreen: LegacyScreenId,
-    actor?: unknown,
+    nextScreen: LegacyProductDestination,
     selected?: Partial<SelectedEntities>
   ) {
     const destination = canonicalScreen(nextScreen);
-    if (!destination) return;
+    if (!destination) {
+      throw new Error(`No canonical product destination exists for ${nextScreen}.`);
+    }
     if (selected) {
       dispatch({ type: "select-entities", selected });
     }
     const transition = findTransitionTo(state, destination);
     if (transition) {
       dispatch({ type: "run-transition", actionId: transition.actionId });
-      return;
-    }
-    if (
-      typeof actor === "string" &&
-      actor in ACTOR_DEFINITIONS &&
-      ACTOR_DEFINITIONS[actor as PreviewActorId].screens.includes(destination)
-    ) {
-      dispatch({ type: "switch-actor", actor: actor as PreviewActorId });
-      dispatch({ type: "open-screen", screen: destination });
-      return;
-    }
-    if (ACTOR_DEFINITIONS[state.actor].screens.includes(destination)) {
-      dispatch({ type: "open-screen", screen: destination });
     }
   }
 
   return (
     <PrototypeShell
       actor={state.actor}
-      data={data}
+      data={previewData}
       onActorChange={selectActor}
       onScenarioChange={(scenario) =>
         dispatch({ type: "set-scenario", scenario })
@@ -253,7 +235,7 @@ export function NativeMomentumPrototype({
       transitions={getAvailableTransitions(state)}
     >
       <LegacyScreenRenderer
-        data={data}
+        data={previewData}
         navigate={navigateFromScreen}
         scenario={state.scenario}
         screen={legacyScreen(activeScreen)}

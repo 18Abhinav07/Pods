@@ -33,7 +33,11 @@ import {
 } from "@phosphor-icons/react";
 import Image from "next/image";
 
-import type { ScenarioId, SelectedEntities } from "./model";
+import {
+  PREVIEW_FIXTURE_PROFILE,
+  type ScenarioId,
+  type SelectedEntities
+} from "./model";
 import styles from "./native-momentum-prototype.module.css";
 
 export type NativeMomentumPreviewPod = {
@@ -147,6 +151,36 @@ const JOURNEY_FIXTURE_PEOPLE: readonly NativeMomentumPreviewPerson[] = [
   }
 ];
 
+const JOURNEY_FIXTURE_ROOM_ENTRIES: readonly NativeMomentumRoomEntry[] = [
+  {
+    id: "fixture-room-message-1",
+    kind: "message",
+    author: "Ari Vale",
+    handle: "arivale",
+    body: "The funding and roster flow is calm on mobile. I am checking the proof path next.",
+    time: "10:32 PM"
+  },
+  {
+    id: "fixture-room-activity-1",
+    kind: "activity",
+    author: "Kai Rowan",
+    handle: "kairowan",
+    body: "Ship the compact Pod room and proof entry flow.",
+    result: "The responsive room and submission path are ready for review.",
+    status: "approved",
+    time: "10:47 PM",
+    artifactLabel: "Pull request 184"
+  },
+  {
+    id: "fixture-room-message-2",
+    kind: "message",
+    author: "Noah Mercer",
+    handle: "noahmercer",
+    body: "The proof card reads faster now. I can understand the task before opening the detail.",
+    time: "10:51 PM"
+  }
+];
+
 function buildPreviewRecords(): PreviewRecords {
   const applicationMotivations = [
     "I want a shared rhythm for shipping the proof experience.",
@@ -226,14 +260,6 @@ function buildPreviewRecords(): PreviewRecords {
   };
 }
 
-type ActorId =
-  | "visitor"
-  | "participant"
-  | "creator"
-  | "social"
-  | "operations"
-  | "onboarding";
-
 type ScreenId =
   | "discover"
   | "pod-preview"
@@ -278,7 +304,6 @@ type ScreenId =
   | "connect"
   | "signature-waiting"
   | "setup-complete"
-  | "application-submitted"
   | "proof-approved"
   | "proof-rejected"
   | "profile-identity"
@@ -292,9 +317,14 @@ type ScreenId =
 
 export type LegacyScreenId = ScreenId;
 
+export type LegacyProductDestination =
+  | LegacyScreenId
+  | "application-submitted"
+  | "creator-reviewing"
+  | "publishing";
+
 type LegacyNavigate = (
-  screen: ScreenId,
-  actor?: ActorId,
+  screen: LegacyProductDestination,
   selected?: Partial<SelectedEntities>
 ) => void;
 
@@ -443,13 +473,13 @@ function BottomNav({
   navigate
 }: {
   active: "today" | "discover" | "pods" | "messages";
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const items = [
-    { id: "today", label: "Today", icon: House, screen: "today" as ScreenId, actor: "participant" as ActorId },
-    { id: "discover", label: "Discover", icon: Compass, screen: "discover" as ScreenId, actor: "visitor" as ActorId },
-    { id: "pods", label: "My Pods", icon: Users, screen: "my-pods" as ScreenId, actor: "participant" as ActorId },
-    { id: "messages", label: "Messages", icon: ChatCircleDots, screen: "messages" as ScreenId, actor: "social" as ActorId }
+    { id: "today", label: "Today", icon: House, screen: "today" as ScreenId },
+    { id: "discover", label: "Discover", icon: Compass, screen: "discover" as ScreenId },
+    { id: "pods", label: "My Pods", icon: Users, screen: "my-pods" as ScreenId },
+    { id: "messages", label: "Messages", icon: ChatCircleDots, screen: "messages" as ScreenId }
   ];
   return (
     <nav aria-label="Prototype primary navigation" className={styles.bottomNav}>
@@ -459,7 +489,7 @@ function BottomNav({
           <button
             aria-current={active === item.id ? "page" : undefined}
             key={item.id}
-            onClick={() => navigate(item.screen, item.actor)}
+            onClick={() => navigate(item.screen)}
             type="button"
           >
             <Icon size={21} weight={active === item.id ? "fill" : "regular"} />
@@ -654,7 +684,7 @@ function DiscoverScreen({
             <PodRow
               key={pod.id}
               onClick={() =>
-                navigate("pod-preview", undefined, { podId: pod.id })
+                navigate("pod-preview", { podId: pod.id })
               }
               pod={pod}
               relationship={pod.stage === "live" ? "Live now · Visitor room open" : `Apply · ${pod.maxParticipants} places`}
@@ -674,7 +704,7 @@ function PodPreviewScreen({
 }: {
   pod: NativeMomentumPreviewPod;
   creator: NativeMomentumPreviewPerson;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -738,7 +768,7 @@ function VisitorRoomScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={`${styles.roomScreen} ${templateThemeClass[pod.templateId]}`}>
@@ -770,7 +800,7 @@ function PublicProofScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const entry = data.roomEntries.find((item) => item.kind === "activity") ?? data.roomEntries[0]!;
   return (
@@ -805,7 +835,7 @@ function ApplicationScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -840,7 +870,7 @@ function InviteScreen({
 }: {
   pod: NativeMomentumPreviewPod;
   creator: NativeMomentumPreviewPerson;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -866,7 +896,7 @@ function InviteScreen({
           <DisclosureRow icon={<Receipt size={19} />} label="Settlement outcomes" value="Approved, rejected, protected, and missed" />
         </div>
         <div className={styles.buttonStack}>
-          <PrimaryButton onClick={() => navigate("funding", "participant")}>Accept and continue</PrimaryButton>
+          <PrimaryButton onClick={() => navigate("funding")}>Accept and continue</PrimaryButton>
           <SecondaryButton>Decline invitation</SecondaryButton>
         </div>
       </ScreenBody>
@@ -874,7 +904,7 @@ function InviteScreen({
   );
 }
 
-function InvalidInviteScreen({ navigate }: { navigate: (screen: ScreenId, actor?: ActorId) => void }) {
+function InvalidInviteScreen({ navigate }: { navigate: LegacyNavigate }) {
   return (
     <MobileScreen>
       <ScreenHeader title="Invitation unavailable" trailing="none" />
@@ -896,7 +926,7 @@ function ActivityEventCard({
   publicMode = false
 }: {
   entry: NativeMomentumRoomEntry;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
   publicMode?: boolean;
 }) {
   return (
@@ -931,7 +961,7 @@ function RoomTimeline({
   publicMode = false
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
   publicMode?: boolean;
 }) {
   return (
@@ -972,7 +1002,7 @@ function TodayScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -1010,7 +1040,7 @@ function MyPodsScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const first = data.pods[0]!;
   return (
@@ -1043,7 +1073,7 @@ function FinancialJourney({
 }: {
   kind: "funding" | "refund" | "settlement";
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const config = kind === "funding"
     ? {
@@ -1113,7 +1143,7 @@ function WaitingScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -1148,7 +1178,7 @@ function RoomScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={`${styles.roomScreen} ${templateThemeClass[pod.templateId]}`}>
@@ -1196,7 +1226,7 @@ function CommitmentScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -1233,7 +1263,7 @@ function CommitmentScreen({
 function ProofTypeScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const choices = [
     { icon: LinkSimple, title: "Public artifact", copy: "Pull request, deployment, or public document", selected: true },
@@ -1269,7 +1299,7 @@ function ProofTypeScreen({
 function ProofEvidenceScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1307,7 +1337,7 @@ function ProofEvidenceScreen({
 function ProofReviewScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1343,7 +1373,7 @@ function SubmissionStatusScreen({
 }: {
   approved: boolean;
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1367,8 +1397,8 @@ function SubmissionStatusScreen({
           <div className={styles.proofThumb}><Image alt="Reviewer evidence" height={120} src="/media/build-proof.jpg" width={120} /><span>Shared with your creator</span></div>
         </section>
         <DisclosureRow icon={<Clock size={19} />} label="Decision history" value={approved ? "Approved at 10:52 PM" : "Protection applies at 10:47 PM tomorrow"} />
-        <PrimaryButton onClick={() => navigate(approved ? "room" : "submission-approved")}>
-          {approved ? "Return to Pod room" : "Preview approved state"}
+        <PrimaryButton onClick={() => navigate(approved ? "room" : "creator-reviewing")}>
+          {approved ? "Return to Pod room" : "Track review status"}
         </PrimaryButton>
       </ScreenBody>
     </MobileScreen>
@@ -1403,7 +1433,7 @@ function UpdatesScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const groups = [
     {
@@ -1446,7 +1476,7 @@ function MembersScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1469,7 +1499,7 @@ function RulesScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1504,7 +1534,7 @@ function CreatorCommandScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1564,7 +1594,7 @@ function ApplicationsScreen({
               ariaLabel={`Review ${application.person.displayName}'s application`}
               icon={false}
               onClick={() =>
-                navigate("application-detail", undefined, {
+                navigate("application-detail", {
                   applicationId: application.id,
                   personHandle: application.person.handle
                 })
@@ -1629,7 +1659,7 @@ function CreatorFundingScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const fundedPeople = data.people.filter(
     (person) => person.handle.toLowerCase() !== data.viewer.handle.toLowerCase()
@@ -1690,7 +1720,7 @@ function ReviewQueueScreen({
               aria-label={`Review ${submission.person.displayName}'s submission`}
               key={submission.id}
               onClick={() =>
-                navigate("review-proof", undefined, {
+                navigate("review-proof", {
                   personHandle: submission.person.handle,
                   submissionId: submission.id
                 })
@@ -1714,7 +1744,7 @@ function ReviewProofScreen({
   navigate
 }: {
   submission: PreviewSubmissionRecord;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={styles.themeBuild}>
@@ -1757,7 +1787,7 @@ function CreatorSettlementScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const people = [
     { ...data.people[0]!, amount: data.finance.payoutNim, result: "3 approved" },
@@ -1826,7 +1856,7 @@ function PrivateProfileScreen({
             <button
               key={person.handle}
               onClick={() =>
-                navigate("public-profile", undefined, {
+                navigate("public-profile", {
                   personHandle: person.handle
                 })
               }
@@ -1853,7 +1883,7 @@ function PublicProfileScreen({
   navigate
 }: {
   person: NativeMomentumPreviewPerson;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1903,7 +1933,7 @@ function PeopleSearchScreen({
             <PersonRow
               key={person.handle}
               onClick={() =>
-                navigate("public-profile", undefined, {
+                navigate("public-profile", {
                   personHandle: person.handle
                 })
               }
@@ -1922,7 +1952,7 @@ function MessagesScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1952,7 +1982,7 @@ function RequestsScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -1983,7 +2013,7 @@ function DirectMessageScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const peer = data.people[0]!;
   return (
@@ -2036,7 +2066,7 @@ function TransferQueueScreen({
               aria-label={`Open ${transfer.state} transfer for ${transfer.pod}`}
               key={transfer.id}
               onClick={() =>
-                navigate("transfer-detail", undefined, {
+                navigate("transfer-detail", {
                   transferId: transfer.id
                 })
               }
@@ -2060,7 +2090,7 @@ function TransferDetailScreen({
 }: {
   data: NativeMomentumPreviewData;
   transfer: PreviewTransferRecord;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -2118,13 +2148,13 @@ function PublicSafetyScreen({
 function LandingScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen className={styles.landingScreen}>
       <header className={styles.landingHeader}>
         <span className={styles.previewWordmark}><i />pods</span>
-        <button onClick={() => navigate("discover", "visitor")} type="button">Pods</button>
+        <button onClick={() => navigate("discover")} type="button">Pods</button>
         <button onClick={() => navigate("connect")} type="button">Wallet</button>
       </header>
       <div className={styles.landingComposition}>
@@ -2146,7 +2176,7 @@ function LandingScreen({
 function ConnectScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -2199,7 +2229,7 @@ function ProfileIdentityScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -2224,7 +2254,7 @@ function ProfileAvatarScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const bundledNames = [
     "Ari Vale",
@@ -2273,7 +2303,7 @@ function ProfileAvatarScreen({
 function ProfilePrivacyScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
@@ -2318,7 +2348,7 @@ function SetupCompleteScreen({
           <h2>Your Pods identity is ready.</h2>
           <p>Start with today’s action or browse a public activity.</p>
         </section>
-        <PrimaryButton onClick={() => navigate("today", "participant")}>
+        <PrimaryButton onClick={() => navigate("today")}>
           Enter Pods
         </PrimaryButton>
       </ScreenBody>
@@ -2329,12 +2359,12 @@ function SetupCompleteScreen({
 function CreateTemplateScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const templates: NativeMomentumPreviewPod["templateId"][] = ["build", "fitness", "reading", "study", "create"];
   return (
     <MobileScreen>
-      <WizardHeader current={1} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
+      <WizardHeader current={1} label="Create a Pod" onClose={() => navigate("today")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>Activity contract</span>
@@ -2361,11 +2391,11 @@ function CreateActivityScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
-      <WizardHeader current={2} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
+      <WizardHeader current={2} label="Create a Pod" onClose={() => navigate("today")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>{templateLabel[pod.templateId]}</span>
@@ -2391,11 +2421,11 @@ function CreateActivityScreen({
 function CreateCommunityScreen({
   navigate
 }: {
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
-      <WizardHeader current={3} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
+      <WizardHeader current={3} label="Create a Pod" onClose={() => navigate("today")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>Community access</span>
@@ -2426,12 +2456,12 @@ function CreateCommitmentScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   const perOccurrence = pod.totalNim / Math.max(pod.occurrenceCount, 1);
   return (
     <MobileScreen>
-      <WizardHeader current={4} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
+      <WizardHeader current={4} label="Create a Pod" onClose={() => navigate("today")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>NIM commitment</span>
@@ -2464,11 +2494,11 @@ function CreateReviewScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  navigate: LegacyNavigate;
 }) {
   return (
     <MobileScreen>
-      <WizardHeader current={5} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
+      <WizardHeader current={5} label="Create a Pod" onClose={() => navigate("today")} total={5} />
       <ScreenBody>
         <section className={styles.publishHero}>
           <span><ShieldCheck size={28} /></span>
@@ -2484,7 +2514,7 @@ function CreateReviewScreen({
           <div><span>Verifier</span><strong>You, the Pod creator</strong></div>
         </div>
         <div className={styles.publishConsent}><button aria-pressed="true" type="button"><Check size={14} /></button><p>I accept the creator-review authority, no-appeal rule, custodial treasury, timeout protection, and exact maximum commitment shown above.</p></div>
-        <PrimaryButton onClick={() => navigate("command-center", "creator")}>Publish Pod</PrimaryButton>
+        <PrimaryButton onClick={() => navigate("publishing")}>Publish Pod</PrimaryButton>
       </ScreenBody>
     </MobileScreen>
   );
@@ -2610,9 +2640,19 @@ function LegacyScreenContent({
     case "create-community": return <CreateCommunityScreen navigate={navigate} />;
     case "create-commitment": return <CreateCommitmentScreen navigate={navigate} pod={pod} />;
     case "create-review": return <CreateReviewScreen navigate={navigate} pod={pod} />;
-    default: return <DiscoverScreen data={data} navigate={navigate} />;
+    default:
+      throw new Error(`No visual renderer exists for ${String(screen)}`);
   }
 }
+
+const LIVE_PUBLIC_SCREENS = new Set<LegacyScreenId>([
+  "discover",
+  "pod-preview",
+  "visitor-room",
+  "public-proof",
+  "people-search",
+  "public-profile"
+]);
 
 export function LegacyScreenRenderer({
   data,
@@ -2651,6 +2691,16 @@ export function LegacyScreenRenderer({
         ]
       : data.pods
   };
+  const journeyData: NativeMomentumPreviewData = {
+    ...selectedData,
+    viewer: {
+      displayName: PREVIEW_FIXTURE_PROFILE.displayName,
+      handle: PREVIEW_FIXTURE_PROFILE.handle,
+      avatarSeed: PREVIEW_FIXTURE_PROFILE.avatarSeed
+    },
+    people: [...JOURNEY_FIXTURE_PEOPLE],
+    roomEntries: [...JOURNEY_FIXTURE_ROOM_ENTRIES]
+  };
 
   return (
     <div
@@ -2658,7 +2708,7 @@ export function LegacyScreenRenderer({
       data-testid="legacy-scenario-renderer"
     >
       <LegacyScreenContent
-        data={selectedData}
+        data={LIVE_PUBLIC_SCREENS.has(screen) ? selectedData : journeyData}
         navigate={navigate}
         records={records}
         screen={screen}

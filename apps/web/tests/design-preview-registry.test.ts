@@ -8,6 +8,7 @@ import {
   dispatchPreviewAction,
   getAvailableTransitions
 } from "../src/components/design-preview/registry";
+import { CANONICAL_TO_LEGACY_SCREEN } from "../src/components/design-preview/native-momentum-prototype";
 import {
   ACTIVITY_OUTCOMES,
   POD_LIFECYCLE,
@@ -77,6 +78,16 @@ describe("design preview journey registry", () => {
       "creator-settlement"
     ]) {
       expect(SCREEN_IDS).not.toContain(legacyId);
+    }
+  });
+
+  it("maps every canonical screen to an explicit legacy renderer", () => {
+    expect(Object.keys(CANONICAL_TO_LEGACY_SCREEN).sort()).toEqual(
+      [...SCREEN_IDS].sort()
+    );
+
+    for (const screen of SCREEN_IDS) {
+      expect(CANONICAL_TO_LEGACY_SCREEN[screen]).toBeTruthy();
     }
   });
 

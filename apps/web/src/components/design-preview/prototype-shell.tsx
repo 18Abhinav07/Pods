@@ -2,7 +2,13 @@
 
 import { CaretRight, SlidersHorizontal, X } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
-import { useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode
+} from "react";
 
 import type {
   NativeMomentumPreviewData,
@@ -43,10 +49,52 @@ export function PrototypeShell({
   children: ReactNode;
 }) {
   const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
+  const mobileControlsRef = useRef<HTMLElement>(null);
+  const mobileTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileCloseRef = useRef<HTMLButtonElement>(null);
   const reducedMotion = useReducedMotion();
   const actors = Object.values(ACTOR_DEFINITIONS);
   const activeActor = ACTOR_DEFINITIONS[actor];
   const activeScreen = SCREEN_REGISTRY[screen];
+
+  useEffect(() => {
+    if (mobileControlsOpen) {
+      mobileCloseRef.current?.focus();
+    }
+  }, [mobileControlsOpen]);
+
+  function closeMobileControls() {
+    setMobileControlsOpen(false);
+    mobileTriggerRef.current?.focus();
+  }
+
+  function handleMobileControlsKeyDown(
+    event: KeyboardEvent<HTMLElement>
+  ) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMobileControls();
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const focusable = [
+      ...(mobileControlsRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+      ) ?? [])
+    ];
+    if (focusable.length === 0) return;
+
+    const first = focusable[0]!;
+    const last = focusable.at(-1)!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   return (
     <main className={`${styles.foundation} ${styles.prototypeShell}`}>
@@ -55,6 +103,7 @@ export function PrototypeShell({
         aria-label="Open preview controls"
         className={styles.mobileControlTrigger}
         onClick={() => setMobileControlsOpen(true)}
+        ref={mobileTriggerRef}
         type="button"
       >
         <SlidersHorizontal aria-hidden="true" size={20} weight="bold" />
@@ -190,6 +239,8 @@ export function PrototypeShell({
           aria-label="Preview controls"
           aria-modal="true"
           className={styles.mobileCompanion}
+          onKeyDown={handleMobileControlsKeyDown}
+          ref={mobileControlsRef}
           role="dialog"
         >
           <header>
@@ -199,7 +250,8 @@ export function PrototypeShell({
             </div>
             <button
               aria-label="Close preview controls"
-              onClick={() => setMobileControlsOpen(false)}
+              onClick={closeMobileControls}
+              ref={mobileCloseRef}
               type="button"
             >
               <X aria-hidden="true" size={20} />

@@ -181,6 +181,13 @@ export type PreviewViewer = {
   handle: string;
 };
 
+export const PREVIEW_FIXTURE_PROFILE = {
+  id: "viewer-kai-rowan",
+  displayName: "Kai Rowan",
+  handle: "kairowan",
+  avatarSeed: "Kai Rowan"
+} as const;
+
 export type PreviewVisualState = {
   consentAccepted: boolean;
   selectedTemplate: "build" | "create" | "fitness" | "reading" | "study";

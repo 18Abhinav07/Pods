@@ -31,13 +31,10 @@ import {
   Wallet,
   X
 } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
+import { useMemo, useState } from "react";
 
-import {
-  PREVIEW_FIXTURE_PROFILE,
-  type ScenarioId,
-  type SelectedEntities
-} from "./model";
 import styles from "./native-momentum-prototype.module.css";
 
 export type NativeMomentumPreviewPod = {
@@ -94,171 +91,13 @@ export type NativeMomentumPreviewData = {
   };
 };
 
-type PreviewApplicationRecord = {
-  id: string;
-  person: NativeMomentumPreviewPerson;
-  motivation: string;
-  responseCount: number;
-  appliedAt: string;
-};
-
-type PreviewSubmissionRecord = {
-  id: string;
-  person: NativeMomentumPreviewPerson;
-  occurrence: number;
-  commitment: string;
-  result: string;
-  artifactLabel: string;
-  age: string;
-};
-
-type PreviewTransferRecord = {
-  id: string;
-  pod: string;
-  state: "Unknown" | "Retry required" | "Late";
-  tone: "warning" | "danger";
-  amount: number;
-  age: string;
-  description: string;
-  leg: string;
-  lastChecked: string;
-};
-
-type PreviewRecords = {
-  applications: PreviewApplicationRecord[];
-  submissions: PreviewSubmissionRecord[];
-  transfers: PreviewTransferRecord[];
-};
-
-const JOURNEY_FIXTURE_PEOPLE: readonly NativeMomentumPreviewPerson[] = [
-  {
-    displayName: "Ari Vale",
-    handle: "arivale",
-    avatarSeed: "Ari Vale",
-    bio: "A fictional creator-review fixture."
-  },
-  {
-    displayName: "Noah Mercer",
-    handle: "noahmercer",
-    avatarSeed: "Noah Mercer",
-    bio: "A fictional participant-review fixture."
-  },
-  {
-    displayName: "Mina Sol",
-    handle: "minasol",
-    avatarSeed: "Mina Sol",
-    bio: "A fictional participant-review fixture."
-  }
-];
-
-const JOURNEY_FIXTURE_ROOM_ENTRIES: readonly NativeMomentumRoomEntry[] = [
-  {
-    id: "fixture-room-message-1",
-    kind: "message",
-    author: "Ari Vale",
-    handle: "arivale",
-    body: "The funding and roster flow is calm on mobile. I am checking the proof path next.",
-    time: "10:32 PM"
-  },
-  {
-    id: "fixture-room-activity-1",
-    kind: "activity",
-    author: "Kai Rowan",
-    handle: "kairowan",
-    body: "Ship the compact Pod room and proof entry flow.",
-    result: "The responsive room and submission path are ready for review.",
-    status: "approved",
-    time: "10:47 PM",
-    artifactLabel: "Pull request 184"
-  },
-  {
-    id: "fixture-room-message-2",
-    kind: "message",
-    author: "Noah Mercer",
-    handle: "noahmercer",
-    body: "The proof card reads faster now. I can understand the task before opening the detail.",
-    time: "10:51 PM"
-  }
-];
-
-function buildPreviewRecords(): PreviewRecords {
-  const applicationMotivations = [
-    "I want a shared rhythm for shipping the proof experience.",
-    "I want to make public activity rooms easier to follow."
-  ];
-  const submissionResults = [
-    "The responsive room and submission path are ready.",
-    "Funding-state audit is published with clear state transitions."
-  ];
-  const submissionArtifacts = ["Pull request 184", "Pull request 219"];
-  const commitments = [
-    "Ship the compact Pod room and proof entry flow.",
-    "Publish the funding-state audit."
-  ];
-
-  return {
-    applications: JOURNEY_FIXTURE_PEOPLE.map((person, index) => ({
-      id: `application-${person.handle}`,
-      person,
-      motivation:
-        applicationMotivations[index] ??
-        `I want to build visible momentum with ${person.displayName}.`,
-      responseCount: index === 0 ? 2 : 1,
-      appliedAt: index === 0 ? "Today at 9:18 PM" : "Today at 9:42 PM"
-    })),
-    submissions: JOURNEY_FIXTURE_PEOPLE.map((person, index) => ({
-      id: `submission-${person.handle}`,
-      person,
-      occurrence: index + 1,
-      commitment:
-        commitments[index] ?? `Complete occurrence ${index + 1} work.`,
-      result:
-        submissionResults[index] ??
-        `${person.displayName} submitted the committed work.`,
-      artifactLabel:
-        submissionArtifacts[index] ?? `Artifact ${index + 1}`,
-      age: index === 0 ? "46m" : "3h"
-    })),
-    transfers: [
-      {
-        id: "transfer-unknown",
-        pod: "Pods in Pods",
-        state: "Unknown",
-        tone: "warning",
-        amount: 0.4,
-        age: "4m",
-        description:
-          "Broadcast exists, but chain confirmation is not yet conclusive. Reconcile before any retry.",
-        leg: "7e320c14...a881",
-        lastChecked: "4 minutes ago"
-      },
-      {
-        id: "transfer-retry",
-        pod: "Night Run Club",
-        state: "Retry required",
-        tone: "danger",
-        amount: 0.2,
-        age: "18m",
-        description:
-          "The previous broadcast failed safely. Reconcile the failed attempt before replacing it.",
-        leg: "9b420c14...f219",
-        lastChecked: "18 minutes ago"
-      },
-      {
-        id: "transfer-late",
-        pod: "Reading Reset",
-        state: "Late",
-        tone: "warning",
-        amount: 0.1,
-        age: "1h",
-        description:
-          "Confirmation is later than the target window. Inspect the chain record before taking action.",
-        leg: "4a119d72...c004",
-        lastChecked: "1 hour ago"
-      }
-    ]
-  };
-}
+type ActorId =
+  | "visitor"
+  | "participant"
+  | "creator"
+  | "social"
+  | "operations"
+  | "onboarding";
 
 type ScreenId =
   | "discover"
@@ -286,7 +125,6 @@ type ScreenId =
   | "rules"
   | "command-center"
   | "applications"
-  | "application-detail"
   | "creator-funding"
   | "review-queue"
   | "review-proof"
@@ -302,10 +140,6 @@ type ScreenId =
   | "public-safety"
   | "landing"
   | "connect"
-  | "signature-waiting"
-  | "setup-complete"
-  | "proof-approved"
-  | "proof-rejected"
   | "profile-identity"
   | "profile-avatar"
   | "profile-privacy"
@@ -317,16 +151,111 @@ type ScreenId =
 
 export type LegacyScreenId = ScreenId;
 
-export type LegacyProductDestination =
-  | LegacyScreenId
-  | "application-submitted"
-  | "creator-reviewing"
-  | "publishing";
+type ScreenDefinition = {
+  id: ScreenId;
+  label: string;
+  note: string;
+};
 
-type LegacyNavigate = (
-  screen: LegacyProductDestination,
-  selected?: Partial<SelectedEntities>
-) => void;
+type ActorDefinition = {
+  id: ActorId;
+  label: string;
+  description: string;
+  screens: ScreenDefinition[];
+};
+
+const actorDefinitions: ActorDefinition[] = [
+  {
+    id: "visitor",
+    label: "Visitor",
+    description: "Discovery, public rooms, applications, and private invitations.",
+    screens: [
+      { id: "discover", label: "Discover", note: "Browse live, open, and recent public Pods." },
+      { id: "pod-preview", label: "Pod preview", note: "Understand the group before applying." },
+      { id: "visitor-room", label: "Visitor room", note: "Read-only build-in-public experience." },
+      { id: "public-proof", label: "Public proof", note: "Sanitized proof for public viewers." },
+      { id: "apply", label: "Application", note: "Apply without implying that a place is reserved." },
+      { id: "invite", label: "Invitation", note: "Review the frozen contract before accepting." },
+      { id: "invalid-invite", label: "Unavailable invite", note: "A safe state that reveals no private Pod data." }
+    ]
+  },
+  {
+    id: "participant",
+    label: "Participant",
+    description: "Daily action, commitment, proof, room, finance, and completion.",
+    screens: [
+      { id: "today", label: "Today", note: "The single most important action." },
+      { id: "my-pods", label: "My Pods", note: "Lifecycle inventory with one next action per row." },
+      { id: "funding", label: "Funding", note: "Current financial state first, detail on demand." },
+      { id: "waiting", label: "Waiting room", note: "Roster state, cutoff, and next meaningful event." },
+      { id: "room", label: "Pod room", note: "Chat-first group activity." },
+      { id: "commitment", label: "Commitment", note: "A focused first step with one decision." },
+      { id: "proof-type", label: "Proof type", note: "Choose the clearest evidence format." },
+      { id: "proof-evidence", label: "Evidence", note: "Separate creator-only and Pod-shared evidence." },
+      { id: "proof-review", label: "Review proof", note: "Final check before creator review." },
+      { id: "submission-review", label: "Under review", note: "Outcome, reviewer, and audience without repetition." },
+      { id: "submission-approved", label: "Approved", note: "A concise success state and earned momentum." },
+      { id: "refund", label: "Refund", note: "A terminal financial branch, never a waiting state." },
+      { id: "settlement", label: "Settlement", note: "Payout first, ledger detail on demand." },
+      { id: "updates", label: "Updates", note: "Action history grouped by meaning." },
+      { id: "members", label: "Members", note: "People, progress, and within-Pod streaks." },
+      { id: "rules", label: "Contract", note: "Readable rules with expandable technical terms." }
+    ]
+  },
+  {
+    id: "creator",
+    label: "Creator",
+    description: "Applications, funding, proof decisions, and settlement.",
+    screens: [
+      { id: "command-center", label: "Command center", note: "The one urgent creator action leads." },
+      { id: "applications", label: "Applications", note: "Identity first, answers disclosed only when needed." },
+      { id: "creator-funding", label: "Funding", note: "Recognizable participants and one status line." },
+      { id: "review-queue", label: "Review queue", note: "Compact proof worklist ordered by deadline." },
+      { id: "review-proof", label: "Review proof", note: "Sticky decision dock and readable evidence." },
+      { id: "creator-settlement", label: "Settlement", note: "Conservation summary with simple member rows." }
+    ]
+  },
+  {
+    id: "social",
+    label: "Social",
+    description: "Profiles, people, requests, and direct messages.",
+    screens: [
+      { id: "private-profile", label: "My profile", note: "Identity, activity, and connections without a directory wall." },
+      { id: "public-profile", label: "Public profile", note: "Earned identity and public milestones." },
+      { id: "people-search", label: "People search", note: "Search-led discovery, never an unbounded directory." },
+      { id: "messages", label: "Messages", note: "Dense conversation rows and clear unread state." },
+      { id: "requests", label: "Requests", note: "One primary response with secondary actions in overflow." },
+      { id: "direct-message", label: "Direct message", note: "Native conversation density and visible reply context." }
+    ]
+  },
+  {
+    id: "operations",
+    label: "Operations",
+    description: "Transfer recovery and public-safety queues.",
+    screens: [
+      { id: "transfer-queue", label: "Transfer queue", note: "Compact operational rows with filters." },
+      { id: "transfer-detail", label: "Transfer detail", note: "Raw identifiers only when an operator asks." },
+      { id: "public-safety", label: "Public safety", note: "Reports and moderation decisions with audit context." }
+    ]
+  },
+  {
+    id: "onboarding",
+    label: "Onboarding",
+    description: "Wallet entry, profile setup, and Pod creation.",
+    screens: [
+      { id: "landing", label: "Landing", note: "The product promise before wallet entry." },
+      { id: "connect", label: "Wallet", note: "One wallet action with an honest Testnet boundary." },
+      { id: "profile-identity", label: "Identity", note: "Handle, name, and bio in one focused step." },
+      { id: "profile-avatar", label: "Avatar", note: "Art-directed portraits plus real photo upload." },
+      { id: "profile-privacy", label: "Privacy", note: "Plain-language visibility and message controls." },
+      { id: "create-template", label: "Template", note: "Five polished activity contracts." },
+      { id: "create-activity", label: "Activity", note: "Purpose, cadence, and schedule." },
+      { id: "create-community", label: "Community", note: "Public or private access and visitor policy." },
+      { id: "create-commitment", label: "NIM commitment", note: "Maximum upfront amount in one clear equation." },
+      { id: "create-review", label: "Publish review", note: "Freeze the complete contract with informed consent." }
+    ]
+  }
+];
 
 const templateLabel: Record<NativeMomentumPreviewPod["templateId"], string> = {
   build: "Build & Ship",
@@ -473,13 +402,13 @@ function BottomNav({
   navigate
 }: {
   active: "today" | "discover" | "pods" | "messages";
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const items = [
-    { id: "today", label: "Today", icon: House, screen: "today" as ScreenId },
-    { id: "discover", label: "Discover", icon: Compass, screen: "discover" as ScreenId },
-    { id: "pods", label: "My Pods", icon: Users, screen: "my-pods" as ScreenId },
-    { id: "messages", label: "Messages", icon: ChatCircleDots, screen: "messages" as ScreenId }
+    { id: "today", label: "Today", icon: House, screen: "today" as ScreenId, actor: "participant" as ActorId },
+    { id: "discover", label: "Discover", icon: Compass, screen: "discover" as ScreenId, actor: "visitor" as ActorId },
+    { id: "pods", label: "My Pods", icon: Users, screen: "my-pods" as ScreenId, actor: "participant" as ActorId },
+    { id: "messages", label: "Messages", icon: ChatCircleDots, screen: "messages" as ScreenId, actor: "social" as ActorId }
   ];
   return (
     <nav aria-label="Prototype primary navigation" className={styles.bottomNav}>
@@ -489,7 +418,7 @@ function BottomNav({
           <button
             aria-current={active === item.id ? "page" : undefined}
             key={item.id}
-            onClick={() => navigate(item.screen)}
+            onClick={() => navigate(item.screen, item.actor)}
             type="button"
           >
             <Icon size={21} weight={active === item.id ? "fill" : "regular"} />
@@ -505,23 +434,15 @@ function PrimaryButton({
   children,
   onClick,
   icon = true,
-  disabled = false,
-  ariaLabel
+  disabled = false
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   icon?: boolean;
   disabled?: boolean;
-  ariaLabel?: string;
 }) {
   return (
-    <button
-      aria-label={ariaLabel}
-      className={styles.primaryButton}
-      disabled={disabled}
-      onClick={onClick}
-      type="button"
-    >
+    <button className={styles.primaryButton} disabled={disabled} onClick={onClick} type="button">
       <span>{children}</span>
       {icon ? <i><ArrowRight size={19} weight="bold" /></i> : null}
     </button>
@@ -662,7 +583,7 @@ function DiscoverScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -680,12 +601,10 @@ function DiscoverScreen({
         </div>
         <SectionHeading eyebrow="Public activities" title={`${data.pods.length} Pods from the database`} />
         <div className={styles.rowList}>
-          {data.pods.map((pod) => (
+          {data.pods.map((pod, index) => (
             <PodRow
               key={pod.id}
-              onClick={() =>
-                navigate("pod-preview", { podId: pod.id })
-              }
+              onClick={() => navigate(index === 0 ? "pod-preview" : "pod-preview")}
               pod={pod}
               relationship={pod.stage === "live" ? "Live now · Visitor room open" : `Apply · ${pod.maxParticipants} places`}
             />
@@ -704,7 +623,7 @@ function PodPreviewScreen({
 }: {
   pod: NativeMomentumPreviewPod;
   creator: NativeMomentumPreviewPerson;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -768,7 +687,7 @@ function VisitorRoomScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={`${styles.roomScreen} ${templateThemeClass[pod.templateId]}`}>
@@ -800,7 +719,7 @@ function PublicProofScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const entry = data.roomEntries.find((item) => item.kind === "activity") ?? data.roomEntries[0]!;
   return (
@@ -835,7 +754,7 @@ function ApplicationScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -855,9 +774,7 @@ function ApplicationScreen({
           <ShieldCheck size={22} weight="regular" />
           <span><strong>Applying does not reserve a place</strong><small>A place is secured only after acceptance, funding finality, and roster lock.</small></span>
         </div>
-        <PrimaryButton onClick={() => navigate("application-submitted")}>
-          Submit application
-        </PrimaryButton>
+        <PrimaryButton onClick={() => navigate("funding", "participant")}>Submit application</PrimaryButton>
       </ScreenBody>
     </MobileScreen>
   );
@@ -870,7 +787,7 @@ function InviteScreen({
 }: {
   pod: NativeMomentumPreviewPod;
   creator: NativeMomentumPreviewPerson;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -896,7 +813,7 @@ function InviteScreen({
           <DisclosureRow icon={<Receipt size={19} />} label="Settlement outcomes" value="Approved, rejected, protected, and missed" />
         </div>
         <div className={styles.buttonStack}>
-          <PrimaryButton onClick={() => navigate("funding")}>Accept and continue</PrimaryButton>
+          <PrimaryButton onClick={() => navigate("funding", "participant")}>Accept and continue</PrimaryButton>
           <SecondaryButton>Decline invitation</SecondaryButton>
         </div>
       </ScreenBody>
@@ -904,7 +821,7 @@ function InviteScreen({
   );
 }
 
-function InvalidInviteScreen({ navigate }: { navigate: LegacyNavigate }) {
+function InvalidInviteScreen({ navigate }: { navigate: (screen: ScreenId, actor?: ActorId) => void }) {
   return (
     <MobileScreen>
       <ScreenHeader title="Invitation unavailable" trailing="none" />
@@ -926,7 +843,7 @@ function ActivityEventCard({
   publicMode = false
 }: {
   entry: NativeMomentumRoomEntry;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
   publicMode?: boolean;
 }) {
   return (
@@ -961,7 +878,7 @@ function RoomTimeline({
   publicMode = false
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
   publicMode?: boolean;
 }) {
   return (
@@ -1002,7 +919,7 @@ function TodayScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -1040,7 +957,7 @@ function MyPodsScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const first = data.pods[0]!;
   return (
@@ -1073,7 +990,7 @@ function FinancialJourney({
 }: {
   kind: "funding" | "refund" | "settlement";
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const config = kind === "funding"
     ? {
@@ -1143,7 +1060,7 @@ function WaitingScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -1178,7 +1095,7 @@ function RoomScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={`${styles.roomScreen} ${templateThemeClass[pod.templateId]}`}>
@@ -1226,7 +1143,7 @@ function CommitmentScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={templateThemeClass[pod.templateId]}>
@@ -1263,7 +1180,7 @@ function CommitmentScreen({
 function ProofTypeScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const choices = [
     { icon: LinkSimple, title: "Public artifact", copy: "Pull request, deployment, or public document", selected: true },
@@ -1299,7 +1216,7 @@ function ProofTypeScreen({
 function ProofEvidenceScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1337,7 +1254,7 @@ function ProofEvidenceScreen({
 function ProofReviewScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1373,7 +1290,7 @@ function SubmissionStatusScreen({
 }: {
   approved: boolean;
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1397,31 +1314,8 @@ function SubmissionStatusScreen({
           <div className={styles.proofThumb}><Image alt="Reviewer evidence" height={120} src="/media/build-proof.jpg" width={120} /><span>Shared with your creator</span></div>
         </section>
         <DisclosureRow icon={<Clock size={19} />} label="Decision history" value={approved ? "Approved at 10:52 PM" : "Protection applies at 10:47 PM tomorrow"} />
-        <PrimaryButton onClick={() => navigate(approved ? "room" : "creator-reviewing")}>
-          {approved ? "Return to Pod room" : "Track review status"}
-        </PrimaryButton>
-      </ScreenBody>
-    </MobileScreen>
-  );
-}
-
-function ProofRejectedScreen({
-  navigate
-}: {
-  navigate: LegacyNavigate;
-}) {
-  return (
-    <MobileScreen>
-      <ScreenHeader title="Proof Rejected" trailing="actions" />
-      <ScreenBody>
-        <section className={styles.outcomeHero}>
-          <span><X size={28} weight="bold" /></span>
-          <small>Occurrence 2</small>
-          <h2>Proof does not meet the locked commitment.</h2>
-          <p>The participant sees the creator decision and the occurrence is no longer bonus eligible.</p>
-        </section>
-        <PrimaryButton onClick={() => navigate("review-queue")}>
-          Return to review queue
+        <PrimaryButton onClick={() => navigate(approved ? "room" : "submission-approved")}>
+          {approved ? "Return to Pod room" : "Preview approved state"}
         </PrimaryButton>
       </ScreenBody>
     </MobileScreen>
@@ -1433,7 +1327,7 @@ function UpdatesScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const groups = [
     {
@@ -1476,7 +1370,7 @@ function MembersScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1499,7 +1393,7 @@ function RulesScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1534,7 +1428,7 @@ function CreatorCommandScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1564,89 +1458,29 @@ function CreatorCommandScreen({
 }
 
 function ApplicationsScreen({
-  applications,
+  data,
   navigate
 }: {
-  applications: PreviewApplicationRecord[];
-  navigate: LegacyNavigate;
+  data: NativeMomentumPreviewData;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
       <ScreenHeader back onBack={() => navigate("command-center")} title="Applications" trailing="actions" />
       <ScreenBody>
         <div className={styles.queueSummary}><span>2 waiting</span><strong>Decide before funding cutoff</strong></div>
-        {applications.map((application) => (
-          <article className={styles.applicationCard} key={application.id}>
+        {data.people.map((person, index) => (
+          <article className={styles.applicationCard} key={person.handle}>
             <div className={styles.applicationIdentity}>
-              <PreviewAvatar name={application.person.avatarSeed} />
-              <span><strong>{application.person.displayName}</strong><small>@{application.person.handle}</small></span>
-              <button aria-label={`More actions for ${application.person.displayName}`} type="button"><DotsThree size={20} weight="bold" /></button>
+              <PreviewAvatar name={person.avatarSeed} />
+              <span><strong>{person.displayName}</strong><small>@{person.handle}</small></span>
+              <button aria-label={`More actions for ${person.displayName}`} type="button"><DotsThree size={20} weight="bold" /></button>
             </div>
-            <p>{application.person.bio}</p>
-            <DisclosureRow
-              icon={<FileText size={18} />}
-              label="Application answers"
-              value={`${application.responseCount} ${
-                application.responseCount === 1 ? "response" : "thoughtful responses"
-              }`}
-            />
-            <PrimaryButton
-              ariaLabel={`Review ${application.person.displayName}'s application`}
-              icon={false}
-              onClick={() =>
-                navigate("application-detail", {
-                  applicationId: application.id,
-                  personHandle: application.person.handle
-                })
-              }
-            >
-              Review application
-            </PrimaryButton>
+            <p>{person.bio}</p>
+            <DisclosureRow icon={<FileText size={18} />} label="Application answers" value={index === 0 ? "2 thoughtful responses" : "1 response"} />
+            <PrimaryButton icon={false}>Accept applicant</PrimaryButton>
           </article>
         ))}
-      </ScreenBody>
-    </MobileScreen>
-  );
-}
-
-function ApplicationDetailScreen({
-  application,
-  navigate
-}: {
-  application: PreviewApplicationRecord;
-  navigate: LegacyNavigate;
-}) {
-  return (
-    <MobileScreen>
-      <ScreenHeader
-        back
-        onBack={() => navigate("applications")}
-        title={`${application.person.displayName}'s application`}
-        trailing="actions"
-      />
-      <ScreenBody>
-        <article className={styles.applicationCard}>
-          <div className={styles.applicationIdentity}>
-            <PreviewAvatar name={application.person.avatarSeed} />
-            <span>
-              <strong>{application.person.displayName}</strong>
-              <small>@{application.person.handle}</small>
-            </span>
-          </div>
-          <p>{application.person.bio}</p>
-          <div className={styles.reviewComparison}>
-            <div>
-              <span>Why this Pod?</span>
-              <strong>{application.motivation}</strong>
-            </div>
-            <div>
-              <span>Applied</span>
-              <strong>{application.appliedAt}</strong>
-            </div>
-          </div>
-        </article>
-        <SecondaryButton>Decline application</SecondaryButton>
-        <PrimaryButton icon={false}>Accept applicant</PrimaryButton>
       </ScreenBody>
     </MobileScreen>
   );
@@ -1659,7 +1493,7 @@ function CreatorFundingScreen({
 }: {
   data: NativeMomentumPreviewData;
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const fundedPeople = data.people.filter(
     (person) => person.handle.toLowerCase() !== data.viewer.handle.toLowerCase()
@@ -1696,11 +1530,11 @@ function CreatorFundingScreen({
 }
 
 function ReviewQueueScreen({
-  submissions,
+  data,
   navigate
 }: {
-  submissions: PreviewSubmissionRecord[];
-  navigate: LegacyNavigate;
+  data: NativeMomentumPreviewData;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1708,28 +1542,14 @@ function ReviewQueueScreen({
       <ScreenBody>
         <section className={styles.reviewQueueLead}>
           <span>2</span>
-          <div>
-            <small>Simulated journey actors</small>
-            <h2>Oldest first</h2>
-            <p>One proof reaches its 12-hour target in 46 minutes.</p>
-          </div>
+          <div><small>Proofs waiting</small><h2>Oldest first</h2><p>One reaches its 12-hour target in 46 minutes.</p></div>
         </section>
         <div className={styles.reviewQueue}>
-          {submissions.map((submission) => (
-            <button
-              aria-label={`Review ${submission.person.displayName}'s submission`}
-              key={submission.id}
-              onClick={() =>
-                navigate("review-proof", {
-                  personHandle: submission.person.handle,
-                  submissionId: submission.id
-                })
-              }
-              type="button"
-            >
-              <PreviewAvatar name={submission.person.avatarSeed} />
-              <span><small>Occurrence {submission.occurrence}</small><strong>{submission.person.displayName}</strong><p>{submission.commitment}</p></span>
-              <time>{submission.age}</time>
+          {data.people.map((person, index) => (
+            <button key={person.handle} onClick={() => navigate("review-proof")} type="button">
+              <PreviewAvatar name={person.avatarSeed} />
+              <span><small>Occurrence {index + 1}</small><strong>{person.displayName}</strong><p>{index === 0 ? "Ship the compact room and proof flow" : "Publish the funding-state audit"}</p></span>
+              <time>{index === 0 ? "46m" : "3h"}</time>
               <CaretRight size={16} weight="bold" />
             </button>
           ))}
@@ -1740,43 +1560,37 @@ function ReviewQueueScreen({
 }
 
 function ReviewProofScreen({
-  submission,
+  data,
   navigate
 }: {
-  submission: PreviewSubmissionRecord;
-  navigate: LegacyNavigate;
+  data: NativeMomentumPreviewData;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
+  const person = data.people[0]!;
   return (
     <MobileScreen className={styles.themeBuild}>
       <ScreenHeader back onBack={() => navigate("review-queue")} title="Review proof" trailing="actions" />
       <ScreenBody>
         <div className={styles.reviewPerson}>
-          <PreviewAvatar name={submission.person.avatarSeed} />
-          <span><strong>{submission.person.displayName}</strong><small>@{submission.person.handle} · Occurrence {submission.occurrence}</small></span>
-          <StatusPill tone="warning">{submission.age} open</StatusPill>
+          <PreviewAvatar name={person.avatarSeed} />
+          <span><strong>{person.displayName}</strong><small>@{person.handle} · Occurrence 2</small></span>
+          <StatusPill tone="warning">10h 14m open</StatusPill>
         </div>
         <section className={styles.reviewComparison}>
-          <div><span>Locked commitment</span><strong>{submission.commitment}</strong></div>
-          <div><span>Submitted result</span><strong>{submission.result}</strong></div>
+          <div><span>Locked commitment</span><strong>Ship the compact Pod room and proof entry flow.</strong></div>
+          <div><span>Submitted result</span><strong>The responsive room and submission path are ready.</strong></div>
         </section>
         <div className={styles.reviewEvidence}>
           <Image alt="Creator-only build workspace evidence" height={480} src="/media/build-workspace.jpg" width={720} />
           <span><LockKey size={16} /><strong>Creator only</strong></span>
         </div>
-        <DisclosureRow icon={<LinkSimple size={19} />} label={submission.artifactLabel} />
+        <DisclosureRow icon={<LinkSimple size={19} />} label="Pull request 184" />
         <button className={styles.optionalNote} type="button">Add a private review note <Plus size={16} /></button>
         <div className={styles.stickyActionSpacer} />
       </ScreenBody>
       <div className={styles.decisionDock}>
-        <SecondaryButton onClick={() => navigate("proof-rejected")}>
-          Reject proof
-        </SecondaryButton>
-        <PrimaryButton
-          icon={false}
-          onClick={() => navigate("proof-approved")}
-        >
-          Approve proof
-        </PrimaryButton>
+        <SecondaryButton>Reject</SecondaryButton>
+        <PrimaryButton icon={false}>Approve proof</PrimaryButton>
       </div>
     </MobileScreen>
   );
@@ -1787,7 +1601,7 @@ function CreatorSettlementScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const people = [
     { ...data.people[0]!, amount: data.finance.payoutNim, result: "3 approved" },
@@ -1826,7 +1640,7 @@ function PrivateProfileScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1853,15 +1667,7 @@ function PrivateProfileScreen({
         />
         <div className={styles.avatarRail}>
           {data.people.map((person) => (
-            <button
-              key={person.handle}
-              onClick={() =>
-                navigate("public-profile", {
-                  personHandle: person.handle
-                })
-              }
-              type="button"
-            >
+            <button key={person.handle} onClick={() => navigate("public-profile")} type="button">
               <PreviewAvatar name={person.avatarSeed} />
               <span>{person.displayName.split(" ")[0]}</span>
             </button>
@@ -1883,7 +1689,7 @@ function PublicProfileScreen({
   navigate
 }: {
   person: NativeMomentumPreviewPerson;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1916,7 +1722,7 @@ function PeopleSearchScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1930,15 +1736,7 @@ function PeopleSearchScreen({
         <SectionHeading eyebrow="Database profiles" title={`${data.people.length} people`} />
         <div className={styles.personList}>
           {data.people.map((person) => (
-            <PersonRow
-              key={person.handle}
-              onClick={() =>
-                navigate("public-profile", {
-                  personHandle: person.handle
-                })
-              }
-              person={person}
-            />
+            <PersonRow key={person.handle} onClick={() => navigate("public-profile")} person={person} />
           ))}
         </div>
         <p className={styles.privacyFootnote}>Only opted-in public profiles appear in search.</p>
@@ -1952,7 +1750,7 @@ function MessagesScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -1982,7 +1780,7 @@ function RequestsScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -2013,7 +1811,7 @@ function DirectMessageScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const peer = data.people[0]!;
   return (
@@ -2045,12 +1843,17 @@ function DirectMessageScreen({
 }
 
 function TransferQueueScreen({
-  transfers,
+  data,
   navigate
 }: {
-  transfers: PreviewTransferRecord[];
-  navigate: LegacyNavigate;
+  data: NativeMomentumPreviewData;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
+  const rows = [
+    { pod: data.pods[0]?.name ?? "Pods in Pods", state: "Unknown", tone: "warning" as const, amount: data.finance.payoutNim, age: "4m" },
+    { pod: "Night Run Club", state: "Retry required", tone: "danger" as const, amount: 0.2, age: "18m" },
+    { pod: "Reading Reset", state: "Late", tone: "warning" as const, amount: 0.1, age: "1h" }
+  ];
   return (
     <MobileScreen>
       <ScreenHeader title="Transfer operations" trailing="actions" />
@@ -2061,19 +1864,10 @@ function TransferQueueScreen({
           <button aria-label="Filter transfers" type="button"><FunnelSimple size={18} /></button>
         </div>
         <div className={styles.opsList}>
-          {transfers.map((transfer) => (
-            <button
-              aria-label={`Open ${transfer.state} transfer for ${transfer.pod}`}
-              key={transfer.id}
-              onClick={() =>
-                navigate("transfer-detail", {
-                  transferId: transfer.id
-                })
-              }
-              type="button"
-            >
-              <span><StatusPill tone={transfer.tone}>{transfer.state}</StatusPill><strong>{transfer.pod}</strong><small>{formatNim(transfer.amount)} · Payout leg</small></span>
-              <time>{transfer.age}</time>
+          {rows.map((row) => (
+            <button key={`${row.pod}-${row.state}`} onClick={() => navigate("transfer-detail")} type="button">
+              <span><StatusPill tone={row.tone}>{row.state}</StatusPill><strong>{row.pod}</strong><small>{formatNim(row.amount)} · Payout leg</small></span>
+              <time>{row.age}</time>
               <CaretRight size={16} weight="bold" />
             </button>
           ))}
@@ -2085,28 +1879,26 @@ function TransferQueueScreen({
 
 function TransferDetailScreen({
   data,
-  transfer,
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  transfer: PreviewTransferRecord;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
       <ScreenHeader back onBack={() => navigate("transfer-queue")} title="Transfer detail" trailing="actions" />
       <ScreenBody>
         <section className={styles.opsDetailHero}>
-          <StatusPill tone={transfer.tone}>{transfer.state}</StatusPill>
-          <h2>{formatNim(transfer.amount)}</h2>
-          <p>{transfer.description}</p>
+          <StatusPill tone="warning">Unknown</StatusPill>
+          <h2>{formatNim(data.finance.payoutNim)}</h2>
+          <p>Broadcast exists, but chain confirmation is not yet conclusive. Reconcile before any retry.</p>
         </section>
         <div className={styles.opsFacts}>
-          <div><span>Pod</span><strong>{transfer.pod}</strong></div>
+          <div><span>Pod</span><strong>{data.pods[0]?.name ?? "Pods in Pods"}</strong></div>
           <div><span>Network</span><strong>Nimiq Testnet</strong></div>
-          <div><span>Transfer leg</span><code>{transfer.leg}</code></div>
+          <div><span>Transfer leg</span><code>7e320c14...a881</code></div>
           <div><span>Transaction</span><code>{shortenHash(data.finance.transactionHash)}</code></div>
-          <div><span>Last checked</span><strong>{transfer.lastChecked}</strong></div>
+          <div><span>Last checked</span><strong>4 minutes ago</strong></div>
         </div>
         <div className={styles.operatorNotice}><ShieldCheck size={20} /><span><strong>Retry safety is active</strong><small>The worker must prove absence before creating another broadcast.</small></span></div>
         <PrimaryButton icon={false}>Reconcile on chain</PrimaryButton>
@@ -2148,13 +1940,13 @@ function PublicSafetyScreen({
 function LandingScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen className={styles.landingScreen}>
       <header className={styles.landingHeader}>
         <span className={styles.previewWordmark}><i />pods</span>
-        <button onClick={() => navigate("discover")} type="button">Pods</button>
+        <button onClick={() => navigate("discover", "visitor")} type="button">Pods</button>
         <button onClick={() => navigate("connect")} type="button">Wallet</button>
       </header>
       <div className={styles.landingComposition}>
@@ -2176,7 +1968,7 @@ function LandingScreen({
 function ConnectScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -2192,33 +1984,8 @@ function ConnectScreen({
           <div><ShieldCheck size={19} /><span><strong>One-time signature</strong><small>Proves wallet ownership without a password.</small></span></div>
           <div><Eye size={19} /><span><strong>Private by default</strong><small>Your wallet address never appears on social profiles.</small></span></div>
         </div>
-        <PrimaryButton onClick={() => navigate("signature-waiting")}>
-          Connect Nimiq wallet
-        </PrimaryButton>
+        <PrimaryButton onClick={() => navigate("profile-identity")}>Connect Nimiq wallet</PrimaryButton>
         <p className={styles.testnetNote}>Testnet beta. Test NIM has no real-world value.</p>
-      </ScreenBody>
-    </MobileScreen>
-  );
-}
-
-function SignatureWaitingScreen({
-  navigate
-}: {
-  navigate: LegacyNavigate;
-}) {
-  return (
-    <MobileScreen>
-      <ScreenHeader title="Wallet confirmation" trailing="none" />
-      <ScreenBody>
-        <section className={styles.outcomeHero}>
-          <span><Wallet size={28} weight="regular" /></span>
-          <small>Wallet handoff</small>
-          <h2>Confirm in Nimiq Pay</h2>
-          <p>Pods will continue as soon as the signed wallet response returns.</p>
-        </section>
-        <PrimaryButton onClick={() => navigate("profile-identity")}>
-          Preview signed response
-        </PrimaryButton>
       </ScreenBody>
     </MobileScreen>
   );
@@ -2229,7 +1996,7 @@ function ProfileIdentityScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -2254,7 +2021,7 @@ function ProfileAvatarScreen({
   navigate
 }: {
   data: NativeMomentumPreviewData;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const bundledNames = [
     "Ari Vale",
@@ -2303,7 +2070,7 @@ function ProfileAvatarScreen({
 function ProfilePrivacyScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
@@ -2324,34 +2091,7 @@ function ProfilePrivacyScreen({
           <button aria-pressed="false" type="button"><span><strong>Friends only</strong><small>Only accepted friends can start a chat.</small></span><b /></button>
         </div>
       </ScreenBody>
-      <div className={styles.actionDock}>
-        <PrimaryButton onClick={() => navigate("setup-complete")}>
-          Enter Pods
-        </PrimaryButton>
-      </div>
-    </MobileScreen>
-  );
-}
-
-function SetupCompleteScreen({
-  navigate
-}: {
-  navigate: LegacyNavigate;
-}) {
-  return (
-    <MobileScreen>
-      <ScreenHeader title="Profile ready" trailing="none" />
-      <ScreenBody>
-        <section className={`${styles.outcomeHero} ${styles.outcomeApproved}`}>
-          <span><CheckCircle size={28} weight="fill" /></span>
-          <small>Profile ready</small>
-          <h2>Your Pods identity is ready.</h2>
-          <p>Start with today’s action or browse a public activity.</p>
-        </section>
-        <PrimaryButton onClick={() => navigate("today")}>
-          Enter Pods
-        </PrimaryButton>
-      </ScreenBody>
+      <div className={styles.actionDock}><PrimaryButton onClick={() => navigate("today", "participant")}>Enter Pods</PrimaryButton></div>
     </MobileScreen>
   );
 }
@@ -2359,12 +2099,12 @@ function SetupCompleteScreen({
 function CreateTemplateScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const templates: NativeMomentumPreviewPod["templateId"][] = ["build", "fitness", "reading", "study", "create"];
   return (
     <MobileScreen>
-      <WizardHeader current={1} label="Create a Pod" onClose={() => navigate("today")} total={5} />
+      <WizardHeader current={1} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>Activity contract</span>
@@ -2391,11 +2131,11 @@ function CreateActivityScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
-      <WizardHeader current={2} label="Create a Pod" onClose={() => navigate("today")} total={5} />
+      <WizardHeader current={2} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>{templateLabel[pod.templateId]}</span>
@@ -2421,11 +2161,11 @@ function CreateActivityScreen({
 function CreateCommunityScreen({
   navigate
 }: {
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
-      <WizardHeader current={3} label="Create a Pod" onClose={() => navigate("today")} total={5} />
+      <WizardHeader current={3} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>Community access</span>
@@ -2456,12 +2196,12 @@ function CreateCommitmentScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   const perOccurrence = pod.totalNim / Math.max(pod.occurrenceCount, 1);
   return (
     <MobileScreen>
-      <WizardHeader current={4} label="Create a Pod" onClose={() => navigate("today")} total={5} />
+      <WizardHeader current={4} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>NIM commitment</span>
@@ -2494,11 +2234,11 @@ function CreateReviewScreen({
   navigate
 }: {
   pod: NativeMomentumPreviewPod;
-  navigate: LegacyNavigate;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
     <MobileScreen>
-      <WizardHeader current={5} label="Create a Pod" onClose={() => navigate("today")} total={5} />
+      <WizardHeader current={5} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.publishHero}>
           <span><ShieldCheck size={28} /></span>
@@ -2514,28 +2254,22 @@ function CreateReviewScreen({
           <div><span>Verifier</span><strong>You, the Pod creator</strong></div>
         </div>
         <div className={styles.publishConsent}><button aria-pressed="true" type="button"><Check size={14} /></button><p>I accept the creator-review authority, no-appeal rule, custodial treasury, timeout protection, and exact maximum commitment shown above.</p></div>
-        <PrimaryButton onClick={() => navigate("publishing")}>Publish Pod</PrimaryButton>
+        <PrimaryButton onClick={() => navigate("command-center", "creator")}>Publish Pod</PrimaryButton>
       </ScreenBody>
     </MobileScreen>
   );
 }
 
-function LegacyScreenContent({
+export function LegacyScreenRenderer({
   data,
-  records,
   screen,
-  navigate,
-  selected
+  navigate
 }: {
   data: NativeMomentumPreviewData;
-  records: PreviewRecords;
   screen: ScreenId;
-  navigate: LegacyNavigate;
-  selected: SelectedEntities;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
-  const pod = data.pods.find((candidate) => candidate.id === selected.podId)
-    ?? data.pods[0]
-    ?? {
+  const pod = data.pods[0] ?? {
     id: "preview-pod",
     name: "Pods in Pods",
     purpose: "Build the accountability product in public with the team.",
@@ -2555,36 +2289,7 @@ function LegacyScreenContent({
     avatarSeed: "Ari Vale",
     bio: "Shipping small products with careful craft."
   };
-  const person = data.people.find(
-    (candidate) => candidate.handle === selected.personHandle
-  ) ?? data.people[1] ?? creator;
-  const application = records.applications.find(
-    (candidate) => candidate.id === selected.applicationId
-  ) ?? records.applications.find(
-    (candidate) => candidate.person.handle === person.handle
-  ) ?? {
-    id: `application-${person.handle}`,
-    person,
-    motivation: "I want to build visible momentum with this group.",
-    responseCount: 1,
-    appliedAt: "Today"
-  };
-  const submission = records.submissions.find(
-    (candidate) => candidate.id === selected.submissionId
-  ) ?? records.submissions.find(
-    (candidate) => candidate.person.handle === person.handle
-  ) ?? {
-    id: `submission-${person.handle}`,
-    person,
-    occurrence: 1,
-    commitment: "Complete the locked occurrence work.",
-    result: `${person.displayName} submitted the committed work.`,
-    artifactLabel: "Shared artifact",
-    age: "46m"
-  };
-  const transfer = records.transfers.find(
-    (candidate) => candidate.id === selected.transferId
-  ) ?? records.transfers[0]!;
+  const person = data.people[1] ?? creator;
 
   switch (screen) {
     case "discover": return <DiscoverScreen data={data} navigate={navigate} />;
@@ -2605,19 +2310,16 @@ function LegacyScreenContent({
     case "proof-review": return <ProofReviewScreen navigate={navigate} />;
     case "submission-review": return <SubmissionStatusScreen approved={false} data={data} navigate={navigate} />;
     case "submission-approved": return <SubmissionStatusScreen approved data={data} navigate={navigate} />;
-    case "proof-approved": return <SubmissionStatusScreen approved data={data} navigate={navigate} />;
-    case "proof-rejected": return <ProofRejectedScreen navigate={navigate} />;
     case "refund": return <FinancialJourney data={data} kind="refund" navigate={navigate} />;
     case "settlement": return <FinancialJourney data={data} kind="settlement" navigate={navigate} />;
     case "updates": return <UpdatesScreen navigate={navigate} pod={pod} />;
     case "members": return <MembersScreen data={data} navigate={navigate} />;
     case "rules": return <RulesScreen navigate={navigate} pod={pod} />;
     case "command-center": return <CreatorCommandScreen data={data} navigate={navigate} pod={pod} />;
-    case "applications": return <ApplicationsScreen applications={records.applications} navigate={navigate} />;
-    case "application-detail": return <ApplicationDetailScreen application={application} navigate={navigate} />;
+    case "applications": return <ApplicationsScreen data={data} navigate={navigate} />;
     case "creator-funding": return <CreatorFundingScreen data={data} navigate={navigate} pod={pod} />;
-    case "review-queue": return <ReviewQueueScreen navigate={navigate} submissions={records.submissions} />;
-    case "review-proof": return <ReviewProofScreen navigate={navigate} submission={submission} />;
+    case "review-queue": return <ReviewQueueScreen data={data} navigate={navigate} />;
+    case "review-proof": return <ReviewProofScreen data={data} navigate={navigate} />;
     case "creator-settlement": return <CreatorSettlementScreen data={data} navigate={navigate} />;
     case "private-profile": return <PrivateProfileScreen data={data} navigate={navigate} />;
     case "public-profile": return <PublicProfileScreen navigate={navigate} person={person} />;
@@ -2625,13 +2327,11 @@ function LegacyScreenContent({
     case "messages": return <MessagesScreen data={data} navigate={navigate} />;
     case "requests": return <RequestsScreen data={data} navigate={navigate} />;
     case "direct-message": return <DirectMessageScreen data={data} navigate={navigate} />;
-    case "transfer-queue": return <TransferQueueScreen navigate={navigate} transfers={records.transfers} />;
-    case "transfer-detail": return <TransferDetailScreen data={data} navigate={navigate} transfer={transfer} />;
+    case "transfer-queue": return <TransferQueueScreen data={data} navigate={navigate} />;
+    case "transfer-detail": return <TransferDetailScreen data={data} navigate={navigate} />;
     case "public-safety": return <PublicSafetyScreen data={data} />;
     case "landing": return <LandingScreen navigate={navigate} />;
     case "connect": return <ConnectScreen navigate={navigate} />;
-    case "signature-waiting": return <SignatureWaitingScreen navigate={navigate} />;
-    case "setup-complete": return <SetupCompleteScreen navigate={navigate} />;
     case "profile-identity": return <ProfileIdentityScreen data={data} navigate={navigate} />;
     case "profile-avatar": return <ProfileAvatarScreen data={data} navigate={navigate} />;
     case "profile-privacy": return <ProfilePrivacyScreen navigate={navigate} />;
@@ -2640,80 +2340,143 @@ function LegacyScreenContent({
     case "create-community": return <CreateCommunityScreen navigate={navigate} />;
     case "create-commitment": return <CreateCommitmentScreen navigate={navigate} pod={pod} />;
     case "create-review": return <CreateReviewScreen navigate={navigate} pod={pod} />;
-    default:
-      throw new Error(`No visual renderer exists for ${String(screen)}`);
+    default: return <DiscoverScreen data={data} navigate={navigate} />;
   }
 }
 
-const LIVE_PUBLIC_SCREENS = new Set<LegacyScreenId>([
-  "discover",
-  "pod-preview",
-  "visitor-room",
-  "public-proof",
-  "people-search",
-  "public-profile"
-]);
-
-export function LegacyScreenRenderer({
-  data,
-  screen,
-  navigate,
-  selected,
-  scenario
+export function LegacyNativeMomentumPrototype({
+  data
 }: {
   data: NativeMomentumPreviewData;
-  screen: LegacyScreenId;
-  navigate: LegacyNavigate;
-  selected: SelectedEntities;
-  scenario: ScenarioId;
 }) {
-  const selectedPerson = data.people.find(
-    (candidate) => candidate.handle === selected.personHandle
+  const reducedMotion = useReducedMotion();
+  const [actor, setActor] = useState<ActorId>("visitor");
+  const [screen, setScreen] = useState<ScreenId>("discover");
+  const activeActor = useMemo(
+    () => actorDefinitions.find((definition) => definition.id === actor) ?? actorDefinitions[0]!,
+    [actor]
   );
-  const selectedPod = data.pods.find(
-    (candidate) => candidate.id === selected.podId
-  );
-  const records = buildPreviewRecords();
-  const selectedData = {
-    ...data,
-    people: selectedPerson
-      ? [
-          selectedPerson,
-          ...data.people.filter(
-            (candidate) => candidate.handle !== selectedPerson.handle
-          )
-        ]
-      : data.people,
-    pods: selectedPod
-      ? [
-          selectedPod,
-          ...data.pods.filter((candidate) => candidate.id !== selectedPod.id)
-        ]
-      : data.pods
-  };
-  const journeyData: NativeMomentumPreviewData = {
-    ...selectedData,
-    viewer: {
-      displayName: PREVIEW_FIXTURE_PROFILE.displayName,
-      handle: PREVIEW_FIXTURE_PROFILE.handle,
-      avatarSeed: PREVIEW_FIXTURE_PROFILE.avatarSeed
-    },
-    people: [...JOURNEY_FIXTURE_PEOPLE],
-    roomEntries: [...JOURNEY_FIXTURE_ROOM_ENTRIES]
-  };
+  const activeScreen = activeActor.screens.find((definition) => definition.id === screen)
+    ?? activeActor.screens[0]!;
+
+  function selectActor(nextActor: ActorId) {
+    const definition = actorDefinitions.find((item) => item.id === nextActor);
+    if (!definition) return;
+    setActor(nextActor);
+    setScreen(definition.screens[0]!.id);
+  }
+
+  function navigate(nextScreen: ScreenId, nextActor?: ActorId) {
+    if (nextActor) {
+      setActor(nextActor);
+      setScreen(nextScreen);
+      return;
+    }
+    const owner = actorDefinitions.find((definition) =>
+      definition.screens.some((candidate) => candidate.id === nextScreen)
+    );
+    if (owner && !activeActor.screens.some((candidate) => candidate.id === nextScreen)) {
+      setActor(owner.id);
+    }
+    setScreen(nextScreen);
+  }
 
   return (
-    <div
-      data-preview-scenario={scenario}
-      data-testid="legacy-scenario-renderer"
-    >
-      <LegacyScreenContent
-        data={LIVE_PUBLIC_SCREENS.has(screen) ? selectedData : journeyData}
-        navigate={navigate}
-        records={records}
-        screen={screen}
-        selected={selected}
-      />
-    </div>
+    <main className={styles.prototypeShell}>
+      <aside className={styles.prototypeSidebar}>
+        <div className={styles.prototypeBrand}>
+          <span className={styles.previewWordmark}><i />pods</span>
+          <StatusPill tone="live">Native Momentum</StatusPill>
+        </div>
+        <div className={styles.prototypeIntro}>
+          <span>Interactive visual system</span>
+          <h1>Every Pods flow, redesigned.</h1>
+          <p>Independent screens use current database content where available. Buttons move through the visual flow without mutating product state.</p>
+        </div>
+        <nav aria-label="Preview actors" className={styles.actorNav}>
+          {actorDefinitions.map((definition) => (
+            <button
+              aria-label={definition.label}
+              aria-current={actor === definition.id ? "page" : undefined}
+              key={definition.id}
+              onClick={() => selectActor(definition.id)}
+              type="button"
+            >
+              <span>{definition.label}</span>
+              <small>{definition.screens.length} screens</small>
+              <CaretRight size={16} weight="bold" />
+            </button>
+          ))}
+        </nav>
+        <div className={styles.dataStatus}>
+          <i className={data.databaseStatus === "connected" ? styles.dataLive : ""} />
+          <span>
+            <strong>{data.databaseStatus === "connected" ? "Live database preview" : "Representative preview data"}</strong>
+            <small>{data.pods.length} Pods · {data.people.length} profiles · {data.roomEntries.length} room events</small>
+          </span>
+        </div>
+      </aside>
+
+      <section className={styles.prototypeStage}>
+        <header className={styles.stageHeader}>
+          <div><span>{activeActor.label} flow</span><h2>{activeScreen.label}</h2></div>
+          <p>{activeScreen.note}</p>
+        </header>
+        <nav aria-label={`${activeActor.label} screens`} className={styles.screenRail}>
+          {activeActor.screens.map((definition, index) => (
+            <button
+              aria-label={definition.label}
+              aria-current={definition.id === screen ? "page" : undefined}
+              key={definition.id}
+              onClick={() => setScreen(definition.id)}
+              type="button"
+            >
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              {definition.label}
+            </button>
+          ))}
+        </nav>
+        <div className={styles.deviceStage}>
+          <div className={styles.deviceFrame}>
+            <div className={styles.deviceStatus}><span>9:41</span><i /><b /></div>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                animate={{ opacity: 1, x: 0 }}
+                className={styles.screenMotion}
+                data-preview-label={activeScreen.label}
+                exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -10 }}
+                initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 12 }}
+                key={`${actor}-${screen}`}
+                transition={{ duration: reducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <LegacyScreenRenderer data={data} navigate={navigate} screen={screen} />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </section>
+
+      <aside className={styles.flowInspector}>
+        <div>
+          <span>Actor contract</span>
+          <h2>{activeActor.label}</h2>
+          <p>{activeActor.description}</p>
+        </div>
+        <ol>
+          {activeActor.screens.map((definition, index) => (
+            <li className={definition.id === screen ? styles.flowStepActive : ""} key={definition.id}>
+              <button onClick={() => setScreen(definition.id)} type="button">
+                <i>{String(index + 1).padStart(2, "0")}</i>
+                <span><strong>{definition.label}</strong><small>{definition.note}</small></span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        <section className={styles.prototypeRules}>
+          <span>Visual contract</span>
+          <p>One primary action. One enclosing surface. Secondary detail in disclosures. Motion only for state, navigation, and feedback.</p>
+        </section>
+      </aside>
+    </main>
   );
 }

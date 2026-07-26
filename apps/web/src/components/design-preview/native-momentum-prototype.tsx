@@ -1,27 +1,8 @@
 "use client";
 
-import { useReducer } from "react";
-
-import {
-  LegacyScreenRenderer,
-  type LegacyProductDestination,
-  type LegacyScreenId
-} from "./legacy-screen-renderer";
-import {
-  PREVIEW_FIXTURE_PROFILE,
-  type NativeMomentumPreviewData,
-  type PreviewActorId,
-  type SelectedEntities,
-  type ScreenId
-} from "./model";
-import {
-  createInitialPreviewState,
-  dispatchPreviewAction,
-  findTransitionTo,
-  getAvailableTransitions,
-  SCREEN_REGISTRY
-} from "./registry";
-import { PrototypeShell } from "./prototype-shell";
+import { LegacyNativeMomentumPrototype } from "./legacy-screen-renderer";
+import type { NativeMomentumPreviewData, ScreenId } from "./model";
+import type { LegacyScreenId } from "./legacy-screen-renderer";
 
 export type {
   NativeMomentumPreviewData,
@@ -30,17 +11,19 @@ export type {
   NativeMomentumRoomEntry
 } from "./model";
 
+// Retained as a compatibility contract for the typed journey tests. The
+// restored visual prototype does not route through this adapter.
 export const CANONICAL_TO_LEGACY_SCREEN = {
   landing: "landing",
   connect: "connect",
-  "signature-waiting": "signature-waiting",
+  "signature-waiting": "connect",
   "signature-error": "connect",
   "profile-identity": "profile-identity",
   "profile-avatar": "profile-avatar",
   "photo-source": "profile-avatar",
   "photo-crop": "profile-avatar",
   "profile-privacy": "profile-privacy",
-  "setup-complete": "setup-complete",
+  "setup-complete": "profile-privacy",
   discover: "discover",
   "public-pod-details": "pod-preview",
   "visitor-room": "visitor-room",
@@ -78,8 +61,8 @@ export const CANONICAL_TO_LEGACY_SCREEN = {
   "proof-review": "proof-review",
   "submission-review": "submission-review",
   "creator-reviewing": "submission-review",
-  "proof-approved": "proof-approved",
-  "proof-rejected": "proof-rejected",
+  "proof-approved": "submission-approved",
+  "proof-rejected": "submission-review",
   "proof-timeout-protected": "submission-review",
   "proof-missed": "submission-review",
   "final-review": "settlement",
@@ -95,7 +78,7 @@ export const CANONICAL_TO_LEGACY_SCREEN = {
   rules: "rules",
   "creator-command-center": "command-center",
   applications: "applications",
-  "application-detail": "application-detail",
+  "application-detail": "applications",
   "creator-roster": "creator-funding",
   "review-queue": "review-queue",
   "review-proof": "review-proof",
@@ -130,117 +113,10 @@ export const CANONICAL_TO_LEGACY_SCREEN = {
   "published-success": "create-review"
 } satisfies Record<ScreenId, LegacyScreenId>;
 
-const LEGACY_TO_CANONICAL: Partial<
-  Record<LegacyProductDestination, ScreenId>
-> = {
-  "pod-preview": "public-pod-details",
-  apply: "application",
-  funding: "funding-summary",
-  waiting: "funding-waiting",
-  room: "pod-room",
-  "submission-approved": "proof-approved",
-  refund: "refund-reason",
-  settlement: "settlement-calculated",
-  "command-center": "creator-command-center",
-  "creator-funding": "creator-roster",
-  "creator-settlement": "creator-final-review"
-};
-
-function legacyScreen(screen: ScreenId): LegacyScreenId {
-  return CANONICAL_TO_LEGACY_SCREEN[screen];
-}
-
-function canonicalScreen(
-  screen: LegacyProductDestination
-): ScreenId | undefined {
-  const mapped = LEGACY_TO_CANONICAL[screen];
-  if (mapped) return mapped;
-  return screen in SCREEN_REGISTRY ? (screen as ScreenId) : undefined;
-}
-
 export function NativeMomentumPrototype({
   data
 }: {
   data: NativeMomentumPreviewData;
 }) {
-  const previewData: NativeMomentumPreviewData = {
-    ...data,
-    viewer: {
-      displayName: PREVIEW_FIXTURE_PROFILE.displayName,
-      handle: PREVIEW_FIXTURE_PROFILE.handle,
-      avatarSeed: PREVIEW_FIXTURE_PROFILE.avatarSeed
-    }
-  };
-  const [state, dispatch] = useReducer(
-    dispatchPreviewAction,
-    undefined,
-    () =>
-      ({
-        ...createInitialPreviewState({
-        id: PREVIEW_FIXTURE_PROFILE.id,
-        displayName: PREVIEW_FIXTURE_PROFILE.displayName,
-        handle: PREVIEW_FIXTURE_PROFILE.handle
-        }),
-        selected: {
-          ...(previewData.pods[0] ? { podId: previewData.pods[0].id } : {}),
-          ...(previewData.people[0]
-            ? { personHandle: previewData.people[0].handle }
-            : {})
-        }
-      })
-  );
-
-  const activeScreen = state.screen;
-
-  function selectActor(actor: PreviewActorId) {
-    dispatch({ type: "switch-actor", actor });
-  }
-
-  function selectScreen(screen: ScreenId) {
-    if (!SCREEN_REGISTRY[screen]) return;
-    dispatch({ type: "open-screen", screen });
-  }
-
-  function navigateFromScreen(
-    nextScreen: LegacyProductDestination,
-    selected?: Partial<SelectedEntities>
-  ) {
-    const destination = canonicalScreen(nextScreen);
-    if (!destination) {
-      throw new Error(`No canonical product destination exists for ${nextScreen}.`);
-    }
-    if (selected) {
-      dispatch({ type: "select-entities", selected });
-    }
-    const transition = findTransitionTo(state, destination);
-    if (transition) {
-      dispatch({ type: "run-transition", actionId: transition.actionId });
-    }
-  }
-
-  return (
-    <PrototypeShell
-      actor={state.actor}
-      data={previewData}
-      onActorChange={selectActor}
-      onScenarioChange={(scenario) =>
-        dispatch({ type: "set-scenario", scenario })
-      }
-      onScreenChange={selectScreen}
-      onTransition={(actionId) =>
-        dispatch({ type: "run-transition", actionId })
-      }
-      scenario={state.scenario}
-      screen={activeScreen}
-      transitions={getAvailableTransitions(state)}
-    >
-      <LegacyScreenRenderer
-        data={previewData}
-        navigate={navigateFromScreen}
-        scenario={state.scenario}
-        screen={legacyScreen(activeScreen)}
-        selected={state.selected}
-      />
-    </PrototypeShell>
-  );
+  return <LegacyNativeMomentumPrototype data={data} />;
 }

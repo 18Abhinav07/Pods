@@ -283,14 +283,6 @@ export function OutcomeStrip({
   tone: "success" | "pending" | "danger" | "neutral";
   detail?: string;
 }) {
-  const terminalIcon =
-    tone === "danger" ? (
-      <X aria-hidden="true" size={24} weight="bold" />
-    ) : tone === "success" ? (
-      <Check aria-hidden="true" size={24} weight="bold" />
-    ) : (
-      <Clock aria-hidden="true" size={24} weight="bold" />
-    );
   return (
     <div className={styles.outcomeStrip} data-tone={tone} role="status">
       <i aria-hidden="true" />

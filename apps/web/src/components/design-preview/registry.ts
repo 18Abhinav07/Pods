@@ -355,6 +355,8 @@ export const TRANSITION_REGISTRY: readonly TransitionDefinition[] = [
   transition("people-search", "open-person", "public-profile", ["social"]),
   transition("public-profile", "message", "direct-message", ["social"]),
   transition("messages", "open-message", "direct-message", ["social"]),
+  transition("applications", "open-application", "application-detail", ["creator"]),
+  transition("review-queue", "open-submission", "review-proof", ["creator"]),
   transition("refund-reason", "queue", "refund-queued", ["waiting-member", "participant"]),
   transition("refund-queued", "prepared", "refund-prepared", ["waiting-member", "participant"]),
   transition("refund-prepared", "submitted", "refund-submitted", ["waiting-member", "participant"]),

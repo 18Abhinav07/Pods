@@ -192,6 +192,93 @@ describe("NativeMomentumPrototype", () => {
     ).toBeVisible();
   });
 
+  it("opens the exact non-first application selected from the creator queue", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Creator" }));
+    fireEvent.click(screen.getByRole("button", { name: "Applications" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Applications" })
+      ).toBeVisible()
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Review Noah Mercer's application"
+      })
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Noah Mercer's application" })
+      ).toBeVisible()
+    );
+    expect(
+      screen.getByText(
+        "I want to make public activity rooms easier to follow."
+      )
+    ).toBeVisible();
+  });
+
+  it("opens the exact non-first submission selected from the review queue", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Creator" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review queue" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Review queue" })
+      ).toBeVisible()
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Review Noah Mercer's submission"
+      })
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Review proof" })
+      ).toBeVisible()
+    );
+    expect(
+      screen.getByText(
+        "Funding-state audit is published with clear state transitions."
+      )
+    ).toBeVisible();
+    expect(screen.getByText("Pull request 219")).toBeVisible();
+  });
+
+  it("opens the exact non-first transfer selected from operations", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Operations" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "Transfer operations" })
+      ).toBeVisible()
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Open Retry required transfer for Night Run Club"
+      })
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Transfer detail" })
+      ).toBeVisible()
+    );
+    expect(screen.getByText("0.2 NIM")).toBeVisible();
+    expect(screen.getByText("9b420c14...f219")).toBeVisible();
+  });
+
   it("renders the selected scenario at its registered state", async () => {
     render(<NativeMomentumPrototype data={previewData} />);
 

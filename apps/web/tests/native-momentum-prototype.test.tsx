@@ -149,6 +149,7 @@ describe("NativeMomentumPrototype", () => {
     fireEvent.click(within(actorNav).getByRole("button", { name: "Creator" }));
     expect(screen.getByRole("button", { name: "Command center" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Applications" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Application detail" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Funding" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Review queue" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Review proof" })).toBeVisible();
@@ -158,5 +159,85 @@ describe("NativeMomentumPrototype", () => {
     expect(screen.getByRole("button", { name: "Transfer queue" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Transfer detail" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Public safety" })).toBeVisible();
+  });
+
+  it("keeps creator application decisions on a focused detail screen", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    const actorNav = screen.getByRole("navigation", { name: "Preview actors" });
+    fireEvent.click(within(actorNav).getByRole("button", { name: "Creator" }));
+    fireEvent.click(screen.getByRole("button", { name: "Applications" }));
+
+    expect(screen.queryByRole("button", { name: "Accept applicant" })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: /Review Ari Vale/ }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Ari Vale" })).toBeVisible()
+    );
+    expect(screen.getByText("Why do you want to join?")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Accept application" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Decline application" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Applications" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Review Noah Mercer/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Noah Mercer" })).toBeVisible()
+    );
+  });
+
+  it("keeps onboarding choices explicit and interactive", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    const actorNav = screen.getByRole("navigation", { name: "Preview actors" });
+    fireEvent.click(within(actorNav).getByRole("button", { name: "Onboarding" }));
+    fireEvent.click(screen.getByRole("button", { name: "Avatar" }));
+
+    const firstPortrait = await screen.findByRole("button", { name: "Choose portrait 1" });
+    const secondPortrait = screen.getByRole("button", { name: "Choose portrait 2" });
+    expect(firstPortrait).toHaveAttribute("aria-pressed", "true");
+    expect(secondPortrait).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(secondPortrait);
+    expect(firstPortrait).toHaveAttribute("aria-pressed", "false");
+    expect(secondPortrait).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /Upload your own photo/ })).toBeInTheDocument();
+  });
+
+  it("carries proof visibility choices into the review screen", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    const actorNav = screen.getByRole("navigation", { name: "Preview actors" });
+    fireEvent.click(within(actorNav).getByRole("button", { name: "Participant" }));
+    fireEvent.click(screen.getByRole("button", { name: "Proof type" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Image evidence/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Evidence" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Share with Pod" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Review proof" }));
+    expect(await screen.findByText("Image evidence")).toBeInTheDocument();
+    expect(screen.getByText("1 Pod-shared image")).toBeInTheDocument();
+  });
+
+  it("keeps creation choices and live NIM math connected to publish review", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    const actorNav = screen.getByRole("navigation", { name: "Preview actors" });
+    fireEvent.click(within(actorNav).getByRole("button", { name: "Onboarding" }));
+    fireEvent.click(screen.getByRole("button", { name: "Template" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Fitness & Movement/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Community" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Private Pod/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: "NIM commitment" }));
+    const amount = await screen.findByRole("textbox", { name: "Per occurrence" });
+    fireEvent.change(amount, { target: { value: "0.2" } });
+    expect(screen.getByText("0.6 NIM")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Publish review" }));
+    expect(await screen.findByText("Fitness & Movement")).toBeInTheDocument();
+    expect(screen.getByText("Private · Invitations · Members only")).toBeInTheDocument();
+    expect(screen.getByText("0.6 NIM maximum per participant")).toBeInTheDocument();
   });
 });

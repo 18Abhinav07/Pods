@@ -78,7 +78,7 @@ export const CANONICAL_TO_LEGACY_SCREEN = {
   rules: "rules",
   "creator-command-center": "command-center",
   applications: "applications",
-  "application-detail": "applications",
+  "application-detail": "application-detail",
   "creator-roster": "creator-funding",
   "review-queue": "review-queue",
   "review-proof": "review-proof",

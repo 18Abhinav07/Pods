@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const actorScreens = {
   Visitor: ["Discover", "Pod preview", "Visitor room", "Public proof", "Application", "Invitation", "Unavailable invite"],
-  Participant: ["Today", "My Pods", "Funding", "Waiting room", "Pod room", "Commitment", "Proof type", "Evidence", "Review proof", "Under review", "Approved", "Refund", "Settlement", "Updates", "Members", "Contract"],
-  Creator: ["Command center", "Applications", "Funding", "Review queue", "Review proof", "Settlement"],
+  Participant: ["Today", "My Pods", "Funding", "Waiting room", "Pod room", "Commitment", "Proof type", "Evidence", "Review proof", "Under review", "Approved", "Refund queued", "Refund prepared", "Refund submitted", "Refund confirming", "Refund review", "Refund confirmed", "Final review", "Payout calculated", "Payout prepared", "Payout submitted", "Payout confirming", "Payout review", "No transfer", "Payout paid", "Updates", "Members", "Contract"],
+  Creator: ["Command center", "Applications", "Application detail", "Funding", "Review queue", "Review proof", "Settlement"],
   Social: ["My profile", "Public profile", "People search", "Messages", "Requests", "Direct message"],
   Operations: ["Transfer queue", "Transfer detail", "Public safety"],
   Onboarding: ["Landing", "Wallet", "Identity", "Avatar", "Privacy", "Template", "Activity", "Community", "NIM commitment", "Publish review"]

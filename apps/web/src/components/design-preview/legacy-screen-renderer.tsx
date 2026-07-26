@@ -118,13 +118,26 @@ type ScreenId =
   | "proof-review"
   | "submission-review"
   | "submission-approved"
+  | "refund-queued"
+  | "refund-prepared"
+  | "refund-submitted"
+  | "refund-confirming"
+  | "refund-review"
   | "refund"
+  | "settlement-final-review"
+  | "settlement-calculated"
+  | "settlement-prepared"
+  | "settlement-submitted"
+  | "settlement-confirming"
+  | "settlement-review"
+  | "settlement-zero"
   | "settlement"
   | "updates"
   | "members"
   | "rules"
   | "command-center"
   | "applications"
+  | "application-detail"
   | "creator-funding"
   | "review-queue"
   | "review-proof"
@@ -164,6 +177,42 @@ type ActorDefinition = {
   screens: ScreenDefinition[];
 };
 
+type ProofDraftPreview = {
+  format: "artifact" | "image" | "written";
+  shareEvidenceWithPod: boolean;
+};
+
+type CreateDraftPreview = {
+  templateId: NativeMomentumPreviewPod["templateId"];
+  name: string;
+  purpose: string;
+  weekdays: number[];
+  starts: string;
+  ends: string;
+  access: "public" | "private";
+  visitorsAllowed: boolean;
+  minParticipants: string;
+  maxParticipants: string;
+  perOccurrenceNim: string;
+};
+
+type FinancialJourneyState =
+  | "funding-secured"
+  | "refund-queued"
+  | "refund-prepared"
+  | "refund-submitted"
+  | "refund-confirming"
+  | "refund-review"
+  | "refund-confirmed"
+  | "settlement-final-review"
+  | "settlement-calculated"
+  | "settlement-prepared"
+  | "settlement-submitted"
+  | "settlement-confirming"
+  | "settlement-review"
+  | "settlement-zero"
+  | "settlement-paid";
+
 const actorDefinitions: ActorDefinition[] = [
   {
     id: "visitor",
@@ -195,8 +244,20 @@ const actorDefinitions: ActorDefinition[] = [
       { id: "proof-review", label: "Review proof", note: "Final check before creator review." },
       { id: "submission-review", label: "Under review", note: "Outcome, reviewer, and audience without repetition." },
       { id: "submission-approved", label: "Approved", note: "A concise success state and earned momentum." },
-      { id: "refund", label: "Refund", note: "A terminal financial branch, never a waiting state." },
-      { id: "settlement", label: "Settlement", note: "Payout first, ledger detail on demand." },
+      { id: "refund-queued", label: "Refund queued", note: "Return created, with no wallet action implied." },
+      { id: "refund-prepared", label: "Refund prepared", note: "A safe transfer is ready for broadcast." },
+      { id: "refund-submitted", label: "Refund submitted", note: "Transaction identity becomes available." },
+      { id: "refund-confirming", label: "Refund confirming", note: "Chain confirmation is visible without claiming completion." },
+      { id: "refund-review", label: "Refund review", note: "A delayed return has a clear protected state." },
+      { id: "refund", label: "Refund confirmed", note: "A terminal financial branch, never a waiting state." },
+      { id: "settlement-final-review", label: "Final review", note: "Occurrence outcomes freeze before settlement math." },
+      { id: "settlement-calculated", label: "Payout calculated", note: "The entitlement is final before transfer preparation." },
+      { id: "settlement-prepared", label: "Payout prepared", note: "The worker has prepared one idempotent transfer." },
+      { id: "settlement-submitted", label: "Payout submitted", note: "The chain transaction is visible and pending." },
+      { id: "settlement-confirming", label: "Payout confirming", note: "Finality remains distinct from submission." },
+      { id: "settlement-review", label: "Payout review", note: "Ambiguous chain state never triggers a blind retry." },
+      { id: "settlement-zero", label: "No transfer", note: "A zero entitlement closes without an empty transaction." },
+      { id: "settlement", label: "Payout paid", note: "Payout first, ledger detail on demand." },
       { id: "updates", label: "Updates", note: "Action history grouped by meaning." },
       { id: "members", label: "Members", note: "People, progress, and within-Pod streaks." },
       { id: "rules", label: "Contract", note: "Readable rules with expandable technical terms." }
@@ -209,6 +270,7 @@ const actorDefinitions: ActorDefinition[] = [
     screens: [
       { id: "command-center", label: "Command center", note: "The one urgent creator action leads." },
       { id: "applications", label: "Applications", note: "Identity first, answers disclosed only when needed." },
+      { id: "application-detail", label: "Application detail", note: "Read one application before making one decision." },
       { id: "creator-funding", label: "Funding", note: "Recognizable participants and one status line." },
       { id: "review-queue", label: "Review queue", note: "Compact proof worklist ordered by deadline." },
       { id: "review-proof", label: "Review proof", note: "Sticky decision dock and readable evidence." },
@@ -300,12 +362,14 @@ function seedNumber(value: string) {
 
 function PreviewAvatar({
   name,
-  size = "medium"
+  size = "medium",
+  variant
 }: {
   name: string;
   size?: "small" | "medium" | "large" | "hero";
+  variant?: number;
 }) {
-  const seed = seedNumber(name);
+  const seed = variant ?? seedNumber(name);
   const palettes = [
     { bg: "#E8EEE5", skin: "#9B5B39", hair: "#171916", shirt: "#4E8667", detail: "#D6EA8B" },
     { bg: "#F2E7E2", skin: "#75452F", hair: "#171412", shirt: "#E38268", detail: "#F4C1A6" },
@@ -984,59 +1048,287 @@ function MyPodsScreen({
 }
 
 function FinancialJourney({
-  kind,
   data,
-  navigate
+  navigate,
+  state
 }: {
-  kind: "funding" | "refund" | "settlement";
   data: NativeMomentumPreviewData;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  state: FinancialJourneyState;
 }) {
-  const config = kind === "funding"
-    ? {
+  type FinancialConfig = {
+    kind: "funding" | "refund" | "settlement";
+    eyebrow: string;
+    title: string;
+    copy: string;
+    stages: string[];
+    completedThrough: number;
+    activeIndex: number | null;
+    tone: "success" | "warning" | "neutral";
+    notice?: string;
+    problem?: boolean;
+    showBreakdown?: boolean;
+    transactionAvailable?: boolean;
+    actionLabel?: string;
+  };
+
+  const refundStages = ["Queued", "Prepared", "Submitted", "Confirmed"];
+  const settlementStages = ["Review", "Calculated", "Prepared", "Submitted", "Paid"];
+  let config: FinancialConfig;
+
+  switch (state) {
+    case "funding-secured":
+      config = {
+        kind: "funding",
         eyebrow: "Place secured",
         title: formatNim(data.finance.commitmentNim),
         copy: "Your finalized deposit is credited and included in the locked roster.",
         stages: ["Wallet", "Submitted", "Finalized", "Secured"],
-        current: 3,
-        tone: "success" as const
-      }
-    : kind === "refund"
-      ? {
-          eyebrow: "Return confirmed",
-          title: formatNim(data.finance.returnedNim),
-          copy: "Your protected principal has returned to the funding wallet.",
-          stages: ["Queued", "Prepared", "Submitted", "Confirmed"],
-          current: 3,
-          tone: "success" as const
-        }
-      : {
-          eyebrow: "Final payout",
-          title: formatNim(data.finance.payoutNim),
-          copy: `${formatNim(data.finance.commitmentNim)} principal plus ${formatNim(data.finance.bonusNim)} earned bonus.`,
-          stages: ["Calculated", "Prepared", "Submitted", "Paid"],
-          current: 3,
-          tone: "success" as const
-        };
+        completedThrough: 3,
+        activeIndex: null,
+        tone: "success",
+        transactionAvailable: true,
+        actionLabel: "Continue to waiting room"
+      };
+      break;
+    case "refund-queued":
+      config = {
+        kind: "refund",
+        eyebrow: "Return queued",
+        title: formatNim(data.finance.returnedNim),
+        copy: "Your protected principal is scheduled to return. No wallet action is needed.",
+        stages: refundStages,
+        completedThrough: -1,
+        activeIndex: 0,
+        tone: "neutral",
+        notice: "The return is recorded before any transaction is prepared."
+      };
+      break;
+    case "refund-prepared":
+      config = {
+        kind: "refund",
+        eyebrow: "Return prepared",
+        title: formatNim(data.finance.returnedNim),
+        copy: "One idempotent transfer is ready for the worker to broadcast.",
+        stages: refundStages,
+        completedThrough: 0,
+        activeIndex: 1,
+        tone: "neutral",
+        notice: "Retry safety prevents a second transfer from being created."
+      };
+      break;
+    case "refund-submitted":
+      config = {
+        kind: "refund",
+        eyebrow: "Return submitted",
+        title: formatNim(data.finance.returnedNim),
+        copy: "The transaction is on chain and waiting for final confirmation.",
+        stages: refundStages,
+        completedThrough: 2,
+        activeIndex: 3,
+        tone: "neutral",
+        transactionAvailable: true
+      };
+      break;
+    case "refund-confirming":
+      config = {
+        kind: "refund",
+        eyebrow: "Confirming return",
+        title: formatNim(data.finance.returnedNim),
+        copy: "The transaction is visible. Pods is waiting for final chain certainty.",
+        stages: refundStages,
+        completedThrough: 2,
+        activeIndex: 3,
+        tone: "warning",
+        transactionAvailable: true,
+        notice: "Closing this screen does not interrupt confirmation."
+      };
+      break;
+    case "refund-review":
+      config = {
+        kind: "refund",
+        eyebrow: "Return needs review",
+        title: formatNim(data.finance.returnedNim),
+        copy: "Chain state is ambiguous, so automatic retry is paused.",
+        stages: refundStages,
+        completedThrough: 2,
+        activeIndex: 3,
+        tone: "warning",
+        transactionAvailable: true,
+        notice: "Your ledger claim remains intact while the existing transaction is reconciled.",
+        problem: true
+      };
+      break;
+    case "refund-confirmed":
+      config = {
+        kind: "refund",
+        eyebrow: "Return confirmed",
+        title: formatNim(data.finance.returnedNim),
+        copy: "Your protected principal has returned to the funding wallet.",
+        stages: refundStages,
+        completedThrough: 3,
+        activeIndex: null,
+        tone: "success",
+        transactionAvailable: true,
+        actionLabel: "Return to My Pods"
+      };
+      break;
+    case "settlement-final-review":
+      config = {
+        kind: "settlement",
+        eyebrow: "Final review",
+        title: "3 outcomes",
+        copy: "Every occurrence decision must become final before payout math begins.",
+        stages: settlementStages,
+        completedThrough: -1,
+        activeIndex: 0,
+        tone: "neutral",
+        notice: "Outstanding clarification or dispute states keep settlement safely paused."
+      };
+      break;
+    case "settlement-calculated":
+      config = {
+        kind: "settlement",
+        eyebrow: "Payout calculated",
+        title: formatNim(data.finance.payoutNim),
+        copy: `${formatNim(data.finance.commitmentNim)} principal plus ${formatNim(data.finance.bonusNim)} earned bonus.`,
+        stages: settlementStages,
+        completedThrough: 1,
+        activeIndex: 2,
+        tone: "neutral",
+        showBreakdown: true,
+        notice: "The entitlement is frozen before transfer preparation."
+      };
+      break;
+    case "settlement-prepared":
+      config = {
+        kind: "settlement",
+        eyebrow: "Payout prepared",
+        title: formatNim(data.finance.payoutNim),
+        copy: "One transfer is ready for safe broadcast from the Testnet treasury.",
+        stages: settlementStages,
+        completedThrough: 2,
+        activeIndex: 3,
+        tone: "neutral",
+        showBreakdown: true,
+        notice: "A unique transfer leg prevents duplicate payouts."
+      };
+      break;
+    case "settlement-submitted":
+      config = {
+        kind: "settlement",
+        eyebrow: "Payout submitted",
+        title: formatNim(data.finance.payoutNim),
+        copy: "The transfer is on chain and waiting for final confirmation.",
+        stages: settlementStages,
+        completedThrough: 3,
+        activeIndex: 4,
+        tone: "neutral",
+        showBreakdown: true,
+        transactionAvailable: true
+      };
+      break;
+    case "settlement-confirming":
+      config = {
+        kind: "settlement",
+        eyebrow: "Confirming payout",
+        title: formatNim(data.finance.payoutNim),
+        copy: "Pods has observed the transaction and is waiting for final chain certainty.",
+        stages: settlementStages,
+        completedThrough: 3,
+        activeIndex: 4,
+        tone: "warning",
+        showBreakdown: true,
+        transactionAvailable: true,
+        notice: "No additional wallet action is required."
+      };
+      break;
+    case "settlement-review":
+      config = {
+        kind: "settlement",
+        eyebrow: "Payout needs review",
+        title: formatNim(data.finance.payoutNim),
+        copy: "Automatic retry is paused until the existing chain state is reconciled.",
+        stages: settlementStages,
+        completedThrough: 3,
+        activeIndex: 4,
+        tone: "warning",
+        showBreakdown: true,
+        transactionAvailable: true,
+        notice: "Your entitlement remains final. Review affects transfer delivery only.",
+        problem: true
+      };
+      break;
+    case "settlement-zero":
+      config = {
+        kind: "settlement",
+        eyebrow: "No transfer required",
+        title: "0 NIM",
+        copy: "The final entitlement is zero, so the ledger closes without an empty transaction.",
+        stages: ["Review", "Calculated", "Closed"],
+        completedThrough: 2,
+        activeIndex: null,
+        tone: "neutral",
+        notice: "Occurrence outcomes remain available in the final record.",
+        actionLabel: "Return to My Pods"
+      };
+      break;
+    case "settlement-paid":
+      config = {
+        kind: "settlement",
+        eyebrow: "Final payout",
+        title: formatNim(data.finance.payoutNim),
+        copy: `${formatNim(data.finance.commitmentNim)} principal plus ${formatNim(data.finance.bonusNim)} earned bonus.`,
+        stages: settlementStages,
+        completedThrough: 4,
+        activeIndex: null,
+        tone: "success",
+        showBreakdown: true,
+        transactionAvailable: true,
+        actionLabel: "Return to My Pods"
+      };
+      break;
+  }
+
+  const kind = config.kind;
   return (
-    <MobileScreen>
+    <MobileScreen className={`${styles.financialScreen} ${styles[`financialScreen-${kind}`]}`}>
       <ScreenHeader back onBack={() => navigate("my-pods")} title={kind === "funding" ? "Funding" : kind === "refund" ? "Refund" : "Settlement"} trailing="actions" />
       <ScreenBody>
         <section className={`${styles.financialHero} ${styles[`financial-${config.tone}`]}`}>
-          <CheckCircle size={32} weight="fill" />
+          <span className={styles.financialToken}>
+            {kind === "funding" ? <Wallet size={29} weight="regular" /> : <Image alt="NIM" height={48} src="/media/nimiq-signet.svg" width={48} />}
+          </span>
           <span>{config.eyebrow}</span>
           <h2>{config.title}</h2>
           <p>{config.copy}</p>
         </section>
         <ol className={styles.compactTimeline}>
           {config.stages.map((stage, index) => (
-            <li className={index <= config.current ? styles.timelineComplete : ""} key={stage}>
-              <i>{index <= config.current ? <Check size={12} weight="bold" /> : null}</i>
+            <li
+              className={[
+                index <= config.completedThrough ? styles.timelineComplete : "",
+                index === config.activeIndex ? styles.timelineCurrent : "",
+                index === config.activeIndex && config.problem ? styles.timelineProblem : ""
+              ].filter(Boolean).join(" ")}
+              key={stage}
+            >
+              <i>
+                {index <= config.completedThrough ? <Check size={12} weight="bold" /> : null}
+                {index === config.activeIndex && !config.problem ? <Clock size={12} weight="bold" /> : null}
+                {index === config.activeIndex && config.problem ? <Flag size={12} weight="fill" /> : null}
+              </i>
               <span>{stage}</span>
             </li>
           ))}
         </ol>
-        {kind === "settlement" ? (
+        {config.notice ? (
+          <section className={`${styles.financialNotice} ${config.problem ? styles.financialNoticeProblem : ""}`}>
+            {config.problem ? <Flag size={19} weight="fill" /> : <ShieldCheck size={19} />}
+            <p>{config.notice}</p>
+          </section>
+        ) : null}
+        {config.showBreakdown ? (
           <section className={styles.moneyBreakdown}>
             <div><span>Principal</span><strong>{formatNim(data.finance.commitmentNim)}</strong></div>
             <div><span>Earned bonus</span><strong>+{formatNim(data.finance.bonusNim)}</strong></div>
@@ -1044,12 +1336,18 @@ function FinancialJourney({
           </section>
         ) : null}
         <div className={styles.disclosureList}>
-          <DisclosureRow icon={<Receipt size={19} />} label="Transaction details" value={shortenHash(data.finance.transactionHash)} />
+          <DisclosureRow
+            icon={<Receipt size={19} />}
+            label={config.transactionAvailable ? "Transaction details" : "Transfer record"}
+            value={config.transactionAvailable ? shortenHash(data.finance.transactionHash) : "Not broadcast yet"}
+          />
           <DisclosureRow icon={<FileText size={19} />} label={kind === "settlement" ? "Occurrence outcomes" : "Contract and ledger"} value="Open the full record" />
         </div>
-        <PrimaryButton onClick={() => navigate(kind === "funding" ? "waiting" : "my-pods")}>
-          {kind === "funding" ? "Continue to waiting room" : "Return to My Pods"}
-        </PrimaryButton>
+        {config.actionLabel ? <div className={styles.financialAction}>
+          <PrimaryButton onClick={() => navigate(kind === "funding" ? "waiting" : "my-pods")}>
+            {config.actionLabel}
+          </PrimaryButton>
+        </div> : null}
       </ScreenBody>
     </MobileScreen>
   );
@@ -1178,14 +1476,18 @@ function CommitmentScreen({
 }
 
 function ProofTypeScreen({
-  navigate
+  navigate,
+  proofDraft,
+  updateProofDraft
 }: {
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  proofDraft: ProofDraftPreview;
+  updateProofDraft: (patch: Partial<ProofDraftPreview>) => void;
 }) {
   const choices = [
-    { icon: LinkSimple, title: "Public artifact", copy: "Pull request, deployment, or public document", selected: true },
-    { icon: ImageSquare, title: "Image evidence", copy: "A clear screenshot or camera capture", selected: false },
-    { icon: FileText, title: "Written result", copy: "A concise result the creator can inspect", selected: false }
+    { id: "artifact" as const, icon: LinkSimple, title: "Public artifact", copy: "Pull request, deployment, or public document" },
+    { id: "image" as const, icon: ImageSquare, title: "Image evidence", copy: "A clear screenshot or camera capture" },
+    { id: "written" as const, icon: FileText, title: "Written result", copy: "A concise result the creator can inspect" }
   ];
   return (
     <MobileScreen>
@@ -1197,11 +1499,16 @@ function ProofTypeScreen({
           <p>Pick the format that makes your locked result easiest to verify.</p>
         </section>
         <div className={styles.selectionList}>
-          {choices.map(({ icon: Icon, title, copy, selected }) => (
-            <button aria-pressed={selected} key={title} type="button">
+          {choices.map(({ id, icon: Icon, title, copy }) => (
+            <button
+              aria-pressed={proofDraft.format === id}
+              key={title}
+              onClick={() => updateProofDraft({ format: id })}
+              type="button"
+            >
               <i><Icon size={21} /></i>
               <span><strong>{title}</strong><small>{copy}</small></span>
-              <b>{selected ? <Check size={14} weight="bold" /> : null}</b>
+              <b>{proofDraft.format === id ? <Check size={14} weight="bold" /> : null}</b>
             </button>
           ))}
         </div>
@@ -1214,9 +1521,13 @@ function ProofTypeScreen({
 }
 
 function ProofEvidenceScreen({
-  navigate
+  navigate,
+  proofDraft,
+  updateProofDraft
 }: {
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  proofDraft: ProofDraftPreview;
+  updateProofDraft: (patch: Partial<ProofDraftPreview>) => void;
 }) {
   return (
     <MobileScreen>
@@ -1236,8 +1547,22 @@ function ProofEvidenceScreen({
           <div><ImageSquare size={26} weight="regular" /><span><strong>Screenshot attached</strong><small>build-proof.jpg · 1.8 MB</small></span></div>
           <Image alt="Attached reviewer evidence" height={480} src="/media/build-proof.jpg" width={720} />
           <div className={styles.visibilityChoice}>
-            <button aria-pressed="true" type="button"><Check size={13} weight="bold" />Creator only</button>
-            <button aria-pressed="false" type="button">Share with Pod</button>
+            <button
+              aria-pressed={!proofDraft.shareEvidenceWithPod}
+              onClick={() => updateProofDraft({ shareEvidenceWithPod: false })}
+              type="button"
+            >
+              {!proofDraft.shareEvidenceWithPod ? <Check size={13} weight="bold" /> : null}
+              Creator only
+            </button>
+            <button
+              aria-pressed={proofDraft.shareEvidenceWithPod}
+              onClick={() => updateProofDraft({ shareEvidenceWithPod: true })}
+              type="button"
+            >
+              {proofDraft.shareEvidenceWithPod ? <Check size={13} weight="bold" /> : null}
+              Share with Pod
+            </button>
           </div>
         </section>
         <div className={styles.privacyFootnote}>
@@ -1252,10 +1577,17 @@ function ProofEvidenceScreen({
 }
 
 function ProofReviewScreen({
-  navigate
+  navigate,
+  proofDraft
 }: {
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  proofDraft: ProofDraftPreview;
 }) {
+  const proofFormat = proofDraft.format === "artifact"
+    ? "Public artifact"
+    : proofDraft.format === "image"
+      ? "Image evidence"
+      : "Written result";
   return (
     <MobileScreen>
       <WizardHeader current={4} label="Daily proof" onClose={() => navigate("today")} total={4} />
@@ -1267,9 +1599,10 @@ function ProofReviewScreen({
         </section>
         <section className={styles.reviewSheet}>
           <div><span>Locked task</span><strong>Ship the compact Pod room and proof entry flow.</strong></div>
+          <div><span>Proof format</span><strong>{proofFormat}</strong></div>
           <div><span>Public artifact</span><strong>Pull request 184</strong></div>
-          <div><span>Reviewer evidence</span><strong>1 creator-only image</strong></div>
-          <div><span>Public sharing</span><strong>Artifact only</strong></div>
+          <div><span>Reviewer evidence</span><strong>{proofDraft.shareEvidenceWithPod ? "1 Pod-shared image" : "1 creator-only image"}</strong></div>
+          <div><span>Public sharing</span><strong>{proofDraft.shareEvidenceWithPod ? "Artifact and selected image" : "Artifact only"}</strong></div>
         </section>
         <div className={styles.commitmentConsequence}>
           <Clock size={21} />
@@ -1459,10 +1792,12 @@ function CreatorCommandScreen({
 
 function ApplicationsScreen({
   data,
-  navigate
+  navigate,
+  selectApplicant
 }: {
   data: NativeMomentumPreviewData;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  selectApplicant: (handle: string) => void;
 }) {
   return (
     <MobileScreen>
@@ -1470,18 +1805,74 @@ function ApplicationsScreen({
       <ScreenBody>
         <div className={styles.queueSummary}><span>2 waiting</span><strong>Decide before funding cutoff</strong></div>
         {data.people.map((person, index) => (
-          <article className={styles.applicationCard} key={person.handle}>
+          <button
+            aria-label={`Review ${person.displayName}`}
+            className={styles.applicationCard}
+            key={person.handle}
+            onClick={() => selectApplicant(person.handle)}
+            type="button"
+          >
             <div className={styles.applicationIdentity}>
               <PreviewAvatar name={person.avatarSeed} />
               <span><strong>{person.displayName}</strong><small>@{person.handle}</small></span>
-              <button aria-label={`More actions for ${person.displayName}`} type="button"><DotsThree size={20} weight="bold" /></button>
+              <CaretRight size={18} weight="bold" />
             </div>
             <p>{person.bio}</p>
-            <DisclosureRow icon={<FileText size={18} />} label="Application answers" value={index === 0 ? "2 thoughtful responses" : "1 response"} />
-            <PrimaryButton icon={false}>Accept applicant</PrimaryButton>
-          </article>
+            <span className={styles.applicationMeta}>
+              <FileText size={17} />
+              {index === 0 ? "2 responses" : "1 response"}
+            </span>
+          </button>
         ))}
       </ScreenBody>
+    </MobileScreen>
+  );
+}
+
+function ApplicationDetailScreen({
+  data,
+  navigate,
+  selectedApplicantHandle
+}: {
+  data: NativeMomentumPreviewData;
+  navigate: (screen: ScreenId, actor?: ActorId) => void;
+  selectedApplicantHandle: string | null;
+}) {
+  const person = data.people.find((candidate) => candidate.handle === selectedApplicantHandle)
+    ?? data.people[0]!;
+  return (
+    <MobileScreen className={styles.applicationDetailScreen}>
+      <ScreenHeader back onBack={() => navigate("applications")} title="Application" trailing="none" />
+      <ScreenBody>
+        <section className={styles.applicantHero}>
+          <PreviewAvatar name={person.avatarSeed} size="large" />
+          <span>
+            <small>@{person.handle}</small>
+            <h2>{person.displayName}</h2>
+            <p>{person.bio}</p>
+          </span>
+        </section>
+        <div className={styles.applicantContext}>
+          <span>1 shared public Pod</span>
+          <span>3-occurrence streak</span>
+        </div>
+        <section className={styles.applicationAnswers}>
+          <article>
+            <small>Why do you want to join?</small>
+            <p>I want a visible rhythm for shipping the proof flow with people who will notice when I disappear.</p>
+          </article>
+          <article>
+            <small>What will you ship?</small>
+            <p>A complete mobile submission path with public artifacts and creator-only evidence.</p>
+          </article>
+        </section>
+        <p className={styles.applicationDecisionNote}>Acceptance opens funding. A place is secured only after the deposit finalizes.</p>
+        <div className={styles.stickyActionSpacer} />
+      </ScreenBody>
+      <div className={styles.decisionDock}>
+        <SecondaryButton>Decline application</SecondaryButton>
+        <PrimaryButton icon={false}>Accept application</PrimaryButton>
+      </div>
     </MobileScreen>
   );
 }
@@ -1584,8 +1975,10 @@ function ReviewProofScreen({
           <Image alt="Creator-only build workspace evidence" height={480} src="/media/build-workspace.jpg" width={720} />
           <span><LockKey size={16} /><strong>Creator only</strong></span>
         </div>
-        <DisclosureRow icon={<LinkSimple size={19} />} label="Pull request 184" />
-        <button className={styles.optionalNote} type="button">Add a private review note <Plus size={16} /></button>
+        <div className={styles.reviewTools}>
+          <DisclosureRow icon={<LinkSimple size={19} />} label="Pull request 184" value="Public artifact" />
+          <button className={styles.optionalNote} type="button">Add a private review note <Plus size={16} /></button>
+        </div>
         <div className={styles.stickyActionSpacer} />
       </ScreenBody>
       <div className={styles.decisionDock}>
@@ -1787,19 +2180,28 @@ function RequestsScreen({
       <ScreenHeader back onBack={() => navigate("messages")} title="Requests" trailing="actions" />
       <ScreenBody>
         <SectionHeading eyebrow="Message introduction" title="Choose who enters your space" />
-        <article className={styles.requestRow}>
-          <PreviewAvatar name={data.people[1]?.avatarSeed ?? "Noah"} />
-          <span><strong>{data.people[1]?.displayName ?? "Noah Mercer"}</strong><small>@{data.people[1]?.handle ?? "noahmercer"} · 1 shared Pod</small></span>
-          <PrimaryButton icon={false}>Accept</PrimaryButton>
+        <article className={styles.requestCard}>
+          <div className={styles.requestIdentity}>
+            <PreviewAvatar name={data.people[1]?.avatarSeed ?? "Noah"} />
+            <span><strong>{data.people[1]?.displayName ?? "Noah Mercer"}</strong><small>@{data.people[1]?.handle ?? "noahmercer"} · 1 shared Pod</small></span>
+          </div>
           <p>I would like to compare notes on making public activity rooms easier to follow.</p>
-          <button aria-label="More request actions" type="button"><DotsThree size={21} weight="bold" /></button>
+          <div className={styles.requestActions}>
+            <SecondaryButton>Decline</SecondaryButton>
+            <PrimaryButton icon={false}>Accept</PrimaryButton>
+          </div>
         </article>
         <SectionHeading eyebrow="Friend request" title="People who want to connect" />
-        <article className={styles.requestRow}>
-          <PreviewAvatar name={data.people[0]?.avatarSeed ?? "Ari"} />
-          <span><strong>{data.people[0]?.displayName ?? "Ari Vale"}</strong><small>@{data.people[0]?.handle ?? "arivale"} · Met in {data.pods[0]?.name ?? "a public Pod"}</small></span>
-          <PrimaryButton icon={false}>Accept</PrimaryButton>
-          <button aria-label="More friend request actions" type="button"><DotsThree size={21} weight="bold" /></button>
+        <article className={styles.requestCard}>
+          <div className={styles.requestIdentity}>
+            <PreviewAvatar name={data.people[0]?.avatarSeed ?? "Ari"} />
+            <span><strong>{data.people[0]?.displayName ?? "Ari Vale"}</strong><small>@{data.people[0]?.handle ?? "arivale"}</small></span>
+          </div>
+          <p>You met in {data.pods[0]?.name ?? "a public Pod"}.</p>
+          <div className={styles.requestActions}>
+            <SecondaryButton>Decline</SecondaryButton>
+            <PrimaryButton icon={false}>Accept</PrimaryButton>
+          </div>
         </article>
       </ScreenBody>
     </MobileScreen>
@@ -1901,8 +2303,10 @@ function TransferDetailScreen({
           <div><span>Last checked</span><strong>4 minutes ago</strong></div>
         </div>
         <div className={styles.operatorNotice}><ShieldCheck size={20} /><span><strong>Retry safety is active</strong><small>The worker must prove absence before creating another broadcast.</small></span></div>
-        <PrimaryButton icon={false}>Reconcile on chain</PrimaryButton>
-        <SecondaryButton>Move to manual review</SecondaryButton>
+        <div className={styles.operatorActions}>
+          <PrimaryButton icon={false}>Reconcile on chain</PrimaryButton>
+          <SecondaryButton>Move to manual review</SecondaryButton>
+        </div>
       </ScreenBody>
     </MobileScreen>
   );
@@ -1971,22 +2375,26 @@ function ConnectScreen({
   navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.walletScreen}>
       <ScreenHeader title="Wallet" trailing="none" />
       <ScreenBody>
         <section className={styles.walletHero}>
-          <span><Wallet size={32} weight="regular" /></span>
-          <small>Nimiq Pay</small>
-          <h2>Your wallet is your Pods account.</h2>
-          <p>Connect and sign one message. Pods never asks for your private key.</p>
+          <span className={styles.walletSignal}>
+            <i />
+            <Image alt="Nimiq" height={64} src="/media/nimiq-signet.svg" width={64} />
+          </span>
+          <h2>Connect your wallet</h2>
+          <p>One signature creates your Pods account.</p>
         </section>
-        <div className={styles.walletFacts}>
-          <div><ShieldCheck size={19} /><span><strong>One-time signature</strong><small>Proves wallet ownership without a password.</small></span></div>
-          <div><Eye size={19} /><span><strong>Private by default</strong><small>Your wallet address never appears on social profiles.</small></span></div>
-        </div>
-        <PrimaryButton onClick={() => navigate("profile-identity")}>Connect Nimiq wallet</PrimaryButton>
-        <p className={styles.testnetNote}>Testnet beta. Test NIM has no real-world value.</p>
+        <section className={styles.walletPromise}>
+          <ShieldCheck size={20} />
+          <span><strong>Private identity</strong><small>Your public profile never displays your wallet address.</small></span>
+        </section>
       </ScreenBody>
+      <div className={styles.actionDock}>
+        <PrimaryButton onClick={() => navigate("profile-identity")}>Connect wallet</PrimaryButton>
+        <p className={styles.testnetNote}>Testnet beta. Test NIM has no real-world value.</p>
+      </div>
     </MobileScreen>
   );
 }
@@ -1999,7 +2407,7 @@ function ProfileIdentityScreen({
   navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={1} label="Set up profile" onClose={() => navigate("landing")} total={3} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
@@ -2023,6 +2431,7 @@ function ProfileAvatarScreen({
   data: NativeMomentumPreviewData;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
+  const [selectedAvatar, setSelectedAvatar] = useState(0);
   const bundledNames = [
     "Ari Vale",
     "Noah Mercer",
@@ -2044,19 +2453,25 @@ function ProfileAvatarScreen({
     )
   ].slice(0, 12);
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={2} label="Set up profile" onClose={() => navigate("landing")} total={3} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
           <span>Your portrait</span>
           <h2>Choose a signal that feels like you</h2>
-          <p>Twelve distinct illustrated portraits are bundled with Pods. A real photo upload remains available.</p>
+          <p>Pick a portrait or use your own photo.</p>
         </section>
         <div className={styles.avatarGrid}>
           {names.map((name, index) => (
-            <button aria-pressed={index === 0} key={name} type="button">
-              <PreviewAvatar name={name} size="large" />
-              {index === 0 ? <i><Check size={14} weight="bold" /></i> : null}
+            <button
+              aria-label={`Choose portrait ${index + 1}`}
+              aria-pressed={selectedAvatar === index}
+              key={name}
+              onClick={() => setSelectedAvatar(index)}
+              type="button"
+            >
+              <PreviewAvatar name={name} size="large" variant={index} />
+              {selectedAvatar === index ? <i><Check size={14} weight="bold" /></i> : null}
             </button>
           ))}
         </div>
@@ -2072,8 +2487,10 @@ function ProfilePrivacyScreen({
 }: {
   navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [contactPolicy, setContactPolicy] = useState<"requests" | "friends">("requests");
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={3} label="Set up profile" onClose={() => navigate("landing")} total={3} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
@@ -2082,13 +2499,13 @@ function ProfilePrivacyScreen({
           <p>These controls can be changed later. Wallet identity and private Pod activity always remain private.</p>
         </section>
         <div className={styles.flatChoices}>
-          <button aria-pressed="true" type="button"><span><strong>Public profile</strong><small>People can search, follow, and see public milestones.</small></span><b><Check size={14} /></b></button>
-          <button aria-pressed="false" type="button"><span><strong>Private profile</strong><small>Your handle exists, but profile content stays hidden.</small></span><b /></button>
+          <button aria-pressed={visibility === "public"} onClick={() => setVisibility("public")} type="button"><span><strong>Public profile</strong><small>People can search, follow, and see public milestones.</small></span><b>{visibility === "public" ? <Check size={14} /> : null}</b></button>
+          <button aria-pressed={visibility === "private"} onClick={() => setVisibility("private")} type="button"><span><strong>Private profile</strong><small>Your handle exists, but profile content stays hidden.</small></span><b>{visibility === "private" ? <Check size={14} /> : null}</b></button>
         </div>
         <div className={styles.choiceSectionTitle}><h2>Who can contact you</h2></div>
         <div className={styles.flatChoices}>
-          <button aria-pressed="true" type="button"><span><strong>Friends and requests</strong><small>Non-friends can send one introduction.</small></span><b><Check size={14} /></b></button>
-          <button aria-pressed="false" type="button"><span><strong>Friends only</strong><small>Only accepted friends can start a chat.</small></span><b /></button>
+          <button aria-pressed={contactPolicy === "requests"} onClick={() => setContactPolicy("requests")} type="button"><span><strong>Friends and requests</strong><small>Non-friends can send one introduction.</small></span><b>{contactPolicy === "requests" ? <Check size={14} /> : null}</b></button>
+          <button aria-pressed={contactPolicy === "friends"} onClick={() => setContactPolicy("friends")} type="button"><span><strong>Friends only</strong><small>Only accepted friends can start a chat.</small></span><b>{contactPolicy === "friends" ? <Check size={14} /> : null}</b></button>
         </div>
       </ScreenBody>
       <div className={styles.actionDock}><PrimaryButton onClick={() => navigate("today", "participant")}>Enter Pods</PrimaryButton></div>
@@ -2097,13 +2514,17 @@ function ProfilePrivacyScreen({
 }
 
 function CreateTemplateScreen({
-  navigate
+  createDraft,
+  navigate,
+  updateCreateDraft
 }: {
+  createDraft: CreateDraftPreview;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  updateCreateDraft: (patch: Partial<CreateDraftPreview>) => void;
 }) {
   const templates: NativeMomentumPreviewPod["templateId"][] = ["build", "fitness", "reading", "study", "create"];
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={1} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
@@ -2112,11 +2533,16 @@ function CreateTemplateScreen({
           <p>Each template carries its own evidence fields, cadence, and visual rhythm.</p>
         </section>
         <div className={styles.templateList}>
-          {templates.map((template, index) => (
-            <button aria-pressed={index === 0} key={template} type="button">
+          {templates.map((template) => (
+            <button
+              aria-pressed={createDraft.templateId === template}
+              key={template}
+              onClick={() => updateCreateDraft({ templateId: template })}
+              type="button"
+            >
               <Image alt="" height={160} src={templateMedia[template]} width={160} />
               <span><strong>{templateLabel[template]}</strong><small>{template === "build" ? "Daily output and public artifacts" : template === "fitness" ? "Movement, distance, or attendance" : template === "reading" ? "Pages, reflections, and consistency" : template === "study" ? "Focused sessions and learning outputs" : "Practice sessions and finished work"}</small></span>
-              <b>{index === 0 ? <Check size={14} weight="bold" /> : null}</b>
+              <b>{createDraft.templateId === template ? <Check size={14} weight="bold" /> : null}</b>
             </button>
           ))}
         </div>
@@ -2127,30 +2553,54 @@ function CreateTemplateScreen({
 }
 
 function CreateActivityScreen({
-  pod,
-  navigate
+  createDraft,
+  navigate,
+  updateCreateDraft
 }: {
-  pod: NativeMomentumPreviewPod;
+  createDraft: CreateDraftPreview;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  updateCreateDraft: (patch: Partial<CreateDraftPreview>) => void;
 }) {
+  const weekdayLabels = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  function toggleWeekday(index: number) {
+    if (createDraft.weekdays.includes(index) && createDraft.weekdays.length === 1) return;
+    const weekdays = createDraft.weekdays.includes(index)
+      ? createDraft.weekdays.filter((weekday) => weekday !== index)
+      : [...createDraft.weekdays, index].sort((left, right) => left - right);
+    updateCreateDraft({ weekdays });
+  }
+
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={2} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
-          <span>{templateLabel[pod.templateId]}</span>
+          <span>{templateLabel[createDraft.templateId]}</span>
           <h2>Give the group a clear rhythm</h2>
           <p>Name the activity, explain why it exists, and choose when people show up.</p>
         </section>
-        <label className={styles.inputField}><span>Pod name</span><input defaultValue={pod.name} /></label>
-        <label className={styles.textAreaField}><span>Purpose</span><textarea defaultValue={pod.purpose} /></label>
+        <label className={styles.inputField}><span>Pod name</span><input onChange={(event) => updateCreateDraft({ name: event.target.value })} value={createDraft.name} /></label>
+        <label className={styles.textAreaField}><span>Purpose</span><textarea onChange={(event) => updateCreateDraft({ purpose: event.target.value })} value={createDraft.purpose} /></label>
         <div className={styles.cadencePicker}>
           <span>Active weekdays</span>
-          <div>{["M", "T", "W", "T", "F", "S", "S"].map((day, index) => <button aria-pressed={[0, 2, 4].includes(index)} key={`${day}-${index}`} type="button">{day}</button>)}</div>
+          <div>
+            {weekdayLabels.map((day, index) => (
+              <button
+                aria-label={day}
+                aria-pressed={createDraft.weekdays.includes(index)}
+                key={day}
+                onClick={() => toggleWeekday(index)}
+                type="button"
+              >
+                {day.slice(0, 1)}
+              </button>
+            ))}
+          </div>
         </div>
         <div className={styles.dualFields}>
-          <label className={styles.inputField}><span>Starts</span><input defaultValue="Jul 27" /></label>
-          <label className={styles.inputField}><span>Ends</span><input defaultValue="Aug 02" /></label>
+          <label className={styles.inputField}><span>Starts</span><input onChange={(event) => updateCreateDraft({ starts: event.target.value })} value={createDraft.starts} /></label>
+          <label className={styles.inputField}><span>Ends</span><input onChange={(event) => updateCreateDraft({ ends: event.target.value })} value={createDraft.ends} /></label>
         </div>
       </ScreenBody>
       <div className={styles.actionDock}><PrimaryButton onClick={() => navigate("create-community")}>Set community access</PrimaryButton></div>
@@ -2159,12 +2609,16 @@ function CreateActivityScreen({
 }
 
 function CreateCommunityScreen({
-  navigate
+  createDraft,
+  navigate,
+  updateCreateDraft
 }: {
+  createDraft: CreateDraftPreview;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  updateCreateDraft: (patch: Partial<CreateDraftPreview>) => void;
 }) {
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={3} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
@@ -2173,17 +2627,31 @@ function CreateCommunityScreen({
           <p>Applications and invitations always require creator acceptance before funding.</p>
         </section>
         <div className={styles.flatChoices}>
-          <button aria-pressed="true" type="button"><span><strong>Public Pod</strong><small>Listed in Discover. People apply before funding.</small></span><b><Check size={14} /></b></button>
-          <button aria-pressed="false" type="button"><span><strong>Private Pod</strong><small>Accessible only through a revocable invitation.</small></span><b /></button>
+          <button aria-pressed={createDraft.access === "public"} onClick={() => updateCreateDraft({ access: "public" })} type="button"><span><strong>Public Pod</strong><small>Listed in Discover. People apply before funding.</small></span><b>{createDraft.access === "public" ? <Check size={14} /> : null}</b></button>
+          <button aria-pressed={createDraft.access === "private"} onClick={() => updateCreateDraft({ access: "private", visitorsAllowed: false })} type="button"><span><strong>Private Pod</strong><small>Accessible only through a revocable invitation.</small></span><b>{createDraft.access === "private" ? <Check size={14} /> : null}</b></button>
         </div>
-        <section className={styles.visitorChoice}>
-          <Eye size={21} />
-          <span><strong>Allow read-only visitors</strong><small>Anyone with the link can watch messages and explicitly public proof after roster lock.</small></span>
-          <button aria-pressed="true" type="button"><i /></button>
-        </section>
+        {createDraft.access === "public" ? (
+          <section className={styles.visitorChoice}>
+            <Eye size={21} />
+            <span><strong>Allow read-only visitors</strong><small>Anyone with the link can watch messages and explicitly public proof after roster lock.</small></span>
+            <button
+              aria-label="Allow read-only visitors"
+              aria-pressed={createDraft.visitorsAllowed}
+              onClick={() => updateCreateDraft({ visitorsAllowed: !createDraft.visitorsAllowed })}
+              type="button"
+            >
+              <i />
+            </button>
+          </section>
+        ) : (
+          <section className={styles.memberOnlyNote}>
+            <LockKey size={20} />
+            <span><strong>Members only</strong><small>Private Pod rooms and proof stay unavailable to visitors.</small></span>
+          </section>
+        )}
         <div className={styles.dualFields}>
-          <label className={styles.inputField}><span>Minimum</span><input defaultValue="2" inputMode="numeric" /></label>
-          <label className={styles.inputField}><span>Maximum</span><input defaultValue="5" inputMode="numeric" /></label>
+          <label className={styles.inputField}><span>Minimum</span><input inputMode="numeric" onChange={(event) => updateCreateDraft({ minParticipants: event.target.value })} value={createDraft.minParticipants} /></label>
+          <label className={styles.inputField}><span>Maximum</span><input inputMode="numeric" onChange={(event) => updateCreateDraft({ maxParticipants: event.target.value })} value={createDraft.maxParticipants} /></label>
         </div>
       </ScreenBody>
       <div className={styles.actionDock}><PrimaryButton onClick={() => navigate("create-commitment")}>Set NIM commitment</PrimaryButton></div>
@@ -2192,15 +2660,23 @@ function CreateCommunityScreen({
 }
 
 function CreateCommitmentScreen({
+  createDraft,
   pod,
-  navigate
+  navigate,
+  updateCreateDraft
 }: {
+  createDraft: CreateDraftPreview;
   pod: NativeMomentumPreviewPod;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  updateCreateDraft: (patch: Partial<CreateDraftPreview>) => void;
 }) {
-  const perOccurrence = pod.totalNim / Math.max(pod.occurrenceCount, 1);
+  const parsedPerOccurrence = Number(createDraft.perOccurrenceNim);
+  const perOccurrence = Number.isFinite(parsedPerOccurrence) && parsedPerOccurrence >= 0
+    ? parsedPerOccurrence
+    : 0;
+  const maximumUpfront = perOccurrence * pod.occurrenceCount;
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={4} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
         <section className={styles.wizardPrompt}>
@@ -2208,20 +2684,27 @@ function CreateCommitmentScreen({
           <h2>Make showing up matter</h2>
           <p>Participants fund the maximum commitment upfront. You review proof but never fund or receive participant money.</p>
         </section>
-        <label className={styles.nimInput}>
-          <span>Per occurrence</span>
-          <div><input defaultValue={perOccurrence.toFixed(1)} inputMode="decimal" /><strong>NIM</strong></div>
-        </label>
+        <section className={styles.nimCommitmentCard}>
+          <span className={styles.nimTokenMark}>
+            <i />
+            <Image alt="NIM" height={72} src="/media/nimiq-signet.svg" width={72} />
+          </span>
+          <label className={styles.nimInput}>
+            <span>Per occurrence</span>
+            <div><input aria-label="Per occurrence" inputMode="decimal" onChange={(event) => updateCreateDraft({ perOccurrenceNim: event.target.value })} value={createDraft.perOccurrenceNim} /><strong>NIM</strong></div>
+          </label>
+          <p>Each completed occurrence protects this slice and keeps it bonus-eligible.</p>
+        </section>
         <section className={styles.commitmentEquation}>
           <div><span>Occurrences</span><strong>{pod.occurrenceCount}</strong></div>
           <i>×</i>
           <div><span>Each</span><strong>{formatNim(perOccurrence)}</strong></div>
           <i>=</i>
-          <div><span>Maximum upfront</span><strong>{formatNim(pod.totalNim)}</strong></div>
+          <div><span>Maximum upfront</span><strong>{formatNim(maximumUpfront)}</strong></div>
         </section>
         <div className={styles.commitmentConsequence}>
           <Receipt size={21} />
-          <span><strong>Proportional Testnet settlement</strong><small>Approved work is bonus-eligible. Protected principal never enters the bonus pool.</small></span>
+          <span><strong>How settlement works</strong><small>Approved work can earn a share of forfeited slices. Protected principal never enters the bonus pool.</small></span>
         </div>
       </ScreenBody>
       <div className={styles.actionDock}><PrimaryButton onClick={() => navigate("create-review")}>Review frozen contract</PrimaryButton></div>
@@ -2230,44 +2713,74 @@ function CreateCommitmentScreen({
 }
 
 function CreateReviewScreen({
+  createDraft,
   pod,
   navigate
 }: {
+  createDraft: CreateDraftPreview;
   pod: NativeMomentumPreviewPod;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
 }) {
+  const [accepted, setAccepted] = useState(false);
+  const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const schedule = createDraft.weekdays.map((weekday) => weekdayLabels[weekday]).join(", ");
+  const perOccurrence = Number(createDraft.perOccurrenceNim);
+  const maximumUpfront = (Number.isFinite(perOccurrence) ? Math.max(perOccurrence, 0) : 0) * pod.occurrenceCount;
+  const community = createDraft.access === "public"
+    ? `Public · Applications · ${createDraft.visitorsAllowed ? "Visitors allowed" : "Members only"}`
+    : "Private · Invitations · Members only";
   return (
-    <MobileScreen>
+    <MobileScreen className={styles.onboardingScreen}>
       <WizardHeader current={5} label="Create a Pod" onClose={() => navigate("today", "participant")} total={5} />
       <ScreenBody>
+        <section className={styles.publishVisual}>
+          <Image alt="" height={360} src={templateMedia[createDraft.templateId]} width={720} />
+          <span><ShieldCheck size={18} /> Ready to publish</span>
+        </section>
         <section className={styles.publishHero}>
-          <span><ShieldCheck size={28} /></span>
-          <small>Ready to freeze</small>
-          <h2>{pod.name}</h2>
-          <p>Publishing creates the occurrence schedule and makes every financial and evidence term immutable.</p>
+          <h2>{createDraft.name}</h2>
+          <p>Publishing locks the schedule, evidence rules, and NIM commitment.</p>
         </section>
         <div className={styles.contractSummary}>
-          <div><span>Template</span><strong>{templateLabel[pod.templateId]}</strong></div>
-          <div><span>Schedule</span><strong>{pod.occurrenceCount} occurrences · Mon, Wed, Fri</strong></div>
-          <div><span>Community</span><strong>Public · Applications · Visitors allowed</strong></div>
-          <div><span>Commitment</span><strong>{formatNim(pod.totalNim)} maximum per participant</strong></div>
+          <div><span>Template</span><strong>{templateLabel[createDraft.templateId]}</strong></div>
+          <div><span>Schedule</span><strong>{pod.occurrenceCount} occurrences · {schedule}</strong></div>
+          <div><span>Community</span><strong>{community}</strong></div>
+          <div><span>Commitment</span><strong>{formatNim(maximumUpfront)} maximum per participant</strong></div>
           <div><span>Verifier</span><strong>You, the Pod creator</strong></div>
         </div>
-        <div className={styles.publishConsent}><button aria-pressed="true" type="button"><Check size={14} /></button><p>I accept the creator-review authority, no-appeal rule, custodial treasury, timeout protection, and exact maximum commitment shown above.</p></div>
-        <PrimaryButton onClick={() => navigate("command-center", "creator")}>Publish Pod</PrimaryButton>
+        <div className={styles.publishConsent}>
+          <button aria-label="Accept frozen terms" aria-pressed={accepted} onClick={() => setAccepted((current) => !current)} type="button">{accepted ? <Check size={14} /> : null}</button>
+          <p>I accept the frozen review, custody, timeout, and commitment terms shown above.</p>
+        </div>
+        <div className={styles.stickyActionSpacer} />
       </ScreenBody>
+      <div className={styles.actionDock}>
+        <PrimaryButton disabled={!accepted} onClick={() => navigate("command-center", "creator")}>Publish Pod</PrimaryButton>
+      </div>
     </MobileScreen>
   );
 }
 
 export function LegacyScreenRenderer({
+  createDraft,
   data,
+  navigate,
+  proofDraft,
   screen,
-  navigate
+  selectedApplicantHandle,
+  selectApplicant,
+  updateCreateDraft,
+  updateProofDraft
 }: {
+  createDraft: CreateDraftPreview;
   data: NativeMomentumPreviewData;
-  screen: ScreenId;
   navigate: (screen: ScreenId, actor?: ActorId) => void;
+  proofDraft: ProofDraftPreview;
+  screen: ScreenId;
+  selectedApplicantHandle: string | null;
+  selectApplicant: (handle: string) => void;
+  updateCreateDraft: (patch: Partial<CreateDraftPreview>) => void;
+  updateProofDraft: (patch: Partial<ProofDraftPreview>) => void;
 }) {
   const pod = data.pods[0] ?? {
     id: "preview-pod",
@@ -2301,22 +2814,35 @@ export function LegacyScreenRenderer({
     case "invalid-invite": return <InvalidInviteScreen navigate={navigate} />;
     case "today": return <TodayScreen data={data} navigate={navigate} pod={pod} />;
     case "my-pods": return <MyPodsScreen data={data} navigate={navigate} />;
-    case "funding": return <FinancialJourney data={data} kind="funding" navigate={navigate} />;
+    case "funding": return <FinancialJourney data={data} navigate={navigate} state="funding-secured" />;
     case "waiting": return <WaitingScreen navigate={navigate} pod={pod} />;
     case "room": return <RoomScreen data={data} navigate={navigate} pod={pod} />;
     case "commitment": return <CommitmentScreen navigate={navigate} pod={pod} />;
-    case "proof-type": return <ProofTypeScreen navigate={navigate} />;
-    case "proof-evidence": return <ProofEvidenceScreen navigate={navigate} />;
-    case "proof-review": return <ProofReviewScreen navigate={navigate} />;
+    case "proof-type": return <ProofTypeScreen navigate={navigate} proofDraft={proofDraft} updateProofDraft={updateProofDraft} />;
+    case "proof-evidence": return <ProofEvidenceScreen navigate={navigate} proofDraft={proofDraft} updateProofDraft={updateProofDraft} />;
+    case "proof-review": return <ProofReviewScreen navigate={navigate} proofDraft={proofDraft} />;
     case "submission-review": return <SubmissionStatusScreen approved={false} data={data} navigate={navigate} />;
     case "submission-approved": return <SubmissionStatusScreen approved data={data} navigate={navigate} />;
-    case "refund": return <FinancialJourney data={data} kind="refund" navigate={navigate} />;
-    case "settlement": return <FinancialJourney data={data} kind="settlement" navigate={navigate} />;
+    case "refund-queued": return <FinancialJourney data={data} navigate={navigate} state="refund-queued" />;
+    case "refund-prepared": return <FinancialJourney data={data} navigate={navigate} state="refund-prepared" />;
+    case "refund-submitted": return <FinancialJourney data={data} navigate={navigate} state="refund-submitted" />;
+    case "refund-confirming": return <FinancialJourney data={data} navigate={navigate} state="refund-confirming" />;
+    case "refund-review": return <FinancialJourney data={data} navigate={navigate} state="refund-review" />;
+    case "refund": return <FinancialJourney data={data} navigate={navigate} state="refund-confirmed" />;
+    case "settlement-final-review": return <FinancialJourney data={data} navigate={navigate} state="settlement-final-review" />;
+    case "settlement-calculated": return <FinancialJourney data={data} navigate={navigate} state="settlement-calculated" />;
+    case "settlement-prepared": return <FinancialJourney data={data} navigate={navigate} state="settlement-prepared" />;
+    case "settlement-submitted": return <FinancialJourney data={data} navigate={navigate} state="settlement-submitted" />;
+    case "settlement-confirming": return <FinancialJourney data={data} navigate={navigate} state="settlement-confirming" />;
+    case "settlement-review": return <FinancialJourney data={data} navigate={navigate} state="settlement-review" />;
+    case "settlement-zero": return <FinancialJourney data={data} navigate={navigate} state="settlement-zero" />;
+    case "settlement": return <FinancialJourney data={data} navigate={navigate} state="settlement-paid" />;
     case "updates": return <UpdatesScreen navigate={navigate} pod={pod} />;
     case "members": return <MembersScreen data={data} navigate={navigate} />;
     case "rules": return <RulesScreen navigate={navigate} pod={pod} />;
     case "command-center": return <CreatorCommandScreen data={data} navigate={navigate} pod={pod} />;
-    case "applications": return <ApplicationsScreen data={data} navigate={navigate} />;
+    case "applications": return <ApplicationsScreen data={data} navigate={navigate} selectApplicant={selectApplicant} />;
+    case "application-detail": return <ApplicationDetailScreen data={data} navigate={navigate} selectedApplicantHandle={selectedApplicantHandle} />;
     case "creator-funding": return <CreatorFundingScreen data={data} navigate={navigate} pod={pod} />;
     case "review-queue": return <ReviewQueueScreen data={data} navigate={navigate} />;
     case "review-proof": return <ReviewProofScreen data={data} navigate={navigate} />;
@@ -2335,11 +2861,11 @@ export function LegacyScreenRenderer({
     case "profile-identity": return <ProfileIdentityScreen data={data} navigate={navigate} />;
     case "profile-avatar": return <ProfileAvatarScreen data={data} navigate={navigate} />;
     case "profile-privacy": return <ProfilePrivacyScreen navigate={navigate} />;
-    case "create-template": return <CreateTemplateScreen navigate={navigate} />;
-    case "create-activity": return <CreateActivityScreen navigate={navigate} pod={pod} />;
-    case "create-community": return <CreateCommunityScreen navigate={navigate} />;
-    case "create-commitment": return <CreateCommitmentScreen navigate={navigate} pod={pod} />;
-    case "create-review": return <CreateReviewScreen navigate={navigate} pod={pod} />;
+    case "create-template": return <CreateTemplateScreen createDraft={createDraft} navigate={navigate} updateCreateDraft={updateCreateDraft} />;
+    case "create-activity": return <CreateActivityScreen createDraft={createDraft} navigate={navigate} updateCreateDraft={updateCreateDraft} />;
+    case "create-community": return <CreateCommunityScreen createDraft={createDraft} navigate={navigate} updateCreateDraft={updateCreateDraft} />;
+    case "create-commitment": return <CreateCommitmentScreen createDraft={createDraft} navigate={navigate} pod={pod} updateCreateDraft={updateCreateDraft} />;
+    case "create-review": return <CreateReviewScreen createDraft={createDraft} navigate={navigate} pod={pod} />;
     default: return <DiscoverScreen data={data} navigate={navigate} />;
   }
 }
@@ -2350,8 +2876,31 @@ export function LegacyNativeMomentumPrototype({
   data: NativeMomentumPreviewData;
 }) {
   const reducedMotion = useReducedMotion();
+  const previewPod = data.pods[0];
   const [actor, setActor] = useState<ActorId>("visitor");
   const [screen, setScreen] = useState<ScreenId>("discover");
+  const [selectedApplicantHandle, setSelectedApplicantHandle] = useState<string | null>(
+    data.people[0]?.handle ?? null
+  );
+  const [proofDraft, setProofDraft] = useState<ProofDraftPreview>({
+    format: "artifact",
+    shareEvidenceWithPod: false
+  });
+  const [createDraft, setCreateDraft] = useState<CreateDraftPreview>(() => ({
+    templateId: previewPod?.templateId ?? "build",
+    name: previewPod?.name ?? "Pods in Pods",
+    purpose: previewPod?.purpose ?? "Build the accountability product in public with the team.",
+    weekdays: [0, 2, 4],
+    starts: "Jul 27",
+    ends: "Aug 02",
+    access: previewPod?.visibility ?? "public",
+    visitorsAllowed: previewPod?.visitorsAllowed ?? true,
+    minParticipants: String(previewPod?.minParticipants ?? 2),
+    maxParticipants: String(previewPod?.maxParticipants ?? 5),
+    perOccurrenceNim: (
+      (previewPod?.totalNim ?? 0.3) / Math.max(previewPod?.occurrenceCount ?? 3, 1)
+    ).toFixed(1)
+  }));
   const activeActor = useMemo(
     () => actorDefinitions.find((definition) => definition.id === actor) ?? actorDefinitions[0]!,
     [actor]
@@ -2379,6 +2928,19 @@ export function LegacyNativeMomentumPrototype({
       setActor(owner.id);
     }
     setScreen(nextScreen);
+  }
+
+  function selectApplicant(handle: string) {
+    setSelectedApplicantHandle(handle);
+    setScreen("application-detail");
+  }
+
+  function updateCreateDraft(patch: Partial<CreateDraftPreview>) {
+    setCreateDraft((current) => ({ ...current, ...patch }));
+  }
+
+  function updateProofDraft(patch: Partial<ProofDraftPreview>) {
+    setProofDraft((current) => ({ ...current, ...patch }));
   }
 
   return (
@@ -2449,7 +3011,17 @@ export function LegacyNativeMomentumPrototype({
                 key={`${actor}-${screen}`}
                 transition={{ duration: reducedMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
               >
-                <LegacyScreenRenderer data={data} navigate={navigate} screen={screen} />
+                <LegacyScreenRenderer
+                  createDraft={createDraft}
+                  data={data}
+                  navigate={navigate}
+                  proofDraft={proofDraft}
+                  screen={screen}
+                  selectedApplicantHandle={selectedApplicantHandle}
+                  selectApplicant={selectApplicant}
+                  updateCreateDraft={updateCreateDraft}
+                  updateProofDraft={updateProofDraft}
+                />
               </motion.div>
             </AnimatePresence>
           </div>

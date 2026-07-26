@@ -126,9 +126,28 @@ type PreviewRecords = {
   transfers: PreviewTransferRecord[];
 };
 
-function buildPreviewRecords(
-  data: NativeMomentumPreviewData
-): PreviewRecords {
+const JOURNEY_FIXTURE_PEOPLE: readonly NativeMomentumPreviewPerson[] = [
+  {
+    displayName: "Ari Vale",
+    handle: "arivale",
+    avatarSeed: "Ari Vale",
+    bio: "A fictional creator-review fixture."
+  },
+  {
+    displayName: "Noah Mercer",
+    handle: "noahmercer",
+    avatarSeed: "Noah Mercer",
+    bio: "A fictional participant-review fixture."
+  },
+  {
+    displayName: "Mina Sol",
+    handle: "minasol",
+    avatarSeed: "Mina Sol",
+    bio: "A fictional participant-review fixture."
+  }
+];
+
+function buildPreviewRecords(): PreviewRecords {
   const applicationMotivations = [
     "I want a shared rhythm for shipping the proof experience.",
     "I want to make public activity rooms easier to follow."
@@ -144,7 +163,7 @@ function buildPreviewRecords(
   ];
 
   return {
-    applications: data.people.map((person, index) => ({
+    applications: JOURNEY_FIXTURE_PEOPLE.map((person, index) => ({
       id: `application-${person.handle}`,
       person,
       motivation:
@@ -153,7 +172,7 @@ function buildPreviewRecords(
       responseCount: index === 0 ? 2 : 1,
       appliedAt: index === 0 ? "Today at 9:18 PM" : "Today at 9:42 PM"
     })),
-    submissions: data.people.map((person, index) => ({
+    submissions: JOURNEY_FIXTURE_PEOPLE.map((person, index) => ({
       id: `submission-${person.handle}`,
       person,
       occurrence: index + 1,
@@ -169,10 +188,10 @@ function buildPreviewRecords(
     transfers: [
       {
         id: "transfer-unknown",
-        pod: data.pods[0]?.name ?? "Pods in Pods",
+        pod: "Pods in Pods",
         state: "Unknown",
         tone: "warning",
-        amount: data.finance.payoutNim,
+        amount: 0.4,
         age: "4m",
         description:
           "Broadcast exists, but chain confirmation is not yet conclusive. Reconcile before any retry.",
@@ -257,6 +276,11 @@ type ScreenId =
   | "public-safety"
   | "landing"
   | "connect"
+  | "signature-waiting"
+  | "setup-complete"
+  | "application-submitted"
+  | "proof-approved"
+  | "proof-rejected"
   | "profile-identity"
   | "profile-avatar"
   | "profile-privacy"
@@ -273,112 +297,6 @@ type LegacyNavigate = (
   actor?: ActorId,
   selected?: Partial<SelectedEntities>
 ) => void;
-
-type ScreenDefinition = {
-  id: ScreenId;
-  label: string;
-  note: string;
-};
-
-type ActorDefinition = {
-  id: ActorId;
-  label: string;
-  description: string;
-  screens: ScreenDefinition[];
-};
-
-const actorDefinitions: ActorDefinition[] = [
-  {
-    id: "visitor",
-    label: "Visitor",
-    description: "Discovery, public rooms, applications, and private invitations.",
-    screens: [
-      { id: "discover", label: "Discover", note: "Browse live, open, and recent public Pods." },
-      { id: "pod-preview", label: "Pod preview", note: "Understand the group before applying." },
-      { id: "visitor-room", label: "Visitor room", note: "Read-only build-in-public experience." },
-      { id: "public-proof", label: "Public proof", note: "Sanitized proof for public viewers." },
-      { id: "apply", label: "Application", note: "Apply without implying that a place is reserved." },
-      { id: "invite", label: "Invitation", note: "Review the frozen contract before accepting." },
-      { id: "invalid-invite", label: "Unavailable invite", note: "A safe state that reveals no private Pod data." }
-    ]
-  },
-  {
-    id: "participant",
-    label: "Participant",
-    description: "Daily action, commitment, proof, room, finance, and completion.",
-    screens: [
-      { id: "today", label: "Today", note: "The single most important action." },
-      { id: "my-pods", label: "My Pods", note: "Lifecycle inventory with one next action per row." },
-      { id: "funding", label: "Funding", note: "Current financial state first, detail on demand." },
-      { id: "waiting", label: "Waiting room", note: "Roster state, cutoff, and next meaningful event." },
-      { id: "room", label: "Pod room", note: "Chat-first group activity." },
-      { id: "commitment", label: "Commitment", note: "A focused first step with one decision." },
-      { id: "proof-type", label: "Proof type", note: "Choose the clearest evidence format." },
-      { id: "proof-evidence", label: "Evidence", note: "Separate creator-only and Pod-shared evidence." },
-      { id: "proof-review", label: "Review proof", note: "Final check before creator review." },
-      { id: "submission-review", label: "Under review", note: "Outcome, reviewer, and audience without repetition." },
-      { id: "submission-approved", label: "Approved", note: "A concise success state and earned momentum." },
-      { id: "refund", label: "Refund", note: "A terminal financial branch, never a waiting state." },
-      { id: "settlement", label: "Settlement", note: "Payout first, ledger detail on demand." },
-      { id: "updates", label: "Updates", note: "Action history grouped by meaning." },
-      { id: "members", label: "Members", note: "People, progress, and within-Pod streaks." },
-      { id: "rules", label: "Contract", note: "Readable rules with expandable technical terms." }
-    ]
-  },
-  {
-    id: "creator",
-    label: "Creator",
-    description: "Applications, funding, proof decisions, and settlement.",
-    screens: [
-      { id: "command-center", label: "Command center", note: "The one urgent creator action leads." },
-      { id: "applications", label: "Applications", note: "Identity first, answers disclosed only when needed." },
-      { id: "creator-funding", label: "Funding", note: "Recognizable participants and one status line." },
-      { id: "review-queue", label: "Review queue", note: "Compact proof worklist ordered by deadline." },
-      { id: "review-proof", label: "Review proof", note: "Sticky decision dock and readable evidence." },
-      { id: "creator-settlement", label: "Settlement", note: "Conservation summary with simple member rows." }
-    ]
-  },
-  {
-    id: "social",
-    label: "Social",
-    description: "Profiles, people, requests, and direct messages.",
-    screens: [
-      { id: "private-profile", label: "My profile", note: "Identity, activity, and connections without a directory wall." },
-      { id: "public-profile", label: "Public profile", note: "Earned identity and public milestones." },
-      { id: "people-search", label: "People search", note: "Search-led discovery, never an unbounded directory." },
-      { id: "messages", label: "Messages", note: "Dense conversation rows and clear unread state." },
-      { id: "requests", label: "Requests", note: "One primary response with secondary actions in overflow." },
-      { id: "direct-message", label: "Direct message", note: "Native conversation density and visible reply context." }
-    ]
-  },
-  {
-    id: "operations",
-    label: "Operations",
-    description: "Transfer recovery and public-safety queues.",
-    screens: [
-      { id: "transfer-queue", label: "Transfer queue", note: "Compact operational rows with filters." },
-      { id: "transfer-detail", label: "Transfer detail", note: "Raw identifiers only when an operator asks." },
-      { id: "public-safety", label: "Public safety", note: "Reports and moderation decisions with audit context." }
-    ]
-  },
-  {
-    id: "onboarding",
-    label: "Onboarding",
-    description: "Wallet entry, profile setup, and Pod creation.",
-    screens: [
-      { id: "landing", label: "Landing", note: "The product promise before wallet entry." },
-      { id: "connect", label: "Wallet", note: "One wallet action with an honest Testnet boundary." },
-      { id: "profile-identity", label: "Identity", note: "Handle, name, and bio in one focused step." },
-      { id: "profile-avatar", label: "Avatar", note: "Art-directed portraits plus real photo upload." },
-      { id: "profile-privacy", label: "Privacy", note: "Plain-language visibility and message controls." },
-      { id: "create-template", label: "Template", note: "Five polished activity contracts." },
-      { id: "create-activity", label: "Activity", note: "Purpose, cadence, and schedule." },
-      { id: "create-community", label: "Community", note: "Public or private access and visitor policy." },
-      { id: "create-commitment", label: "NIM commitment", note: "Maximum upfront amount in one clear equation." },
-      { id: "create-review", label: "Publish review", note: "Freeze the complete contract with informed consent." }
-    ]
-  }
-];
 
 const templateLabel: Record<NativeMomentumPreviewPod["templateId"], string> = {
   build: "Build & Ship",
@@ -732,7 +650,7 @@ function DiscoverScreen({
         </div>
         <SectionHeading eyebrow="Public activities" title={`${data.pods.length} Pods from the database`} />
         <div className={styles.rowList}>
-          {data.pods.map((pod, index) => (
+          {data.pods.map((pod) => (
             <PodRow
               key={pod.id}
               onClick={() =>
@@ -907,7 +825,9 @@ function ApplicationScreen({
           <ShieldCheck size={22} weight="regular" />
           <span><strong>Applying does not reserve a place</strong><small>A place is secured only after acceptance, funding finality, and roster lock.</small></span>
         </div>
-        <PrimaryButton onClick={() => navigate("funding", "participant")}>Submit application</PrimaryButton>
+        <PrimaryButton onClick={() => navigate("application-submitted")}>
+          Submit application
+        </PrimaryButton>
       </ScreenBody>
     </MobileScreen>
   );
@@ -1455,6 +1375,29 @@ function SubmissionStatusScreen({
   );
 }
 
+function ProofRejectedScreen({
+  navigate
+}: {
+  navigate: LegacyNavigate;
+}) {
+  return (
+    <MobileScreen>
+      <ScreenHeader title="Proof Rejected" trailing="actions" />
+      <ScreenBody>
+        <section className={styles.outcomeHero}>
+          <span><X size={28} weight="bold" /></span>
+          <small>Occurrence 2</small>
+          <h2>Proof does not meet the locked commitment.</h2>
+          <p>The participant sees the creator decision and the occurrence is no longer bonus eligible.</p>
+        </section>
+        <PrimaryButton onClick={() => navigate("review-queue")}>
+          Return to review queue
+        </PrimaryButton>
+      </ScreenBody>
+    </MobileScreen>
+  );
+}
+
 function UpdatesScreen({
   pod,
   navigate
@@ -1735,7 +1678,11 @@ function ReviewQueueScreen({
       <ScreenBody>
         <section className={styles.reviewQueueLead}>
           <span>2</span>
-          <div><small>Proofs waiting</small><h2>Oldest first</h2><p>One reaches its 12-hour target in 46 minutes.</p></div>
+          <div>
+            <small>Simulated journey actors</small>
+            <h2>Oldest first</h2>
+            <p>One proof reaches its 12-hour target in 46 minutes.</p>
+          </div>
         </section>
         <div className={styles.reviewQueue}>
           {submissions.map((submission) => (
@@ -1791,8 +1738,15 @@ function ReviewProofScreen({
         <div className={styles.stickyActionSpacer} />
       </ScreenBody>
       <div className={styles.decisionDock}>
-        <SecondaryButton>Reject</SecondaryButton>
-        <PrimaryButton icon={false}>Approve proof</PrimaryButton>
+        <SecondaryButton onClick={() => navigate("proof-rejected")}>
+          Reject proof
+        </SecondaryButton>
+        <PrimaryButton
+          icon={false}
+          onClick={() => navigate("proof-approved")}
+        >
+          Approve proof
+        </PrimaryButton>
       </div>
     </MobileScreen>
   );
@@ -2208,8 +2162,33 @@ function ConnectScreen({
           <div><ShieldCheck size={19} /><span><strong>One-time signature</strong><small>Proves wallet ownership without a password.</small></span></div>
           <div><Eye size={19} /><span><strong>Private by default</strong><small>Your wallet address never appears on social profiles.</small></span></div>
         </div>
-        <PrimaryButton onClick={() => navigate("profile-identity")}>Connect Nimiq wallet</PrimaryButton>
+        <PrimaryButton onClick={() => navigate("signature-waiting")}>
+          Connect Nimiq wallet
+        </PrimaryButton>
         <p className={styles.testnetNote}>Testnet beta. Test NIM has no real-world value.</p>
+      </ScreenBody>
+    </MobileScreen>
+  );
+}
+
+function SignatureWaitingScreen({
+  navigate
+}: {
+  navigate: LegacyNavigate;
+}) {
+  return (
+    <MobileScreen>
+      <ScreenHeader title="Wallet confirmation" trailing="none" />
+      <ScreenBody>
+        <section className={styles.outcomeHero}>
+          <span><Wallet size={28} weight="regular" /></span>
+          <small>Wallet handoff</small>
+          <h2>Confirm in Nimiq Pay</h2>
+          <p>Pods will continue as soon as the signed wallet response returns.</p>
+        </section>
+        <PrimaryButton onClick={() => navigate("profile-identity")}>
+          Preview signed response
+        </PrimaryButton>
       </ScreenBody>
     </MobileScreen>
   );
@@ -2315,7 +2294,34 @@ function ProfilePrivacyScreen({
           <button aria-pressed="false" type="button"><span><strong>Friends only</strong><small>Only accepted friends can start a chat.</small></span><b /></button>
         </div>
       </ScreenBody>
-      <div className={styles.actionDock}><PrimaryButton onClick={() => navigate("today", "participant")}>Enter Pods</PrimaryButton></div>
+      <div className={styles.actionDock}>
+        <PrimaryButton onClick={() => navigate("setup-complete")}>
+          Enter Pods
+        </PrimaryButton>
+      </div>
+    </MobileScreen>
+  );
+}
+
+function SetupCompleteScreen({
+  navigate
+}: {
+  navigate: LegacyNavigate;
+}) {
+  return (
+    <MobileScreen>
+      <ScreenHeader title="Profile ready" trailing="none" />
+      <ScreenBody>
+        <section className={`${styles.outcomeHero} ${styles.outcomeApproved}`}>
+          <span><CheckCircle size={28} weight="fill" /></span>
+          <small>Profile ready</small>
+          <h2>Your Pods identity is ready.</h2>
+          <p>Start with today’s action or browse a public activity.</p>
+        </section>
+        <PrimaryButton onClick={() => navigate("today", "participant")}>
+          Enter Pods
+        </PrimaryButton>
+      </ScreenBody>
     </MobileScreen>
   );
 }
@@ -2569,6 +2575,8 @@ function LegacyScreenContent({
     case "proof-review": return <ProofReviewScreen navigate={navigate} />;
     case "submission-review": return <SubmissionStatusScreen approved={false} data={data} navigate={navigate} />;
     case "submission-approved": return <SubmissionStatusScreen approved data={data} navigate={navigate} />;
+    case "proof-approved": return <SubmissionStatusScreen approved data={data} navigate={navigate} />;
+    case "proof-rejected": return <ProofRejectedScreen navigate={navigate} />;
     case "refund": return <FinancialJourney data={data} kind="refund" navigate={navigate} />;
     case "settlement": return <FinancialJourney data={data} kind="settlement" navigate={navigate} />;
     case "updates": return <UpdatesScreen navigate={navigate} pod={pod} />;
@@ -2592,6 +2600,8 @@ function LegacyScreenContent({
     case "public-safety": return <PublicSafetyScreen data={data} />;
     case "landing": return <LandingScreen navigate={navigate} />;
     case "connect": return <ConnectScreen navigate={navigate} />;
+    case "signature-waiting": return <SignatureWaitingScreen navigate={navigate} />;
+    case "setup-complete": return <SetupCompleteScreen navigate={navigate} />;
     case "profile-identity": return <ProfileIdentityScreen data={data} navigate={navigate} />;
     case "profile-avatar": return <ProfileAvatarScreen data={data} navigate={navigate} />;
     case "profile-privacy": return <ProfilePrivacyScreen navigate={navigate} />;
@@ -2623,7 +2633,7 @@ export function LegacyScreenRenderer({
   const selectedPod = data.pods.find(
     (candidate) => candidate.id === selected.podId
   );
-  const records = buildPreviewRecords(data);
+  const records = buildPreviewRecords();
   const selectedData = {
     ...data,
     people: selectedPerson

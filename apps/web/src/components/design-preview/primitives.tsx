@@ -8,8 +8,10 @@ import {
   UploadSimple,
   X
 } from "@phosphor-icons/react";
+import Image from "next/image";
 import { useId, type ReactNode } from "react";
 
+import type { TransferState } from "./model";
 import styles from "./prototype.module.css";
 
 function formatAmount(value: number) {
@@ -51,13 +53,21 @@ export function ChoiceCard({
   disabled?: boolean;
 }) {
   return (
-    <label className={styles.choiceCard} data-selected={selected}>
+    <label
+      className={`${styles.choiceCard} ${
+        media ? styles.choiceCardWithMedia : styles.choiceCardWithoutMedia
+      }`}
+      data-disabled={disabled}
+      data-layout={media ? "with-media" : "without-media"}
+      data-selected={selected}
+    >
       <input
         checked={selected}
         disabled={disabled}
         name={name}
-        onClick={() => onSelect(value)}
-        readOnly
+        onChange={(event) => {
+          if (!disabled && event.currentTarget.checked) onSelect(value);
+        }}
         type="radio"
         value={value}
       />
@@ -209,7 +219,7 @@ export function RequestCard({
 export function NimMedallion({ size = "large" }: { size?: "small" | "large" }) {
   return (
     <span className={styles.nimMedallion} data-size={size}>
-      <img alt="Nimiq" src="/media/nimiq-signet.svg" />
+      <Image alt="Nimiq" height={64} src="/media/nimiq-signet.svg" width={64} />
     </span>
   );
 }
@@ -246,8 +256,8 @@ export function TransferTracker({
   steps,
   current
 }: {
-  steps: readonly { id: string; label: string }[];
-  current: string;
+  steps: readonly { id: TransferState; label: string }[];
+  current: TransferState;
 }) {
   const currentIndex = steps.findIndex((step) => step.id === current);
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer } from "react";
+import { useReducer } from "react";
 
 import {
   LegacyScreenRenderer,
@@ -17,6 +17,7 @@ import {
   createInitialPreviewState,
   dispatchPreviewAction,
   findTransitionTo,
+  getAvailableTransitions,
   SCREEN_REGISTRY
 } from "./registry";
 import { PrototypeShell } from "./prototype-shell";
@@ -47,6 +48,8 @@ const LEGACY_SCREEN_IDS = new Set<LegacyScreenId>([
   "proof-review",
   "submission-review",
   "submission-approved",
+  "proof-approved",
+  "proof-rejected",
   "refund",
   "settlement",
   "updates",
@@ -70,6 +73,8 @@ const LEGACY_SCREEN_IDS = new Set<LegacyScreenId>([
   "public-safety",
   "landing",
   "connect",
+  "signature-waiting",
+  "setup-complete",
   "profile-identity",
   "profile-avatar",
   "profile-privacy",
@@ -79,6 +84,20 @@ const LEGACY_SCREEN_IDS = new Set<LegacyScreenId>([
   "create-commitment",
   "create-review"
 ]);
+
+const LEGACY_TO_CANONICAL: Partial<Record<LegacyScreenId, ScreenId>> = {
+  "pod-preview": "public-pod-details",
+  apply: "application",
+  funding: "funding-summary",
+  waiting: "funding-waiting",
+  room: "pod-room",
+  "submission-approved": "proof-approved",
+  refund: "refund-reason",
+  settlement: "settlement-calculated",
+  "command-center": "creator-command-center",
+  "creator-funding": "creator-roster",
+  "creator-settlement": "creator-final-review"
+};
 
 const LEGACY_FALLBACKS: Partial<Record<ScreenId, LegacyScreenId>> = {
   "signature-waiting": "connect",
@@ -149,6 +168,12 @@ function legacyScreen(screen: ScreenId): LegacyScreenId {
   return LEGACY_FALLBACKS[screen] ?? "discover";
 }
 
+function canonicalScreen(screen: LegacyScreenId): ScreenId | undefined {
+  const mapped = LEGACY_TO_CANONICAL[screen];
+  if (mapped) return mapped;
+  return screen in SCREEN_REGISTRY ? (screen as ScreenId) : undefined;
+}
+
 export function NativeMomentumPrototype({
   data
 }: {
@@ -171,14 +196,7 @@ export function NativeMomentumPrototype({
       })
   );
 
-  const activeActor = ACTOR_DEFINITIONS[state.actor];
-  const activeScreen = useMemo(
-    () =>
-      activeActor.screens.includes(state.screen)
-        ? state.screen
-        : activeActor.initialScreen,
-    [activeActor, state.screen]
-  );
+  const activeScreen = state.screen;
 
   function selectActor(actor: PreviewActorId) {
     dispatch({ type: "switch-actor", actor });
@@ -191,16 +209,30 @@ export function NativeMomentumPrototype({
 
   function navigateFromScreen(
     nextScreen: LegacyScreenId,
-    _actor?: unknown,
+    actor?: unknown,
     selected?: Partial<SelectedEntities>
   ) {
-    const destination = nextScreen as ScreenId;
+    const destination = canonicalScreen(nextScreen);
+    if (!destination) return;
     if (selected) {
       dispatch({ type: "select-entities", selected });
     }
     const transition = findTransitionTo(state, destination);
     if (transition) {
       dispatch({ type: "run-transition", actionId: transition.actionId });
+      return;
+    }
+    if (
+      typeof actor === "string" &&
+      actor in ACTOR_DEFINITIONS &&
+      ACTOR_DEFINITIONS[actor as PreviewActorId].screens.includes(destination)
+    ) {
+      dispatch({ type: "switch-actor", actor: actor as PreviewActorId });
+      dispatch({ type: "open-screen", screen: destination });
+      return;
+    }
+    if (ACTOR_DEFINITIONS[state.actor].screens.includes(destination)) {
+      dispatch({ type: "open-screen", screen: destination });
     }
   }
 
@@ -213,8 +245,12 @@ export function NativeMomentumPrototype({
         dispatch({ type: "set-scenario", scenario })
       }
       onScreenChange={selectScreen}
+      onTransition={(actionId) =>
+        dispatch({ type: "run-transition", actionId })
+      }
       scenario={state.scenario}
       screen={activeScreen}
+      transitions={getAvailableTransitions(state)}
     >
       <LegacyScreenRenderer
         data={data}

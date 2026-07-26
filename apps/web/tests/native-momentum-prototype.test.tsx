@@ -27,7 +27,8 @@ const previewData: NativeMomentumPreviewData = {
       minParticipants: 2,
       maxParticipants: 5,
       visibility: "public",
-      visitorsAllowed: true
+      visitorsAllowed: true,
+      source: "live"
     },
     {
       id: "pod-2",
@@ -41,7 +42,8 @@ const previewData: NativeMomentumPreviewData = {
       minParticipants: 3,
       maxParticipants: 12,
       visibility: "public",
-      visitorsAllowed: true
+      visitorsAllowed: true,
+      source: "live"
     }
   ],
   people: [
@@ -49,13 +51,15 @@ const previewData: NativeMomentumPreviewData = {
       displayName: "Ari Vale",
       handle: "arivale",
       avatarSeed: "Ari Vale",
-      bio: "Shipping small products with careful craft."
+      bio: "Shipping small products with careful craft.",
+      source: "live"
     },
     {
       displayName: "Noah Mercer",
       handle: "noahmercer",
       avatarSeed: "Noah Mercer",
-      bio: "Builder, runner, and public-work enthusiast."
+      bio: "Builder, runner, and public-work enthusiast.",
+      source: "live"
     }
   ],
   roomEntries: [
@@ -65,7 +69,8 @@ const previewData: NativeMomentumPreviewData = {
       author: "Ari Vale",
       handle: "arivale",
       body: "The mobile proof flow is ready for a final pass.",
-      time: "10:42 PM"
+      time: "10:42 PM",
+      source: "live"
     },
     {
       id: "activity-1",
@@ -76,7 +81,8 @@ const previewData: NativeMomentumPreviewData = {
       result: "The responsive room and submission path are ready.",
       status: "approved",
       time: "10:47 PM",
-      artifactLabel: "Pull request 184"
+      artifactLabel: "Pull request 184",
+      source: "live"
     }
   ],
   finance: {
@@ -92,10 +98,192 @@ describe("NativeMomentumPrototype", () => {
   it("renders current database content in the visitor discovery flow", () => {
     render(<NativeMomentumPrototype data={previewData} />);
 
-    expect(screen.getByText("Live database preview")).toBeVisible();
+    expect(
+      screen.getByText("Live public data with simulated journey fixtures")
+    ).toBeVisible();
     expect(screen.getByRole("heading", { name: "Discover Pods" })).toBeVisible();
     expect(screen.getByRole("button", { name: /Open Pods in Pods/ })).toBeVisible();
     expect(screen.getByText("Night Run Club")).toBeVisible();
+  });
+
+  it.each([320, 390])(
+    "exposes actor and scenario controls from the compact mobile companion at %ipx",
+    (width) => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: width
+    });
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open preview controls" })
+    );
+    const companion = screen.getByRole("dialog", {
+      name: "Preview controls"
+    });
+    expect(
+      within(companion).getByRole("group", { name: "Preview actor" })
+    ).toBeVisible();
+    expect(
+      within(companion).getByRole("combobox", { name: "Mobile visual state" })
+    ).toBeVisible();
+
+    fireEvent.click(
+      within(companion).getByRole("button", { name: "Creator" })
+    );
+    expect(
+      screen.getByRole("heading", { name: "Creator journey" })
+    ).toBeVisible();
+    }
+  );
+
+  it("renders wallet signature and onboarding completion handoffs", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Onboarding" }));
+    fireEvent.click(screen.getByRole("button", { name: "Connect wallet" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Wallet" })
+      ).toBeVisible()
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Connect Nimiq wallet" })
+    );
+    expect(
+      screen.getByRole("heading", { name: "Signature Waiting" })
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Profile Privacy" }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", {
+          name: "Choose what people can discover"
+        })
+      ).toBeVisible()
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Enter Pods" }));
+    expect(
+      screen.getByRole("heading", { name: "Setup Complete" })
+    ).toBeVisible();
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Enter Pods" })
+      ).toBeVisible()
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Enter Pods" }));
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Today" })
+    ).toBeVisible();
+  });
+
+  it("renders the complete applicant to Pod room actor handoff", () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Applicant" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Application Pending" })
+    );
+
+    for (const actionId of ["accepted", "review-contract"]) {
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: `Run transition ${actionId}`
+        })
+      );
+    }
+    expect(
+      screen.getByRole("heading", { name: "Accepted journey" })
+    ).toBeVisible();
+
+    for (const actionId of [
+      "accept-contract",
+      "continue",
+      "confirm",
+      "submitted",
+      "observed",
+      "finalized",
+      "credited",
+      "wait-cutoff"
+    ]) {
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: `Run transition ${actionId}`
+        })
+      );
+    }
+    expect(
+      screen.getByRole("heading", { name: "Waiting journey" })
+    ).toBeVisible();
+
+    for (const actionId of ["cutoff-locked", "enter-room"]) {
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: `Run transition ${actionId}`
+        })
+      );
+    }
+    expect(
+      screen.getByRole("heading", { name: "Participant journey" })
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Pod Room" })).toBeVisible();
+  });
+
+  it("renders creator approval and rejection outcomes", async () => {
+    render(<NativeMomentumPrototype data={previewData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Creator" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review proof" }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Review proof" })
+      ).toBeVisible()
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Approve proof" }));
+    expect(
+      screen.getByRole("heading", { name: "Proof Approved" })
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Review proof" }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Reject proof" })
+      ).toBeVisible()
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reject proof" }));
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Proof Rejected" })
+    ).toBeVisible();
+  });
+
+  it("keeps invented journey records on fictional actors when live people exist", async () => {
+    const liveData = {
+      ...previewData,
+      people: [
+        {
+          displayName: "Real Builder",
+          handle: "realbuilder",
+          avatarSeed: "Real Builder",
+          bio: "This is a live public profile.",
+          source: "live" as const
+        }
+      ]
+    } as NativeMomentumPreviewData;
+    render(<NativeMomentumPrototype data={liveData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Creator" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review queue" }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Review queue" })
+      ).toBeVisible()
+    );
+
+    expect(screen.queryByText("Real Builder")).not.toBeInTheDocument();
+    expect(screen.getByText("Noah Mercer")).toBeVisible();
+    expect(screen.getByText("Simulated journey actors")).toBeVisible();
   });
 
   it("walks through the participant commitment and proof flow using prototype actions", async () => {

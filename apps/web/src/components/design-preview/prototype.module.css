@@ -34,6 +34,11 @@
     #171a17;
 }
 
+.mobileControlTrigger,
+.mobileCompanion {
+  display: none;
+}
+
 .prototypeSidebar,
 .flowInspector {
   position: sticky;
@@ -107,13 +112,17 @@
 }
 
 .prototypeIntro > span,
-.stageHeader span,
+.stageHeader h1,
 .flowInspector > div:first-child > span,
 .prototypeRules > span {
   color: rgba(255, 255, 255, 0.48);
   font: 700 10px/13px "Fira Mono", ui-monospace, monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.stageHeader h1 {
+  margin: 0;
 }
 
 .prototypeIntro h1 {
@@ -452,6 +461,29 @@
   line-height: 1.5;
 }
 
+.transitionActions {
+  display: grid;
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.transitionActions button {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 11px;
+  border: 0;
+  border-radius: 11px;
+  color: #1d211d;
+  background: #d9ed72;
+  font-size: 11px;
+  font-weight: 780;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
 .foundation *,
 .foundation *::before,
 .foundation *::after {
@@ -469,7 +501,6 @@
   position: relative;
   display: grid;
   min-height: 96px;
-  grid-template-columns: auto minmax(0, 1fr) 28px;
   align-items: center;
   gap: 14px;
   padding: 18px;
@@ -480,8 +511,21 @@
   cursor: pointer;
 }
 
+.choiceCardWithMedia {
+  grid-template-columns: auto minmax(0, 1fr) 28px;
+}
+
+.choiceCardWithoutMedia {
+  grid-template-columns: minmax(0, 1fr) 28px;
+}
+
 .choiceCard[data-selected="true"] {
   background: var(--pods-lime-soft);
+}
+
+.choiceCard[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.46;
 }
 
 .choiceCard > input {
@@ -1102,6 +1146,7 @@
 
 @media (max-width: 760px) {
   .prototypeShell {
+    --preview-mobile-toolbar: calc(58px + env(safe-area-inset-top));
     display: block;
     min-height: 100dvh;
     overflow: hidden;
@@ -1125,22 +1170,27 @@
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 8px;
+    min-height: var(--preview-mobile-toolbar);
+    padding:
+      calc(8px + env(safe-area-inset-top))
+      104px
+      8px
+      8px;
     border-radius: 0;
     background: #171a17;
   }
 
   .deviceStage {
     display: block;
-    height: calc(100dvh - 58px);
+    height: calc(100dvh - var(--preview-mobile-toolbar));
     padding: 0;
     overflow: hidden;
   }
 
   .deviceFrame {
     width: 100%;
-    height: calc(100dvh - 58px);
-    min-height: calc(100dvh - 58px);
+    height: calc(100dvh - var(--preview-mobile-toolbar));
+    min-height: calc(100dvh - var(--preview-mobile-toolbar));
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -1151,8 +1201,123 @@
   }
 
   .screenMotion {
-    height: calc(100dvh - 58px);
+    height: calc(100dvh - var(--preview-mobile-toolbar));
     padding-top: 0;
+  }
+
+  .mobileControlTrigger {
+    position: fixed;
+    z-index: 50;
+    top: calc(10px + env(safe-area-inset-top));
+    right: 10px;
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    gap: 7px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    color: #171a17;
+    background: #d9ed72;
+    box-shadow: 0 10px 30px -16px rgba(0, 0, 0, 0.65);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .mobileCompanion {
+    position: fixed;
+    z-index: 80;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: 10px;
+    display: grid;
+    max-height: min(78dvh, 620px);
+    gap: 18px;
+    padding:
+      18px
+      18px
+      calc(18px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    border-radius: 24px;
+    color: #f8f9f5;
+    background: rgba(23, 26, 23, 0.98);
+    box-shadow: 0 30px 90px -28px rgba(0, 0, 0, 0.72);
+  }
+
+  .mobileCompanion > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .mobileCompanion > header span {
+    color: rgba(255, 255, 255, 0.5);
+    font: 700 9px/1.2 "Fira Mono", ui-monospace, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobileCompanion > header h2 {
+    margin: 4px 0 0;
+    font-size: 22px;
+    letter-spacing: -0.04em;
+  }
+
+  .mobileCompanion > header button {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    color: #f8f9f5;
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .mobileActorGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mobileActorGrid button {
+    min-height: 42px;
+    padding: 8px 6px;
+    border: 0;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 11px;
+    font-weight: 760;
+  }
+
+  .mobileActorGrid button[aria-pressed="true"] {
+    color: #171a17;
+    background: #d9ed72;
+  }
+
+  .mobileScenarioControl {
+    display: grid;
+    gap: 7px;
+  }
+
+  .mobileScenarioControl > span {
+    color: rgba(255, 255, 255, 0.5);
+    font: 700 9px/1.2 "Fira Mono", ui-monospace, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mobileScenarioControl select {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 13px;
+    color: #f8f9f5;
+    background: rgba(255, 255, 255, 0.09);
+    font-size: 16px;
   }
 }
 

@@ -9,10 +9,11 @@ import {
   getAvailableTransitions
 } from "../src/components/design-preview/registry";
 import {
+  ACTIVITY_OUTCOMES,
   POD_LIFECYCLE,
-  type ActivityOutcome,
-  PreviewActorId,
-  PreviewState
+  SCREEN_IDS,
+  type PreviewActorId,
+  type PreviewState
 } from "../src/components/design-preview/model";
 
 describe("design preview journey registry", () => {
@@ -26,6 +27,66 @@ describe("design preview journey registry", () => {
     for (const transition of TRANSITION_REGISTRY) {
       expect(SCREEN_REGISTRY[transition.to]).toBeDefined();
     }
+  });
+
+  it("owns every canonical screen through at least one actor inventory", () => {
+    const ownedScreens = new Set(
+      Object.values(ACTOR_DEFINITIONS).flatMap((actor) => actor.screens)
+    );
+
+    for (const screen of SCREEN_IDS) {
+      expect(ownedScreens.has(screen), `${screen} must have an owner`).toBe(true);
+    }
+  });
+
+  it("keeps every transition source and destination inside actor ownership", () => {
+    const violations: string[] = [];
+
+    for (const transition of TRANSITION_REGISTRY) {
+      for (const actorId of transition.allowedActors) {
+        if (!ACTOR_DEFINITIONS[actorId].screens.includes(transition.from)) {
+          violations.push(`${actorId} does not own source ${transition.from}`);
+        }
+
+        const destinationActor = transition.destinationActor ?? actorId;
+        if (
+          !ACTOR_DEFINITIONS[destinationActor].screens.includes(transition.to)
+        ) {
+          violations.push(
+            `${destinationActor} does not own destination ${transition.to}`
+          );
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps legacy visual aliases out of the canonical screen vocabulary", () => {
+    for (const legacyId of [
+      "pod-preview",
+      "apply",
+      "funding",
+      "waiting",
+      "room",
+      "refund",
+      "submission-approved",
+      "settlement",
+      "command-center",
+      "creator-funding",
+      "creator-settlement"
+    ]) {
+      expect(SCREEN_IDS).not.toContain(legacyId);
+    }
+  });
+
+  it("rejects attempts to open a screen outside the active actor inventory", () => {
+    expect(() =>
+      dispatchPreviewAction(createInitialPreviewState(), {
+        type: "open-screen",
+        screen: "transfer-queue"
+      })
+    ).toThrow(/visitor.*transfer-queue/i);
   });
 
   it("switches inspected journeys without changing the signed-in viewer", () => {
@@ -126,12 +187,6 @@ describe("design preview journey registry", () => {
   });
 
   it("uses final_review then completed as the Pod lifecycle", () => {
-    const validOutcomes: ActivityOutcome[] = [
-      "approved",
-      "rejected",
-      "timeout_protected",
-      "missed"
-    ];
     const allActors: PreviewActorId[] = Object.keys(
       ACTOR_DEFINITIONS
     ) as PreviewActorId[];
@@ -146,7 +201,7 @@ describe("design preview journey registry", () => {
       "completed",
       "cancelled"
     ]);
-    expect(validOutcomes).toEqual([
+    expect(ACTIVITY_OUTCOMES).toEqual([
       "approved",
       "rejected",
       "timeout_protected",

@@ -11,19 +11,22 @@ const fallbackPeople: NativeMomentumPreviewPerson[] = [
     displayName: "Ari Vale",
     handle: "arivale",
     avatarSeed: "Ari Vale",
-    bio: "Shipping small products with careful craft and visible progress."
+    bio: "Shipping small products with careful craft and visible progress.",
+    source: "fixture"
   },
   {
     displayName: "Noah Mercer",
     handle: "noahmercer",
     avatarSeed: "Noah Mercer",
-    bio: "Designing community tools that make good habits easier to keep."
+    bio: "Designing community tools that make good habits easier to keep.",
+    source: "fixture"
   },
   {
     displayName: "Mina Sol",
     handle: "minasol",
     avatarSeed: "Mina Sol",
-    bio: "Running, reading, and making ambitious work feel social."
+    bio: "Running, reading, and making ambitious work feel social.",
+    source: "fixture"
   }
 ];
 
@@ -40,7 +43,8 @@ const fallbackPods: NativeMomentumPreviewPod[] = [
     minParticipants: 2,
     maxParticipants: 5,
     visibility: "public",
-    visitorsAllowed: true
+    visitorsAllowed: true,
+    source: "fixture"
   },
   {
     id: "preview-night-run",
@@ -54,7 +58,8 @@ const fallbackPods: NativeMomentumPreviewPod[] = [
     minParticipants: 3,
     maxParticipants: 8,
     visibility: "public",
-    visitorsAllowed: false
+    visitorsAllowed: false,
+    source: "fixture"
   },
   {
     id: "preview-reading-reset",
@@ -68,7 +73,8 @@ const fallbackPods: NativeMomentumPreviewPod[] = [
     minParticipants: 2,
     maxParticipants: 6,
     visibility: "public",
-    visitorsAllowed: true
+    visitorsAllowed: true,
+    source: "fixture"
   }
 ];
 
@@ -79,7 +85,8 @@ const fallbackRoomEntries: NativeMomentumRoomEntry[] = [
     author: "Ari Vale",
     handle: "arivale",
     body: "The funding and roster flow is finally calm on mobile. I am checking the proof path next.",
-    time: "10:32 PM"
+    time: "10:32 PM",
+    source: "fixture"
   },
   {
     id: "preview-activity-1",
@@ -90,7 +97,8 @@ const fallbackRoomEntries: NativeMomentumRoomEntry[] = [
     result: "The responsive room, visibility controls, and submission path are ready for review.",
     status: "approved",
     time: "10:47 PM",
-    artifactLabel: "Pull request 184"
+    artifactLabel: "Pull request 184",
+    source: "fixture"
   },
   {
     id: "preview-message-2",
@@ -98,7 +106,8 @@ const fallbackRoomEntries: NativeMomentumRoomEntry[] = [
     author: "Noah Mercer",
     handle: "noahmercer",
     body: "The proof card reads much faster now. I can understand the task before opening the detail.",
-    time: "10:51 PM"
+    time: "10:51 PM",
+    source: "fixture"
   },
   {
     id: "preview-system-1",
@@ -106,7 +115,8 @@ const fallbackRoomEntries: NativeMomentumRoomEntry[] = [
     author: "Pods",
     handle: "pods",
     body: "Occurrence 2 proof was approved.",
-    time: "10:52 PM"
+    time: "10:52 PM",
+    source: "fixture"
   }
 ];
 
@@ -118,6 +128,20 @@ function uniqueBy<T>(values: T[], key: (value: T) => string) {
     seen.add(identity);
     return true;
   });
+}
+
+function normalizeSemanticIdentity(value: string) {
+  return value.normalize("NFKC").trim().toLocaleLowerCase("en").replace(/\s+/g, " ");
+}
+
+export function mergePreviewPodsBySemanticIdentity(
+  livePods: NativeMomentumPreviewPod[],
+  fixturePods: NativeMomentumPreviewPod[]
+) {
+  return uniqueBy(
+    [...livePods, ...fixturePods],
+    (pod) => `${normalizeSemanticIdentity(pod.name)}:${pod.templateId}`
+  );
 }
 
 function timeLabel(value: Date) {
@@ -147,14 +171,16 @@ function connectedData(
       minParticipants: contract.community.minParticipants,
       maxParticipants: contract.community.maxParticipants,
       visibility: "public" as const,
-      visitorsAllowed: pod.visitorRoomAvailable
+      visitorsAllowed: pod.visitorRoomAvailable,
+      source: "live" as const
     }];
   });
   const people = publicProfiles.map((profile) => ({
     displayName: profile.displayName,
     handle: profile.handle,
     avatarSeed: profile.displayName,
-    bio: profile.bio || "Showing up for meaningful work with a public rhythm."
+    bio: profile.bio || "Showing up for meaningful work with a public rhythm.",
+    source: "live" as const
   }));
   const liveRoomEntries: NativeMomentumRoomEntry[] = (room?.messages ?? []).flatMap(
     (message): NativeMomentumRoomEntry[] => {
@@ -183,7 +209,8 @@ function connectedData(
           : {}),
         ...(message.activity.artifactUrl
           ? { artifactLabel: "Public artifact" }
-          : {})
+          : {}),
+        source: "live" as const
       }];
     }
     return [{
@@ -196,10 +223,14 @@ function connectedData(
       author,
       handle,
       body: message.body ?? "Message unavailable",
-      time: timeLabel(message.createdAt)
+      time: timeLabel(message.createdAt),
+      source: "live" as const
     }];
   });
-  const mergedPods = uniqueBy([...livePods, ...fallbackPods], (pod) => pod.id).slice(0, 6);
+  const mergedPods = mergePreviewPodsBySemanticIdentity(
+    livePods,
+    fallbackPods
+  ).slice(0, 6);
   const mergedPeople = uniqueBy([...people, ...fallbackPeople], (person) => person.handle).slice(0, 6);
   const mergedRoom = uniqueBy(
     [...liveRoomEntries, ...fallbackRoomEntries],

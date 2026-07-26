@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -35,12 +36,59 @@ describe("design preview primitives", () => {
 
     const choice = screen.getByRole("radio", { name: /Build and Ship/ });
     expect(choice).toBeChecked();
-    fireEvent.click(choice);
-    expect(onSelect).toHaveBeenCalledWith("build");
+    expect(onSelect).not.toHaveBeenCalled();
     expect(screen.getByTestId("choice-indicator-unselected")).toHaveAttribute(
       "aria-hidden",
       "true"
     );
+  });
+
+  it("uses native keyboard radio semantics and an explicit no-media layout", async () => {
+    const onSelect = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChoiceCard
+        description="Focused sessions and learning outputs"
+        name="template"
+        onSelect={onSelect}
+        selected={false}
+        title="Study and Focus"
+        value="study"
+      />
+    );
+
+    const choice = screen.getByRole("radio", { name: /Study and Focus/ });
+    expect(choice.closest("label")).toHaveAttribute("data-layout", "without-media");
+
+    choice.focus();
+    await user.keyboard(" ");
+    expect(onSelect).toHaveBeenCalledWith("study");
+  });
+
+  it("uses a distinct media layout and prevents disabled selection", () => {
+    const onSelect = vi.fn();
+    render(
+      <ChoiceCard
+        description="Movement, distance, or attendance"
+        disabled
+        media={<span data-testid="fitness-media">Run</span>}
+        name="template"
+        onSelect={onSelect}
+        selected={false}
+        title="Fitness and Movement"
+        value="fitness"
+      />
+    );
+
+    const choice = screen.getByRole("radio", {
+      name: /Fitness and Movement/
+    });
+    expect(choice).toBeDisabled();
+    expect(choice.closest("label")).toHaveAttribute("data-layout", "with-media");
+    expect(choice.closest("label")).toHaveAttribute("data-disabled", "true");
+
+    fireEvent.click(choice);
+    expect(onSelect).not.toHaveBeenCalled();
   });
 
   it("uses a semantic switch with visible supporting copy", () => {

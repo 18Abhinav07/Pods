@@ -60,11 +60,9 @@ export const SCREEN_IDS = [
   "profile-privacy",
   "setup-complete",
   "discover",
-  "pod-preview",
   "public-pod-details",
   "visitor-room",
   "public-proof",
-  "apply",
   "application",
   "application-submitted",
   "application-pending",
@@ -74,7 +72,6 @@ export const SCREEN_IDS = [
   "invite",
   "invalid-invite",
   "frozen-contract",
-  "funding",
   "funding-summary",
   "funding-consent",
   "wallet-confirmation",
@@ -84,8 +81,6 @@ export const SCREEN_IDS = [
   "funding-credited",
   "funding-waiting",
   "roster-locked",
-  "waiting",
-  "refund",
   "refund-reason",
   "refund-queued",
   "refund-prepared",
@@ -94,7 +89,6 @@ export const SCREEN_IDS = [
   "refund-confirmed",
   "today",
   "my-pods",
-  "room",
   "pod-room",
   "commitment",
   "proof-type",
@@ -106,7 +100,6 @@ export const SCREEN_IDS = [
   "proof-rejected",
   "proof-timeout-protected",
   "proof-missed",
-  "submission-approved",
   "final-review",
   "settlement-calculated",
   "payout-queued",
@@ -115,20 +108,16 @@ export const SCREEN_IDS = [
   "payout-confirming",
   "payout-paid",
   "completed-archive",
-  "settlement",
   "updates",
   "members",
   "rules",
-  "command-center",
   "creator-command-center",
   "applications",
   "application-detail",
-  "creator-funding",
   "creator-roster",
   "review-queue",
   "review-proof",
   "creator-final-review",
-  "creator-settlement",
   "settlement-calculating",
   "payouts-processing",
   "operations-blocked",
@@ -243,6 +232,7 @@ export type NativeMomentumPreviewPod = {
   maxParticipants: number;
   visibility: "public" | "private";
   visitorsAllowed: boolean;
+  source: "live" | "fixture";
 };
 
 export type NativeMomentumPreviewPerson = {
@@ -250,6 +240,7 @@ export type NativeMomentumPreviewPerson = {
   handle: string;
   avatarSeed: string;
   bio: string;
+  source: "live" | "fixture";
 };
 
 export type NativeMomentumRoomEntry = {
@@ -262,6 +253,7 @@ export type NativeMomentumRoomEntry = {
   status?: "locked" | "reviewing" | "approved" | "rejected" | "protected";
   time: string;
   artifactLabel?: string;
+  source: "live" | "fixture";
 };
 
 export type NativeMomentumPreviewData = {

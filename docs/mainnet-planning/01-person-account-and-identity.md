@@ -57,9 +57,28 @@ added without replacing or fragmenting the Pods person.
 The initial production authentication methods are Google Sign-In and GitHub
 Sign-In. The product does not authenticate against Gmail itself.
 
-Whether Google and GitHub are equal account-creation methods or one is
-required remains an active decision below. Provider credentials and verified
-provider data are private authentication records, not public-profile fields.
+Google and GitHub are equal authentication and account-creation entry points.
+Neither provider is globally mandatory. A person may create their canonical
+Pods account with either provider and link the other later.
+
+After successful provider authentication:
+
+- If that provider identity is already linked, Pods signs the person into the
+  existing canonical account.
+- If it is not linked, Pods starts the minimal onboarding flow and atomically
+  creates the person, minimum profile, username reservation, and provider link
+  when onboarding completes.
+- Signing in or linking another provider must never create a second Pods
+  person silently.
+
+GitHub becomes required only when a person chooses functionality that needs
+GitHub ownership or activity proof, such as connecting a repository or using
+GitHub-verified Build and Ship evidence. A Google-first person can link GitHub
+at that point without changing their Pods identity. A GitHub-first person can
+link Google later for an additional sign-in and recovery path.
+
+Provider credentials and verified provider data are private authentication
+records, not public-profile fields.
 
 ### Minimal onboarding
 
@@ -113,15 +132,13 @@ Detailed profile fields are deferred to
 
 Resolve these in order:
 
-1. Whether Google and GitHub are equal account-creation methods or one is
-   required.
-2. How an authenticated person links a second provider safely.
-3. What happens when a provider is already linked to another Pods person.
-4. Username syntax, reservation, change, release, and impersonation rules.
-5. Account recovery when the original provider is unavailable.
-6. Account merge policy for accidentally duplicated identities.
-7. Account states, suspension, deactivation, deletion, and retention.
-8. Session, device, and reauthentication requirements for sensitive actions.
+1. How an authenticated person links a second provider safely.
+2. What happens when a provider is already linked to another Pods person.
+3. Username syntax, reservation, change, release, and impersonation rules.
+4. Account recovery when the original provider is unavailable.
+5. Account merge policy for accidentally duplicated identities.
+6. Account states, suspension, deactivation, deletion, and retention.
+7. Session, device, and reauthentication requirements for sensitive actions.
 
 ## Deferred Dependencies
 

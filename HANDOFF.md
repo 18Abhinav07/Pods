@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-27 17:10
+last-updated: 2026-07-27 18:44
 last-agent: codex
 mode: HACKATHON
 ---
@@ -33,14 +33,43 @@ Testnet NIM payouts. Mainnet remains a separate, unauthorized product phase.
 - Railway remains Nimiq Testnet only. Testnet payout broadcasting is explicitly
   authorized and enabled for the web and worker services.
 
-## Remaining Human Gate
+## Physical Gate Status
 
-- Run one final Nimiq Pay phone smoke journey against the deployed release:
-  connect, open an existing Pod or create a low-value Testnet Pod, and confirm
-  the final mobile shell and wallet handoff.
-- This is a physical-device confirmation, not a missing automated product path.
+- The complete two-wallet Testnet funding, activity, review, settlement, and
+  payout journey passed on physical Nimiq Pay wallets.
+- Both participants received their expected finalized Testnet payouts, and the
+  user accepted the end-to-end behavior.
 - Mainnet treasury configuration, Mainnet funds, and Mainnet transactions are
   not authorized by this release.
+
+## Completed Local Two-Wallet Journey
+
+- Pod: `Three-Day Ship Sprint`
+- Pod ID: `f2673754-4069-4189-a7f9-c49d80a272d3`
+- LAN URL:
+  `http://192.168.29.244:3411/pods/f2673754-4069-4189-a7f9-c49d80a272d3`
+- Creator and reviewer: seeded `pods_test_operator`; the creator neither funds
+  nor receives settlement value.
+- Contract: three Build and Ship occurrences, `0.1 NIM` per occurrence,
+  `0.3 NIM` upfront per participant, two-participant capacity, proportional
+  settlement, and a public read-only visitor room.
+- Current state: `completed`; the settlement run is `settled`, both payout
+  legs are chain-confirmed, and deposit/payout conservation is exactly
+  `60,000 Luna`.
+- Occurrence one result: `ryuk` is approved and `raptor` is rejected, with
+  both review decisions and both Pod-room realtime events persisted.
+- Occurrences two and three closed with both members missed. Because neither
+  occurrence had an approved bonus recipient, each is recorded as
+  `closed_no_bonus_recipient` and both unused slices were restored.
+- Final conserved payout from the `0.6 NIM` pool: `raptor` received `0.2 NIM`
+  and `ryuk` received `0.4 NIM`.
+- Confirmed payout hashes: `raptor`
+  `c5d1327b85ae308a9fc66620fdf5e51c1d0428b38ab51c8275521663ded8ffe6`;
+  `ryuk`
+  `e303506f01a617f5fc96c0de3edbf9425ce65bcfa19330dd45e1a369dc4e4c27`.
+- Local web and worker processes are stopped after the completed physical gate.
+- Settlement and Testnet payout broadcast remain enabled only for the isolated
+  Testnet runtime.
 
 ## Local Runtime
 
@@ -51,7 +80,7 @@ Testnet NIM payouts. Mainnet remains a separate, unauthorized product phase.
 
 ## Next 3 Tasks
 
-1. Complete the final deployed Nimiq Pay phone smoke journey.
-2. Preserve the Testnet deployment as the stable competition build.
-3. Start Mainnet product work from a new branch without reusing Testnet
+1. Preserve the Testnet deployment as the stable competition build.
+2. Create the isolated Mainnet release line.
+3. Start Mainnet product work without reusing Testnet
    treasury, database, storage, or environment configuration.

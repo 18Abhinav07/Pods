@@ -21,9 +21,9 @@ automated repository, mobile-browser, cancellation-refund, and physical
 two-wallet payout gates pass. The verified physical lifecycle conserved the
 complete 0.6 NIM pool, finalized both participant payouts, transferred nothing
 to the creator, and remained idempotent on later worker cycles. The verified
-core is deployed on Railway. Automatic Testnet payout broadcasting remains
-disabled until its persistent production capability is explicitly authorized;
-the remote Nimiq Pay smoke journey also remains.
+core is deployed on Railway. Automatic low-value Testnet payout broadcasting
+is explicitly authorized and enabled for the isolated Testnet web and worker
+services. Mainnet funds and Mainnet deployment remain unauthorized.
 
 ## Local development
 

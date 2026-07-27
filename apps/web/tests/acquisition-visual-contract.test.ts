@@ -104,10 +104,13 @@ describe("production acquisition visual contract", () => {
       /\.facts\s*\{[^}]*align-items:\s*stretch;/s
     );
     expect(styles).toMatch(
-      /\.fact\s*\{[^}]*display:\s*grid;[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\);/s
+      /\.fact\s*\{[^}]*display:\s*grid;[^}]*grid-template-rows:\s*auto auto;[^}]*align-content:\s*center;[^}]*justify-items:\s*center;[^}]*text-align:\s*center;/s
     );
     expect(styles).toMatch(
-      /\.factValue\s*\{[^}]*font-variant-numeric:\s*tabular-nums;[^}]*white-space:\s*nowrap;/s
+      /\.factLabel\s*\{[^}]*width:\s*100%;[^}]*text-align:\s*center;/s
+    );
+    expect(styles).toMatch(
+      /\.factValue\s*\{[^}]*width:\s*100%;[^}]*margin:\s*0;[^}]*font-variant-numeric:\s*tabular-nums;[^}]*text-align:\s*center;[^}]*white-space:\s*nowrap;/s
     );
   });
 });

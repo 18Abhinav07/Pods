@@ -24,6 +24,7 @@ Related: [[docs/superpowers/specs/2026-07-27-pods-release-branch-and-environment
 - Modify `README.md`: correct the current Testnet payout-broadcast status.
 - Modify `HANDOFF.md`: preserve the completed physical Testnet journey in the release commit, then record the completed release split on the Mainnet integration line.
 - Modify `apps/web/src/components/acquisition-flow.module.css`: include the already device-approved centered application facts.
+- Modify `apps/web/tests/acquisition-visual-contract.test.ts`: update the visual contract from the superseded stretched-row layout to the approved centered metric layout.
 - Create `docs/superpowers/specs/2026-07-27-pods-release-branch-and-environment-isolation-design.md`: durable release contract, already committed.
 - Create `docs/superpowers/plans/2026-07-27-pods-release-branch-and-environment-isolation.md`: this executable plan.
 - No product database row, Testnet object, Railway secret, or treasury value is copied into Mainnet.
@@ -88,6 +89,7 @@ Expected: `main` is the only active local and remote branch, one worktree exists
 - Modify: `README.md`
 - Verify: `HANDOFF.md`
 - Verify: `apps/web/src/components/acquisition-flow.module.css`
+- Modify: `apps/web/tests/acquisition-visual-contract.test.ts`
 
 - [ ] **Step 1: Correct the README release status**
 
@@ -104,7 +106,7 @@ git diff -- README.md HANDOFF.md apps/web/src/components/acquisition-flow.module
 git diff --check
 ```
 
-Expected: only the payout-status correction, completed physical journey handoff, and centered mobile application facts appear; `git diff --check` prints nothing.
+Expected: only the payout-status correction, completed physical journey handoff, centered mobile application facts, and matching visual-contract assertion appear; `git diff --check` prints nothing.
 
 - [ ] **Step 3: Enforce the product copy constraint**
 
@@ -150,7 +152,7 @@ git status --short
 git diff --check
 ```
 
-Expected: only `README.md`, `HANDOFF.md`, and `apps/web/src/components/acquisition-flow.module.css` are modified.
+Expected: only `README.md`, `HANDOFF.md`, `apps/web/src/components/acquisition-flow.module.css`, and `apps/web/tests/acquisition-visual-contract.test.ts` are modified.
 
 ### Task 4: Commit and publish the stable Testnet source
 
@@ -158,15 +160,16 @@ Expected: only `README.md`, `HANDOFF.md`, and `apps/web/src/components/acquisiti
 - Commit: `README.md`
 - Commit: `HANDOFF.md`
 - Commit: `apps/web/src/components/acquisition-flow.module.css`
+- Commit: `apps/web/tests/acquisition-visual-contract.test.ts`
 
 - [ ] **Step 1: Commit the release source changes**
 
 ```bash
-git add README.md HANDOFF.md apps/web/src/components/acquisition-flow.module.css
+git add README.md HANDOFF.md apps/web/src/components/acquisition-flow.module.css apps/web/tests/acquisition-visual-contract.test.ts docs/superpowers/plans/2026-07-27-pods-release-branch-and-environment-isolation.md
 git commit -m "fix: finalize the Testnet v0 release"
 ```
 
-Expected: one commit containing exactly the three release files.
+Expected: one commit containing the release source files and the corrected executable plan.
 
 - [ ] **Step 2: Capture and verify the release commit**
 

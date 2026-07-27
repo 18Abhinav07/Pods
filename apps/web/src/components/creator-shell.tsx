@@ -1,5 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+
+import styles from "./creator-flow.module.css";
 
 const steps = ["Template", "Activity", "Community", "Commitment", "Review"] as const;
 
@@ -17,32 +20,32 @@ export function CreatorShell({
   copy: string;
 }) {
   return (
-    <main className="app-shell creator-shell adaptive-creator-shell">
-      <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/today" aria-label="Pods Today">
-          <span className="pod-mark" aria-hidden="true" />
+    <main className={styles.creatorShell}>
+      <header className={styles.topBar}>
+        <Link className={styles.wordmark} href="/today" aria-label="Pods Today">
+          <Image alt="" aria-hidden="true" height={24} src="/brand/pods-mark.svg" width={24} />
           pods
         </Link>
-        <Link className="quiet-link" href="/my-pods">Save and exit</Link>
+        <Link className={styles.exitButton} href="/my-pods">Exit</Link>
       </header>
-      <nav className="wizard-progress entrance entrance-hero" aria-label="Pod creation progress">
+      <nav className={styles.progress} aria-label={`Create a Pod, step ${activeStep + 1} of ${steps.length}`}>
         {steps.map((step, index) => (
           <span
+            aria-label={`${step}${index < activeStep ? ", complete" : index === activeStep ? ", current" : ""}`}
             aria-current={index === activeStep ? "step" : undefined}
-            className={index < activeStep ? "is-complete" : ""}
+            className={styles.progressDot}
+            data-complete={index < activeStep}
             key={step}
-          >
-            <i>{index + 1}</i>
-            <b>{step}</b>
-          </span>
+            title={step}
+          />
         ))}
       </nav>
-      <section className="wizard-intro entrance entrance-status">
-        <p className="eyebrow">{eyebrow}</p>
+      <section className={styles.intro}>
+        <p className={styles.introEyebrow}>{eyebrow}</p>
         <h1>{title}</h1>
         <p>{copy}</p>
       </section>
-      <section className="wizard-surface entrance entrance-templates">{children}</section>
+      <section className={styles.surface}>{children}</section>
     </main>
   );
 }

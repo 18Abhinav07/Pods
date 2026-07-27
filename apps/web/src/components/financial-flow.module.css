@@ -1,0 +1,1456 @@
+.financialPage {
+  min-height: 100dvh;
+  padding-bottom: max(26px, env(safe-area-inset-bottom));
+  color: #20241f;
+  background: #fff;
+}
+
+.financialTopbar {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: max(14px, env(safe-area-inset-top)) 0 10px;
+}
+
+.networkChip,
+.routeLabel {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border-radius: 999px;
+  color: #626961;
+  background: #f3f5f1;
+  font: 800 9px/1 "Fira Mono", monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.networkChip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d9ed72;
+  box-shadow: 0 0 0 4px rgba(217, 237, 114, 0.2);
+}
+
+.financialIntro {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 22px 0 20px;
+}
+
+.financialIntro > p {
+  margin: 0 0 8px;
+  color: #727871;
+  font: 800 10px/1.2 "Fira Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.financialIntro h1,
+.financialIntro h2 {
+  max-width: 11ch;
+  margin: 0;
+  font-size: clamp(38px, 11vw, 54px);
+  line-height: 0.96;
+  letter-spacing: -0.065em;
+}
+
+.financialIntro > span {
+  display: block;
+  max-width: 38ch;
+  margin-top: 12px;
+  color: #697068;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.unavailableState {
+  display: grid;
+  max-width: 520px;
+  margin: 0 auto;
+  gap: 10px;
+  padding: 22px;
+  border-radius: 27px;
+  background: #f3f5f1;
+}
+
+.unavailableState > span {
+  color: #697068;
+  font: 800 9px/1 "Fira Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.unavailableState h2 {
+  margin: 5px 0 0;
+  font-size: 27px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.unavailableState p {
+  margin: 0;
+  color: #697068;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.commitmentFlow,
+.statusFlow,
+.waitingFlow {
+  --finance-ink: #20241f;
+  --finance-muted: #697068;
+  --finance-lime: #d9ed72;
+  --finance-lime-soft: #f1f8ce;
+  --finance-soft: #f3f5f1;
+  --finance-success: #24745f;
+  --finance-danger: #a54f48;
+  display: grid;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  gap: 18px;
+  color: var(--finance-ink);
+}
+
+.fundingProgress {
+  display: grid;
+  gap: 9px;
+  padding: 0 2px;
+}
+
+.fundingProgress > span {
+  color: var(--finance-muted);
+  font: 800 9px/1.2 "Fira Mono", monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.fundingProgress ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fundingProgress li {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.fundingProgress i {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: #e6e9e3;
+  transition: background-color 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.fundingProgress li[data-state="complete"] i {
+  background: var(--finance-ink);
+}
+
+.fundingProgress li[data-state="current"] i {
+  background: var(--finance-lime);
+}
+
+.fundingProgress small {
+  overflow: hidden;
+  color: var(--finance-muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fundingProgress li[data-state="current"] small {
+  color: var(--finance-ink);
+}
+
+.commitmentHero,
+.statusHero,
+.waitingHero,
+.refundHero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 30px;
+}
+
+.commitmentHero {
+  padding: 22px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 90% 8%, rgba(217, 237, 114, 0.2), transparent 31%),
+    var(--finance-ink);
+  box-shadow: 0 24px 58px rgba(32, 36, 31, 0.16);
+}
+
+.commitmentHero::after,
+.waitingHero::after {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(217, 237, 114, 0.18);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.commitmentHero::after {
+  top: -92px;
+  right: -66px;
+}
+
+.commitmentIdentity {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+}
+
+.commitmentIdentity h2 {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(20px, 6vw, 27px);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
+
+.eyebrow {
+  color: rgba(255, 255, 255, 0.6);
+  font: 800 10px/1.2 "Fira Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nimMedallion {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--finance-lime);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    0 13px 28px rgba(0, 0, 0, 0.15);
+}
+
+.nimMedallion[data-size="small"] {
+  width: 48px;
+  height: 48px;
+  border-radius: 17px;
+}
+
+.nimMedallion img {
+  width: 62%;
+  height: 62%;
+  object-fit: contain;
+}
+
+.commitmentAmount {
+  position: relative;
+  z-index: 1;
+  padding: 34px 0 20px;
+}
+
+.commitmentAmount small {
+  display: block;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.commitmentAmount strong {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: clamp(48px, 15vw, 68px);
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+}
+
+.commitmentAmount strong span {
+  color: var(--finance-lime);
+  font: 800 14px/1 "Fira Mono", monospace;
+  letter-spacing: 0;
+}
+
+.commitmentAmount p {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.commitmentEquation {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.15fr);
+  align-items: center;
+  gap: 8px;
+  padding: 15px;
+  border-radius: 19px;
+  color: var(--finance-ink);
+  background: var(--finance-lime);
+}
+
+.commitmentEquation span,
+.commitmentEquation strong {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.commitmentEquation strong {
+  text-align: right;
+}
+
+.commitmentEquation i {
+  opacity: 0.46;
+  font-style: normal;
+}
+
+.commitmentFacts {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.commitmentFacts p {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+  padding: 13px;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.commitmentFacts strong {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.commitmentFacts span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+  line-height: 1.38;
+}
+
+.riskSummary {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  color: var(--finance-ink);
+  background: #fff;
+}
+
+.riskSummary > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.riskSummary small {
+  color: var(--finance-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.riskSummary strong {
+  flex: 0 0 auto;
+  font-size: 12px;
+}
+
+.riskSummary p {
+  margin: 0;
+  color: var(--finance-muted);
+  font-size: 10px;
+  line-height: 1.42;
+}
+
+.protectionStep,
+.walletStep {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 20px 52px rgba(32, 36, 31, 0.085);
+}
+
+.protectionStep > header,
+.walletStep > header > span {
+  display: grid;
+  gap: 6px;
+}
+
+.stepKicker,
+.walletStep > header small {
+  color: var(--finance-muted);
+  font: 800 9px/1.2 "Fira Mono", monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.protectionStep > header h2 {
+  max-width: 13ch;
+  margin: 0;
+  font-size: clamp(29px, 8vw, 39px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.protectionStep > header p,
+.walletStep > header p {
+  max-width: 37ch;
+  margin: 0;
+  color: var(--finance-muted);
+  font-size: 11px;
+  line-height: 1.48;
+}
+
+.protectionStep .commitmentFacts {
+  margin-top: 0;
+}
+
+.protectionStep .commitmentFacts p {
+  background: var(--finance-soft);
+}
+
+.protectionHighlights {
+  display: grid;
+  gap: 8px;
+}
+
+.protectionHighlights > div {
+  display: grid;
+  min-height: 70px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  padding: 12px 13px;
+  border-radius: 18px;
+  background: var(--finance-lime-soft);
+}
+
+.protectionHighlights svg {
+  width: 22px;
+  height: 22px;
+}
+
+.protectionHighlights span {
+  display: grid;
+  gap: 4px;
+}
+
+.protectionHighlights strong {
+  font-size: 12px;
+}
+
+.protectionHighlights small {
+  color: #5d645a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.walletStep > header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+}
+
+.walletStep > header strong {
+  font-size: 29px;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.walletStep .consent {
+  padding: 15px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.mechanics,
+.receipt,
+.waitingContract {
+  overflow: hidden;
+  border: 0;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(32, 36, 31, 0.075);
+}
+
+.mechanics > summary,
+.receipt > summary,
+.waitingContract > summary {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.mechanics > summary::-webkit-details-marker,
+.receipt > summary::-webkit-details-marker,
+.waitingContract > summary::-webkit-details-marker {
+  display: none;
+}
+
+.mechanics > summary > span {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.mechanics > summary svg,
+.receipt > summary > svg,
+.waitingContract > summary > svg {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  transition: transform 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.mechanics[open] > summary > svg,
+.receipt[open] > summary > svg,
+.waitingContract[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.mechanicsBody,
+.waitingContractBody {
+  display: grid;
+  gap: 15px;
+  padding: 0 18px 18px;
+}
+
+.mechanicsBody section > .eyebrow {
+  color: var(--finance-muted);
+}
+
+.mechanicsBody h2 {
+  margin: 6px 0 14px;
+  font-size: 23px;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.outcomeCards {
+  display: grid;
+  gap: 8px;
+}
+
+.outcomeCards > div {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  gap: 4px 12px;
+  padding: 13px 14px;
+  border-radius: 17px;
+  background: var(--finance-soft);
+}
+
+.outcomeCards b,
+.outcomeCards span {
+  min-width: 0;
+  font-size: 12px;
+}
+
+.outcomeCards small {
+  grid-column: 1 / -1;
+  color: var(--finance-muted);
+  font-size: 10px;
+}
+
+.mechanicsNote {
+  margin: 12px 2px 0;
+  color: var(--finance-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.disclosureStack {
+  display: grid;
+  gap: 8px;
+}
+
+.disclosureStack > div {
+  padding: 14px;
+  border-radius: 17px;
+  background: var(--finance-lime-soft);
+}
+
+.disclosureStack strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+
+.disclosureStack p {
+  margin: 0;
+  color: #586056;
+  font-size: 11px;
+  line-height: 1.48;
+}
+
+.consent {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
+  gap: 13px;
+  min-height: 72px;
+  padding: 17px;
+  border-radius: 23px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(32, 36, 31, 0.07);
+  cursor: pointer;
+}
+
+.consent input,
+.consent > i {
+  grid-area: 1 / 1;
+  width: 28px;
+  height: 28px;
+}
+
+.consent input {
+  margin: 0;
+  appearance: none;
+  border: 2px solid #d8ddd5;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 220ms cubic-bezier(0.32, 0.72, 0, 1),
+    background 220ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.consent > i {
+  display: grid;
+  place-items: center;
+  color: var(--finance-ink);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.consent > i svg {
+  width: 16px;
+  height: 16px;
+}
+
+.consent input:checked {
+  border-color: var(--finance-lime);
+  background: var(--finance-lime);
+  transform: scale(1.04);
+}
+
+.consent input:checked + i {
+  opacity: 1;
+}
+
+.consent > span {
+  display: grid;
+  gap: 4px;
+}
+
+.consent strong {
+  font-size: 13px;
+}
+
+.consent small {
+  color: var(--finance-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.financialError {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 20px;
+  color: #722f2b;
+  background: #faece9;
+}
+
+.financialError strong {
+  font-size: 13px;
+}
+
+.financialError span,
+.financialError small {
+  font-size: 11px;
+  line-height: 1.42;
+}
+
+.financialError small {
+  opacity: 0.72;
+}
+
+.actionDock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+  margin: 0 -4px;
+  padding: 14px 4px max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 20%, #fff);
+}
+
+.stepActions {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 9px;
+}
+
+.backAction {
+  display: grid;
+  width: 52px;
+  min-height: 58px;
+  place-items: center;
+  border: 0;
+  border-radius: 19px;
+  color: var(--finance-ink);
+  background: var(--finance-soft);
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.backAction svg {
+  width: 20px;
+  height: 20px;
+}
+
+.backAction:active {
+  transform: scale(0.96);
+}
+
+.primaryAction {
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 8px 7px 20px;
+  border: 0;
+  border-radius: 21px;
+  color: var(--finance-ink);
+  background: var(--finance-lime);
+  box-shadow: 0 15px 32px rgba(145, 164, 49, 0.17);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 220ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 220ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.primaryAction i {
+  display: grid;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 16px;
+  color: #fff;
+  background: var(--finance-ink);
+}
+
+.primaryAction i svg {
+  width: 20px;
+  height: 20px;
+}
+
+.primaryAction:not(:disabled):active {
+  transform: scale(0.985);
+  box-shadow: 0 8px 20px rgba(145, 164, 49, 0.12);
+}
+
+.primaryAction:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  box-shadow: none;
+}
+
+.actionLinks {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.actionLinks a,
+.secondaryLink {
+  min-height: 44px;
+  padding: 13px 4px;
+  color: #60665f;
+  font-size: 11px;
+  font-weight: 750;
+  text-align: center;
+  text-decoration: none;
+}
+
+.statusFlow {
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+.statusHero {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  background: #fff;
+  box-shadow: 0 20px 52px rgba(32, 36, 31, 0.085);
+}
+
+.statusSuccess {
+  background: var(--finance-lime-soft);
+}
+
+.statusAttention {
+  background: #faece9;
+}
+
+.statusHeroTop,
+.refundHeroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.statusHeroTop > span,
+.refundHeroTop > span {
+  font: 800 13px/1 "Fira Mono", monospace;
+}
+
+.statusMessage .eyebrow {
+  color: var(--finance-muted);
+}
+
+.statusMessage h1,
+.refundHero h2 {
+  margin: 8px 0 7px;
+  font-size: clamp(31px, 9vw, 44px);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.statusMessage p,
+.refundHero > p {
+  max-width: 38ch;
+  margin: 0;
+  color: var(--finance-muted);
+  font-size: 12px;
+  line-height: 1.52;
+}
+
+.exceptionReason,
+.refundSafety {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.exceptionReason svg,
+.refundSafety svg {
+  width: 22px;
+  height: 22px;
+}
+
+.exceptionReason > span {
+  display: grid;
+  gap: 3px;
+}
+
+.exceptionReason small {
+  color: var(--finance-danger);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.exceptionReason strong {
+  font-size: 11px;
+}
+
+.compactRail {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+  margin: 0;
+  padding: 13px 8px 11px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 38px rgba(32, 36, 31, 0.065);
+  list-style: none;
+}
+
+.compactRail::before {
+  position: absolute;
+  top: 27px;
+  right: 9%;
+  left: 9%;
+  height: 2px;
+  background: #e4e8e1;
+  content: "";
+}
+
+.compactStep {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  min-height: 49px;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding: 0 2px;
+  border-radius: 0;
+  color: #899087;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+}
+
+.compactStep > span,
+.refundStep > span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  margin-bottom: 0;
+  box-shadow: 0 0 0 4px #fff;
+  border-radius: 50%;
+  color: #858b83;
+  background: var(--finance-soft);
+  font: 800 9px/1 "Fira Mono", monospace;
+}
+
+.compactStep > span svg,
+.refundStep > span svg {
+  width: 14px;
+  height: 14px;
+}
+
+.compactStep strong {
+  overflow: hidden;
+  width: 100%;
+  color: inherit;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compactStep small {
+  display: none;
+}
+
+.compactStep[data-state="complete"] {
+  color: var(--finance-ink);
+}
+
+.compactStep[data-state="complete"] > span {
+  color: #fff;
+  background: var(--finance-ink);
+}
+
+.compactStep[data-state="current"] {
+  color: var(--finance-ink);
+  background: transparent;
+  box-shadow: none;
+}
+
+.compactStep[data-state="current"] > span {
+  color: var(--finance-ink);
+  background: var(--finance-lime);
+}
+
+.receipt > summary > span,
+.waitingContract > summary > span {
+  display: grid;
+  gap: 3px;
+}
+
+.receipt > summary small,
+.waitingContract > summary small {
+  color: var(--finance-muted);
+  font: 800 9px/1.2 "Fira Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.receipt > summary strong,
+.waitingContract > summary strong {
+  font-size: 13px;
+}
+
+.receipt dl,
+.waitingContract dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 0 18px 18px;
+}
+
+.receipt dl > div,
+.waitingContract dl > div {
+  min-width: 0;
+  padding: 13px;
+  border-radius: 16px;
+  background: var(--finance-soft);
+}
+
+.receipt dt,
+.waitingContract dt {
+  color: var(--finance-muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.receipt dd,
+.waitingContract dd {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--finance-ink);
+  font: 750 10px/1.4 "Fira Mono", monospace;
+}
+
+.receiptWide {
+  grid-column: 1 / -1;
+}
+
+.statusActions {
+  display: grid;
+  gap: 8px;
+}
+
+.refundFlow {
+  display: grid;
+  gap: 12px;
+}
+
+.refundHero {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  color: #fff;
+  background: var(--finance-ink);
+  box-shadow: 0 20px 52px rgba(32, 36, 31, 0.12);
+}
+
+.refundHero .eyebrow {
+  margin-top: 9px;
+}
+
+.refundHero > p {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.refundSuccess {
+  color: var(--finance-ink);
+  background: var(--finance-lime);
+}
+
+.refundSuccess .eyebrow,
+.refundSuccess > p {
+  color: #56603f;
+}
+
+.refundAttention {
+  color: #642e2a;
+  background: #faece9;
+}
+
+.refundAttention .eyebrow,
+.refundAttention > p {
+  color: #8d5751;
+}
+
+.refundReason {
+  margin-top: 5px;
+  padding: 12px;
+  border-radius: 15px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.refundAttention .refundReason {
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.refundSafety {
+  margin-top: 3px;
+  color: #763d37;
+  background: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.refundRail {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.refundStep {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 5px;
+  padding: 9px 3px;
+  border-radius: 15px;
+  color: #8d938c;
+  background: #fff;
+  box-shadow: 0 9px 24px rgba(32, 36, 31, 0.045);
+}
+
+.refundStep > span {
+  width: 25px;
+  height: 25px;
+}
+
+.refundStep strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.refundStep[data-state="complete"] {
+  color: var(--finance-ink);
+}
+
+.refundStep[data-state="complete"] > span {
+  color: #fff;
+  background: var(--finance-ink);
+}
+
+.refundStep[data-state="current"] {
+  color: var(--finance-ink);
+  background: var(--finance-lime);
+}
+
+.refundStep[data-state="current"] > span {
+  color: var(--finance-ink);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.textCheck {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.waitingHero {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(217, 237, 114, 0.19), transparent 30%),
+    var(--finance-ink);
+  box-shadow: 0 22px 54px rgba(32, 36, 31, 0.14);
+}
+
+.waitingHero::after {
+  top: -108px;
+  right: -56px;
+}
+
+.waitingState {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  color: var(--finance-lime);
+  font: 800 10px/1 "Fira Mono", monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.waitingState i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 5px rgba(217, 237, 114, 0.11);
+}
+
+.waitingHero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 12ch;
+  margin: 15px 0 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(36px, 11vw, 52px);
+  line-height: 0.95;
+  letter-spacing: -0.065em;
+}
+
+.waitingHero > p {
+  position: relative;
+  z-index: 1;
+  max-width: 36ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.63);
+  font-size: 12px;
+  line-height: 1.48;
+}
+
+.waitingStatus {
+  position: relative;
+  z-index: 1;
+  padding: 12px 13px;
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.waitingHero [role="timer"] {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 15px;
+  border-radius: 18px;
+  color: var(--finance-ink);
+  background: var(--finance-lime);
+}
+
+.waitingHero [role="timer"] small {
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.waitingHero [role="timer"] strong {
+  font: 850 20px/1 "Fira Mono", monospace;
+}
+
+.rosterCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 25px;
+  background: #fff;
+  box-shadow: 0 17px 44px rgba(32, 36, 31, 0.07);
+}
+
+.rosterCard > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 11px;
+  border-radius: 18px;
+  background: var(--finance-soft);
+}
+
+.rosterCard svg {
+  width: 22px;
+  height: 22px;
+}
+
+.rosterCard span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.rosterCard small,
+.rosterCard em {
+  color: var(--finance-muted);
+  font-size: 8px;
+  font-style: normal;
+}
+
+.rosterCard strong {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.22;
+}
+
+.waitingContractBody dl {
+  padding: 0;
+}
+
+.waitingContractBody aside {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 11px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--finance-lime-soft);
+}
+
+.waitingContractBody aside > svg {
+  width: 22px;
+  height: 22px;
+}
+
+.waitingContractBody aside span {
+  display: grid;
+  gap: 4px;
+}
+
+.waitingContractBody aside strong {
+  font-size: 11px;
+}
+
+.waitingContractBody aside p {
+  margin: 0;
+  color: #5d645a;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.waitingAction {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 25%, #fff);
+}
+
+.primaryAction:focus-visible,
+.backAction:focus-visible,
+.actionLinks a:focus-visible,
+.secondaryLink:focus-visible,
+.mechanics > summary:focus-visible,
+.receipt > summary:focus-visible,
+.waitingContract > summary:focus-visible,
+.consent input:focus-visible {
+  outline: 3px solid #20241f;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .primaryAction:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 38px rgba(145, 164, 49, 0.2);
+  }
+
+  .backAction:hover {
+    background: color-mix(in srgb, var(--finance-lime) 24%, var(--finance-soft));
+  }
+
+  .mechanics > summary:hover,
+  .receipt > summary:hover,
+  .waitingContract > summary:hover {
+    background: #fafbf8;
+  }
+}
+
+@media (max-width: 359px) {
+  .commitmentFlow,
+  .statusFlow,
+  .waitingFlow {
+    gap: 14px;
+  }
+
+  .commitmentHero,
+  .statusHero,
+  .waitingHero,
+  .refundHero {
+    padding: 18px;
+    border-radius: 25px;
+  }
+
+  .commitmentFacts {
+    grid-template-columns: 1fr;
+  }
+
+  .commitmentEquation {
+    padding: 13px;
+  }
+
+  .commitmentEquation span,
+  .commitmentEquation strong {
+    font-size: 11px;
+  }
+
+  .compactStep {
+    min-height: 47px;
+    padding-inline: 1px;
+  }
+
+  .refundStep strong {
+    font-size: 7px;
+  }
+
+  .rosterCard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction,
+  .backAction,
+  .fundingProgress i,
+  .consent input,
+  .mechanics > summary > svg,
+  .receipt > summary > svg,
+  .waitingContract > summary > svg {
+    transition: none;
+  }
+}

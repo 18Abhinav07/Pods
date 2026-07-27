@@ -66,7 +66,7 @@ describe("ParticipantSubmissionPage", () => {
     });
   });
 
-  it("renders one editorial proof record and one chronological review timeline", async () => {
+  it("renders one editorial proof record with review timing progressively disclosed", async () => {
     const { container } = render(await ParticipantSubmissionPage({
       params: Promise.resolve({ podId: "pod-1", submissionId: "submission-1" })
     }));
@@ -75,7 +75,9 @@ describe("ParticipantSubmissionPage", () => {
     expect(container.querySelector("[data-submission-record]")).toHaveTextContent(
       "Proof record"
     );
-    expect(container.querySelector("[data-review-timeline]")).toBeVisible();
+    expect(screen.getByText("Review timing").closest("details"))
+      .not.toHaveAttribute("open");
+    expect(container.querySelector("[data-review-timeline]")).not.toBeVisible();
     expect(container.querySelectorAll("[data-review-timeline] > div")).toHaveLength(3);
     expect(container.querySelector(".submission-detail-card")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open public artifact" })).toHaveAttribute(

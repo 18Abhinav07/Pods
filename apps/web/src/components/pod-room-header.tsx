@@ -15,6 +15,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import styles from "./pod-room.module.css";
+
 export function PodRoomHeader({
   isCreator,
   memberCount,
@@ -94,28 +96,28 @@ export function PodRoomHeader({
 
   return (
     <>
-      <header className="pod-room-header">
-        <span className="pod-room-identity">
-          <span className="pod-room-thumbnail"><Image alt="" fill sizes="44px" src={thumbnail} /></span>
+      <header className={styles.header}>
+        <span className={styles.identity}>
+          <span className={styles.thumbnail}><Image alt="" fill sizes="42px" src={thumbnail} /></span>
           <span>
             <h1>{name}</h1>
-            <small className="pod-room-meta">
+            <small className={styles.meta}>
               <span>{memberCount} {memberCount === 1 ? "member" : "members"}</span>
             </small>
           </span>
         </span>
-        <span className="pod-room-utilities">
-          <button aria-expanded={toolsOpen} aria-label="Open Pod tools" onClick={() => setToolsOpen(true)} ref={toolsTrigger} type="button">
+        <span className={styles.utilities}>
+          <button className={styles.iconButton} aria-expanded={toolsOpen} aria-label="Open Pod tools" onClick={() => setToolsOpen(true)} ref={toolsTrigger} type="button">
             <DotsThree aria-hidden="true" size={23} weight="bold" />
           </button>
         </span>
       </header>
       {toolsOpen ? createPortal(
-        <div className="pod-tools-layer">
-          <button aria-hidden="true" className="pod-tools-backdrop" onClick={closeTools} tabIndex={-1} type="button" />
-          <section aria-label="Pod tools" aria-modal="true" className="pod-tools-sheet" ref={toolsDialog} role="dialog" tabIndex={-1}>
-            <header><span><small>Pod tools</small><strong>{name}</strong></span><button aria-label="Close Pod tools" onClick={closeTools} type="button"><X aria-hidden="true" size={21} weight="bold" /></button></header>
-            <nav>
+        <div className={styles.layer}>
+          <button aria-hidden="true" className={styles.backdrop} onClick={closeTools} tabIndex={-1} type="button" />
+          <section aria-label="Pod tools" aria-modal="true" className={styles.sheet} ref={toolsDialog} role="dialog" tabIndex={-1}>
+            <header className={styles.sheetHeader}><span><small>Pod tools</small><strong>{name}</strong></span><button aria-label="Close Pod tools" onClick={closeTools} type="button"><X aria-hidden="true" size={21} weight="bold" /></button></header>
+            <nav className={styles.sheetNav}>
               <Link aria-label="Proofs" href={`/pods/${podId}/activity`} onClick={closeTools}>
                 <i aria-hidden="true"><Lightning size={20} weight="bold" /></i>
                 <span><strong>Proofs</strong><small>Browse activity and submissions</small></span>
@@ -139,7 +141,7 @@ export function PodRoomHeader({
                 <span><strong>Updates</strong><small>Review decisions and payout activity</small></span>
               </Link>
             </nav>
-            <button className="pod-share-action" onClick={() => void sharePod()} type="button"><ShareNetwork aria-hidden="true" size={20} weight="bold" /><span>{shareState || "Share Pod"}</span></button>
+            <button className={styles.sheetShare} onClick={() => void sharePod()} type="button"><ShareNetwork aria-hidden="true" size={20} weight="bold" /><span>{shareState || "Share Pod"}</span></button>
           </section>
         </div>,
         document.body

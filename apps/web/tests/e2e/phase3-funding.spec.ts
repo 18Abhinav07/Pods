@@ -518,16 +518,16 @@ test("audited cutoff connects roster lock, exclusion, cancellation, and refund r
     const excludedPage = memberContexts[2]!.page;
     await excludedPage.goto(`${baseUrl}/pods/${capacityPodId}/today`);
     await expect(excludedPage.getByRole("status")).toContainText("Refund confirmed");
-    await expect(excludedPage.locator(".refund-rail").getByText("0.5 NIM", { exact: true })).toBeVisible();
+    await expect(excludedPage.locator("[data-refund-rail]").getByText("0.5 NIM", { exact: true }).first()).toBeVisible();
 
     const cancelledPage = memberContexts[3]!.page;
     await cancelledPage.goto(`${baseUrl}/pods/${cancelledPodId}/today`);
     await expect(cancelledPage.getByRole("status")).toContainText("Refund confirmed");
     await expect(
-      cancelledPage.locator(".refund-rail").getByText(
+      cancelledPage.locator("[data-refund-rail]").getByText(
         cancelledIntent.amountLuna / 100_000 + " NIM",
         { exact: true }
-      )
+      ).first()
     ).toBeVisible();
 
     const creatorPage = await context.newPage();

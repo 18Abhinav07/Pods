@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 import { CommunityForm } from "../src/components/community-form";
 
 describe("CommunityForm room audience", () => {
-  it("renders clean audience rows with the copy first and the radio control at the right", async () => {
+  it("uses clear access choices and a conventional public visitor switch", async () => {
     const user = userEvent.setup();
     const { container } = render(
       <CommunityForm
@@ -24,23 +24,36 @@ describe("CommunityForm room audience", () => {
       />
     );
 
-    const membersOnly = screen.getByLabelText("Members only");
-    const membersRow = membersOnly.closest("label");
-    expect(membersRow).toHaveClass("visitor-audience-row", "is-selected");
-    expect(membersRow?.lastElementChild).toBe(membersOnly);
-    expect(
-      within(membersRow as HTMLElement).getByText(
-        "Only locked members can read the room and public proof record."
-      )
-    ).toBeVisible();
+    expect(screen.getByRole("radio", { name: /Public Pod/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Private Pod/ })).not.toBeChecked();
 
-    const visitors = screen.getByLabelText("Let visitors follow along");
+    const visitors = screen.getByRole("switch", {
+      name: "Allow read-only visitors"
+    });
+    expect(visitors).toHaveAttribute("aria-checked", "false");
+    expect(
+      container.querySelector<HTMLInputElement>('input[name="roomAudience"]')
+    ).toHaveValue("members_only");
+
     await user.click(visitors);
-    expect(visitors.closest("label")).toHaveClass("visitor-audience-row", "is-selected");
-    expect(membersRow).not.toHaveClass("is-selected");
-    expect(container.querySelectorAll(".visitor-audience-row")).toHaveLength(2);
-    expect(screen.getByText(
-      "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
-    )).toBeVisible();
+    expect(visitors).toHaveAttribute("aria-checked", "true");
+    expect(
+      container.querySelector<HTMLInputElement>('input[name="roomAudience"]')
+    ).toHaveValue("public_read_only");
+
+    const questions = screen.getByLabelText(/Questions for applicants/);
+    await user.clear(questions);
+    await user.type(questions, "What will you ship this week?");
+    await user.click(screen.getByRole("radio", { name: /Private Pod/ }));
+    expect(screen.queryByRole("switch", { name: "Allow read-only visitors" }))
+      .not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Invitation expiry"), "72");
+
+    await user.click(screen.getByRole("radio", { name: /Public Pod/ }));
+    expect(screen.getByLabelText(/Questions for applicants/))
+      .toHaveValue("What will you ship this week?");
+    await user.click(screen.getByRole("radio", { name: /Private Pod/ }));
+    expect(screen.getByLabelText("Invitation expiry")).toHaveValue("72");
+    expect(screen.getByText("You review the work")).toBeVisible();
   });
 });

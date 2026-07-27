@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import styles from "../../../../components/acquisition-flow.module.css";
 import { ApplicationForm } from "../../../../components/application-form";
 import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
@@ -17,20 +18,16 @@ export default async function ApplyPage({ params }: { params: Promise<{ podId: s
   if (contract.community.visibility !== "public") notFound();
 
   return (
-    <main className="app-shell application-shell">
-      <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href={`/pods/${podId}`}><span className="pod-mark" aria-hidden="true" />pods</Link>
-        <span className="phase-pill">Application</span>
+    <main className={`app-shell application-shell ${styles.shell} ${styles.applicationShell}`}>
+      <header className={`app-topbar ${styles.topbar}`}>
+        <Link className={`wordmark ${styles.wordmark}`} href={`/pods/${podId}`}><span className="pod-mark" aria-hidden="true" />pods</Link>
+        <span className={styles.routeLabel}>Application</span>
       </header>
-      <section className="today-hero entrance entrance-hero">
-        <p className="eyebrow">Apply to {contract.activity.name}</p>
-        <h1>Show the creator how you will participate.</h1>
+      <section className={`${styles.intro} ${styles.applicationIntro}`}>
+        <p className={styles.routeLabel}>Apply to join</p>
+        <h1>{contract.activity.name}</h1>
         <p className="screen-copy">Your answers are frozen with this application and visible to the Pod creator.</p>
       </section>
-      <aside className="reservation-disclosure">
-        <strong>No place is reserved yet</strong>
-        <p>Applying does not reserve a place. A place is secured only after acceptance, funding finality, and roster lock.</p>
-      </aside>
       <ApplicationForm
         podId={podId}
         questions={contract.community.applicationQuestions}

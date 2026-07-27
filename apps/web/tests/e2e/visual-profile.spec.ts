@@ -173,36 +173,51 @@ test("captures the complete first-run wallet and profile journey", async ({ cont
   await page.waitForTimeout(750);
   await page.screenshot({ path: testInfo.outputPath("landing.png"), fullPage: true });
 
+  await page.goto("/connect?returnTo=%2Ftoday");
+  await expect(page.getByRole("heading", { name: "Connect your wallet" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Connect wallet" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.waitForTimeout(750);
+  await page.screenshot({ path: testInfo.outputPath("connect.png"), fullPage: true });
+
   await authenticate(context);
   await page.goto("/today");
-  await expect(page.getByRole("heading", { name: "Choose how people know you." })).toBeVisible();
-  await expect(page.locator(".onboarding-progress > span")).toHaveCount(3);
+  await expect(page.getByRole("heading", { name: "Make your work recognizable" })).toBeVisible();
+  await expect(page.getByLabel("Step 1 of 3")).toBeVisible();
   await expect(page.getByText(/wallet verified/i)).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
   await page.waitForTimeout(450);
-  await page.screenshot({ path: testInfo.outputPath("onboarding-profile.png"), fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath("onboarding-identity.png"), fullPage: true });
 
   const handle = `new_${randomBytes(3).toString("hex")}`;
-  await page.getByRole("button", { name: "Choose moss avatar" }).click();
   await page.getByLabel("Handle").fill(handle);
   await page.getByLabel("Display name").fill("Mira");
-  await page.getByRole("button", { name: "Continue to your story" }).click();
-  await expect(page.getByRole("heading", { name: "What are you showing up for?" })).toBeVisible();
   await page.getByLabel("Short bio").fill("Building useful rituals with people who show up.");
-  await page.getByLabel("Public profile").check();
+  await page.getByRole("button", { name: "Choose an avatar" }).click();
+  await expect(page.getByRole("heading", { name: "Choose a signal that feels like you" })).toBeVisible();
+  await expect(page.getByLabel("Step 2 of 3")).toBeVisible();
+  await expect(page.getByRole("button", { name: /choose .* avatar/i })).toHaveCount(12);
+  await expect(page.getByRole("button", { name: "Upload your own photo" })).toBeDisabled();
+  await page.getByRole("button", { name: "Choose moss avatar" }).click();
+  await expect(page.getByRole("button", { name: "Choose moss avatar" })).toHaveAttribute("data-selected", "true");
+  await expectNoHorizontalOverflow(page);
+  await page.waitForTimeout(280);
+  await page.screenshot({ path: testInfo.outputPath("onboarding-portrait.png"), fullPage: true });
+  await page.getByRole("button", { name: "Set boundaries" }).click();
+
+  await expect(page.getByRole("heading", { name: "Choose what people can discover" })).toBeVisible();
+  await expect(page.getByLabel("Step 3 of 3")).toBeVisible();
+  await page.getByLabel("Public profile").locator("xpath=ancestor::label").click();
   await expect(page.getByLabel("Public profile")).toBeChecked();
   await expect(page.getByLabel("Private profile")).not.toBeChecked();
-  await expect(page.getByLabel("Public profile").locator("xpath=ancestor::label")).toHaveClass(/is-selected/);
-  await page.waitForTimeout(280);
-  await page.screenshot({ path: testInfo.outputPath("onboarding-story.png"), fullPage: true });
-  await page.getByRole("button", { name: "Continue to privacy" }).click();
-
-  await expect(page.getByRole("heading", { name: "Stay social on your terms." })).toBeVisible();
-  await page.getByLabel("Allow message requests").check();
+  await expect(page.getByLabel("Public profile").locator("xpath=ancestor::label")).toHaveAttribute("data-selected", "true");
+  await page.getByLabel("Allow message requests").locator("xpath=ancestor::label").click();
   await expect(page.getByLabel("Allow message requests")).toBeChecked();
   await expect(page.getByLabel("Friends only")).not.toBeChecked();
-  await expect(page.getByLabel("Allow message requests").locator("xpath=ancestor::label")).toHaveClass(/is-selected/);
+  await expect(page.getByLabel("Allow message requests").locator("xpath=ancestor::label")).toHaveAttribute("data-selected", "true");
+  await expectNoHorizontalOverflow(page);
   await page.waitForTimeout(280);
-  await page.screenshot({ path: testInfo.outputPath("onboarding-privacy.png"), fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath("onboarding-boundaries.png"), fullPage: true });
   await page.getByRole("button", { name: "Enter Pods" }).click();
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByRole("heading", { name: "Start moving." })).toBeVisible();

@@ -20,5 +20,5 @@ export default async function ActivityStepPage({ searchParams }: { searchParams:
     weekdays: [1, 3, 5],
     config: {}
   };
-  return <CreatorShell activeStep={1} eyebrow="Step 2 of 5" title="Define what showing up means." copy="The schedule and success criterion become immutable when this Pod is published."><ActivityForm podId={pod.id} templateId={pod.templateId} initial={initial} /></CreatorShell>;
+  return <CreatorShell activeStep={1} eyebrow="Step 2 of 5" title="Give the group a clear rhythm." copy="Name the goal, define what counts, and choose when people show up."><ActivityForm podId={pod.id} templateId={pod.templateId} initial={initial} /></CreatorShell>;
 }

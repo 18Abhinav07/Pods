@@ -126,7 +126,10 @@ test("public enrollment works from discovery through accepted funding handoff", 
 
   await page.goto(`${baseUrl}/discover?template=build`);
   const creatorCard = page.locator(".public-pod-card").filter({ hasText: pod.name });
-  await expect(creatorCard.getByRole("link", { name: "Manage enrollment" })).toBeVisible();
+  await expect(creatorCard.getByRole("link", { name: `Open ${pod.name}` })).toHaveAttribute(
+    "href",
+    `/pods/${pod.id}/admin`
+  );
   await expect(creatorCard.getByRole("link", { name: "Apply to join" })).toHaveCount(0);
   await page.waitForLoadState("networkidle");
   await page.goto(`${baseUrl}/pods/${pod.id}`);
@@ -143,13 +146,14 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await applicantPage.goto(`${baseUrl}/discover?template=build`);
     const card = applicantPage.locator(".public-pod-card").filter({ hasText: pod.name });
     await expect(card).toBeVisible();
-    await expect(card.getByText("0.5 NIM upfront")).toBeVisible();
-    await expect(card.getByText("Open to apply")).toBeVisible();
-    await card.getByRole("link", { name: "View Pod" }).click();
+    await expect(card.getByText("Accepting applications")).toBeVisible();
+    await card.getByRole("link", { name: `Open ${pod.name}` }).click();
     await expect(applicantPage.getByText("Applying does not reserve a place.", { exact: false })).toBeVisible();
     await applicantPage.getByRole("link", { name: "Apply to join" }).click();
     await applicantPage.getByLabel("What will you ship?").fill("A tested mobile enrollment flow");
+    await applicantPage.getByRole("button", { name: "Next question" }).click();
     await applicantPage.getByLabel("Why does this cadence fit?").fill("The five-day cadence matches my build week");
+    await applicantPage.getByRole("button", { name: "Review application" }).click();
     await applicantPage.getByLabel(/I understand that applying/).check();
     await applicantPage.getByRole("button", { name: "Send application" }).click();
     await expect(applicantPage).toHaveURL(new RegExp(`/applications\\?sent=1&pod=${pod.id}$`));
@@ -157,7 +161,10 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await applicantPage.goto(`${baseUrl}/discover?template=build`);
     const appliedCard = applicantPage.locator(".public-pod-card").filter({ hasText: pod.name });
     await expect(appliedCard.getByText("Application pending")).toBeVisible();
-    await expect(appliedCard.getByRole("link", { name: "View application" })).toBeVisible();
+    await expect(appliedCard.getByRole("link", { name: `Open ${pod.name}` })).toHaveAttribute(
+      "href",
+      `/applications?pod=${pod.id}`
+    );
     await expect(appliedCard.getByRole("link", { name: "Apply to join" })).toHaveCount(0);
 
     await page.goto(`${baseUrl}/pods/${pod.id}/admin/applications`);
@@ -173,7 +180,11 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await applicantPage.goto(`${baseUrl}/discover?template=build`);
     const acceptedCard = applicantPage.locator(".public-pod-card").filter({ hasText: pod.name });
     await expect(acceptedCard.getByText("Accepted, funding required")).toBeVisible();
-    await acceptedCard.getByRole("link", { name: "Continue to funding" }).click();
+    await expect(acceptedCard.getByRole("link", { name: `Open ${pod.name}` })).toHaveAttribute(
+      "href",
+      `/pods/${pod.id}/fund`
+    );
+    await acceptedCard.getByRole("link", { name: `Open ${pod.name}` }).click();
     await expect(applicantPage.getByRole("heading", { name: "Back your place." })).toBeVisible();
     await expect(applicantPage.getByRole("button", { name: "Commit 0.5 NIM" })).toBeDisabled();
 

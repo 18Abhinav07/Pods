@@ -44,5 +44,6 @@ describe("ApplicationsPage", () => {
     expect(screen.getByRole("link", { name: "View receipt" }))
       .toHaveAttribute("href", "/pods/pod-1/today");
     expect(screen.queryByText(/creator cancelled this Pod before funding/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Return to Updates" })).not.toBeInTheDocument();
   });
 });

@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import styles from "./ops-flow.module.css";
 
 export function PublicModerationControls({
   reportId
@@ -11,10 +13,12 @@ export function PublicModerationControls({
   const router = useRouter();
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  const submissionLock = useRef(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (working) return;
+    if (submissionLock.current) return;
+    submissionLock.current = true;
     const form = new FormData(event.currentTarget);
     setWorking(true);
     setError("");
@@ -35,15 +39,30 @@ export function PublicModerationControls({
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Action could not be applied");
+    } finally {
+      submissionLock.current = false;
       setWorking(false);
     }
   }
 
   return (
-    <form className="public-moderation-controls" onSubmit={submit}>
-      <label>
-        Action
-        <select defaultValue="suppress_content" name="action">
+    <form
+      aria-busy={working}
+      className={styles.embeddedForm}
+      onSubmit={submit}
+    >
+      <div className={styles.formHeading}>
+        <strong>Choose a reversible visibility action</strong>
+        <span>Membership, evidence decisions, deposits, refunds, and payouts stay unchanged.</span>
+      </div>
+      <label className={styles.fieldGroup}>
+        <span className={styles.fieldLabel}>Action</span>
+        <select
+          className={styles.select}
+          defaultValue="suppress_content"
+          disabled={working}
+          name="action"
+        >
           <option value="suppress_content">Hide from public room</option>
           <option value="restore_content">Restore to public room</option>
           <option value="suspend_room">Suspend public room</option>
@@ -51,10 +70,12 @@ export function PublicModerationControls({
           <option value="dismiss_report">Dismiss report</option>
         </select>
       </label>
-      <label>
-        Audit reason
+      <label className={styles.fieldGroup}>
+        <span className={styles.fieldLabel}>Audit reason</span>
         <textarea
+          className={styles.textarea}
           defaultValue="Reviewed by Pods public safety operations."
+          disabled={working}
           maxLength={1000}
           minLength={5}
           name="reason"
@@ -62,10 +83,16 @@ export function PublicModerationControls({
           rows={3}
         />
       </label>
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
-      <button className="primary-action" disabled={working} type="submit">
-        {working ? "Applying" : "Apply action"}
-      </button>
+      {error ? <p className={styles.error} role="alert">{error}</p> : null}
+      <div className={styles.formActions}>
+        <button
+          className={styles.primaryAction}
+          disabled={working}
+          type="submit"
+        >
+          {working ? "Applying action" : "Apply action"}
+        </button>
+      </div>
     </form>
   );
 }

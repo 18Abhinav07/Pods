@@ -44,4 +44,20 @@ describe("PodOccurrenceStrip", () => {
     expect(screen.getByText("1 of 1 occurrences finished")).toBeVisible();
     expect(screen.queryByText("Activity in progress")).not.toBeInTheDocument();
   });
+
+  it("keeps the current participant action visible beside the occurrence state", () => {
+    render(
+      <PodOccurrenceStrip
+        action={{ href: "/pods/pod-1/activity/occurrence-1", label: "Add proof" }}
+        initialNow="2027-03-01T10:00:00.000Z"
+        progressLabel="Occurrence 1 of 3"
+        stateLabel="Proof due"
+        targetAt="2027-03-01T11:00:00.000Z"
+        targetLabel="remaining"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "Add proof" }))
+      .toHaveAttribute("href", "/pods/pod-1/activity/occurrence-1");
+  });
 });

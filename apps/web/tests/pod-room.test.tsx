@@ -464,7 +464,7 @@ describe("Pod room", () => {
 
     const composer = screen.getByRole("form", { name: "Send a room message" });
     const send = screen.getByRole("button", { name: "Send message" });
-    expect(composer).toHaveClass("is-bottom-attached");
+    expect(composer).toHaveAttribute("data-bottom-attached", "true");
     expect(send).toBeDisabled();
     expect(send).toHaveClass("is-disabled");
 
@@ -591,8 +591,8 @@ describe("Pod room", () => {
       />
     );
 
-    expect(container.querySelector(".pod-room-panel.is-direct")).toBeInTheDocument();
-    expect(container.querySelector("#viewer-message.is-viewer")).toBeInTheDocument();
+    expect(container.querySelector('[data-room-mode="direct"]')).toBeInTheDocument();
+    expect(container.querySelector("#viewer-message")).toHaveAttribute("data-viewer", "true");
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveAttribute("placeholder", "Message");
   });
 
@@ -632,9 +632,12 @@ describe("Pod room", () => {
       />
     );
 
-    expect(container.querySelector("#first-note")).toHaveClass("is-group-start");
-    expect(container.querySelector("#second-note")).toHaveClass("is-consecutive", "is-group-end");
-    expect(container.querySelector("#viewer-note")).toHaveClass("is-viewer", "is-group-start", "is-group-end");
+    expect(container.querySelector("#first-note")).toHaveAttribute("data-group-start", "true");
+    expect(container.querySelector("#second-note")).toHaveAttribute("data-grouped", "true");
+    expect(container.querySelector("#second-note")).toHaveAttribute("data-group-end", "true");
+    expect(container.querySelector("#viewer-note")).toHaveAttribute("data-viewer", "true");
+    expect(container.querySelector("#viewer-note")).toHaveAttribute("data-group-start", "true");
+    expect(container.querySelector("#viewer-note")).toHaveAttribute("data-group-end", "true");
     expect(screen.getAllByText("Abhinav")).toHaveLength(1);
   });
 

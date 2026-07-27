@@ -78,7 +78,7 @@ test("an unauthenticated creator is sent to the signed wallet gate", async ({ pa
   await page.goto("/pods/create/template");
 
   await expect(page).toHaveURL(/\/connect\?returnTo=%2Fpods%2Fcreate%2Ftemplate$/);
-  await expect(page.getByRole("heading", { name: "One signature. No account form." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connect your wallet" })).toBeVisible();
 });
 
 test("the hydrated connect control reaches the injected wallet provider", async ({ page }) => {
@@ -106,7 +106,7 @@ test("the hydrated connect control reaches the injected wallet provider", async 
   });
 
   await page.goto("/connect?returnTo=%2Ftoday");
-  await page.getByRole("button", { name: "Connect Nimiq wallet" }).click();
+  await page.getByRole("button", { name: "Connect wallet" }).click();
 
   await expect(page.locator(".inline-error")).toContainText(
     "Hydrated wallet verification reached"
@@ -167,7 +167,7 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
   await page.getByRole("button", { name: "Continue to community" }).click();
 
   await expect(page).toHaveURL(/\/pods\/create\/community\?draft=/);
-  await page.getByLabel("Public activity").check();
+  await page.getByRole("radio", { name: /Public Pod/ }).check();
   await page.getByLabel("Minimum people").fill("3");
   await page.getByLabel("Maximum people").fill("8");
   await page
@@ -177,7 +177,7 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
 
   await expect(page).toHaveURL(/\/pods\/create\/commitment\?draft=/);
   await page.getByLabel("NIM per occurrence").fill("0.1");
-  await expect(page.getByText("Total upfront")).toBeVisible();
+  await expect(page.getByText("Maximum upfront")).toBeVisible();
   await page.getByRole("button", { name: "Review frozen contract" }).click();
 
   await expect(page).toHaveURL(/\/pods\/create\/review\?draft=/);
@@ -189,6 +189,8 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
   )).toBeVisible();
   await page.getByRole("checkbox", { name: /Freeze this contract/ }).check();
   await page.getByRole("button", { name: "Publish Pod" }).click();
+  await expect(page.getByText("Pod published", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Open frozen contract" }).click();
 
   await expect(page).toHaveURL(/\/pods\/[^/]+\/rules$/);
   await expect(page.getByText("Contract frozen", { exact: true })).toBeVisible();
@@ -209,11 +211,11 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
   await page.waitForLoadState("networkidle");
   await page.goto("/my-pods");
   const publishedRow = page.locator(
-    `.my-pod-row[href="/pods/${podId}/admin"], .my-pod-row:has(a[href="/pods/${podId}/admin"])`
+    `article:has(a[href="/pods/${podId}/admin"])`
   );
   await expect(publishedRow.getByText("Enrollment open", { exact: true })).toBeVisible();
   await expect(publishedRow.getByText("Applications and invitations are active", { exact: true })).toBeVisible();
-  await expect(publishedRow.locator(".template-symbol.template-build svg")).toBeVisible();
+  await expect(publishedRow.locator("img")).toBeVisible();
 });
 
 test("a creator explicitly confirms permanent deletion of an unpublished draft", async ({ context, page }) => {
@@ -225,9 +227,7 @@ test("a creator explicitly confirms permanent deletion of an unpublished draft",
   const { draft } = (await createResponse.json()) as { draft: { id: string } };
 
   await page.goto("/my-pods");
-  const row = page.locator(
-    `.my-pod-row[href*="${draft.id}"], .my-pod-row:has(a[href*="${draft.id}"])`
-  );
+  const row = page.locator(`article:has(a[href*="${draft.id}"])`);
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Delete draft" }).click();
   await expect(row.getByText("Delete this draft?")).toBeVisible();

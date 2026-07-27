@@ -1,16 +1,28 @@
 "use client";
 
 import { parseNimToLuna } from "@pods/domain";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { savePodDraftStep } from "../lib/wizard-client";
+import styles from "./creator-flow.module.css";
 
 function formatLuna(luna: number) {
   return new Intl.NumberFormat("en", { maximumFractionDigits: 5 }).format(luna / 100_000);
 }
 
-export function CommitmentForm({ podId, occurrenceCount, initialNim }: { podId: string; occurrenceCount: number; initialNim: string }) {
+export function CommitmentForm({
+  podId,
+  occurrenceCount,
+  initialNim,
+  settlementMode
+}: {
+  podId: string;
+  occurrenceCount: number;
+  initialNim: string;
+  settlementMode: "proportional" | "full_refund_alpha" | null;
+}) {
   const router = useRouter();
   const [nim, setNim] = useState(initialNim);
   const [error, setError] = useState("");
@@ -32,12 +44,38 @@ export function CommitmentForm({ podId, occurrenceCount, initialNim }: { podId: 
     }
   }
 
-  return <form className="wizard-form" onSubmit={submit}>
-    <label className="field-block commitment-input"><span>NIM per occurrence</span><div><input name="nimPerOccurrence" inputMode="decimal" value={nim} onChange={(event) => setNim(event.target.value)} required /><b>NIM</b></div><small>Every participant funds the maximum commitment upfront.</small></label>
-    <div className="commitment-math"><div><span>Occurrences</span><strong>{occurrenceCount}</strong></div><i>×</i><div><span>Per occurrence</span><strong>{nim || "0"} NIM</strong></div><i>=</i><div className="is-total"><span>Total upfront</span><strong>{total} NIM</strong></div></div>
-    <div className="outcome-compact"><div><span>Roster lock</span><b>Full Testnet return queued</b></div><div><span>Approved work</span><b>Builds streak and public record</b></div><div><span>Rejected or missed</span><b>Affects progress, never the return</b></div></div>
-    <div className="authority-note"><strong>Phase 4 full-return contract</strong><span>Testnet NIM has no real-world value. The complete commitment returns after roster lock and cannot become a proportional payout later.</span></div>
-    {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
-    <button className="primary-action full-action" disabled={saving} type="submit">{saving ? "Saving commitment" : "Review frozen contract"}</button>
+  return <form className={styles.form} onSubmit={submit}>
+    <section className={styles.nimHero}>
+      <span className={styles.nimMark}>
+        <Image alt="NIM" height={56} src="/media/nimiq-signet.svg" width={56} />
+      </span>
+      <label className={styles.amountField}>
+        <span>Per occurrence</span>
+        <span className={styles.amountInput}><input aria-label="NIM per occurrence" name="nimPerOccurrence" inputMode="decimal" value={nim} onChange={(event) => setNim(event.target.value)} required /><b>NIM</b></span>
+      </label>
+    </section>
+
+    <section className={styles.equation} aria-label={`${occurrenceCount} occurrences times ${nim || "0"} NIM equals ${total} NIM maximum upfront`}>
+      <div><span>Occurrences</span><strong>{occurrenceCount}</strong></div>
+      <i aria-hidden="true">×</i>
+      <div><span>Each</span><strong>{nim || "0"} NIM</strong></div>
+      <i aria-hidden="true">=</i>
+      <div><span>Maximum upfront</span><strong>{total} NIM</strong></div>
+    </section>
+
+    <details className={styles.details}>
+      <summary>How settlement works</summary>
+      <div className={styles.detailsBody}>
+        {settlementMode === "proportional"
+          ? "Approved work returns its own slice and may earn from rejected or missed slices in the same occurrence. Timeout-protected principal never enters the bonus pool."
+          : settlementMode === "full_refund_alpha"
+            ? "This immutable Testnet contract returns the complete commitment after roster lock. Activity outcomes still build the progress record."
+            : "The exact settlement rule will appear in the frozen contract before publication. Nothing is published from this screen."}
+      </div>
+    </details>
+
+    <div className={styles.infoNote}><span className={styles.infoNoteIcon} aria-hidden="true">N</span><span><strong>Funded upfront by participants</strong><span>You set the cadence and review proof. You never fund this Pod or receive participant money.</span></span></div>
+    {error ? <div className={styles.error} role="alert">{error}</div> : null}
+    <div className={styles.actionDock}><button className={styles.primaryAction} disabled={saving} type="submit">{saving ? "Saving commitment" : "Review frozen contract"}</button></div>
   </form>;
 }

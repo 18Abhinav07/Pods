@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AppHeader } from "../../components/app-header";
+import styles from "../../components/home-flow.module.css";
 import { buildInboxEvents } from "../../lib/inbox-events";
 import { profileForSession } from "../../lib/profile-presentation";
 import { podsRepository } from "../../lib/server-db";
@@ -22,15 +23,17 @@ export default async function UpdatesPage() {
   );
 
   return (
-    <main className="app-shell updates-shell">
+    <main className={`app-shell ${styles.page}`}>
       <AppHeader profile={profileForSession(session)} title="Updates" />
-      <p className="route-lede entrance entrance-hero">Decisions, reviews, and money movement.</p>
+      <section className={styles.historyIntro}>
+        <p>Your durable record of decisions, proof reviews, and NIM movement.</p>
+      </section>
       {events.length > 0 ? (
-        <section className="inbox-timeline" aria-label="Pod history">
-          {events.map((event, index) => (
-            <Link className={`inbox-event is-${event.tone}`} href={event.href} key={event.id}>
-              <span className="inbox-event-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-              <span className="inbox-event-copy">
+        <section className={styles.historyList} aria-label="Pod history">
+          {events.map((event) => (
+            <Link className={styles.historyCard} data-tone={event.tone} href={event.href} key={event.id}>
+              <span className={styles.historyIcon} aria-hidden="true">{event.tone === "positive" ? "✓" : event.tone === "attention" ? "!" : "•"}</span>
+              <span className={styles.historyCopy}>
                 <small>{event.podName}</small>
                 <strong>{event.title}</strong>
                 <span>{event.detail}</span>
@@ -40,10 +43,10 @@ export default async function UpdatesPage() {
           ))}
         </section>
       ) : (
-        <section className="neutral-empty entrance entrance-status">
-          <span>No updates yet</span>
-          <p>Applications, funding, roster decisions, proof review, and transfers will be recorded here.</p>
-          <Link className="primary-action full-action" href="/discover">Discover public Pods</Link>
+        <section className={styles.empty}>
+          <h2>No updates yet.</h2>
+          <p>Applications, funding, proof review, and transfers will appear here as they happen.</p>
+          <Link className={styles.primaryLink} href="/discover">Discover public Pods</Link>
         </section>
       )}
     </main>

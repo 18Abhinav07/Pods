@@ -47,6 +47,8 @@ describe("SettlementSummary", () => {
     expect(screen.getByText("Approved")).toBeVisible();
     expect(screen.getByText("Confirming on chain")).toBeVisible();
     expect(screen.getByText("abc123")).toBeVisible();
+    expect(screen.getByRole("list", { name: "Payout progress" })).toBeVisible();
+    expect(screen.getByText("How settlement works")).toBeVisible();
     expect(screen.queryByText(/wallet/i)).not.toBeInTheDocument();
   });
 
@@ -87,7 +89,8 @@ describe("SettlementSummary", () => {
     );
 
     expect(screen.getByText("Treasury conserved")).toBeVisible();
-    expect(screen.getByText("2 participant entitlements")).toBeVisible();
+    expect(screen.getByText("2")).toBeVisible();
+    expect(screen.getByText("Participant entitlements")).toBeVisible();
     const approved = screen.getByText("Approved builder").closest("li");
     expect(approved).not.toBeNull();
     expect(within(approved!).getByText("0.2 NIM")).toBeVisible();
@@ -96,6 +99,118 @@ describe("SettlementSummary", () => {
     expect(screen.getByText("No transfer required")).toBeVisible();
     expect(screen.queryByText(/recipient/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/wallet/i)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["queued", "Payout queued"],
+    ["prepared", "Payout prepared"],
+    ["broadcast", "Payout submitted"],
+    ["confirmed", "Payout paid"],
+    ["unknown", "Payout confirmation delayed"],
+    ["retryable_failed", "Payout retry paused"],
+    ["mismatched", "Payout details need review"],
+    ["late", "Late payout under review"],
+    ["manual_review", "Payout under manual review"]
+  ] as const)("gives %s a distinct participant composition", (state, title) => {
+    render(
+      <SettlementSummary
+        mode="participant"
+        settlement={{
+          state: state === "confirmed" ? "settled" : state === "manual_review" ? "manual_review" : "executing",
+          totalDepositLuna: 10_000,
+          totalPayoutLuna: 10_000
+        }}
+        entitlement={{
+          state: state === "confirmed" ? "transfer_confirmed" : state === "manual_review" ? "manual_review" : "transfer_queued",
+          depositLuna: 10_000,
+          principalLuna: 10_000,
+          provisionalForfeitureLuna: 0,
+          restorationLuna: 0,
+          bonusLuna: 0,
+          payoutLuna: 10_000
+        }}
+        outcomes={[]}
+        transfer={{
+          state,
+          amountLuna: 10_000,
+          transactionHash: state === "broadcast" || state === "confirmed" ? "hash-1" : null
+        }}
+      />
+    );
+
+    expect(screen.getByRole("heading", { name: title })).toBeVisible();
+  });
+
+  it("explains a zero-recipient restoration without treating it as bonus", () => {
+    render(
+      <SettlementSummary
+        mode="participant"
+        settlement={{
+          state: "settled",
+          totalDepositLuna: 10_000,
+          totalPayoutLuna: 10_000
+        }}
+        entitlement={{
+          state: "transfer_confirmed",
+          depositLuna: 10_000,
+          principalLuna: 0,
+          provisionalForfeitureLuna: 10_000,
+          restorationLuna: 10_000,
+          bonusLuna: 0,
+          payoutLuna: 10_000
+        }}
+        outcomes={[{
+          ordinal: 1,
+          state: "missed",
+          principalLuna: 0,
+          provisionalForfeitureLuna: 10_000,
+          restorationLuna: 10_000,
+          bonusLuna: 0,
+          payoutLuna: 10_000
+        }]}
+        transfer={{
+          state: "confirmed",
+          amountLuna: 10_000,
+          transactionHash: "restored-hash"
+        }}
+      />
+    );
+
+    expect(screen.getByText("Unused forfeiture restored")).toBeVisible();
+    expect(screen.getByText("0.1 NIM restored")).toBeVisible();
+    expect(screen.getByText("0 NIM bonus")).toBeVisible();
+  });
+
+  it("closes a zero entitlement without inventing a transfer", () => {
+    render(
+      <SettlementSummary
+        mode="participant"
+        settlement={{
+          state: "settled",
+          totalDepositLuna: 10_000,
+          totalPayoutLuna: 10_000
+        }}
+        entitlement={{
+          state: "no_transfer_required",
+          depositLuna: 10_000,
+          principalLuna: 0,
+          provisionalForfeitureLuna: 10_000,
+          restorationLuna: 0,
+          bonusLuna: 0,
+          payoutLuna: 0
+        }}
+        outcomes={[]}
+        transfer={null}
+      />
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "No payout transfer required" })
+    ).toBeVisible();
+    expect(screen.getByText("0 NIM", { selector: "strong" })).toBeVisible();
+    expect(screen.getByText("Closed")).toBeVisible();
+    expect(screen.queryByText("Submitted")).not.toBeInTheDocument();
+    expect(screen.queryByText(/transaction hash/i)).not.toBeInTheDocument();
   });
 
   it.each([

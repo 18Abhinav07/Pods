@@ -18,7 +18,9 @@ describe("activity ritual quality contract", () => {
 
     expect(source).toMatch(/\.statementEditor:focus-within\s*\{[\s\S]*outline:/);
     expect(source).toMatch(/\.linkEditor:focus-within\s*\{[\s\S]*outline:/);
-    expect(source).toMatch(/\.linkEditor input:focus-visible\s*\{[\s\S]*outline:/);
+    expect(source).toMatch(
+      /\.linkEditor input:focus-visible\s*\{[^}]*outline:\s*0;/s
+    );
     expect(source).toMatch(/\.privacyChoices label:focus-within\s*\{[\s\S]*outline:/);
     expect(source).toMatch(
       /\.approvalForm textarea:focus-visible,[\s\S]*\.rejectionPanel textarea:focus-visible\s*\{[\s\S]*outline:/

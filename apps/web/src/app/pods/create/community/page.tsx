@@ -16,5 +16,5 @@ export default async function CommunityStepPage({ searchParams }: { searchParams
     applicationQuestions: ["What will you commit to during this Pod?"],
     roomAudience: "members_only"
   };
-  return <CreatorShell activeStep={2} eyebrow="Step 3 of 5" title="Choose who can enter." copy="Public Pods are discoverable and application-based. Private Pods stay hidden behind invitations."><CommunityForm podId={pod.id} initial={initial} /></CreatorShell>;
+  return <CreatorShell activeStep={2} eyebrow="Step 3 of 5" title="Who gets to take part?" copy="Public Pods use applications. Private Pods stay behind invitations."><CommunityForm podId={pod.id} initial={initial} /></CreatorShell>;
 }

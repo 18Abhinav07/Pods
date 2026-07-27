@@ -1,0 +1,827 @@
+.entryShell,
+.onboardingShell {
+  width: min(100%, 520px);
+  min-height: 100dvh;
+  margin-inline: auto;
+  color: #1d211d;
+  background:
+    radial-gradient(circle at 88% 5%, rgba(217, 237, 114, 0.18), transparent 24%),
+    #ffffff;
+}
+
+.entryShell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding:
+    max(18px, env(safe-area-inset-top))
+    clamp(18px, 5vw, 26px)
+    max(18px, env(safe-area-inset-bottom));
+}
+
+.topbar {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #1d211d;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.wordmark :global(.pod-mark) {
+  width: 27px;
+  height: 27px;
+}
+
+.routeLabel {
+  color: #6e746d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.connectionStage {
+  display: grid;
+  min-height: calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  grid-template-rows: auto 1fr;
+  gap: clamp(28px, 7vh, 52px);
+  padding-top: clamp(42px, 10vh, 84px);
+}
+
+.walletVisual {
+  position: relative;
+  display: grid;
+  width: 118px;
+  height: 118px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 36px;
+  background: #d9ed72;
+  box-shadow:
+    0 28px 56px rgba(76, 89, 28, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  animation: visualEnter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.walletVisual::before,
+.walletVisual::after {
+  position: absolute;
+  border: 1px solid rgba(29, 33, 29, 0.13);
+  border-radius: 50%;
+  content: "";
+}
+
+.walletVisual::before {
+  inset: -20px;
+}
+
+.walletVisual::after {
+  inset: 17px;
+}
+
+.walletVisual img {
+  position: relative;
+  z-index: 1;
+  width: 62px;
+  height: 62px;
+}
+
+.connectPanel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 20px;
+  animation: contentEnter 460ms 80ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.connectCopy {
+  display: grid;
+  gap: 10px;
+}
+
+.connectCopy h1 {
+  max-width: 390px;
+  margin: 0;
+  font-size: clamp(38px, 10.4vw, 48px);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+}
+
+.connectCopy p {
+  max-width: 34ch;
+  margin: 0;
+  color: #6e746d;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.walletPromise {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  padding: 17px 18px;
+  border-radius: 22px;
+  background: #f5f7f2;
+  box-shadow: 0 16px 36px rgba(29, 33, 29, 0.055);
+}
+
+.walletPromise svg {
+  width: 21px;
+  height: 21px;
+}
+
+.walletPromise span {
+  display: grid;
+  gap: 3px;
+}
+
+.walletPromise strong {
+  font-size: 14px;
+}
+
+.walletPromise small {
+  color: #6e746d;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.connectAction {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 58px;
+  border: 0;
+  border-radius: 22px;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.primaryButton {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 6px 6px 20px;
+  color: #1d211d;
+  background: #d9ed72;
+  box-shadow: 0 18px 40px rgba(76, 89, 28, 0.15);
+  text-align: left;
+}
+
+.primaryButton > span:first-child {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.buttonLabel {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.primaryButton > i {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 17px;
+  color: #f8faef;
+  background: #1d211d;
+}
+
+.primaryButton > i svg {
+  width: 21px;
+  height: 21px;
+}
+
+.secondaryButton {
+  padding-inline: 18px;
+  color: #1d211d;
+  background: #f2f4ef;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.primaryButton:active,
+.secondaryButton:active {
+  transform: scale(0.98);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.connectNote {
+  margin: 0;
+  color: #777d76;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.inlineError {
+  display: grid;
+  gap: 4px;
+  padding: 15px 17px;
+  border-radius: 20px;
+  color: #6f2f2a;
+  background: #fff0ed;
+}
+
+.inlineError strong {
+  font-size: 13px;
+}
+
+.inlineError span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.onboardingShell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    clamp(16px, 4.6vw, 24px)
+    0;
+}
+
+.onboardingTopbar {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.onboardingTopbar > span {
+  color: #6e746d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.onboardingForm {
+  display: grid;
+  min-height: calc(100dvh - 64px - env(safe-area-inset-top));
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+}
+
+.onboardingFormEditing {
+  min-height: 0;
+}
+
+.progress {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 2px 0;
+}
+
+.progress > span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #dde1da;
+  transition:
+    width 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms ease;
+}
+
+.progress > span[data-current="true"] {
+  width: 28px;
+  background: #1d211d;
+}
+
+.progress > span[data-complete="true"] {
+  background: #d9ed72;
+}
+
+.step {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 4px;
+  animation: contentEnter 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.prompt {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 22px;
+  overflow: hidden;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(217, 237, 114, 0.72), transparent 30%),
+    linear-gradient(145deg, #f5f8dc, #fbfcf7 68%);
+  box-shadow: 0 18px 44px rgba(29, 33, 29, 0.065);
+}
+
+.prompt::after {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1d211d;
+  content: "";
+}
+
+.prompt > span {
+  color: #6b725e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.prompt h1 {
+  max-width: 330px;
+  margin: 0;
+  font-size: clamp(30px, 9.5vw, 42px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.prompt p {
+  max-width: 40ch;
+  margin: 0;
+  color: #6e746d;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.fields {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field > span {
+  color: #5f655e;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.field input,
+.field textarea,
+.handleField {
+  width: 100%;
+  border: 0;
+  border-radius: 20px;
+  color: #1d211d;
+  background: #f3f5f1;
+  box-shadow: inset 0 0 0 1px rgba(29, 33, 29, 0.035);
+  font: inherit;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.field input {
+  min-height: 54px;
+  padding: 0 16px;
+}
+
+.field textarea {
+  min-height: 106px;
+  padding: 15px 16px;
+  resize: vertical;
+}
+
+.handleField {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  padding-left: 16px;
+}
+
+.handleField b {
+  color: #8a9089;
+  font-size: 16px;
+}
+
+.handleField input {
+  padding-left: 5px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.field input:focus,
+.field textarea:focus,
+.handleField:focus-within {
+  outline: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(217, 237, 114, 0.78);
+}
+
+.handleField input:focus {
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.field small,
+.field em {
+  color: #777d76;
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.field small[role="alert"] {
+  color: #9a4037;
+}
+
+.fieldMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.avatarGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.avatarOption {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 8px;
+  border: 0;
+  border-radius: 25px;
+  background: #f5f6f3;
+  box-shadow: 0 14px 32px rgba(29, 33, 29, 0.055);
+  cursor: pointer;
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.avatarOption :global(.profile-avatar-large) {
+  width: 100%;
+  height: 100%;
+  max-width: 84px;
+  max-height: 84px;
+}
+
+.avatarOption[data-selected="true"] {
+  background: #f1f8c9;
+  box-shadow:
+    0 18px 38px rgba(76, 89, 28, 0.12),
+    inset 0 0 0 2px #d9ed72;
+  transform: translateY(-2px);
+}
+
+.avatarOption > i {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  color: #1d211d;
+  background: #d9ed72;
+}
+
+.avatarOption > i svg {
+  width: 12px;
+  height: 12px;
+}
+
+.uploadTile {
+  display: grid;
+  min-height: 64px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  padding: 12px 15px;
+  border: 0;
+  border-radius: 22px;
+  color: #1d211d;
+  background: #f3f5f1;
+  text-align: left;
+}
+
+.uploadTile > i {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 15px;
+  background: #ffffff;
+}
+
+.uploadTile > span {
+  display: grid;
+  gap: 2px;
+}
+
+.uploadTile strong {
+  font-size: 14px;
+}
+
+.uploadTile small {
+  color: #777d76;
+  font-size: 11px;
+}
+
+.choiceGroup {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choiceGroup legend {
+  margin-bottom: 2px;
+  color: #5f655e;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.choiceCard {
+  display: grid;
+  min-height: 78px;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 16px;
+  border-radius: 22px;
+  background: #f5f6f3;
+  box-shadow: 0 14px 32px rgba(29, 33, 29, 0.05);
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.choiceCard[data-selected="true"] {
+  background: #f1f8cf;
+  box-shadow: 0 18px 38px rgba(76, 89, 28, 0.1);
+}
+
+.choiceCard > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.choiceCopy {
+  display: grid;
+  gap: 4px;
+}
+
+.choiceCopy strong {
+  font-size: 14px;
+}
+
+.choiceCopy span {
+  color: #6e746d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.choiceIndicator {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #d8ddd5;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.choiceCard[data-selected="true"] .choiceIndicator {
+  border-color: #d9ed72;
+  background: #d9ed72;
+}
+
+.choiceIndicator svg {
+  width: 13px;
+  height: 13px;
+}
+
+.statusCard {
+  display: grid;
+  min-height: 70px;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: #f5f6f3;
+}
+
+.statusCard > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.statusCard > span:first-of-type {
+  display: grid;
+  gap: 3px;
+}
+
+.statusCard strong {
+  font-size: 14px;
+}
+
+.statusCard small {
+  color: #6e746d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.switch {
+  position: relative;
+  width: 48px;
+  height: 30px;
+  border-radius: 999px;
+  background: #dfe3dc;
+  transition: background-color 180ms ease;
+}
+
+.switch::after {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 3px 9px rgba(29, 33, 29, 0.15);
+  content: "";
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.statusCard[data-checked="true"] .switch {
+  background: #d9ed72;
+}
+
+.statusCard[data-checked="true"] .switch::after {
+  background: #1d211d;
+  transform: translateX(18px);
+}
+
+.privacyNote {
+  margin: 0;
+  padding: 0 4px;
+  color: #747a73;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.actions {
+  position: sticky;
+  z-index: 2;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  margin-top: auto;
+  padding:
+    18px
+    0
+    max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, #ffffff 20%);
+}
+
+.actionsSingle {
+  grid-template-columns: 1fr;
+}
+
+.onboardingFormEditing .actions {
+  position: static;
+  padding-bottom: 0;
+}
+
+.saveSpinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes visualEnter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) rotate(-4deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+
+@keyframes contentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 350px) {
+  .entryShell,
+  .onboardingShell {
+    padding-inline: 14px;
+  }
+
+  .prompt {
+    padding: 19px;
+    border-radius: 24px;
+  }
+
+  .avatarGrid {
+    gap: 9px;
+  }
+
+  .choiceCard {
+    padding-inline: 14px;
+  }
+
+  .primaryButton {
+    padding-left: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walletVisual,
+  .connectPanel,
+  .step,
+  .saveSpinner {
+    animation: none;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .avatarOption,
+  .choiceCard,
+  .progress > span,
+  .switch,
+  .switch::after {
+    transition: none;
+  }
+}

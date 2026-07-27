@@ -3142,7 +3142,19 @@ body {
 
 .social-bottom-nav a[aria-current="page"] .nav-icon {
   color: var(--color-ink);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--activity-build);
   transform: translateY(-1px);
+}
+
+.app-header-menu-trigger:focus-visible,
+.social-topbar .profile-entry:focus-visible,
+.app-header-menu-sheet button:focus-visible,
+.app-header-menu-sheet a:focus-visible,
+.social-bottom-nav a:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
 }
 
 /* Conversation-first Pod shell */
@@ -6921,11 +6933,11 @@ body {
   min-height: 44px;
   place-items: center;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--color-line) 82%, transparent);
+  border: 0;
   border-radius: 15px;
   color: var(--color-ink);
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-  box-shadow: 0 8px 24px rgba(27, 31, 27, 0.045);
+  background: var(--color-paper);
+  box-shadow: 0 9px 26px rgba(27, 31, 27, 0.08);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -7009,7 +7021,7 @@ body {
   height: 44px;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--color-line);
+  border: 0;
   border-radius: 15px;
   color: var(--color-ink);
   background: var(--color-surface);
@@ -7017,7 +7029,7 @@ body {
 
 .app-header-menu-sheet nav {
   display: grid;
-  gap: 2px;
+  gap: 8px;
 }
 
 .app-header-menu-sheet nav a {
@@ -7026,9 +7038,11 @@ body {
   grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 8px 2px;
-  border-bottom: 1px solid var(--color-line);
+  padding: 10px;
+  border: 0;
+  border-radius: 17px;
   color: var(--color-ink);
+  background: var(--color-soft);
   text-decoration: none;
 }
 

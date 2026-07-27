@@ -1,6 +1,7 @@
 import type { TransferLegState } from "@pods/domain";
 import Link from "next/link";
 
+import styles from "../../../components/ops-flow.module.css";
 import { PayoutRetryControls } from "../../../components/payout-retry-controls";
 import { formatZonedMoment } from "../../../lib/format-moment";
 import { requireOpsSession } from "../../../lib/ops-session";
@@ -27,6 +28,21 @@ function formatNim(luna: number) {
   }).format(luna / 100_000);
 }
 
+function recoveryDescription(state: OperationsState) {
+  switch (state) {
+    case "unknown":
+      return "The latest chain outcome has not been proven.";
+    case "retryable_failed":
+      return "The immutable attempt failed and is eligible for a fresh chain check.";
+    case "mismatched":
+      return "The recorded attempt and observed chain result do not match.";
+    case "late":
+      return "The transaction validity window expired before confirmation.";
+    case "manual_review":
+      return "Automated recovery stopped for an operator decision.";
+  }
+}
+
 export default async function TransferOperationsPage({
   searchParams
 }: {
@@ -46,26 +62,29 @@ export default async function TransferOperationsPage({
   });
 
   return (
-    <main className="app-shell ops-shell transfer-ops-shell">
-      <header className="app-topbar">
-        <Link className="wordmark" href="/ops/transfers">
+    <main className={styles.shell}>
+      <header className={styles.topbar}>
+        <Link
+          className={`wordmark ${styles.wordmark}`}
+          href="/ops/transfers"
+        >
           <span className="pod-mark" aria-hidden="true" />
           pods
         </Link>
-        <nav aria-label="Operations">
+        <nav aria-label="Operations" className={styles.opsNav}>
           <Link href="/ops/public-safety">Public safety</Link>
           <Link aria-current="page" href="/ops/transfers">Transfers</Link>
         </nav>
       </header>
-      <section className="today-hero entrance entrance-hero">
-        <p className="eyebrow">Testnet payout operations</p>
+      <section className={styles.hero}>
+        <p className={styles.eyebrow}>Testnet payout operations</p>
         <h1>{transfers.length} {transfers.length === 1 ? "transfer needs" : "transfers need"} attention.</h1>
-        <p className="screen-copy">
+        <p className={styles.heroCopy}>
           A replacement is available only after a fresh chain check proves the
           latest immutable attempt failed or expired.
         </p>
       </section>
-      <nav className="transfer-ops-filters" aria-label="Transfer state filters">
+      <nav className={styles.filterBar} aria-label="Transfer state filters">
         <Link aria-current={!activeState ? "page" : undefined} href="/ops/transfers">
           All
         </Link>
@@ -80,31 +99,63 @@ export default async function TransferOperationsPage({
         ))}
       </nav>
       {transfers.length > 0 ? (
-        <section className="transfer-ops-queue" aria-label="Payout transfer queue">
+        <section
+          aria-label="Payout transfer queue"
+          className={styles.queueLayout}
+        >
           {transfers.map((transfer) => (
-            <article key={transfer.id}>
-              <header>
-                <span>{transfer.state.replaceAll("_", " ")}</span>
-                <time dateTime={transfer.updatedAt.toISOString()}>
+            <article className={styles.queueCard} key={transfer.id}>
+              <header className={styles.cardHeader}>
+                <span
+                  className={styles.stateBadge}
+                  data-state={transfer.state}
+                >
+                  {transfer.state.replaceAll("_", " ")}
+                </span>
+                <time
+                  className={styles.cardTime}
+                  dateTime={transfer.updatedAt.toISOString()}
+                >
                   {formatZonedMoment(transfer.updatedAt, {
                     timeZone: "UTC",
                     includeZone: true
                   })}
                 </time>
               </header>
-              <h2>{transfer.podName}</h2>
-              <p>{formatNim(transfer.amountLuna)} NIM on {transfer.network}</p>
-              <dl>
-                <div><dt>Pod</dt><dd>{transfer.podId}</dd></div>
-                <div><dt>Leg</dt><dd>{transfer.id}</dd></div>
-                <div><dt>Attempt</dt><dd>{transfer.attempt ? `#${transfer.attempt.sequence}` : "Not prepared"}</dd></div>
-                <div><dt>Hash</dt><dd>{transfer.attempt?.transactionHash ?? "None"}</dd></div>
-                <div><dt>Reason</dt><dd>{transfer.errorCode ?? "Manual review required"}</dd></div>
+              <div className={styles.cardLead}>
+                <p className={styles.amount}>
+                  {formatNim(transfer.amountLuna)}
+                  <small>NIM</small>
+                </p>
+                <h2>{transfer.podName ?? "Payout transfer"}</h2>
+                <p>{transfer.network} network</p>
+              </div>
+              <div className={styles.reasonBlock}>
+                <span>Recovery reason</span>
+                <strong>
+                  {transfer.errorCode ?? (
+                    isOperationsState(transfer.state)
+                      ? recoveryDescription(transfer.state)
+                      : "Manual review required"
+                  )}
+                </strong>
+              </div>
+              <dl className={styles.detailList}>
+                <div><dt>Pod ID</dt><dd>{transfer.podId}</dd></div>
+                <div><dt>Transfer leg</dt><dd>{transfer.id}</dd></div>
+                <div>
+                  <dt>Attempt</dt>
+                  <dd>{transfer.attempt ? `#${transfer.attempt.sequence}` : "Not prepared"}</dd>
+                </div>
+                <div>
+                  <dt>Transaction hash</dt>
+                  <dd><code>{transfer.attempt?.transactionHash ?? "None"}</code></dd>
+                </div>
               </dl>
               {transfer.state === "retryable_failed" || transfer.state === "late" ? (
                 <PayoutRetryControls legId={transfer.id} />
               ) : (
-                <p className="transfer-ops-lock">
+                <p className={styles.recoveryNote}>
                   This state requires reconciliation, not a replacement transaction.
                 </p>
               )}
@@ -112,8 +163,8 @@ export default async function TransferOperationsPage({
           ))}
         </section>
       ) : (
-        <section className="neutral-empty">
-          <span>Queue clear</span>
+        <section className={styles.emptyCard}>
+          <strong>Queue clear</strong>
           <p>No payout transfers match this recovery filter.</p>
         </section>
       )}

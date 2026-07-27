@@ -13,10 +13,12 @@ describe("public profile actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Follow" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Following" })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Add friend" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Request sent" })).toBeDisabled());
     expect(fetch).toHaveBeenCalledWith("/api/social/follows", expect.objectContaining({
       body: JSON.stringify({ handle: "builder" })
     }));
+    await waitFor(() => expect(
+      screen.getByRole("button", { name: "Cancel request" })
+    ).toBeEnabled());
   });
 
   it("uses a controlled safety tray instead of a native details dropdown", () => {

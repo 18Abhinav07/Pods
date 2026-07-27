@@ -1,0 +1,443 @@
+.page {
+  --home-ink: #1d211d;
+  --home-muted: #687069;
+  --home-lime: #d9ed72;
+  --home-lime-soft: #f1f7cf;
+  --home-canvas: #f8f9f5;
+  --home-surface: #fefff9;
+  --home-soft: #f1f3ef;
+  min-height: 100svh;
+  padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  overflow-x: clip;
+  color: var(--home-ink);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(217, 237, 114, 0.15), transparent 21rem),
+    var(--home-canvas);
+}
+
+.groups {
+  display: grid;
+  padding-top: 22px;
+  gap: 30px;
+}
+
+.group {
+  display: grid;
+  gap: 14px;
+}
+
+.groupHeader {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.groupHeader h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+.groupHeader span {
+  display: grid;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  place-items: center;
+  color: #596249;
+  background: var(--home-lime-soft);
+  font-family: var(--font-fira-mono), monospace;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.podList {
+  display: grid;
+  gap: 14px;
+}
+
+.podCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--home-surface);
+  box-shadow:
+    0 18px 48px -24px rgba(29, 33, 29, 0.2),
+    0 5px 14px -10px rgba(29, 33, 29, 0.12);
+}
+
+.podLink {
+  display: grid;
+  min-height: 108px;
+  padding: 14px;
+  grid-template-columns: 68px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 14px;
+  color: var(--home-ink);
+  text-decoration: none;
+}
+
+.podThumb {
+  position: relative;
+  width: 68px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--home-soft);
+}
+
+.podThumb img {
+  object-fit: cover;
+}
+
+.podCopy {
+  min-width: 0;
+}
+
+.podCopy > small {
+  display: block;
+  overflow: hidden;
+  color: var(--home-muted);
+  font-family: var(--font-fira-mono), monospace;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.podCopy > strong {
+  display: block;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.podStatus {
+  display: grid;
+  margin-top: 11px;
+  gap: 3px;
+}
+
+.podStatus strong {
+  color: #586047;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.podStatus span {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--home-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.podArrow {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  place-items: center;
+  color: var(--home-ink);
+  background: var(--home-lime);
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.draftActions {
+  display: flex;
+  padding: 0 14px 14px 96px;
+  justify-content: flex-end;
+}
+
+.deleteDraft {
+  min-height: 44px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 14px;
+  color: #8c413b;
+  background: #fff0ee;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.deleteConfirmation {
+  display: grid;
+  margin: 0 14px 14px;
+  padding: 16px;
+  border-radius: 18px;
+  gap: 14px;
+  background: #fff4f1;
+}
+
+.deleteConfirmation strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.deleteConfirmation p {
+  margin: 4px 0 0;
+  color: #755f5b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.deleteButtons {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 10px;
+}
+
+.deleteButtons button {
+  min-height: 44px;
+  padding: 8px 11px;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.keepDraft {
+  color: var(--home-ink);
+  background: var(--home-surface);
+}
+
+.confirmDelete {
+  color: #fff;
+  background: #8c413b;
+}
+
+.deleteError {
+  margin: 0;
+  color: #8c413b;
+  font-size: 12px;
+}
+
+.empty {
+  display: grid;
+  margin-top: 28px;
+  padding: 24px;
+  border-radius: 26px;
+  gap: 14px;
+  background: var(--home-surface);
+  box-shadow:
+    0 18px 48px -24px rgba(29, 33, 29, 0.2),
+    0 5px 14px -10px rgba(29, 33, 29, 0.12);
+}
+
+.empty h2,
+.empty p {
+  margin: 0;
+}
+
+.empty h2 {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.empty p {
+  color: var(--home-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.emptyActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.primaryLink,
+.secondaryLink {
+  display: inline-flex;
+  min-height: 48px;
+  padding: 10px 13px;
+  border-radius: 15px;
+  align-items: center;
+  justify-content: center;
+  color: var(--home-ink);
+  font-size: 13px;
+  font-weight: 850;
+  text-align: center;
+  text-decoration: none;
+}
+
+.primaryLink {
+  background: var(--home-lime);
+}
+
+.secondaryLink {
+  background: var(--home-soft);
+}
+
+.historyIntro {
+  padding: 18px 0 22px;
+}
+
+.historyIntro h1,
+.historyIntro p {
+  margin: 0;
+}
+
+.historyIntro h1 {
+  font-size: clamp(30px, 9vw, 38px);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.historyIntro p {
+  max-width: 31ch;
+  margin-top: 8px;
+  color: var(--home-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.historyList {
+  display: grid;
+  padding-bottom: 28px;
+  gap: 14px;
+}
+
+.historyCard {
+  display: grid;
+  min-height: 102px;
+  padding: 16px;
+  border-radius: 22px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 13px;
+  color: var(--home-ink);
+  background: var(--home-surface);
+  box-shadow:
+    0 18px 48px -24px rgba(29, 33, 29, 0.2),
+    0 5px 14px -10px rgba(29, 33, 29, 0.12);
+  text-decoration: none;
+}
+
+.historyIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  place-items: center;
+  color: var(--home-ink);
+  background: var(--home-soft);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.historyCard[data-tone="positive"] .historyIcon {
+  background: #dff2ea;
+}
+
+.historyCard[data-tone="attention"] .historyIcon {
+  background: #fff0e5;
+}
+
+.historyCopy {
+  min-width: 0;
+}
+
+.historyCopy small,
+.historyCopy strong,
+.historyCopy span {
+  display: block;
+}
+
+.historyCopy small {
+  overflow: hidden;
+  color: var(--home-muted);
+  font-size: 10px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyCopy strong {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.historyCopy span {
+  margin-top: 5px;
+  color: var(--home-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.historyCard time {
+  max-width: 70px;
+  color: var(--home-muted);
+  font-family: var(--font-fira-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.podLink:focus-visible,
+.deleteDraft:focus-visible,
+.deleteButtons button:focus-visible,
+.primaryLink:focus-visible,
+.secondaryLink:focus-visible,
+.historyCard:focus-visible {
+  outline: 3px solid #1d211d;
+  outline-offset: 3px;
+}
+
+@media (max-width: 350px) {
+  .podLink {
+    padding: 12px;
+    grid-template-columns: 58px minmax(0, 1fr) 28px;
+    gap: 11px;
+  }
+
+  .podThumb {
+    width: 58px;
+    height: 72px;
+  }
+
+  .draftActions {
+    padding-left: 81px;
+  }
+
+  .historyCard {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .historyIcon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .historyCard time {
+    grid-column: 2;
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .podCard,
+  .historyCard {
+    scroll-behavior: auto;
+  }
+}

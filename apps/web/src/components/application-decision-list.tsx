@@ -6,11 +6,13 @@ import type {
   ProfileAvatar as ProfileAvatarType
 } from "@pods/domain";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { decidePodApplication } from "../lib/creator-enrollment-client";
 import { ProfileAvatar } from "./profile-avatar";
+import styles from "./pod-admin-flow.module.css";
 
 export type CreatorApplicationItem = {
   id: string;
@@ -25,10 +27,12 @@ export type CreatorApplicationItem = {
 
 export function ApplicationDecisionList({
   podId,
-  applications
+  applications,
+  selectedApplicationId
 }: {
   podId: string;
   applications: CreatorApplicationItem[];
+  selectedApplicationId?: string;
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -37,6 +41,7 @@ export function ApplicationDecisionList({
   const [error, setError] = useState("");
 
   async function decide(applicationId: string, decision: ApplicationDecision) {
+    if (busyId !== null) return;
     setBusyId(applicationId);
     setError("");
     try {
@@ -51,46 +56,95 @@ export function ApplicationDecisionList({
   }
 
   if (pending.length === 0) {
-    return <section className="neutral-empty"><span>Queue clear</span><p>No applications need a decision. Share the public Pod to recruit the right group.</p></section>;
+    return <section className={styles.empty}><strong>Queue clear</strong><p>No applications need a decision. Share the public Pod to recruit the right group.</p></section>;
+  }
+
+  const selected = selectedApplicationId
+    ? pending.find(({ id }) => id === selectedApplicationId)
+    : null;
+
+  if (selected) {
+    const working = busyId === selected.id;
+    return (
+      <section className={styles.detail} aria-label={`${selected.applicant.displayName} application`}>
+        <Link className={styles.applicationHeaderLink} href={`/pods/${podId}/admin/applications`}>
+          All applications
+        </Link>
+        <article className={styles.applicantCard}>
+          <ProfileAvatar
+            avatar={selected.applicant.avatar}
+            displayName={selected.applicant.displayName}
+          />
+          <span>
+            <strong>{selected.applicant.displayName}</strong>
+            <small>@{selected.applicant.handle}</small>
+          </span>
+          <p>{selected.applicant.bio || "No introduction added yet."}</p>
+        </article>
+        <section className={styles.answerStack} aria-labelledby="application-answers-title">
+          <h3 id="application-answers-title">Application answers</h3>
+          {selected.answers.map(({ question, answer }) => (
+            <article className={styles.answerCard} key={question}>
+              <span>{question}</span>
+              <p>{answer}</p>
+            </article>
+          ))}
+        </section>
+        {error ? <p className={styles.error} role="alert">{error}</p> : null}
+        <div className={styles.decisionDock}>
+          <button
+            aria-label="Decline applicant"
+            disabled={working}
+            onClick={() => void decide(selected.id, "reject")}
+            type="button"
+          >
+            Decline
+          </button>
+          <button
+            aria-label={working ? "Saving decision" : "Accept applicant"}
+            disabled={working}
+            onClick={() => void decide(selected.id, "accept")}
+            type="button"
+          >
+            {working ? "Saving decision" : "Accept applicant"}
+          </button>
+        </div>
+      </section>
+    );
   }
 
   return (
-    <div className="decision-list">
+    <div className={styles.list}>
       <AnimatePresence initial={false}>
         {pending.map((application) => (
-          <motion.article
-            className="decision-card"
+          <motion.div
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, y: -8 }}
             key={application.id}
             layout
           >
-            <div className="decision-applicant">
+            <Link
+              aria-label={`Review ${application.applicant.displayName} application`}
+              className={styles.queueCard}
+              href={`/pods/${podId}/admin/applications?application=${encodeURIComponent(application.id)}`}
+            >
               <ProfileAvatar
                 avatar={application.applicant.avatar}
                 displayName={application.applicant.displayName}
               />
               <span>
-                <small>Applicant</small>
                 <strong>{application.applicant.displayName}</strong>
-                <i>@{application.applicant.handle}</i>
+                <span className={styles.queueMeta}>
+                  <small>@{application.applicant.handle}</small>
+                  <small>{application.answers.length} {application.answers.length === 1 ? "response" : "responses"}</small>
+                </span>
+                <p>{application.applicant.bio || "No introduction added yet."}</p>
               </span>
-            </div>
-            <p className="decision-applicant-bio">
-              {application.applicant.bio || "No introduction added yet."}
-            </p>
-            <dl>
-              {application.answers.map(({ question, answer }) => (
-                <div key={question}><dt>{question}</dt><dd>{answer}</dd></div>
-              ))}
-            </dl>
-            <div className="decision-actions">
-              <button disabled={busyId === application.id} onClick={() => decide(application.id, "reject")} type="button">Not this cycle</button>
-              <button className="primary-action" disabled={busyId === application.id} onClick={() => decide(application.id, "accept")} type="button">{busyId === application.id ? "Saving" : "Accept"}</button>
-            </div>
-          </motion.article>
+              <i aria-hidden="true">›</i>
+            </Link>
+          </motion.div>
         ))}
       </AnimatePresence>
-      {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
+      {error ? <p className={styles.error} role="alert">{error}</p> : null}
     </div>
   );
 }

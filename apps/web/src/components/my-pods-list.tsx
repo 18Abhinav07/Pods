@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { deletePodDraft } from "../lib/wizard-client";
-import { adaptiveThemeForTemplate, mediaForTemplate } from "../lib/template-presentation";
+import { mediaForTemplate } from "../lib/template-presentation";
+import styles from "./home-flow.module.css";
 
 export type MyPodListItem = {
   id: string;
@@ -45,32 +46,36 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
   }
 
   return (
-    <div className="my-pods-list">
+    <div className={styles.podList}>
       <AnimatePresence initial={false}>
         {items.filter((item) => !removedIds.includes(item.id)).map((item, visualIndex) => {
           const isDraft = item.state === "draft";
           const isConfirming = confirmingId === item.id;
           return (
             <motion.article
-              className={`my-pod-row adaptive-my-pod-row theme-${adaptiveThemeForTemplate(item.templateId)}`}
+              className={styles.podCard}
               exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, y: -8 }}
               key={item.id}
               layout
               transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
-              <Link className="my-pod-main" href={item.href}>
-                <span className="my-pod-thumbnail"><Image alt="" fill sizes="64px" src={mediaForTemplate(item.templateId, visualIndex).hero} /></span>
-                <span className="my-pod-copy">
-                  <strong>{item.name}</strong>
+              <Link className={styles.podLink} href={item.href}>
+                <span className={styles.podThumb}><Image alt="" fill sizes="68px" src={mediaForTemplate(item.templateId, visualIndex).hero} /></span>
+                <span className={styles.podCopy}>
                   <small>{item.templateName}</small>
+                  <strong>{item.name}</strong>
+                  <span className={styles.podStatus}>
+                    <strong>{isDraft ? "Draft" : item.statusLabel ?? "Enrollment open"}</strong>
+                    <span>{isDraft ? "Resume creation. No financial exposure." : item.statusDetail ?? "Rules frozen"}</span>
+                  </span>
                 </span>
+                <i className={styles.podArrow} aria-hidden="true">→</i>
               </Link>
               {isDraft ? (
-                <div className="draft-row-actions">
-                  <Link className="resume-draft-action" href={item.href}>Resume</Link>
+                <div className={styles.draftActions}>
                   <button
                     aria-expanded={isConfirming}
-                    className="delete-draft-action"
+                    className={styles.deleteDraft}
                     onClick={() => {
                       setError("");
                       setConfirmingId(item.id);
@@ -80,18 +85,13 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
                     Delete draft
                   </button>
                 </div>
-              ) : (
-                <div className="published-pod-status">
-                  <strong>{item.statusLabel ?? "Enrollment open"}</strong>
-                  <small>{item.statusDetail ?? "Rules frozen"}</small>
-                </div>
-              )}
+              ) : null}
               <AnimatePresence initial={false}>
                 {isConfirming ? (
                   <motion.div
                     animate={{ opacity: 1, y: 0 }}
                     aria-label={`Delete ${item.name}`}
-                    className="draft-delete-confirmation"
+                    className={styles.deleteConfirmation}
                     initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
                     role="group"
                   >
@@ -99,9 +99,9 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
                       <strong>Delete this draft?</strong>
                       <p>It has not been published and no funds are involved.</p>
                     </div>
-                    <div className="draft-delete-buttons">
+                    <div className={styles.deleteButtons}>
                       <button
-                        className="keep-draft-action"
+                        className={styles.keepDraft}
                         disabled={deletingId === item.id}
                         onClick={() => {
                           setError("");
@@ -112,7 +112,7 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
                         Keep draft
                       </button>
                       <button
-                        className="confirm-delete-action"
+                        className={styles.confirmDelete}
                         disabled={deletingId === item.id}
                         onClick={() => removeDraft(item)}
                         type="button"
@@ -120,7 +120,7 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
                         {deletingId === item.id ? "Deleting" : "Delete permanently"}
                       </button>
                     </div>
-                    {error ? <p className="draft-delete-error" role="alert">{error}</p> : null}
+                    {error ? <p className={styles.deleteError} role="alert">{error}</p> : null}
                   </motion.div>
                 ) : null}
               </AnimatePresence>

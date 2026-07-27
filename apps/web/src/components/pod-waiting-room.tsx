@@ -1,8 +1,13 @@
+"use client";
+
+import { ArrowRight, CalendarBlank, CaretDown, ShieldCheck, UsersThree } from "@phosphor-icons/react";
 import type { MembershipState, SettlementMode } from "@pods/domain";
 import Link from "next/link";
 
+import styles from "./financial-flow.module.css";
 import type { ParticipantRefund } from "./refund-status-rail";
 import { RefundStatusRail } from "./refund-status-rail";
+import { WaitingCountdown } from "./waiting-countdown";
 
 export type PodWaitingRoomProps = {
   podId: string;
@@ -69,65 +74,90 @@ function nim(value: number) {
 export function PodWaitingRoom(props: PodWaitingRoomProps) {
   const remaining = Math.max(0, props.maxParticipants - props.confirmedParticipants);
   const isAlphaRefund = props.settlementMode === "full_refund_alpha";
+  const hasRefundPath = Boolean(props.refund) || [
+    "excluded_at_cutoff",
+    "refund_pending",
+    "refunded"
+  ].includes(props.membershipState ?? "");
   const stateCopy = props.viewerRole === "creator"
     ? ["Creator overview", "Track funded places without exposing participant payment data."] as const
     : participantStateCopy[props.membershipState ?? "applied"] ?? [
         "Waiting room",
         "Your Pod status is available here."
       ];
+  const refundReason = props.membershipState === "excluded_at_cutoff"
+    ? "Pod capacity was filled before your finalized deposit position."
+    : "Your place did not enter the locked roster.";
+  const primaryAction = props.viewerRole === "creator"
+    ? { href: `/pods/${props.podId}/admin/funding`, label: "Open creator funding view" }
+    : hasRefundPath
+      ? { href: "/my-pods", label: "View My Pods" }
+      : { href: `/pods/${props.podId}/rules`, label: "Review frozen rules" };
 
   return (
-    <>
-      <section className="waiting-hero entrance entrance-hero">
-        <p className="eyebrow">{stateCopy[0]}</p>
+    <div className={styles.waitingFlow}>
+      <section className={styles.waitingHero}>
+        <div className={styles.waitingState}>
+          <i aria-hidden="true" />
+          <span>{stateCopy[0]}</span>
+        </div>
         <h1>{props.name}</h1>
         <p>{props.purpose}</p>
-        <div className="waiting-status"><i aria-hidden="true" /><span>{stateCopy[1]}</span></div>
+        <div className={styles.waitingStatus}>{stateCopy[1]}</div>
+        {!hasRefundPath ? <WaitingCountdown cutoffAt={props.cutoffAt} /> : null}
       </section>
 
-      <section className="waiting-metrics entrance entrance-status" aria-label="Pod capacity">
-        <div><span>Roster</span><strong>{props.confirmedParticipants} confirmed</strong><small>{props.minParticipants} minimum</small></div>
-        <div><span>Capacity</span><strong>{remaining} {remaining === 1 ? "place" : "places"} remaining</strong><small>{props.maxParticipants} maximum</small></div>
+      <section className={styles.rosterCard} aria-label="Pod capacity">
+        <div>
+          <UsersThree aria-hidden="true" weight="regular" />
+          <span><small>Roster</small><strong>{props.confirmedParticipants} confirmed</strong><em>{props.minParticipants} minimum</em></span>
+        </div>
+        <div>
+          <CalendarBlank aria-hidden="true" weight="regular" />
+          <span><small>Capacity</small><strong>{remaining} {remaining === 1 ? "place" : "places"} remaining</strong><em>{props.maxParticipants} maximum</em></span>
+        </div>
       </section>
 
-      {props.refund ? <RefundStatusRail refund={props.refund} /> : null}
+      {props.refund ? <RefundStatusRail refund={{ ...props.refund, reason: props.refund.reason ?? refundReason }} /> : null}
 
-      {isAlphaRefund ? (
-        <aside className="waiting-verification alpha-return-notice">
-          <span>Immutable Phase 4 contract</span>
-          <strong>Your full Testnet commitment returns after roster lock.</strong>
-          <p>Activity review changes streaks and progress only. It cannot reduce your return or create a winner pool.</p>
-        </aside>
-      ) : null}
+      <details className={styles.waitingContract}>
+        <summary>
+          <span><small>Frozen contract</small><strong>Schedule and protections</strong></span>
+          <CaretDown aria-hidden="true" />
+        </summary>
+        <div className={styles.waitingContractBody}>
+          <dl>
+            <div><dt>Enrollment cutoff</dt><dd>{formatMoment(props.cutoffAt, props.timeZone)}</dd></div>
+            <div><dt>First occurrence</dt><dd>{formatMoment(props.firstOccurrenceAt, props.timeZone)}</dd></div>
+            <div><dt>Cadence</dt><dd>{props.weekdays.map((day) => weekdayNames[day]).join(" · ")}</dd></div>
+            <div><dt>Schedule</dt><dd>{props.occurrenceCount} frozen occurrences</dd></div>
+            <div><dt>{isAlphaRefund ? "Activity slice" : "At risk each time"}</dt><dd>{nim(props.nimPerOccurrence)} NIM</dd></div>
+            <div><dt>Total commitment</dt><dd>{nim(props.totalNim)} NIM</dd></div>
+          </dl>
+          {isAlphaRefund ? (
+            <aside>
+              <ShieldCheck aria-hidden="true" weight="regular" />
+              <span>
+                <strong>Your full Testnet commitment returns after roster lock.</strong>
+                <p>Activity review changes streaks and progress only. It cannot reduce your return or create a winner pool.</p>
+              </span>
+            </aside>
+          ) : null}
+          <aside>
+            <ShieldCheck aria-hidden="true" weight="regular" />
+            <span>
+              <strong>Proof decisions stay separate from creator funds.</strong>
+              <p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p>
+            </span>
+          </aside>
+        </div>
+      </details>
 
-      <section className="waiting-contract entrance entrance-templates">
-        <div className="section-title-row"><span>Frozen contract</span><h2>Your activity clock</h2></div>
-        <dl>
-          <div><dt>Enrollment cutoff</dt><dd>{formatMoment(props.cutoffAt, props.timeZone)}</dd></div>
-          <div><dt>First occurrence</dt><dd>{formatMoment(props.firstOccurrenceAt, props.timeZone)}</dd></div>
-          <div><dt>Cadence</dt><dd>{props.weekdays.map((day) => weekdayNames[day]).join(" · ")}</dd></div>
-          <div><dt>Schedule</dt><dd>{props.occurrenceCount} frozen occurrences</dd></div>
-          <div><dt>{isAlphaRefund ? "Activity slice" : "At risk each time"}</dt><dd>{nim(props.nimPerOccurrence)} NIM</dd></div>
-          <div><dt>Total commitment</dt><dd>{nim(props.totalNim)} NIM</dd></div>
-        </dl>
-      </section>
-
-      <aside className="waiting-verification">
-        <span>Creator review</span>
-        <strong>Proof decisions stay separate from member funds.</strong>
-        <p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p>
-      </aside>
-
-      <div className="waiting-actions">
-        {props.viewerRole === "creator" ? (
-          <Link className="primary-action full-action" href={`/pods/${props.podId}/admin/funding`}>Open creator funding view</Link>
-        ) : (
-          <Link className="primary-action full-action" href={`/pods/${props.podId}/rules`}>Review frozen rules</Link>
-        )}
-        {props.viewerRole === "creator" ? (
-          <Link className="secondary-action full-action" href={`/pods/${props.podId}/rules`}>Review frozen rules</Link>
-        ) : null}
+      <div className={styles.waitingAction}>
+        <Link className={styles.primaryAction} href={primaryAction.href}>
+          <span>{primaryAction.label}</span><i aria-hidden="true"><ArrowRight weight="bold" /></i>
+        </Link>
       </div>
-    </>
+    </div>
   );
 }

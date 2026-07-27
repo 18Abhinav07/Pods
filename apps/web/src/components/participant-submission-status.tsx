@@ -222,13 +222,15 @@ export function ParticipantSubmissionStatus({
         </div>
       </div>
 
-      {status.state === "reviewing" ? (
-        <ReviewTimeline status={status} timeZone={timeZone} />
-      ) : status.state === "draft" ? null : (
+      {status.state === "draft" ? null : (
         <details className={styles.reviewHistory}>
           <summary>
             <span>Review timing</span>
-            <strong>3 checkpoints</strong>
+            <strong>
+              {status.state === "reviewing"
+                ? "Protection scheduled"
+                : "3 checkpoints"}
+            </strong>
           </summary>
           <ReviewTimeline status={status} timeZone={timeZone} />
         </details>
@@ -245,6 +247,12 @@ export function ParticipantSubmissionStatus({
         }
       >
         <strong>{outcomeTitle(status.state)}</strong>
+        {status.state === "reviewing" ? (
+          <span>
+            If no decision is recorded, protection applies at{" "}
+            {formattedMoment(status.reviewHardDeadlineAt, timeZone)}.
+          </span>
+        ) : null}
       </aside>
 
       {status.reviewDecisionNote ? (

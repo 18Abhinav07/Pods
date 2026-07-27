@@ -1,0 +1,338 @@
+.applicationPage {
+  --admin-ink: #1d211d;
+  --admin-muted: #6e746d;
+  --admin-lime: #d9ed72;
+  --admin-canvas: #f6f7f4;
+  width: min(100%, 520px);
+  min-height: 100svh;
+  margin-inline: auto;
+  padding: 18px clamp(16px, 5vw, 24px) calc(32px + env(safe-area-inset-bottom));
+  color: var(--admin-ink);
+  background:
+    radial-gradient(circle at 92% 2%, rgb(217 237 114 / 24%), transparent 170px),
+    var(--admin-canvas);
+}
+
+.applicationHeader {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 34px;
+}
+
+.applicationHeader a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--admin-ink);
+  font-size: 14px;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.applicationHeader span {
+  color: var(--admin-muted);
+  font: 700 11px/1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.applicationHero {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.applicationHero p {
+  margin: 0;
+  color: var(--admin-muted);
+  font: 700 11px/1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.applicationHero h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(34px, 10vw, 52px);
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+}
+
+.applicationHero small {
+  max-width: 38ch;
+  color: var(--admin-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.list {
+  display: grid;
+  gap: 14px;
+}
+
+.queueCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 42px;
+  gap: 13px;
+  align-items: center;
+  min-height: 92px;
+  padding: 15px;
+  color: var(--admin-ink);
+  background: #fff;
+  border-radius: 24px;
+  box-shadow:
+    0 18px 42px rgb(27 34 24 / 8%),
+    0 2px 7px rgb(27 34 24 / 4%);
+  text-decoration: none;
+  transition:
+    transform 180ms cubic-bezier(.2,.8,.2,1),
+    box-shadow 180ms ease;
+}
+
+.queueCard > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.queueCard strong {
+  overflow: hidden;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queueCard small {
+  overflow: hidden;
+  color: var(--admin-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queueMeta {
+  display: flex;
+  min-width: 0;
+  gap: 7px;
+}
+
+.queueMeta small + small::before {
+  content: "·";
+  margin-right: 7px;
+}
+
+.queueCard p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queueCard i {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--admin-ink);
+  background: var(--admin-lime);
+  font-size: 22px;
+  font-style: normal;
+}
+
+.detail {
+  display: grid;
+  gap: 18px;
+}
+
+.applicationHeaderLink {
+  justify-self: start;
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 780;
+  text-decoration: none;
+}
+
+.applicantCard,
+.answerCard {
+  background: #fff;
+  border-radius: 26px;
+  box-shadow:
+    0 20px 48px rgb(27 34 24 / 8%),
+    0 2px 7px rgb(27 34 24 / 4%);
+}
+
+.applicantCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 15px;
+  align-items: center;
+  padding: 18px;
+}
+
+.applicantCard > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.applicantCard > span strong {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.035em;
+}
+
+.applicantCard small {
+  color: var(--admin-muted);
+  font-size: 13px;
+}
+
+.applicantCard p {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: var(--admin-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.answerStack {
+  display: grid;
+  gap: 12px;
+}
+
+.answerStack > h3 {
+  margin: 6px 4px 0;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.answerCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+}
+
+.answerCard span {
+  color: var(--admin-muted);
+  font: 700 11px/1.3 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.answerCard p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.decisionDock {
+  position: sticky;
+  z-index: 4;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 24px;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 20px 52px rgb(27 34 24 / 14%);
+  backdrop-filter: blur(18px);
+}
+
+.decisionDock button {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 17px;
+  color: var(--admin-ink);
+  background: #eef0eb;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.decisionDock button:last-child {
+  background: var(--admin-lime);
+}
+
+.decisionDock button:disabled {
+  cursor: wait;
+  opacity: .62;
+}
+
+.error {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  color: #8c312d;
+  background: #fff1ef;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.empty {
+  display: grid;
+  gap: 8px;
+  padding: 28px 22px;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgb(27 34 24 / 8%);
+}
+
+.empty strong {
+  font-size: 21px;
+}
+
+.empty p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.queueCard:focus-visible,
+.applicationHeader a:focus-visible,
+.applicationHeaderLink:focus-visible,
+.decisionDock button:focus-visible {
+  outline: 3px solid #1d211d;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .queueCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 50px rgb(27 34 24 / 12%);
+  }
+}
+
+@media (max-width: 359px) {
+  .applicationPage {
+    padding-inline: 14px;
+  }
+
+  .queueCard {
+    grid-template-columns: auto minmax(0, 1fr) 38px;
+    padding: 13px;
+    border-radius: 21px;
+  }
+
+  .queueCard i {
+    width: 38px;
+    height: 38px;
+  }
+
+  .decisionDock {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queueCard {
+    transition: none;
+  }
+}

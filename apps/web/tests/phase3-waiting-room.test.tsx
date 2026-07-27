@@ -42,11 +42,13 @@ describe("Phase 3B waiting room", () => {
     expect(screen.getByText("Commitment credited")).toBeInTheDocument();
     expect(screen.getByText("1 confirmed")).toBeInTheDocument();
     expect(screen.getByText("3 places remaining")).toBeInTheDocument();
+    expect(screen.getByRole("timer", { name: "Time until roster lock" })).toBeVisible();
     expect(screen.getByText("5 frozen occurrences")).toBeInTheDocument();
     expect(screen.getByText(
       "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
     )).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /funding tracker/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Review frozen rules" }))
       .toHaveAttribute("href", "/pods/pod-1/rules");
   });
@@ -64,7 +66,7 @@ describe("Phase 3B waiting room", () => {
     );
 
     expect(screen.getByRole("status")).toHaveTextContent("Refund submitted");
-    expect(screen.getByText("8 NIM")).toBeInTheDocument();
+    expect(screen.getAllByText("8 NIM").length).toBeGreaterThan(0);
     expect(screen.getByText("a".repeat(64))).toBeInTheDocument();
     expect(screen.queryByText(/raw transaction/i)).not.toBeInTheDocument();
   });
@@ -82,9 +84,54 @@ describe("Phase 3B waiting room", () => {
     );
 
     const checkpoints = screen.getAllByRole("listitem");
-    expect(checkpoints).toHaveLength(4);
+    expect(checkpoints).toHaveLength(5);
+    expect(checkpoints[3]).toHaveTextContent("Confirming");
     for (const checkpoint of checkpoints) expect(checkpoint).toHaveClass("is-complete");
     expect(checkpoints.at(-1)).toHaveTextContent("✓");
+  });
+
+  it("maps a broadcast refund to submitted complete and confirming current", () => {
+    render(
+      <RefundStatusRail
+        refund={{
+          state: "broadcast",
+          amountNim: 8,
+          transactionHash: "a".repeat(64),
+          confirmedAt: null,
+          reason: "The minimum roster was not reached."
+        }}
+      />
+    );
+
+    const checkpoints = screen.getAllByRole("listitem");
+    expect(checkpoints).toHaveLength(5);
+    expect(checkpoints[2]).toHaveClass("is-complete");
+    expect(checkpoints[3]).toHaveClass("is-current");
+    expect(checkpoints[3]).toHaveAttribute("aria-current", "step");
+    expect(screen.getByText("The minimum roster was not reached.")).toBeVisible();
+  });
+
+  it("shows one refund action and never renders an incomplete funding rail", () => {
+    render(
+      <PodWaitingRoom
+        {...waitingRoom}
+        membershipState="refund_pending"
+        refund={{
+          state: "queued",
+          amountNim: 0.5,
+          transactionHash: null,
+          confirmedAt: null
+        }}
+      />
+    );
+
+    expect(screen.getByRole("list", { name: "Refund progress" })).toBeVisible();
+    expect(screen.queryByRole("list", { name: "Funding progress" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "View My Pods" })).toHaveAttribute(
+      "href",
+      "/my-pods"
+    );
   });
 
   it("keeps provisional and refund stages in the waiting room", () => {

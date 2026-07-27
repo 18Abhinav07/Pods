@@ -69,4 +69,31 @@ describe("settlement page finalization gate", () => {
 
     expect(screen.getByRole("button", { name: "Finalize now" })).toBeVisible();
   });
+
+  it("presents the complete session to the profile adapter", async () => {
+    const session = {
+      userId: "creator-1",
+      profile: {
+        displayName: "Ari Vale",
+        avatar: { kind: "preset", preset: "sage" }
+      }
+    };
+    requireSession.mockResolvedValue(session);
+    listSettlementReadyPods.mockResolvedValue([]);
+
+    render(await SettlementPage({ params: Promise.resolve({ podId }) }));
+
+    expect(profileForSession).toHaveBeenCalledWith(session);
+  });
+
+  it("labels the creator-ready state as ready to calculate", async () => {
+    listSettlementReadyPods.mockResolvedValue([{ id: podId }]);
+
+    render(await SettlementPage({ params: Promise.resolve({ podId }) }));
+
+    expect(screen.getByText("Ready to calculate")).toBeVisible();
+    expect(
+      screen.getByText("All occurrence decisions are final.")
+    ).toBeVisible();
+  });
 });

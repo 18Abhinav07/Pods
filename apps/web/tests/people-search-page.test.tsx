@@ -58,4 +58,34 @@ describe("PeopleSearchPage", () => {
     expect(screen.queryByText("Running before sunrise.")).not.toBeInTheDocument();
     expect(screen.queryByText("View")).not.toBeInTheDocument();
   });
+
+  it("accepts a conventional at-sign prefix without changing the visible query", async () => {
+    searchPublicProfiles.mockResolvedValue([
+      {
+        handle: "arivale",
+        displayName: "Ari Vale",
+        bio: "Shipping small products.",
+        avatar: { kind: "preset", preset: "moss" },
+        activityStatusVisible: true
+      }
+    ]);
+
+    render(
+      await PeopleSearchPage({
+        searchParams: Promise.resolve({ q: "@arivale" })
+      })
+    );
+
+    expect(searchPublicProfiles).toHaveBeenCalledWith({
+      query: "arivale",
+      limit: 20
+    });
+    expect(screen.getByRole("searchbox", { name: "Search by name or handle" })).toHaveValue(
+      "@arivale"
+    );
+    expect(screen.getByRole("link", { name: /Ari Vale/ })).toHaveAttribute(
+      "href",
+      "/u/arivale"
+    );
+  });
 });

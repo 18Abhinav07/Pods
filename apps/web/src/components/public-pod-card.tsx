@@ -9,6 +9,7 @@ import {
   type PodRelationship
 } from "../lib/participant-pod-state";
 import { adaptiveThemeForTemplate, mediaForTemplate } from "../lib/template-presentation";
+import styles from "./acquisition-flow.module.css";
 
 const templateLabels: Record<TemplateId, string> = {
   build: "Build & Ship",
@@ -49,14 +50,23 @@ export function PublicPodCard({
   });
   const theme = adaptiveThemeForTemplate(pod.templateId);
   const media = mediaForTemplate(pod.templateId, visualIndex ?? pod.id);
+  const statusLabel =
+    relationship.kind === "visitor" && pod.stage === "live"
+      ? "Activity live"
+      : relationship.kind === "visitor" && pod.stage === "recent"
+        ? "Completed"
+        : presentation.statusLabel;
   return (
-    <article className={`public-pod-card adaptive-pod-card is-compact-row theme-${theme} entrance entrance-status${relationship.kind === "visitor" ? " is-visitor" : ""}`}>
+    <article
+      className={`public-pod-card adaptive-pod-card is-compact-row theme-${theme} ${styles.podCard}`}
+      data-template={pod.templateId}
+    >
       <Link
         aria-label={`Open ${pod.name}`}
-        className="adaptive-card-hit-area"
+        className={`adaptive-card-hit-area ${styles.cardHitArea}`}
         href={presentation.href}
       />
-      <div className="adaptive-pod-media">
+      <div className={`adaptive-pod-media ${styles.podMedia}`}>
         <Image
           alt={`${templateLabels[pod.templateId]} activity cover`}
           data-template-art={pod.templateId}
@@ -65,11 +75,11 @@ export function PublicPodCard({
           src={media.hero}
         />
       </div>
-      <div className="adaptive-pod-copy">
-        <h2>{pod.name}</h2>
-        <p>{relationship.kind === "visitor" ? pod.purpose : presentation.statusLabel}</p>
+      <div className={`adaptive-pod-copy ${styles.podCopy}`}>
+        <h2 className={styles.podName}>{pod.name}</h2>
+        <p className={styles.podStatus}>{statusLabel}</p>
       </div>
-      <span className="adaptive-pod-type">
+      <span className={`adaptive-pod-type ${styles.podType}`}>
         {pod.stage && pod.stage !== "open" ? `${pod.stage === "live" ? "Live" : "Archive"} · ` : ""}
         {templateLabels[pod.templateId]}
       </span>

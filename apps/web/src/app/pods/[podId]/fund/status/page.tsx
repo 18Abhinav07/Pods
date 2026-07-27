@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import styles from "../../../../../components/financial-flow.module.css";
 import { FundingStatusRail } from "../../../../../components/funding-status-rail";
 import { participantDepositIntent } from "../../../../../lib/funding-server";
 import { podsRepository } from "../../../../../lib/server-db";
@@ -24,9 +25,16 @@ export default async function FundingStatusPage({
   }
 
   return (
-    <main className="app-shell funding-status-shell">
-      <header className="app-topbar entrance entrance-topbar"><Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link><span className="network-pill"><i aria-hidden="true" />Nimiq Testnet</span></header>
-      <section className="funding-status-intro entrance entrance-hero"><p className="eyebrow">Funding tracker</p><h2>Your commitment persists here.</h2><p>Pods reads this status from the server and independently reconciles the chain.</p></section>
+    <main className={`app-shell funding-status-shell ${styles.financialPage}`}>
+      <header className={styles.financialTopbar}>
+        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
+        <span className={styles.networkChip}><i aria-hidden="true" />Testnet</span>
+      </header>
+      <section className={styles.financialIntro}>
+        <p>Funding tracker</p>
+        <h2>Your commitment persists here.</h2>
+        <span>Pods independently reconciles your wallet transaction with the chain.</span>
+      </section>
       <FundingStatusRail intent={participantDepositIntent(storedIntent)} />
     </main>
   );

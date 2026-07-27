@@ -65,8 +65,8 @@ describe("PodActivityPage", () => {
     expect(screen.getByRole("searchbox", { name: "Search proofs by member" })).toBeVisible();
     expect(screen.getByRole("link", { name: "All proofs" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "My proofs" })).toBeVisible();
-    expect(container.querySelector(".proof-history-controls")).toHaveClass("is-compact-filter");
-    expect(container.querySelector(".proof-history-entry")).toHaveClass("is-editorial-proof");
+    expect(container.querySelector("[data-proof-history-controls]")).toBeVisible();
+    expect(container.querySelector("[data-proof-history-entry]")).toBeVisible();
     expect(screen.getByRole("img", { name: "Ryuk avatar" })).toBeVisible();
     expect(screen.getByText("Ryuk")).toBeVisible();
     expect(screen.getByText("@ryuk_builds")).toBeVisible();

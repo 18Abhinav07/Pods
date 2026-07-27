@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { PodState } from "@pods/domain";
 
+import styles from "../../components/acquisition-flow.module.css";
 import { PrimaryNav } from "../../components/primary-nav";
 import { presentPodRelationship } from "../../lib/participant-pod-state";
 import { podsRepository } from "../../lib/server-db";
@@ -27,18 +28,18 @@ export default async function ApplicationsPage({
     : records;
 
   return (
-    <main className="app-shell">
-      <header className="app-topbar entrance entrance-topbar">
-        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
-        <span className="phase-pill">Applications</span>
+    <main className={`app-shell ${styles.shell}`}>
+      <header className={`app-topbar ${styles.topbar}`}>
+        <Link className={`wordmark ${styles.wordmark}`} href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
+        <span className={styles.routeLabel}>Applications</span>
       </header>
-      <section className="today-hero entrance entrance-hero">
-        <p className="eyebrow">Your applications</p>
-        <h1>{query.sent === "1" ? "Application sent." : "Track every decision."}</h1>
+      <section className={styles.intro}>
+        <p className={styles.routeLabel}>Your applications</p>
+        <h1>{query.sent === "1" ? "Sent and ready to track." : "Know exactly what comes next."}</h1>
         <p className="screen-copy">Acceptance is one gate. Funding finality and roster lock still determine the final place.</p>
       </section>
       {visibleRecords.length > 0 ? (
-        <section className="application-status-list">
+        <section className={styles.statusList} aria-label="Application status">
           {visibleRecords.map(({ application, pod }) => {
             const membership = membershipByApplication.get(application.id);
             const presentation = presentPodRelationship({
@@ -55,12 +56,24 @@ export default async function ApplicationsPage({
             });
             const name = pod.contractData?.activity.name ?? "Pod";
             return (
-              <article className="application-status-card" key={application.id}>
-                <div><span>{presentation.statusLabel}</span><time>{application.updatedAt.toLocaleDateString("en", { month: "short", day: "numeric" })}</time></div>
+              <article className={`application-status-card ${styles.statusCard}`} key={application.id}>
+                <div className={styles.statusMeta}>
+                  <span className={styles.stateLabel}>{presentation.statusLabel}</span>
+                  <time
+                    className={styles.updatedAt}
+                    dateTime={application.updatedAt.toISOString()}
+                  >
+                    Updated {application.updatedAt.toLocaleDateString("en", {
+                      month: "short",
+                      day: "numeric",
+                      timeZone: "UTC"
+                    })}
+                  </time>
+                </div>
                 <h2>{name}</h2>
-                <p>{presentation.statusDetail}</p>
+                <p className={styles.statusDetail}>{presentation.statusDetail}</p>
                 <Link
-                  className="primary-action full-action"
+                  className={styles.primaryAction}
                   href={presentation.href}
                 >
                   {presentation.actionLabel}
@@ -70,13 +83,12 @@ export default async function ApplicationsPage({
           })}
         </section>
       ) : (
-        <section className="empty-state entrance entrance-status">
-          <span className="empty-index">00</span><h2>No applications yet.</h2><p>Browse public activities and apply when the cadence fits.</p>
-          <Link className="primary-action full-action" href="/discover">Browse public Pods</Link>
+        <section className={styles.emptyState}>
+          <h2>No applications yet.</h2><p>Browse public activities and apply when the cadence fits.</p>
+          <Link className={styles.primaryAction} href="/discover">Browse public Pods</Link>
         </section>
       )}
-      {query.pod ? <Link className="secondary-action full-action" href="/applications">View all applications</Link> : null}
-      <Link className="quiet-link centered-link" href="/updates">Return to Updates</Link>
+      {query.pod ? <Link className={styles.quietAction} href="/applications">View all applications</Link> : null}
       <PrimaryNav active="messages" />
     </main>
   );

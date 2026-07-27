@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { ProfileOnboardingForm } from "../../../components/profile-onboarding-form";
+import styles from "../../../components/entry-flow.module.css";
+import { ProfileOnboardingForm } from "../../../components/profile-onboarding-flow";
 import { safeReturnTarget } from "../../../lib/auth";
 import { podsRepository } from "../../../lib/server-db";
 import { getCurrentSession } from "../../../lib/session";
@@ -25,12 +26,13 @@ export default async function ProfileOnboardingPage({
   if (profile) redirect(returnTo);
 
   return (
-    <main className="profile-onboarding-shell">
-      <header className="onboarding-topbar">
-        <Link className="wordmark" href="/" aria-label="Pods home">
+    <main className={styles.onboardingShell}>
+      <header className={styles.onboardingTopbar}>
+        <Link className={styles.wordmark} href="/" aria-label="Pods home">
           <span className="pod-mark" aria-hidden="true" />
           pods
         </Link>
+        <span>Set up profile</span>
       </header>
       <ProfileOnboardingForm returnTo={returnTo} />
     </main>

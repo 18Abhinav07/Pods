@@ -1,16 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import styles from "./ops-flow.module.css";
 
 export function PayoutRetryControls({ legId }: { legId: string }) {
   const router = useRouter();
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  const submissionLock = useRef(false);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (working) return;
+    if (submissionLock.current) return;
+    submissionLock.current = true;
     const form = new FormData(event.currentTarget);
     setWorking(true);
     setError("");
@@ -29,16 +33,28 @@ export function PayoutRetryControls({ legId }: { legId: string }) {
       setError(
         cause instanceof Error ? cause.message : "Payout could not be retried"
       );
+    } finally {
+      submissionLock.current = false;
       setWorking(false);
     }
   }
 
   return (
-    <form className="payout-retry-controls" onSubmit={submit}>
-      <label>
-        Audit reason
+    <form
+      aria-busy={working}
+      className={styles.embeddedForm}
+      onSubmit={submit}
+    >
+      <div className={styles.formHeading}>
+        <strong>Reconcile before replacement</strong>
+        <span>A new transaction is prepared only after the latest chain state is proven.</span>
+      </div>
+      <label className={styles.fieldGroup}>
+        <span className={styles.fieldLabel}>Audit reason</span>
         <textarea
+          className={styles.textarea}
           defaultValue="A fresh chain check is required before replacement."
+          disabled={working}
           maxLength={500}
           minLength={10}
           name="reason"
@@ -46,10 +62,16 @@ export function PayoutRetryControls({ legId }: { legId: string }) {
           rows={2}
         />
       </label>
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
-      <button className="primary-action" disabled={working} type="submit">
-        {working ? "Rechecking" : "Recheck and retry"}
-      </button>
+      {error ? <p className={styles.error} role="alert">{error}</p> : null}
+      <div className={styles.formActions}>
+        <button
+          className={styles.primaryAction}
+          disabled={working}
+          type="submit"
+        >
+          {working ? "Checking chain" : "Recheck and retry"}
+        </button>
+      </div>
     </form>
   );
 }

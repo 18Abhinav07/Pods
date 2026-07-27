@@ -1,7 +1,10 @@
 "use client";
 
+import { ArrowRight, SpinnerGap } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import styles from "./settlement-flow.module.css";
 
 export function SettlementFinalizeButton({ podId }: { podId: string }) {
   const router = useRouter();
@@ -36,14 +39,23 @@ export function SettlementFinalizeButton({ podId }: { podId: string }) {
   }
 
   return (
-    <div className="settlement-finalize">
+    <div className={styles.finalize}>
       <button
-        className="primary-action full-action"
+        className={styles.primaryAction}
         disabled={working}
         onClick={finalize}
         type="button"
       >
-        {working ? "Calculating settlement" : "Finalize now"}
+        <span>{working ? "Calculating settlement" : "Finalize now"}</span>
+        {working ? (
+          <SpinnerGap
+            aria-hidden="true"
+            className={styles.spinner}
+            weight="bold"
+          />
+        ) : (
+          <ArrowRight aria-hidden="true" weight="bold" />
+        )}
       </button>
       {error ? <p role="alert">{error}</p> : null}
     </div>

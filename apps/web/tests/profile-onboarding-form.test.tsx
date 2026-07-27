@@ -11,7 +11,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace, refresh })
 }));
 
-import { ProfileOnboardingForm } from "../src/components/profile-onboarding-form";
+import { ConnectClient } from "../src/components/connect-client";
+import { ProfileOnboardingForm } from "../src/components/profile-onboarding-flow";
 
 afterEach(() => {
   replace.mockReset();
@@ -20,6 +21,16 @@ afterEach(() => {
 });
 
 describe("ProfileOnboardingForm", () => {
+  it("keeps wallet connection concise and separate from profile setup", () => {
+    render(<ConnectClient returnTo="/today" />);
+
+    expect(screen.getByRole("heading", { name: "Connect your wallet" })).toBeVisible();
+    expect(screen.getByText("One signature creates your Pods account.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Connect wallet" })).toBeVisible();
+    expect(screen.queryByText(/private key/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/no password/i)).not.toBeInTheDocument();
+  });
+
   it("collects identity and privacy choices before entering Pods", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
@@ -36,21 +47,32 @@ describe("ProfileOnboardingForm", () => {
     const user = userEvent.setup();
     render(<ProfileOnboardingForm returnTo="/today" />);
 
-    expect(screen.getByRole("heading", { name: "Choose how people know you." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Make your work recognizable" })).toBeVisible();
     expect(screen.getByLabelText("Step 1 of 3")).toBeVisible();
     expect(screen.queryByText("Your Pods identity")).not.toBeInTheDocument();
     expect(screen.queryByText("Identity")).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Handle"), "Abhinav_07");
     await user.type(screen.getByLabelText("Display name"), "Abhinav");
-    await user.click(screen.getByRole("button", { name: "Continue to your story" }));
-
     await user.type(
       screen.getByLabelText("Short bio"),
       "Building Pods in public with the Nimiq community."
     );
-    await user.click(screen.getByLabelText("Public profile"));
-    await user.click(screen.getByRole("button", { name: "Continue to privacy" }));
+    await user.click(screen.getByRole("button", { name: "Choose an avatar" }));
 
+    expect(
+      screen.getByRole("heading", { name: "Choose a signal that feels like you" })
+    ).toBeVisible();
+    expect(screen.getByLabelText("Step 2 of 3")).toBeVisible();
+    expect(screen.getAllByRole("button", { name: /^Choose .+ avatar$/ })).toHaveLength(12);
+    expect(screen.getByRole("button", { name: "Upload your own photo" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Choose moss avatar" }));
+    await user.click(screen.getByRole("button", { name: "Set boundaries" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Choose what people can discover" })
+    ).toBeVisible();
+    expect(screen.getByLabelText("Step 3 of 3")).toBeVisible();
+    await user.click(screen.getByLabelText("Public profile"));
     await user.click(screen.getByLabelText("Allow message requests"));
     await user.click(screen.getByRole("button", { name: "Enter Pods" }));
 
@@ -62,7 +84,7 @@ describe("ProfileOnboardingForm", () => {
           handle: "Abhinav_07",
           displayName: "Abhinav",
           bio: "Building Pods in public with the Nimiq community.",
-          avatar: { kind: "preset", preset: "ember" },
+          avatar: { kind: "preset", preset: "moss" },
           visibility: "public",
           dmPolicy: "requests",
           activityStatusVisible: true
@@ -88,8 +110,8 @@ describe("ProfileOnboardingForm", () => {
 
     await user.type(screen.getByLabelText("Handle"), "abhinav_07");
     await user.type(screen.getByLabelText("Display name"), "Abhinav");
-    await user.click(screen.getByRole("button", { name: "Continue to your story" }));
-    await user.click(screen.getByRole("button", { name: "Continue to privacy" }));
+    await user.click(screen.getByRole("button", { name: "Choose an avatar" }));
+    await user.click(screen.getByRole("button", { name: "Set boundaries" }));
     await user.click(screen.getByRole("button", { name: "Enter Pods" }));
 
     expect(await screen.findByText("Profile handle is already taken")).toBeVisible();
@@ -113,8 +135,8 @@ describe("ProfileOnboardingForm", () => {
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "Continue to your story" }));
-    await user.click(screen.getByRole("button", { name: "Continue to privacy" }));
+    await user.click(screen.getByRole("button", { name: "Choose an avatar" }));
+    await user.click(screen.getByRole("button", { name: "Set boundaries" }));
 
     expect(screen.getByRole("button", { name: "Save profile" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Enter Pods" })).not.toBeInTheDocument();

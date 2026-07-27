@@ -6,12 +6,21 @@ import { useState } from "react";
 
 import { buildCommunityPayload } from "../lib/wizard-payloads";
 import { savePodDraftStep } from "../lib/wizard-client";
+import styles from "./creator-flow.module.css";
 
 export function CommunityForm({ podId, initial }: { podId: string; initial: CommunityStepInput }) {
   const router = useRouter();
   const [visibility, setVisibility] = useState(initial.visibility);
   const [roomAudience, setRoomAudience] = useState(
     initial.visibility === "public" ? initial.roomAudience ?? "members_only" : "members_only"
+  );
+  const [applicationQuestions, setApplicationQuestions] = useState(
+    initial.visibility === "public"
+      ? initial.applicationQuestions.join("\n")
+      : "What will you commit to?"
+  );
+  const [inviteExpiryHours, setInviteExpiryHours] = useState(
+    String(initial.visibility === "private" ? initial.inviteExpiryHours : 168)
   );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -29,48 +38,58 @@ export function CommunityForm({ podId, initial }: { podId: string; initial: Comm
     }
   }
 
-  return <form className="wizard-form" onSubmit={submit}>
-    <fieldset className="field-block"><legend>Community space</legend><div className="visibility-grid">
-      <label className={visibility === "public" ? "is-selected" : ""}><input type="radio" name="visibility" value="public" checked={visibility === "public"} onChange={() => setVisibility("public")} /><strong>Public activity</strong><span>Discoverable. Builders apply and the creator accepts.</span></label>
-      <label className={visibility === "private" ? "is-selected" : ""}><input type="radio" name="visibility" value="private" checked={visibility === "private"} onChange={() => setVisibility("private")} /><strong>Private activity</strong><span>Hidden everywhere. Entry requires a valid invitation.</span></label>
-    </div></fieldset>
-    <div className="field-grid"><label className="field-block"><span>Minimum people</span><input type="number" name="minParticipants" min="2" defaultValue={initial.minParticipants} required /></label><label className="field-block"><span>Maximum people</span><input type="number" name="maxParticipants" min="2" defaultValue={initial.maxParticipants} required /></label></div>
+  function selectVisibility(next: "public" | "private") {
+    setVisibility(next);
+    if (next === "private") setRoomAudience("members_only");
+  }
+
+  return <form className={styles.form} onSubmit={submit}>
+    <fieldset className={styles.field}>
+      <legend className={styles.sectionLabel}>Community space</legend>
+      <div className={styles.choiceGrid}>
+        <label className={styles.choiceCard} data-selected={visibility === "public"}>
+          <input className={styles.choiceInput} type="radio" name="visibility" value="public" checked={visibility === "public"} onChange={() => selectVisibility("public")} />
+          <span className={styles.choiceCopy}><strong>Public Pod</strong><span>Listed in Discover. People apply before funding.</span></span>
+          <i className={styles.choiceIndicator} aria-hidden="true">{visibility === "public" ? "✓" : ""}</i>
+        </label>
+        <label className={styles.choiceCard} data-selected={visibility === "private"}>
+          <input className={styles.choiceInput} type="radio" name="visibility" value="private" checked={visibility === "private"} onChange={() => selectVisibility("private")} />
+          <span className={styles.choiceCopy}><strong>Private Pod</strong><span>Hidden from discovery. Entry needs an invitation.</span></span>
+          <i className={styles.choiceIndicator} aria-hidden="true">{visibility === "private" ? "✓" : ""}</i>
+        </label>
+      </div>
+    </fieldset>
+
     {visibility === "public" ? <>
-      <label className="field-block"><span>Application questions</span><textarea name="applicationQuestions" rows={3} defaultValue={initial.visibility === "public" ? initial.applicationQuestions.join("\n") : "What will you commit to?"} /><small>One question per line. Applicants see these before acceptance.</small></label>
-      <fieldset className="field-block visitor-audience-choice">
-        <legend>Who can read the Pod after the roster locks?</legend>
-        <label className={`visitor-audience-row ${roomAudience === "members_only" ? "is-selected" : ""}`}>
-          <span className="visitor-audience-copy">
-            <strong>Members only</strong>
-            <small>Only locked members can read the room and public proof record.</small>
-          </span>
-          <input
-            aria-label="Members only"
-            checked={roomAudience === "members_only"}
-            name="roomAudience"
-            onChange={() => setRoomAudience("members_only")}
-            type="radio"
-            value="members_only"
-          />
-        </label>
-        <label className={`visitor-audience-row ${roomAudience === "public_read_only" ? "is-selected" : ""}`}>
-          <span className="visitor-audience-copy">
-            <strong>Let visitors follow along</strong>
-            <small>Anyone with the link can read the room and Pod-shared proofs. Visitors cannot react, reply, submit, or see creator-only evidence, private decision notes, or funding details.</small>
-          </span>
-          <input
-            aria-label="Let visitors follow along"
-            checked={roomAudience === "public_read_only"}
-            name="roomAudience"
-            onChange={() => setRoomAudience("public_read_only")}
-            type="radio"
-            value="public_read_only"
-          />
-        </label>
-      </fieldset>
-    </> : <label className="field-block"><span>Invitation expiry</span><select name="inviteExpiryHours" defaultValue={initial.visibility === "private" ? initial.inviteExpiryHours : 168}><option value="24">24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="336">14 days</option></select></label>}
-    <div className="authority-note"><strong>Creator authority</strong><span>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</span></div>
-    {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
-    <button className="primary-action full-action" disabled={saving} type="submit">{saving ? "Saving community" : "Continue to commitment"}</button>
+      <input name="roomAudience" type="hidden" value={roomAudience} />
+      <section className={styles.switchRow}>
+        <span className={styles.switchIcon} aria-hidden="true">◉</span>
+        <span className={styles.switchCopy}>
+          <strong>Allow read-only visitors</strong>
+          <span>Visitors can watch room messages and Pod-shared proof after roster lock.</span>
+        </span>
+        <button
+          aria-checked={roomAudience === "public_read_only"}
+          aria-label="Allow read-only visitors"
+          className={styles.switchControl}
+          onClick={() => setRoomAudience((current) => current === "public_read_only" ? "members_only" : "public_read_only")}
+          role="switch"
+          type="button"
+        />
+      </section>
+      <section className={styles.sectionCard}>
+        <span className={styles.sectionLabel}>Application</span>
+        <label className={styles.field}><span>Questions for applicants</span><textarea name="applicationQuestions" onChange={(event) => setApplicationQuestions(event.currentTarget.value)} rows={3} value={applicationQuestions} /><small>One question per line. You review answers before anyone can fund.</small></label>
+      </section>
+    </> : <section className={styles.sectionCard}><label className={styles.field}><span>Invitation expiry</span><select name="inviteExpiryHours" onChange={(event) => setInviteExpiryHours(event.currentTarget.value)} value={inviteExpiryHours}><option value="24">24 hours</option><option value="72">3 days</option><option value="168">7 days</option><option value="336">14 days</option></select></label></section>}
+
+    <section className={styles.sectionCard}>
+      <span className={styles.sectionLabel}>Group size</span>
+      <div className={styles.twoColumn}><label className={styles.field}><span>Minimum</span><input type="number" name="minParticipants" min="2" defaultValue={initial.minParticipants} required /></label><label className={styles.field}><span>Maximum</span><input type="number" name="maxParticipants" min="2" defaultValue={initial.maxParticipants} required /></label></div>
+    </section>
+
+    <div className={styles.infoNote}><span className={styles.infoNoteIcon} aria-hidden="true">✓</span><span><strong>You review the work</strong><span>As creator, you verify member proof. You do not fund or receive participant money.</span></span></div>
+    {error ? <div className={styles.error} role="alert">{error}</div> : null}
+    <div className={`${styles.actionDock} ${styles.formActionDock}`}><button className={styles.primaryAction} disabled={saving} type="submit">{saving ? "Saving community" : "Continue to commitment"}</button></div>
   </form>;
 }

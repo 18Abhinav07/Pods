@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowRight, CaretDown, Check, Clock, WarningCircle } from "@phosphor-icons/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -8,6 +10,7 @@ import type { DepositExceptionCode, DepositState } from "@pods/domain";
 
 import type { ParticipantDepositIntent } from "../lib/funding-client";
 import { formatZonedMoment } from "../lib/format-moment";
+import styles from "./financial-flow.module.css";
 
 const stages = [
   ["Wallet", "Wallet confirmation"],
@@ -100,6 +103,15 @@ const terminalStates = new Set<DepositState>([
   "refunded"
 ]);
 
+function currentStageIndex(intent: ParticipantDepositIntent) {
+  if (intent.state !== "exception_review") return stateIndex[intent.state];
+  if (intent.creditedAt) return 4;
+  if (intent.finalizedAt) return 3;
+  if (intent.observedAt) return 2;
+  if (intent.transactionHash) return 1;
+  return 0;
+}
+
 function nim(luna: number) {
   return new Intl.NumberFormat("en", { maximumFractionDigits: 5 }).format(luna / 100_000);
 }
@@ -115,18 +127,18 @@ function FundingStatusRefresh({ state }: { state: DepositState }) {
 }
 
 export function FundingStatusRail({ intent }: { intent: ParticipantDepositIntent }) {
-  const currentIndex = stateIndex[intent.state];
+  const currentIndex = currentStageIndex(intent);
   const copy = statusCopy[intent.state];
   const isAlert = intent.state === "wallet_rejected" || intent.state === "exception_review";
   const completedThroughCurrent = intent.state === "applied_to_roster";
   const podDestination = intent.state === "credited_provisional"
-    ? "View Pod status"
+    ? { label: "View Pod status", href: `/pods/${intent.podId}/today` }
     : intent.state === "applied_to_roster"
-      ? "Open Pod"
+      ? { label: "Open Pod", href: `/pods/${intent.podId}/room` }
       : intent.state === "refund_pending"
-        ? "Track refund"
+        ? { label: "Track refund", href: `/pods/${intent.podId}/today` }
         : intent.state === "refunded"
-          ? "View refund receipt"
+          ? { label: "View refund receipt", href: `/pods/${intent.podId}/today` }
           : null;
   const financialHistoryComplete = [
     "credited_provisional",
@@ -136,22 +148,36 @@ export function FundingStatusRail({ intent }: { intent: ParticipantDepositIntent
   ].includes(intent.state);
 
   return (
-    <div className="funding-status-flow">
+    <div className={styles.statusFlow}>
       <FundingStatusRefresh state={intent.state} />
       <section
-        className={`funding-state-card state-${intent.state}`}
+        className={`${styles.statusHero} ${isAlert ? styles.statusAttention : ""} ${intent.state === "applied_to_roster" ? styles.statusSuccess : ""}`}
         role={isAlert ? "alert" : "status"}
       >
-        <div className="funding-state-orbit" aria-hidden="true"><i /><i /></div>
-        <p className="eyebrow">Current financial state</p>
-        <h1>{copy.title}</h1>
-        <p>{copy.detail}</p>
+        <div className={styles.statusHeroTop}>
+          <div className={styles.nimMedallion} data-size="small">
+            <Image alt="NIM token" height={72} src="/media/nimiq-signet.svg" width={72} />
+          </div>
+          <span>{nim(intent.amountLuna)} NIM</span>
+        </div>
+        <div className={styles.statusMessage}>
+          <span className={styles.eyebrow}>Current financial state</span>
+          <h1>{copy.title}</h1>
+          <p>{copy.detail}</p>
+        </div>
         {intent.exceptionCode ? (
-          <div className="exception-reason"><span>Reason</span><strong>{exceptionCopy[intent.exceptionCode]}</strong></div>
+          <div className={styles.exceptionReason}>
+            <WarningCircle aria-hidden="true" weight="regular" />
+            <span><small>Reason</small><strong>{exceptionCopy[intent.exceptionCode]}</strong></span>
+          </div>
         ) : null}
       </section>
 
-      <ol className="funding-stage-rail" aria-label="Funding progress">
+      <ol
+        aria-label="Funding progress"
+        className={styles.compactRail}
+        data-compact-financial-rail=""
+      >
         {stages.map(([shortLabel, accessibleLabel], index) => {
           const relation = index < currentIndex || (completedThroughCurrent && index === currentIndex)
             ? "complete"
@@ -159,32 +185,54 @@ export function FundingStatusRail({ intent }: { intent: ParticipantDepositIntent
               ? "current"
               : "upcoming";
           return (
-            <li aria-current={relation === "current" ? "step" : undefined} className={`is-${relation}`} key={shortLabel}>
-              <span aria-hidden="true">{relation === "complete" ? "✓" : String(index + 1).padStart(2, "0")}</span>
-              <div><strong>{shortLabel}</strong><small>{accessibleLabel}</small></div>
+            <li
+              aria-current={relation === "current" ? "step" : undefined}
+              aria-label={`${shortLabel}: ${accessibleLabel}`}
+              className={`${styles.compactStep} is-${relation}`}
+              data-state={relation}
+              key={shortLabel}
+            >
+              <span aria-hidden="true">
+                {relation === "complete" ? <><Check weight="bold" /><i className={styles.textCheck}>✓</i></> : relation === "current" ? <Clock weight="bold" /> : index + 1}
+              </span>
+              <strong>{shortLabel}</strong>
+              <small>{accessibleLabel}</small>
             </li>
           );
         })}
       </ol>
 
-      <section className="funding-receipt" aria-labelledby="receipt-title">
-        <div className="section-title-row"><span>Persistent receipt</span><h2 id="receipt-title">Commitment details</h2></div>
-        <dl>
+      <details className={styles.receipt} open={isAlert || undefined}>
+        <summary>
+          <span><small>Persistent receipt</small><strong id="receipt-title">Commitment details</strong></span>
+          <CaretDown aria-hidden="true" />
+        </summary>
+        <dl aria-labelledby="receipt-title">
           <div><dt>Amount</dt><dd>{nim(intent.amountLuna)} NIM</dd></div>
           <div><dt>Network</dt><dd>Nimiq Testnet</dd></div>
-          <div className="receipt-wide"><dt>Reference</dt><dd>{intent.reference}</dd></div>
-          {intent.transactionHash ? <div className="receipt-wide"><dt>Transaction hash</dt><dd>{intent.transactionHash}</dd></div> : null}
+          <div className={styles.receiptWide}><dt>Reference</dt><dd>{intent.reference}</dd></div>
+          {intent.transactionHash ? <div className={styles.receiptWide}><dt>Transaction hash</dt><dd>{intent.transactionHash}</dd></div> : null}
           {intent.observedAt ? <div><dt>Observed</dt><dd>{formatZonedMoment(intent.observedAt, { timeZone: "UTC", includeYear: true, includeZone: true })}</dd></div> : null}
           {intent.finalizedAt ? <div><dt>Finalized</dt><dd>{formatZonedMoment(intent.finalizedAt, { timeZone: "UTC", includeYear: true, includeZone: true })}</dd></div> : null}
           {intent.creditedAt ? <div><dt>Credited</dt><dd>{formatZonedMoment(intent.creditedAt, { timeZone: "UTC", includeYear: true, includeZone: true })}</dd></div> : null}
         </dl>
-      </section>
+      </details>
 
-      {intent.state === "wallet_rejected" ? <Link className="primary-action full-action" href={`/pods/${intent.podId}/fund`}>Try funding again</Link> : null}
-      {podDestination ? <Link className="primary-action full-action" href={`/pods/${intent.podId}/today`}>{podDestination}</Link> : null}
-      <Link className="secondary-action full-action" href={financialHistoryComplete ? "/my-pods" : `/applications?pod=${intent.podId}`}>
-        {financialHistoryComplete ? "View My Pods" : "Back to applications"}
-      </Link>
+      <div className={styles.statusActions}>
+        {intent.state === "wallet_rejected" ? (
+          <Link className={styles.primaryAction} href={`/pods/${intent.podId}/fund`}>
+            <span>Try funding again</span><i aria-hidden="true"><ArrowRight weight="bold" /></i>
+          </Link>
+        ) : null}
+        {podDestination ? (
+          <Link className={styles.primaryAction} href={podDestination.href}>
+            <span>{podDestination.label}</span><i aria-hidden="true"><ArrowRight weight="bold" /></i>
+          </Link>
+        ) : null}
+        <Link className={styles.secondaryLink} href={financialHistoryComplete ? "/my-pods" : `/applications?pod=${intent.podId}`}>
+          {financialHistoryComplete ? "View My Pods" : "Back to applications"}
+        </Link>
+      </div>
     </div>
   );
 }

@@ -6,7 +6,13 @@ export const profileAvatarPresets = [
   "indigo",
   "coral",
   "sun",
-  "stone"
+  "stone",
+  "wave",
+  "pine",
+  "rose",
+  "sky",
+  "sand",
+  "ink"
 ] as const;
 
 export type ProfileAvatarPreset = (typeof profileAvatarPresets)[number];

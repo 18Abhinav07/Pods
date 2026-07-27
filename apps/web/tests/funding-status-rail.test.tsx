@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { FundingStatusRail } from "../src/components/funding-status-rail";
@@ -76,12 +77,17 @@ describe("FundingStatusRail", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(copy);
   });
 
-  it("keeps the exact transaction hash visible after refresh", () => {
+  it("keeps transaction detail available but collapsed until requested", async () => {
+    const user = userEvent.setup();
     render(<FundingStatusRail intent={baseIntent} />);
 
+    expect(screen.getByRole("img", { name: "NIM token" })).toBeVisible();
+    const receipt = screen.getByText("Commitment details").closest("details");
+    expect(receipt).not.toHaveAttribute("open");
+    await user.click(screen.getByText("Commitment details"));
     expect(screen.getByText("Transaction hash")).toBeInTheDocument();
     expect(screen.getByText("a".repeat(64))).toBeInTheDocument();
-    expect(screen.getByText("0.5 NIM")).toBeInTheDocument();
+    expect(screen.getAllByText("0.5 NIM").length).toBeGreaterThan(0);
     expect(screen.getByText("Nimiq Testnet")).toBeInTheDocument();
   });
 
@@ -96,10 +102,61 @@ describe("FundingStatusRail", () => {
     }
     expect(checkpoints.at(-1)).toHaveTextContent("✓");
     expect(screen.getByRole("link", { name: "Open Pod" }))
-      .toHaveAttribute("href", "/pods/pod-1/today");
+      .toHaveAttribute("href", "/pods/pod-1/room");
     expect(screen.getByRole("link", { name: "View My Pods" }))
       .toHaveAttribute("href", "/my-pods");
     expect(screen.queryByRole("link", { name: "Back to applications" }))
       .not.toBeInTheDocument();
+  });
+
+  it("presents all six checkpoints as compact semantic steps", () => {
+    render(<FundingStatusRail intent={{ ...baseIntent, state: "observed" }} />);
+
+    expect(screen.getByRole("list", { name: "Funding progress" })).toHaveAttribute(
+      "data-compact-financial-rail"
+    );
+    expect(screen.getAllByRole("listitem")).toHaveLength(6);
+    expect(screen.getByRole("listitem", { name: /Observed/i })).toHaveAttribute(
+      "aria-current",
+      "step"
+    );
+  });
+
+  it("keeps an exception at the latest chain milestone that actually happened", () => {
+    render(
+      <FundingStatusRail
+        intent={{
+          ...baseIntent,
+          state: "exception_review",
+          exceptionCode: "finalized_after_cutoff",
+          observedAt: "2027-03-01T12:00:00.000Z",
+          finalizedAt: "2027-03-01T12:05:00.000Z"
+        }}
+      />
+    );
+
+    expect(screen.getByRole("listitem", { name: /Submitted/i }))
+      .toHaveAttribute("data-state", "complete");
+    expect(screen.getByRole("listitem", { name: /Finalized/i }))
+      .toHaveAttribute("data-state", "current");
+    expect(screen.getByRole("listitem", { name: /Finalized/i }))
+      .toHaveAttribute("aria-current", "step");
+  });
+
+  it("keeps an unobserved transaction exception at submitted", () => {
+    render(
+      <FundingStatusRail
+        intent={{
+          ...baseIntent,
+          state: "exception_review",
+          exceptionCode: "transaction_not_observed"
+        }}
+      />
+    );
+
+    expect(screen.getByRole("listitem", { name: /Submitted/i }))
+      .toHaveAttribute("data-state", "current");
+    expect(screen.getByRole("listitem", { name: /Observed/i }))
+      .toHaveAttribute("data-state", "upcoming");
   });
 });

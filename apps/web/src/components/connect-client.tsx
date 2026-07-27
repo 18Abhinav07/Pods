@@ -1,10 +1,12 @@
 "use client";
 
+import { ArrowRight, ShieldCheck } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { establishWalletSession } from "../lib/nimiq-wallet-client";
 import { useHydrated } from "../lib/use-hydrated";
+import styles from "./entry-flow.module.css";
 
 type ConnectState = "idle" | "connecting" | "signing" | "error";
 
@@ -35,22 +37,36 @@ export function ConnectClient({ returnTo }: { returnTo: string }) {
   const pending = state === "connecting" || state === "signing";
 
   return (
-    <div className="connect-panel">
-      <p className="eyebrow">Enter Pods</p>
-      <h1>Your wallet is your key.</h1>
-      <p className="screen-copy">
-        Sign once in Nimiq Pay. No password and no NIM leaves your wallet.
-      </p>
+    <div className={styles.connectPanel}>
+      <div className={styles.connectCopy}>
+        <h1>Connect your wallet</h1>
+        <p>One signature creates your Pods account.</p>
+      </div>
+      <div className={styles.walletPromise}>
+        <ShieldCheck aria-hidden="true" />
+        <span>
+          <strong>Private identity</strong>
+          <small>Your public profile never displays your wallet address.</small>
+        </span>
+      </div>
       {error ? (
-        <div className="inline-error" role="alert">
+        <div className={styles.inlineError} role="alert">
           <strong>Connection paused</strong>
           <span>{error}</span>
         </div>
       ) : null}
-      <button className="primary-action full-action" disabled={!hydrated || pending} onClick={connect} type="button">
-        {pending ? "Waiting for Nimiq Pay" : error ? "Try wallet again" : "Connect Nimiq wallet"}
-      </button>
-      <p className="fine-print">Signing only verifies ownership.</p>
+      <div className={styles.connectAction}>
+        <button
+          className={styles.primaryButton}
+          disabled={!hydrated || pending}
+          onClick={connect}
+          type="button"
+        >
+          <span>{pending ? "Waiting for Nimiq Pay" : error ? "Try wallet again" : "Connect wallet"}</span>
+          <i aria-hidden="true"><ArrowRight weight="bold" /></i>
+        </button>
+        <p className={styles.connectNote}>Testnet beta. Test NIM has no real-world value.</p>
+      </div>
     </div>
   );
 }

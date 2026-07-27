@@ -2,6 +2,7 @@ import type { ProfileAvatar as ProfileAvatarType } from "@pods/domain";
 import Link from "next/link";
 
 import { ProfileAvatar } from "./profile-avatar";
+import styles from "./social-flow.module.css";
 
 export function PublicProfileCard({
   profile,
@@ -17,7 +18,14 @@ export function PublicProfileCard({
   variant?: "default" | "search";
 }) {
   return (
-    <Link className={`public-profile-card${variant === "search" ? " is-search-result" : ""}`} href={`/u/${profile.handle}`}>
+    <Link
+      className={
+        variant === "search"
+          ? `public-profile-card is-search-result ${styles.searchCard}`
+          : `public-profile-card ${styles.card}`
+      }
+      href={`/u/${profile.handle}`}
+    >
       <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} />
       <span>
         <strong>{profile.displayName}</strong>

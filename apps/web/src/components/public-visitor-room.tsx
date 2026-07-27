@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { mediaForTemplate } from "../lib/template-presentation";
 import { presentTemplateEvidence } from "../lib/template-evidence-presentation";
 import { ArtifactLinkCard } from "./artifact-link-card";
+import styles from "./pod-room.module.css";
 import { ProfileAvatar as Avatar } from "./profile-avatar";
 
 export type PublicVisitorMessage = {
@@ -90,7 +91,7 @@ function PublicActivityEvidence({
     ) : null;
   }
   return (
-    <div className="public-template-evidence" aria-label={`${presentation.templateName} proof`}>
+    <div className={styles.publicEvidence} aria-label={`${presentation.templateName} proof`}>
       {presentation.evidenceRows.map((row) => (
         <p key={row.label}><span>{row.label}</span>{row.value}</p>
       ))}
@@ -248,18 +249,18 @@ export function PublicVisitorRoom({
   }
 
   return (
-    <main className={`app-shell public-room-shell theme-${data.pod.templateId}`}>
-      <header className="public-room-header">
-        <Link className="wordmark" href={`/pods/${data.pod.id}`}>
+    <main className={`${styles.shell} theme-${data.pod.templateId}`} data-read-only-room>
+      <header className={styles.visitorHeader}>
+        <Link className={styles.visitorWordmark} href={`/pods/${data.pod.id}`}>
           <span className="pod-mark" aria-hidden="true" />
           pods
         </Link>
-        <div>
-          <span className="visitor-live-dot" aria-hidden="true" />
+        <div className={styles.visitorBadge}>
+          <span className={styles.visitorDot} aria-hidden="true" />
           <span>Public gallery</span>
         </div>
       </header>
-      <section className="public-room-cover">
+      <section className={styles.visitorCover}>
         <Image
           alt={`${templateNames[data.pod.templateId]} activity`}
           fill
@@ -267,48 +268,48 @@ export function PublicVisitorRoom({
           sizes="(max-width: 560px) 100vw, 520px"
           src={media.hero}
         />
-        <div className="public-room-cover-shade" aria-hidden="true" />
-        <div className="public-room-intro">
+        <div className={styles.visitorShade} aria-hidden="true" />
+        <div className={styles.visitorIntro}>
           <span>{data.pod.stage === "recent" ? "Completed archive" : "Building in public"}</span>
           <h1>{name ?? data.pod.name}</h1>
           <p>{data.pod.purpose}</p>
-          <div>
+          <div className={styles.visitorFacts}>
             <strong>{data.pod.participantCount}</strong> people
             <i aria-hidden="true" />
             <strong>{data.pod.occurrenceCount}</strong> occurrences
           </div>
         </div>
       </section>
-      <aside className="visitor-boundary">
+      <aside className={styles.visitorBoundary}>
         <strong>Read-only visitor</strong>
-        <span>You can read public messages and proof records. Writing, reactions, activity controls, creator-only evidence, private decision notes, and financial details stay private.</span>
+        <span>Public messages and shared proof are visible. Member actions and private evidence stay private.</span>
       </aside>
-      <section className="public-room-stream" aria-label="Public Pod room">
+      <section className={styles.visitorStream} aria-label="Public Pod room">
         {data.messages.length === 0 ? (
-          <div className="public-room-empty">
+          <div className={styles.empty}>
             <span>The room is ready.</span>
             <p>Public activity will appear here as the locked group begins.</p>
           </div>
         ) : data.messages.map((message) => (
           <article
-            className={`public-room-entry is-${message.kind}${message.hidden ? " is-hidden" : ""}`}
+            className={styles.visitorEntry}
             key={message.id}
           >
             {message.hidden ? (
               <p>Message unavailable</p>
             ) : (
               <>
-                <div className="public-room-author">
+                <div className={styles.visitorAuthor}>
                   {message.sender ? (
                     <Avatar
                       avatar={message.sender.avatar}
                       displayName={message.sender.displayName}
                       size="small"
                     />
-                  ) : <span className="system-avatar" aria-hidden="true">p</span>}
+                  ) : <span className={styles.systemAvatar} aria-hidden="true">p</span>}
                   {message.sender ? (
                     <Link
-                      className="public-room-author-link"
+                      className={styles.visitorAuthorLink}
                       href={
                         message.sender.profileVisibility === "public"
                           ? `/u/${message.sender.handle}`
@@ -326,7 +327,7 @@ export function PublicVisitorRoom({
                   ) ? canReport ? (
                     <button
                       aria-label={`Report ${message.kind === "activity" ? "proof" : "message"} by ${message.sender.displayName}`}
-                      className="public-report-trigger"
+                      className={styles.reportTrigger}
                       onClick={() => {
                         setReportTarget({
                           targetKind: message.kind === "activity" ? "submission" : "message",
@@ -343,7 +344,7 @@ export function PublicVisitorRoom({
                   ) : (
                     <Link
                       aria-label={`Connect wallet to report ${message.kind === "activity" ? "proof" : "message"} by ${message.sender.displayName}`}
-                      className="public-report-trigger"
+                      className={styles.reportTrigger}
                       href={`/connect?returnTo=${encodeURIComponent(`/pods/${data.pod.id}/room`)}`}
                     >
                       <span aria-hidden="true">•••</span>
@@ -351,15 +352,15 @@ export function PublicVisitorRoom({
                   ) : null}
                 </div>
                 {message.reply ? (
-                  <div className="public-reply-context">
+                  <div className={styles.replyPreview}>
                     <strong>{message.reply.senderDisplayName ?? "Message"}</strong>
                     <span>{message.reply.excerpt}</span>
                   </div>
                 ) : null}
-                {message.body && message.kind !== "activity" ? <p>{message.body}</p> : null}
+                {message.body && message.kind !== "activity" ? <p className={styles.visitorBody}>{message.body}</p> : null}
                 {message.activity ? (
-                  <div className="public-proof-card">
-                    <div>
+                  <div className={styles.publicProof}>
+                    <div className={styles.publicProofMeta}>
                       <span>Occurrence {message.activity.occurrenceOrdinal}</span>
                       <b>{publicProofStateLabel(message.activity.state)}</b>
                     </div>
@@ -378,7 +379,7 @@ export function PublicVisitorRoom({
                   </div>
                 ) : null}
                 {message.reactions.length > 0 ? (
-                  <div className="public-reaction-summary" aria-label="Member reactions">
+                  <div className={styles.publicReactions} aria-label="Member reactions">
                     {message.reactions.map((reaction) => (
                       <span key={reaction.code}>
                         {reactionNames[reaction.code]} {reaction.count}
@@ -392,20 +393,26 @@ export function PublicVisitorRoom({
         ))}
       </section>
       {reportTarget ? (
-        <div className="public-report-backdrop">
+        <div className={styles.layer}>
+          <button
+            aria-label="Close report dialog"
+            className={styles.backdrop}
+            onClick={() => setReportTarget(null)}
+            type="button"
+          />
           <section
             aria-label="Report public content"
             aria-modal="true"
-            className="public-report-sheet"
+            className={styles.sheet}
             role="dialog"
           >
             {reportState === "sent" ? (
               <>
-                <span className="public-report-kicker">Report received</span>
+                <span>Report received</span>
                 <h2>Pods operations will review it.</h2>
                 <p>The author is not notified by this form. Reporting never changes the Pod contract, review result, or financial state.</p>
                 <button
-                  className="secondary-action full-action"
+                  className={styles.sheetShare}
                   onClick={() => setReportTarget(null)}
                   type="button"
                 >
@@ -414,7 +421,7 @@ export function PublicVisitorRoom({
               </>
             ) : (
               <form onSubmit={submitReport}>
-                <div className="public-report-heading">
+                <div className={styles.sheetHeader}>
                   <span>Private safety report</span>
                   <button
                     aria-label="Close report"
@@ -441,9 +448,9 @@ export function PublicVisitorRoom({
                   required
                   rows={5}
                 />
-                {reportError ? <p className="form-error" role="alert">{reportError}</p> : null}
+                {reportError ? <p role="alert">{reportError}</p> : null}
                 <button
-                  className="primary-action full-action"
+                  className={styles.sheetShare}
                   disabled={reportState === "sending"}
                   type="submit"
                 >
@@ -454,7 +461,7 @@ export function PublicVisitorRoom({
           </section>
         </div>
       ) : null}
-      <div className="visitor-composer-boundary" aria-label="Read-only room">
+      <div className={styles.visitorDock} aria-label="Read-only room">
         <span>Visitors can watch, not participate</span>
         <Link href={`/pods/${data.pod.id}`}>View Pod</Link>
       </div>

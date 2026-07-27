@@ -2,11 +2,28 @@ import { describe, expect, it } from "vitest";
 
 import {
   normalizeProfileHandle,
+  profileAvatarPresets,
   publicProfileProjection,
   validateProfileInput
 } from "../src/social";
 
 describe("profile identity contract", () => {
+  it("offers twelve distinct illustrated avatar presets", () => {
+    expect(profileAvatarPresets).toHaveLength(12);
+    expect(new Set(profileAvatarPresets).size).toBe(12);
+    expect(
+      validateProfileInput({
+        handle: "arivale",
+        displayName: "Ari Vale",
+        bio: "",
+        avatar: { kind: "preset", preset: "wave" },
+        visibility: "public",
+        dmPolicy: "requests",
+        activityStatusVisible: true
+      })
+    ).toMatchObject({ success: true });
+  });
+
   it("normalizes a handle and accepts the complete onboarding contract", () => {
     expect(normalizeProfileHandle("  Abhinav_07 ")).toBe("abhinav_07");
     expect(

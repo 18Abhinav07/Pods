@@ -37,9 +37,10 @@ describe("MessagesPage", () => {
     const { container } = render(await MessagesPage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByRole("heading", { name: "Messages" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "Message sections" })).toBeVisible();
     expect(screen.getByRole("link", { name: "People" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Requests" })).toBeVisible();
-    expect(container.querySelector(".message-segments")).toHaveClass("is-compact-switch");
+    expect(container.querySelector(".message-segments")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Pod Rooms" })).not.toBeInTheDocument();
     expect(screen.getByText("No conversations yet.")).toBeVisible();
   });

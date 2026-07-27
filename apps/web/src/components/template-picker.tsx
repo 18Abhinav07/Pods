@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createPodDraft } from "../lib/wizard-client";
-import { adaptiveThemeForTemplate, mediaForTemplate } from "../lib/template-presentation";
+import { mediaForTemplate } from "../lib/template-presentation";
+import styles from "./creator-flow.module.css";
 
 export function TemplatePicker() {
   const router = useRouter();
@@ -28,10 +29,11 @@ export function TemplatePicker() {
   }
 
   return (
-    <div className="creation-template-list">
+    <div className={styles.templateList}>
       {templateContracts.map((template, index) => (
         <motion.button
-          className={`creation-template adaptive-template-card theme-${adaptiveThemeForTemplate(template.id)}`}
+          className={styles.templateCard}
+          data-pending={pending === template.id}
           disabled={pending !== null}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -44,16 +46,17 @@ export function TemplatePicker() {
           onClick={() => choose(template.id)}
           type="button"
         >
-          <span className="adaptive-template-media"><Image alt="" fill sizes="120px" src={mediaForTemplate(template.id).hero} /></span>
-          <span className="adaptive-template-copy">
+          <span className={styles.templateMedia}><Image alt="" fill sizes="64px" src={mediaForTemplate(template.id).hero} /></span>
+          <span className={styles.templateCopy}>
             <strong>{template.name}</strong>
             <small>{template.summary}</small>
-            <em>{template.evidence}</em>
           </span>
-          <b>{pending === template.id ? "Saving" : "Choose"}</b>
+          <i className={styles.templateIndicator} aria-hidden="true">
+            {pending === template.id ? "…" : "→"}
+          </i>
         </motion.button>
       ))}
-      {error ? <div className="inline-error" role="alert"><span>{error}</span></div> : null}
+      {error ? <div className={styles.error} role="alert">{error}</div> : null}
     </div>
   );
 }

@@ -38,19 +38,35 @@ const props = {
   settlementMode: "full_refund_alpha" as const
 };
 
+async function reachWalletStep(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Review protection" }));
+  await user.click(screen.getByRole("button", { name: "Continue to wallet" }));
+}
+
 describe("FundingCommitment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("shows the complete frozen financial contract before enabling the wallet", async () => {
+  it("reveals the frozen financial contract progressively before enabling the wallet", async () => {
     const user = userEvent.setup();
     render(<FundingCommitment {...props} />);
 
+    expect(screen.getByText("Step 1 of 3")).toBeVisible();
+    expect(screen.getByRole("img", { name: "NIM token" })).toBeVisible();
+    expect(screen.getByText("5 × 0.1 NIM")).toBeVisible();
+    expect(screen.getByText("0.5 NIM upfront")).toBeVisible();
+    expect(screen.getByText("Maximum temporary custody")).toBeVisible();
+    expect(screen.queryByText("How the financial contract works")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Review protection" }));
+
+    expect(screen.getByText("Step 2 of 3")).toBeVisible();
+    expect(screen.getByText("How the financial contract works")).toBeVisible();
     expect(screen.getByText("5 scheduled occurrences")).toBeInTheDocument();
     expect(screen.getByText("0.1 NIM per occurrence")).toBeInTheDocument();
-    expect(screen.getAllByText("0.5 NIM", { selector: "strong" })).toHaveLength(2);
-    expect(screen.getByText("Maximum temporary custody")).toBeInTheDocument();
+    await user.click(screen.getByText("How the financial contract works"));
     expect(
       screen.getByText(
         "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds."
@@ -67,15 +83,41 @@ describe("FundingCommitment", () => {
     expect(screen.getByText("Disabled in this contract")).toBeInTheDocument();
     expect(screen.queryByRole("row", { name: /Rejected/i })).not.toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: "Continue to wallet" }));
+
+    expect(screen.getByText("Step 3 of 3")).toBeVisible();
+    expect(screen.getByText("0.5 NIM", { selector: "strong" })).toBeVisible();
     const button = screen.getByRole("button", { name: "Commit 0.5 NIM" });
     expect(button).toBeDisabled();
+    expect(button.closest("[data-financial-action-dock]")).not.toBeNull();
     await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     expect(button).toBeEnabled();
   });
 
-  it("discloses the public visitor room before wallet confirmation", () => {
+  it("keeps alpha return and proportional redistribution as separate contracts", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<FundingCommitment {...props} />);
+
+    await user.click(screen.getByRole("button", { name: "Review protection" }));
+    const details = screen.getByText("How the financial contract works")
+      .closest("details") as HTMLDetailsElement;
+    if (!details.open) await user.click(screen.getByText("How the financial contract works"));
+    expect(screen.getByText("Full return, independent of outcome")).toBeVisible();
+    expect(screen.queryByText("What each decision means")).not.toBeInTheDocument();
+
+    rerender(<FundingCommitment {...props} settlementMode="proportional" />);
+
+    if (!details.open) await user.click(screen.getByText("How the financial contract works"));
+    expect(screen.getByText("What each decision means")).toBeVisible();
+    expect(screen.queryByText("Full return, independent of outcome")).not.toBeInTheDocument();
+  });
+
+  it("discloses the public visitor room before wallet confirmation", async () => {
+    const user = userEvent.setup();
     render(<FundingCommitment {...props} publicVisitorRoom />);
 
+    await user.click(screen.getByRole("button", { name: "Review protection" }));
+    await user.click(screen.getByText("How the financial contract works"));
     expect(screen.getByText("Public visitor room")).toBeVisible();
     expect(
       screen.getByText(
@@ -106,6 +148,7 @@ describe("FundingCommitment", () => {
     vi.mocked(recordDepositTransactionHint).mockResolvedValue(undefined as never);
     render(<FundingCommitment {...props} />);
 
+    await reachWalletStep(user);
     await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
 
@@ -145,6 +188,7 @@ describe("FundingCommitment", () => {
     vi.mocked(recordDepositWalletAttempt).mockResolvedValue(undefined as never);
     render(<FundingCommitment {...props} />);
 
+    await reachWalletStep(user);
     await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
 
@@ -152,6 +196,25 @@ describe("FundingCommitment", () => {
     expect(recordDepositWalletAttempt).toHaveBeenNthCalledWith(2, "intent-1", "rejected");
     expect(recordDepositTransactionHint).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent("Wallet closed");
+  });
+
+  it("does not blame the wallet when funding fails before handoff", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createDepositIntent).mockRejectedValue(
+      new Error("Phase 3 funding is Testnet only")
+    );
+    render(<FundingCommitment {...props} />);
+
+    await reachWalletStep(user);
+    await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
+    await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
+
+    expect(sendNimCommitment).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("Funding unavailable");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Your wallet was not opened or charged."
+    );
+    expect(screen.queryByText("Wallet handoff paused")).not.toBeInTheDocument();
   });
 
   it("resumes an existing intent through status without requesting a second payment", async () => {
@@ -173,6 +236,7 @@ describe("FundingCommitment", () => {
     });
     render(<FundingCommitment {...props} />);
 
+    await reachWalletStep(user);
     await user.click(screen.getByRole("checkbox", { name: /I accept the immutable full-return/i }));
     await user.click(screen.getByRole("button", { name: "Commit 0.5 NIM" }));
 

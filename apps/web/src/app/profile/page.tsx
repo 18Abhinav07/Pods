@@ -1,7 +1,9 @@
+import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
 import { ProfileAvatar } from "../../components/profile-avatar";
 import { ProfileSettingsSheet } from "../../components/profile-settings-sheet";
+import styles from "../../components/social-flow.module.css";
 import { podsRepository } from "../../lib/server-db";
 import { requireSession } from "../../lib/session";
 
@@ -14,9 +16,9 @@ export default async function ProfilePage() {
   ]);
 
   return (
-    <main className="app-shell private-profile-shell">
-      <header className="profile-page-header">
-        <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
+    <main className={`app-shell ${styles.page}`}>
+      <header className={styles.profileHeader}>
+        <Link href="/today">pods</Link>
         <ProfileSettingsSheet
           profile={{
             handle: profile.handle,
@@ -31,48 +33,97 @@ export default async function ProfilePage() {
         />
       </header>
 
-      <section className="private-profile-cover is-compact-identity entrance entrance-hero">
-        <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} size="large" priority />
-        <div className="private-profile-copy">
+      <section
+        className={`private-profile-cover is-compact-identity ${styles.identityCard}`}
+      >
+        <ProfileAvatar
+          avatar={profile.avatar}
+          displayName={profile.displayName}
+          priority
+          size="large"
+        />
+        <div className={styles.identityCopy}>
           <span>@{profile.handle}</span>
           <h1>{profile.displayName}</h1>
           <p>{profile.bio || "Add a short introduction from settings."}</p>
         </div>
       </section>
 
-      <section className="profile-people entrance entrance-status" aria-labelledby="profile-people-title">
-        <div className="profile-section-head">
+      <section className={styles.peopleSection} aria-labelledby="profile-people-title">
+        <header className={styles.sectionHeader}>
           <div>
-            <span>Connections</span>
+            <span>Private connections</span>
             <h2 id="profile-people-title">Your people</h2>
           </div>
-          <Link className="profile-search-link" href="/people/search" aria-label="Search people">
-            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="5.8" /><path d="m15.3 15.3 4.2 4.2" /></svg>
+          <Link
+            aria-label="Search people"
+            className={styles.arrow}
+            href="/people/search"
+          >
+            <MagnifyingGlass aria-hidden="true" size={17} weight="bold" />
           </Link>
-        </div>
-        <div className="profile-people-lanes">
-          <div className="profile-people-lane">
-            <h3>Following <span>{following.length}</span></h3>
-            {following.length > 0 ? following.slice(0, 4).map((person) => (
-              <Link className="profile-person-row" href={`/u/${person.handle}`} key={`following-${person.handle}`}>
-                <ProfileAvatar avatar={person.avatar} displayName={person.displayName} size="small" />
-                <span><strong>{person.displayName}</strong><small>@{person.handle}</small></span>
-              </Link>
-            )) : <p>No followed profiles yet.</p>}
-          </div>
-          <div className="profile-people-lane">
-            <h3>Friends <span>{friends.length}</span></h3>
-            {friends.length > 0 ? friends.slice(0, 4).map((person) => (
-              <Link className="profile-person-row" href={`/u/${person.handle}`} key={`friend-${person.handle}`}>
-                <ProfileAvatar avatar={person.avatar} displayName={person.displayName} size="small" />
-                <span><strong>{person.displayName}</strong><small>@{person.handle}</small></span>
-              </Link>
-            )) : <p>No friends yet.</p>}
-          </div>
+        </header>
+
+        <div className={styles.peopleLanes}>
+          <section className={styles.peopleCard} aria-label="Following">
+            <h3>
+              Following <span>{following.length}</span>
+            </h3>
+            {following.length > 0 ? (
+              following.slice(0, 4).map((person) => (
+                <Link
+                  className={`profile-person-row ${styles.personRow}`}
+                  href={`/u/${person.handle}`}
+                  key={`following-${person.handle}`}
+                >
+                  <ProfileAvatar
+                    avatar={person.avatar}
+                    displayName={person.displayName}
+                    size="small"
+                  />
+                  <span>
+                    <strong>{person.displayName}</strong>
+                    <small>@{person.handle}</small>
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <p>No followed profiles yet.</p>
+            )}
+          </section>
+
+          <section className={styles.peopleCard} aria-label="Friends">
+            <h3>
+              Friends <span>{friends.length}</span>
+            </h3>
+            {friends.length > 0 ? (
+              friends.slice(0, 4).map((person) => (
+                <Link
+                  className={`profile-person-row ${styles.personRow}`}
+                  href={`/u/${person.handle}`}
+                  key={`friend-${person.handle}`}
+                >
+                  <ProfileAvatar
+                    avatar={person.avatar}
+                    displayName={person.displayName}
+                    size="small"
+                  />
+                  <span>
+                    <strong>{person.displayName}</strong>
+                    <small>@{person.handle}</small>
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <p>No friends yet.</p>
+            )}
+          </section>
         </div>
       </section>
 
-      <p className="profile-privacy-note">Your wallet and private Pod activity stay off your social profile.</p>
+      <p className={styles.privacyNote}>
+        Your wallet and private Pod activity stay off your public profile.
+      </p>
     </main>
   );
 }

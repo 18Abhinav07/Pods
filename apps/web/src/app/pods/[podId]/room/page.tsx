@@ -4,6 +4,7 @@ import type { PodState } from "@pods/domain";
 import { PodOccurrenceStrip } from "../../../../components/pod-occurrence-strip";
 import { PodRoom, type RoomMessage } from "../../../../components/pod-room";
 import { PodRoomHeader } from "../../../../components/pod-room-header";
+import roomStyles from "../../../../components/pod-room.module.css";
 import {
   PublicVisitorRoom,
   type PublicVisitorRoomData
@@ -38,9 +39,10 @@ export default async function PodRoomPage({ params }: { params: Promise<{ podId:
     const contract = waitingRoom.pod.contractData;
     if (!contract) notFound();
     return (
-      <main className={`app-shell pod-room-shell theme-${theme}`}>
+      <main className={`${roomStyles.shell} theme-${theme}`}>
         <PodRoomHeader isCreator={waitingRoom.viewerRole === "creator"} memberCount={waitingRoom.confirmedParticipants} name={contract.activity.name} podId={podId} thumbnail={media.hero} />
         <PodOccurrenceStrip
+          action={{ href: proofAction.href, label: proofAction.label }}
           initialNow={effectiveNow}
           progressLabel={proofAction.progressLabel}
           stateLabel={proofAction.stateLabel}

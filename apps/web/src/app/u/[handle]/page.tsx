@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { ProfileAvatar } from "../../../components/profile-avatar";
 import { SocialProfileActions } from "../../../components/social-profile-actions";
+import styles from "../../../components/social-flow.module.css";
 import { podsRepository } from "../../../lib/server-db";
 import { getCurrentSession } from "../../../lib/session";
 
@@ -21,14 +22,23 @@ export default async function PublicProfilePage({
 
   if (presence.kind === "private") {
     return (
-      <main className="foundation-shell public-profile-shell">
-        <header className="app-topbar"><Link className="wordmark" href="/discover"><span className="pod-mark" aria-hidden="true" />pods</Link></header>
-        <section className="private-public-profile">
-          <span aria-hidden="true">P</span>
-          <p className="eyebrow">Private profile</p>
-          <h1>This Pods profile is private.</h1>
-          <p>You can still meet this person inside a shared Pod without exposing their wider activity history.</p>
-          <Link className="primary-action" href="/discover">Discover public Pods</Link>
+      <main className={styles.publicPage}>
+        <header className={styles.publicHeader}>
+          <Link href="/discover">pods</Link>
+          <span>Private profile</span>
+        </header>
+        <section className={styles.privateState}>
+          <span className={styles.privateMark} aria-hidden="true">
+            P
+          </span>
+          <h1>This Pods profile is private</h1>
+          <p>
+            You can still meet this person inside a shared Pod without exposing
+            their wider activity history.
+          </p>
+          <Link className={styles.primaryButton} href="/discover">
+            Discover public Pods
+          </Link>
         </section>
       </main>
     );
@@ -36,32 +46,77 @@ export default async function PublicProfilePage({
 
   const profile = presence.profile;
   return (
-    <main className="foundation-shell public-profile-shell">
-      <header className="public-profile-header"><Link className="wordmark" href="/discover"><span className="pod-mark" aria-hidden="true" />pods</Link><span>@{profile.handle}</span></header>
-      <section className="public-profile-cover is-profile-showcase">
-        <div className="public-profile-portrait">
-          <ProfileAvatar avatar={profile.avatar} displayName={profile.displayName} size="cover" priority />
+    <main className={styles.publicPage}>
+      <header className={styles.publicHeader}>
+        <Link href="/discover">pods</Link>
+        <span>@{profile.handle}</span>
+      </header>
+      <section
+        className={`public-profile-cover is-profile-showcase ${styles.publicHero}`}
+      >
+        <div className={styles.publicPortrait}>
+          <ProfileAvatar
+            avatar={profile.avatar}
+            displayName={profile.displayName}
+            priority
+            size="cover"
+          />
         </div>
-        <div className="public-profile-cover-copy">
+        <div className={styles.publicCopy}>
           <span>@{profile.handle}</span>
           <h1>{profile.displayName}</h1>
           <p>{profile.bio || "Moving with intention on Pods."}</p>
         </div>
-        <div className="public-profile-showcase-footer">
-          <dl className="public-profile-stats">
-            <div><dt>Followers</dt><dd>{presence.counts.followers}</dd></div>
-            <div><dt>Following</dt><dd>{presence.counts.following}</dd></div>
-            <div><dt>Activity</dt><dd>{profile.activityStatusVisible ? "On" : "Off"}</dd></div>
-          </dl>
-          {!presence.relationship.self ? session ? <SocialProfileActions handle={profile.handle} initial={{ following: presence.relationship.following, friend: presence.relationship.friend, request: presence.relationship.request, messageRequestsAllowed: presence.messageRequestsAllowed }} /> : <Link className="primary-action public-profile-connect" href={`/connect?returnTo=${encodeURIComponent(`/u/${profile.handle}`)}`}>Connect</Link> : null}
-        </div>
+        <dl className={`public-profile-stats ${styles.stats}`}>
+          <div>
+            <dt>Followers</dt>
+            <dd>{presence.counts.followers}</dd>
+          </div>
+          <div>
+            <dt>Following</dt>
+            <dd>{presence.counts.following}</dd>
+          </div>
+          <div>
+            <dt>Activity</dt>
+            <dd>{profile.activityStatusVisible ? "Shown" : "Hidden"}</dd>
+          </div>
+        </dl>
+        {!presence.relationship.self ? (
+          session ? (
+            <SocialProfileActions
+              handle={profile.handle}
+              initial={{
+                following: presence.relationship.following,
+                friend: presence.relationship.friend,
+                request: presence.relationship.request,
+                messageRequestsAllowed: presence.messageRequestsAllowed
+              }}
+            />
+          ) : (
+            <div className={styles.profileActions}>
+              <Link
+                className={styles.primaryButton}
+                href={`/connect?returnTo=${encodeURIComponent(`/u/${profile.handle}`)}`}
+              >
+                Connect
+              </Link>
+            </div>
+          )
+        ) : null}
       </section>
-      <section className="public-profile-activity-empty">
-        <span>Activity</span>
-        <h2>No public milestones yet.</h2>
+
+      <section className={styles.publicActivity}>
+        <span>Public activity</span>
+        <h2>No public milestones yet</h2>
         <p>Completed public Pods and earned streaks will appear here.</p>
       </section>
-      <Link aria-label="Find people" className="public-profile-explore" href="/people/search">Find people</Link>
+      <Link
+        aria-label="Find people"
+        className={styles.exploreLink}
+        href="/people/search"
+      >
+        Find people
+      </Link>
     </main>
   );
 }

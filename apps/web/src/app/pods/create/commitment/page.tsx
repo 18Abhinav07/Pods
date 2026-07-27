@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { CommitmentForm } from "../../../../components/commitment-form";
 import { CreatorShell } from "../../../../components/creator-shell";
+import { alphaFundingPolicy } from "../../../../lib/alpha-access";
 import { requireDraftOwner } from "../../../../lib/creator-guard";
 
 export default async function CommitmentStepPage({ searchParams }: { searchParams: Promise<{ draft?: string }> }) {
@@ -19,5 +20,11 @@ export default async function CommitmentStepPage({ searchParams }: { searchParam
     weekdays: activity.weekdays,
     ...(commitmentCutoff ? { commitmentCutoff } : {})
   });
-  return <CreatorShell activeStep={3} eyebrow="Step 4 of 5" title="Put weight behind the cadence." copy="Every participant will fund the complete maximum commitment before the enrollment cutoff."><CommitmentForm podId={pod.id} occurrenceCount={occurrences.length} initialNim={pod.draftData.commitment?.nimPerOccurrence ?? "0.1"} /></CreatorShell>;
+  let settlementMode: "proportional" | "full_refund_alpha" | null = null;
+  try {
+    settlementMode = alphaFundingPolicy(process.env).settlementMode;
+  } catch {
+    settlementMode = null;
+  }
+  return <CreatorShell activeStep={3} eyebrow="Step 4 of 5" title="Make showing up matter." copy="Choose the NIM slice attached to each scheduled occurrence."><CommitmentForm podId={pod.id} occurrenceCount={occurrences.length} initialNim={pod.draftData.commitment?.nimPerOccurrence ?? "0.1"} settlementMode={settlementMode} /></CreatorShell>;
 }

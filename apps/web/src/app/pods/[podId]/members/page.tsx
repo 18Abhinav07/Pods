@@ -6,6 +6,7 @@ import { ProfileAvatar } from "../../../../components/profile-avatar";
 import { profileForSession } from "../../../../lib/profile-presentation";
 import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
+import styles from "../../../../components/pod-reference-flow.module.css";
 
 export default async function PodMembersPage({ params }: { params: Promise<{ podId: string }> }) {
   const { podId } = await params;
@@ -18,17 +19,17 @@ export default async function PodMembersPage({ params }: { params: Promise<{ pod
   }
   if (!loaded.room?.pod.contractData) notFound();
   return (
-    <main className="app-shell pod-reference-shell">
+    <main className={styles.shell}>
       <AppHeader profile={profileForSession(session)} title="Members" />
-      <Link className="pod-reference-back" href={`/pods/${podId}/room`}>Back to room</Link>
-      <section className="pod-reference-intro">
+      <Link className={styles.roomLink} href={`/pods/${podId}/room`}>Pod room</Link>
+      <section className={styles.intro}>
         <span>Locked roster</span>
         <h1>{loaded.members.length} people</h1>
         <p>Profiles and Pod roles only. Wallet and financial details stay private.</p>
       </section>
-      <section className="pod-member-list">
+      <section className={styles.memberList}>
         {loaded.members.map((member) => (
-          <Link className="pod-member-card pod-member-row" href={`/u/${member.handle}`} key={member.handle}>
+          <Link className={styles.memberCard} href={`/u/${member.handle}`} key={member.handle}>
             <ProfileAvatar avatar={member.avatar} displayName={member.displayName} />
             <div><strong>{member.displayName}</strong><span>@{member.handle}</span></div>
             <small>{member.role}</small>

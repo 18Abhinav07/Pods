@@ -141,6 +141,9 @@ describe("PublicVisitorRoom", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Report proof by Abhinav" }));
     expect(screen.getByRole("dialog", { name: "Report public content" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Close report dialog" })
+    ).toBeVisible();
     fireEvent.change(screen.getByLabelText("What happened?"), {
       target: { value: "This proof needs a safety review." }
     });

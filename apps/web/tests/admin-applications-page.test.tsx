@@ -48,7 +48,8 @@ describe("AdminApplicationsPage", () => {
   it("shows the applicant profile instead of a wallet-derived builder label", async () => {
     render(
       await AdminApplicationsPage({
-        params: Promise.resolve({ podId: "pod-1" })
+        params: Promise.resolve({ podId: "pod-1" }),
+        searchParams: Promise.resolve({})
       })
     );
 
@@ -57,5 +58,19 @@ describe("AdminApplicationsPage", () => {
     expect(screen.getByText("Building Pods with the Nimiq community.")).toBeVisible();
     expect(screen.getByLabelText("Ryuk avatar")).toBeVisible();
     expect(screen.queryByText("Builder 64CBC2")).not.toBeInTheDocument();
+  });
+
+  it("opens one application as a focused review screen", async () => {
+    render(
+      await AdminApplicationsPage({
+        params: Promise.resolve({ podId: "pod-1" }),
+        searchParams: Promise.resolve({ application: "application-1" })
+      })
+    );
+
+    expect(screen.getByRole("heading", { name: "Ryuk" })).toBeVisible();
+    expect(screen.getByText("A reliable visitor room.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Accept applicant" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Decline applicant" })).toBeVisible();
   });
 });

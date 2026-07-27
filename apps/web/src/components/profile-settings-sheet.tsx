@@ -12,7 +12,8 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import { ProfileOnboardingForm } from "./profile-onboarding-form";
+import { ProfileOnboardingForm } from "./profile-onboarding-flow";
+import styles from "./social-flow.module.css";
 import { TestnetMark } from "./testnet-mark";
 import { WalletSessionSwitcher } from "./wallet-session-switcher";
 
@@ -80,7 +81,7 @@ export function ProfileSettingsSheet({
     <>
       <button
         aria-label="Open profile settings"
-        className="profile-settings-trigger"
+        className={`profile-settings-trigger ${styles.settingsTrigger}`}
         onClick={() => setOpen(true)}
         ref={trigger}
         type="button"
@@ -89,10 +90,22 @@ export function ProfileSettingsSheet({
       </button>
 
       {open ? (
-        <div className="profile-settings-sheet" role="presentation">
-          <button aria-label="Close profile settings" className="profile-settings-backdrop" onClick={close} type="button" />
-          <section aria-label="Profile settings" aria-modal="true" className="profile-settings-dialog" ref={dialog} role="dialog" tabIndex={-1}>
-            <header className="profile-settings-sheet-head">
+        <div className={`profile-settings-sheet ${styles.settingsSheet}`} role="presentation">
+          <button
+            aria-label="Close profile settings"
+            className={`profile-settings-backdrop ${styles.settingsBackdrop}`}
+            onClick={close}
+            type="button"
+          />
+          <section
+            aria-label="Profile settings"
+            aria-modal="true"
+            className={`profile-settings-dialog ${styles.settingsDialog}`}
+            ref={dialog}
+            role="dialog"
+            tabIndex={-1}
+          >
+            <header className={`profile-settings-sheet-head ${styles.settingsHeader}`}>
               {view === "menu" ? <span /> : (
                 <button aria-label="Back to profile settings" onClick={() => setView("menu")} type="button">
                   <ArrowLeft aria-hidden="true" size={21} weight="bold" />
@@ -105,7 +118,7 @@ export function ProfileSettingsSheet({
             </header>
 
             {view === "menu" ? (
-              <nav className="profile-settings-menu" aria-label="Profile setting options">
+              <nav className={styles.settingsMenu} aria-label="Profile setting options">
                 <button aria-label="Edit profile" onClick={() => setView("edit")} type="button">
                   <PencilSimple aria-hidden="true" size={22} weight="bold" />
                   <span><strong>Edit profile</strong><small>Photo, name, bio, and privacy</small></span>

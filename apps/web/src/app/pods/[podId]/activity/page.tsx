@@ -9,6 +9,7 @@ import { profileForSession } from "../../../../lib/profile-presentation";
 import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
 import { presentTemplateEvidence } from "../../../../lib/template-evidence-presentation";
+import styles from "../../../../components/pod-reference-flow.module.css";
 
 function proofStateLabel(state: string) {
   if (state === "submitted" || state === "reviewing") return "Creator review";
@@ -53,16 +54,16 @@ export default async function PodActivityPage({
   if (!feed) notFound();
 
   return (
-    <main className="app-shell pod-reference-shell proof-history-shell">
+    <main className={styles.shell}>
       <AppHeader profile={profileForSession(session)} title="Proofs" />
-      <Link className="pod-reference-back" href={`/pods/${podId}/room`}>Back to room</Link>
+      <Link className={styles.roomLink} href={`/pods/${podId}/room`}>Pod room</Link>
 
-      <section className="proof-history-controls is-compact-filter" aria-label="Proof filters">
-        <nav aria-label="Proof scope">
+      <section className={styles.proofControls} data-proof-history-controls aria-label="Proof filters">
+        <nav className={styles.segmented} aria-label="Proof scope">
           <Link aria-current={!mine ? "page" : undefined} href={pageHref(podId, { query, mine: false, page: 1 })}>All proofs</Link>
           <Link aria-current={mine ? "page" : undefined} href={pageHref(podId, { query, mine: true, page: 1 })}>My proofs</Link>
         </nav>
-        <form action={`/pods/${podId}/activity`} method="get" role="search">
+        <form className={styles.searchForm} action={`/pods/${podId}/activity`} method="get" role="search">
           {mine ? <input name="scope" type="hidden" value="mine" /> : null}
           <label htmlFor="proof-member-query">Search proofs by member</label>
           <input
@@ -77,7 +78,7 @@ export default async function PodActivityPage({
       </section>
 
       {feed.items.length > 0 ? (
-        <section className="proof-history-list" aria-label="Submitted proofs">
+        <section className={styles.proofList} aria-label="Submitted proofs">
           {feed.items.map((item) => {
             const {
               submission,
@@ -103,20 +104,20 @@ export default async function PodActivityPage({
                 : {})
             });
             return (
-              <article className="proof-history-entry is-editorial-proof" key={submission.id}>
-              <header>
-                <Link className="proof-participant" href={`/u/${participant.handle}`}>
+              <article className={styles.proofCard} data-proof-history-entry key={submission.id}>
+              <header className={styles.proofHeader}>
+                <Link className={styles.participant} href={`/u/${participant.handle}`}>
                   <ProfileAvatar avatar={participant.avatar} displayName={participant.displayName} size="small" />
                   <span><strong>{participant.displayName}{isViewer ? " (you)" : ""}</strong><small>@{participant.handle}</small></span>
                 </Link>
-                <span className={`proof-review-state is-${submission.state}`}>{proofStateLabel(submission.state)}</span>
+                <span className={styles.proofStatus} data-state={submission.state}>{proofStateLabel(submission.state)}</span>
               </header>
-              <div className="proof-history-meta">
+              <div className={styles.proofMeta}>
                 <span>Occurrence {occurrence.ordinal}</span>
                 <time dateTime={submission.submittedAt?.toISOString()}>{submission.submittedAt ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(submission.submittedAt) : occurrence.localDate}</time>
               </div>
               {sharedEvidenceAvailable ? (
-                <a className="proof-history-image" href={`/api/pods/${podId}/submissions/${submission.id}/shared-evidence`} rel="noreferrer" target="_blank">
+                <a className={styles.proofImage} href={`/api/pods/${podId}/submissions/${submission.id}/shared-evidence`} rel="noreferrer" target="_blank">
                   <Image
                     alt={`Pod-shared proof from ${participant.displayName}`}
                     fill
@@ -126,11 +127,11 @@ export default async function PodActivityPage({
                   />
                 </a>
               ) : null}
-              <div className="proof-history-copy">
+              <div className={styles.proofCopy}>
                 <span>{presentation.templateName}</span>
                 <h2>{commitment.task}</h2>
                 {presentation.evidenceRows.length > 0 ? (
-                  <div className="proof-template-rows">
+                  <div className={styles.proofRows}>
                     {presentation.evidenceRows.map((row) => (
                       <p key={row.label}><strong>{row.label}</strong>{row.value}</p>
                     ))}
@@ -151,14 +152,14 @@ export default async function PodActivityPage({
           })}
         </section>
       ) : (
-        <section className="neutral-empty">
-          <span>No submitted proofs found</span>
+        <section className={styles.empty}>
+          <strong>No submitted proofs found</strong>
           <p>Try another member or scope.</p>
         </section>
       )}
 
       {page > 1 || feed.hasNext ? (
-        <nav className="proof-pagination" aria-label="Proof pages">
+        <nav className={styles.pagination} aria-label="Proof pages">
           {page > 1 ? <Link href={pageHref(podId, { query, mine, page: page - 1 })}>Previous</Link> : <span />}
           <span>Page {page}</span>
           {feed.hasNext ? <Link href={pageHref(podId, { query, mine, page: page + 1 })}>Next</Link> : <span />}

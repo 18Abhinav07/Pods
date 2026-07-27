@@ -12,7 +12,13 @@ const portraitPalette: Record<ProfileAvatarPreset, {
   indigo: { background: "#e9e9f2", skin: "#e8aa7d", hair: "#2f4059", shirt: "#6678b8", accent: "#a9b8ee" },
   coral: { background: "#f2e7e2", skin: "#75452f", hair: "#171412", shirt: "#e38268", accent: "#f4c1a6" },
   sun: { background: "#f2eddf", skin: "#c2764c", hair: "#a64e2d", shirt: "#e4b83d", accent: "#fff0ad" },
-  stone: { background: "#e8e8e5", skin: "#efb58b", hair: "#20201f", shirt: "#73777c", accent: "#d4d0c8" }
+  stone: { background: "#e8e8e5", skin: "#efb58b", hair: "#20201f", shirt: "#73777c", accent: "#d4d0c8" },
+  wave: { background: "#e3eef0", skin: "#8b4e31", hair: "#171916", shirt: "#4e8c9c", accent: "#d9ed72" },
+  pine: { background: "#e9eee5", skin: "#e1a176", hair: "#25271f", shirt: "#53735d", accent: "#b8d8a7" },
+  rose: { background: "#f3e8e5", skin: "#c77752", hair: "#a43f2e", shirt: "#d88171", accent: "#ffd0bc" },
+  sky: { background: "#e7edf4", skin: "#71412e", hair: "#141716", shirt: "#6b8db7", accent: "#c9dbed" },
+  sand: { background: "#f0ece2", skin: "#edb187", hair: "#74452f", shirt: "#d2a73d", accent: "#fff0b4" },
+  ink: { background: "#e7e8e6", skin: "#ad6847", hair: "#171918", shirt: "#363a3b", accent: "#d9ed72" }
 };
 
 function IllustratedPortrait({ preset }: { preset: ProfileAvatarPreset }) {
@@ -32,6 +38,12 @@ function IllustratedPortrait({ preset }: { preset: ProfileAvatarPreset }) {
       {preset === "coral" ? <><path d="M31 57c-2-28 9-42 28-42 22 0 33 15 30 42l-7-8c-3-5-5-11-5-19-8 9-24 15-46 14v13Z" fill={palette.hair} /><circle cx="78" cy="20" fill={palette.hair} r="9" /></> : null}
       {preset === "sun" ? <path d="M31 51c1-25 13-38 31-38 18 0 31 13 29 35-6-7-9-15-8-24-8 12-26 20-52 18v9Z" fill={palette.hair} /> : null}
       {preset === "stone" ? <path d="M33 52c-2-23 9-37 27-39 17-2 31 9 32 27-9-2-17-8-22-18-8 12-21 18-37 19v11Z" fill={palette.hair} /> : null}
+      {preset === "wave" ? <><path d="M30 55c-3-28 9-43 29-43 22 0 34 17 30 46l-9-11-4-19c-10 14-25 20-46 18v9Z" fill={palette.hair} /><path d="M34 28c5-12 14-18 27-18 14 0 24 6 29 18-17-8-36-8-56 0Z" fill={palette.hair} /></> : null}
+      {preset === "pine" ? <><path d="M31 54c-2-25 10-39 29-39 20 0 32 15 29 40l-8-9-5-18c-10 12-25 18-45 17v9Z" fill={palette.hair} /><circle cx="76" cy="18" fill={palette.hair} r="11" /></> : null}
+      {preset === "rose" ? <path d="M29 61c-4-31 9-48 31-48 23 0 35 18 31 50l-10-16-4-20c-9 13-25 21-48 20v14Z" fill={palette.hair} /> : null}
+      {preset === "sky" ? <><path d="M31 54c-3-28 10-42 29-42 21 0 33 16 29 45l-8-12-5-18c-10 13-25 19-45 18v9Z" fill={palette.hair} /><path d="M39 19c8-10 17-14 27-13 10 1 18 6 23 15-17-4-34-4-50-2Z" fill={palette.hair} /></> : null}
+      {preset === "sand" ? <path d="M32 51c0-25 12-38 30-38 19 0 31 13 29 36-7-6-11-15-10-24-9 12-25 19-49 17v9Z" fill={palette.hair} /> : null}
+      {preset === "ink" ? <><path d="M32 53c-2-25 10-39 29-39 20 0 31 14 28 41l-8-10-5-18c-10 13-24 19-44 18v8Z" fill={palette.hair} /><path d="M28 31c8-14 19-21 34-21 16 0 27 8 34 23-23-7-46-8-68-2Z" fill={palette.accent} /></> : null}
 
       <path d="M46 55h1M72 55h1" stroke="#171716" strokeLinecap="round" strokeWidth="4" />
       <path d="M60 57l-2 8h5" fill="none" stroke="#171716" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
@@ -43,6 +55,10 @@ function IllustratedPortrait({ preset }: { preset: ProfileAvatarPreset }) {
       {preset === "coral" ? <><path d="M34 63l-6 6 6 6 6-6-6-6ZM86 63l-6 6 6 6 6-6-6-6Z" fill="none" stroke={palette.accent} strokeWidth="2.5" /></> : null}
       {preset === "sun" ? <><path d="M38 52h18M64 52h18" stroke="#fff" strokeLinecap="round" strokeWidth="3" /><path d="M56 54h8" stroke="#fff" strokeWidth="2" /></> : null}
       {preset === "stone" ? <rect fill={palette.accent} height="8" rx="4" width="66" x="27" y="33" /> : null}
+      {preset === "wave" ? <><circle cx="47" cy="56" fill="none" r="8" stroke={palette.accent} strokeWidth="3" /><circle cx="73" cy="56" fill="none" r="8" stroke={palette.accent} strokeWidth="3" /><path d="M55 56h10" stroke={palette.accent} strokeWidth="3" /></> : null}
+      {preset === "pine" ? <><path d="M34 63l-5 6 5 6 5-6-5-6ZM86 63l-5 6 5 6 5-6-5-6Z" fill="none" stroke={palette.accent} strokeWidth="2.5" /></> : null}
+      {preset === "sand" ? <><circle cx="47" cy="56" fill="none" r="8" stroke="#fff" strokeWidth="3" /><circle cx="73" cy="56" fill="none" r="8" stroke="#fff" strokeWidth="3" /><path d="M55 56h10" stroke="#fff" strokeWidth="3" /></> : null}
+      {preset === "ink" ? <path d="M39 52h16v10H39zM65 52h16v10H65zM55 56h10" fill="none" stroke={palette.accent} strokeWidth="2" /> : null}
     </svg>
   );
 }

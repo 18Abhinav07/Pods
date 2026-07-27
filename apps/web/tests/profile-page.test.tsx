@@ -149,8 +149,8 @@ describe("ProfilePage", () => {
 
     await user.click(screen.getByRole("button", { name: "Open profile settings" }));
     await user.click(screen.getByRole("button", { name: "Edit profile" }));
-    await user.click(screen.getByRole("button", { name: "Continue to your story" }));
-    await user.click(screen.getByRole("button", { name: "Continue to privacy" }));
+    await user.click(screen.getByRole("button", { name: "Choose an avatar" }));
+    await user.click(screen.getByRole("button", { name: "Set boundaries" }));
 
     const saveButton = screen.getByRole("button", { name: "Save profile" });
     await user.click(saveButton);

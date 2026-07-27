@@ -1,5 +1,7 @@
 import type { MessageKind, MessageReplyPreview } from "@pods/domain";
 
+import styles from "./pod-room.module.css";
+
 export type ReplyPreviewSource = {
   id: string;
   sequence: number;
@@ -57,7 +59,7 @@ export function MessageReplyPreviewView({
     return (
       <button
         aria-label={`Reply to ${preview.senderDisplayName ?? "Pods"}: ${preview.excerpt}`}
-        className="message-reply-preview is-interactive"
+        className={styles.replyPreview}
         onClick={onActivate}
         type="button"
       >
@@ -67,7 +69,7 @@ export function MessageReplyPreviewView({
   }
 
   return (
-    <div className={`message-reply-preview${preview.available ? "" : " is-unavailable"}`}>
+    <div className={`${styles.replyPreview}${preview.available ? "" : ` ${styles.replyUnavailable}`}`}>
       {content}
     </div>
   );

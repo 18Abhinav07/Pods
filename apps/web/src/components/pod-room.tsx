@@ -28,7 +28,7 @@ import {
   unavailableReplyPreview
 } from "./message-reply-preview";
 import { ArtifactLinkCard } from "./artifact-link-card";
-import styles from "./activity-ritual/activity-ritual.module.css";
+import styles from "./pod-room.module.css";
 import { ProfileAvatar } from "./profile-avatar";
 
 export type RoomMessage = {
@@ -94,7 +94,7 @@ function RoomActivityEvidence({
   });
   if (presentation.evidenceRows.length === 0) {
     return (
-      <p className={styles.roomArtifactWaiting}>
+      <p className={styles.activityWaiting}>
         {activity.submissionId
           ? "Proof submitted privately. Details are visible only to the participant and assigned reviewer."
           : "Commitment locked. Proof will appear after submission."}
@@ -104,7 +104,7 @@ function RoomActivityEvidence({
   return (
     <div
       aria-label={`${presentation.templateName} proof`}
-      className={styles.roomArtifactEvidence}
+      className={styles.activityEvidence}
     >
       {presentation.evidenceRows.map((row) => (
         <p key={row.label}>
@@ -118,7 +118,6 @@ function RoomActivityEvidence({
           href={presentation.artifact.href}
           label={presentation.artifact.label}
           roomPublicArtifact
-          tone="inverse"
         />
       ) : null}
     </div>
@@ -149,7 +148,7 @@ function messageLabel(kind: RoomMessage["kind"]) {
 function MessageBody({ body }: { body: string | null }) {
   if (!body) return null;
   const parts = body.split(/(https:\/\/[^\s]+)/g);
-  return <p>{parts.map((part, index) => part.startsWith("https://")
+  return <p className={styles.body}>{parts.map((part, index) => part.startsWith("https://")
     ? <a href={part} key={`${part}-${index}`} rel="noreferrer" target="_blank">{part}</a>
     : part)}</p>;
 }
@@ -466,10 +465,10 @@ export function PodRoom({
   }
 
   return (
-    <section className={`pod-room-panel${mode === "direct" ? " is-direct" : ""}`}>
-      <div className="room-message-list" aria-live="polite">
+    <section className={styles.panel} data-room-mode={mode}>
+      <div className={styles.messageList} aria-live="polite">
         {messages.length === 0 ? (
-          <div className="room-empty-state">
+          <div className={styles.empty}>
             <span>{mode === "direct" ? "Conversation opened" : "Room opened"}</span>
             <h2>{mode === "direct" ? "Start with something real." : "Set the rhythm together."}</h2>
             <p>{mode === "direct" ? "Messages are private to this conversation. Pods does not claim end-to-end encryption." : "Share encouragement, questions, and progress. Review evidence and financial outcomes remain separate."}</p>
@@ -485,16 +484,38 @@ export function PodRoom({
           const showHeader = !isMemberMessage || (groupStart && !isViewer);
           return (
             <div
-              className={`room-message-cluster${isMemberMessage ? " is-member" : " is-authoritative"}${isViewer ? " is-viewer" : ""}${groupStart ? " is-group-start" : ""}${groupEnd ? " is-group-end" : ""}`}
+              className={[
+                styles.cluster,
+                isViewer ? `${styles.clusterViewer} is-viewer` : "",
+                groupedWithPrevious ? styles.clusterConsecutive : ""
+              ].filter(Boolean).join(" ")}
               key={message.id}
             >
               {isMemberMessage && !isViewer ? (
                 groupStart && message.sender
                   ? <ProfileAvatar avatar={message.sender.avatar} displayName={message.sender.displayName} size="small" />
-                  : <span className="room-avatar-spacer" aria-hidden="true" />
+                  : <span className={styles.avatarSpacer} aria-hidden="true" />
               ) : null}
               <article
-                className={`room-entry room-entry-${message.kind}${isViewer ? " is-viewer" : ""}${groupedWithPrevious ? " is-consecutive" : ""}${groupStart ? " is-group-start" : ""}${groupEnd ? " is-group-end" : ""}${message.hidden ? " is-hidden" : ""}${highlightedMessageId === message.id ? " is-reply-target" : ""}`}
+                className={[
+                  styles.entry,
+                  isViewer ? `${styles.entryViewer} is-viewer` : "",
+                  groupedWithPrevious ? styles.entryGroupMiddle : "",
+                  !isMemberMessage ? styles.authoritative : "",
+                  message.kind === "announcement" ? styles.announcement : "",
+                  message.kind === "system" ? styles.system : "",
+                  message.hidden ? styles.entryHidden : "",
+                  groupStart ? "is-group-start" : "",
+                  groupEnd ? "is-group-end" : "",
+                  groupedWithPrevious ? "is-consecutive" : "",
+                  highlightedMessageId === message.id
+                    ? `${styles.entryTarget} is-reply-target`
+                    : ""
+                ].filter(Boolean).join(" ")}
+                data-group-end={groupEnd ? "true" : "false"}
+                data-group-start={groupStart ? "true" : "false"}
+                data-grouped={groupedWithPrevious ? "true" : "false"}
+                data-viewer={isViewer ? "true" : "false"}
                 id={message.id}
                 onContextMenu={message.hidden ? undefined : (event) => {
                   event.preventDefault();
@@ -506,20 +527,20 @@ export function PodRoom({
                 onPointerUp={message.hidden ? undefined : cancelLongPress}
               >
               {message.hidden ? (
-                <div className="room-tombstone"><span>Message removed by the Pod creator</span></div>
+                <div className={styles.tombstone}><span>Message removed by the Pod creator</span></div>
               ) : (
                 <>
-                  {showHeader ? <header>
-                    {!isMemberMessage ? (message.sender ? <ProfileAvatar avatar={message.sender.avatar} displayName={message.sender.displayName} size="small" /> : <span className="system-avatar" aria-hidden="true">P</span>) : null}
-                    <div>
-                      {label ? <span className="room-entry-label">{label}</span> : null}
+                  {showHeader ? <header className={styles.entryHeader}>
+                    {!isMemberMessage ? (message.sender ? <ProfileAvatar avatar={message.sender.avatar} displayName={message.sender.displayName} size="small" /> : <span className={styles.systemAvatar} aria-hidden="true">P</span>) : null}
+                    <div className={styles.entryHeaderCopy}>
+                      {label ? <span className={styles.entryLabel}>{label}</span> : null}
                       <strong>{message.sender?.displayName ?? (message.kind === "system" ? "Pods" : "You")}</strong>
                     </div>
-                    {!isMemberMessage ? <div className="room-message-meta">
+                    {!isMemberMessage ? <div className={styles.messageMeta}>
                       <time dateTime={message.createdAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(message.createdAt))}</time>
                       <button
                         aria-label={`More actions for ${message.sender?.displayName ?? "this update"}`}
-                        className="message-more"
+                        className={`${styles.messageButton} message-more`}
                         onClick={() => setActiveMessage(message)}
                         type="button"
                       >
@@ -527,7 +548,7 @@ export function PodRoom({
                       </button>
                     </div> : null}
                   </header> : null}
-                  {message.pinned ? <span className="room-pinned">Pinned</span> : null}
+                  {message.pinned ? <span className={styles.pinned}>Pinned</span> : null}
                   {message.replyPreview ? (
                     message.replyPreview.available ? (
                       <MessageReplyPreviewView
@@ -538,29 +559,29 @@ export function PodRoom({
                   ) : null}
                   {message.kind === "activity" && message.activity ? (
                     <div
-                      className={styles.roomActivityArtifact}
+                      className={styles.activityCard}
                       data-room-activity-card
                     >
-                      <div className={styles.roomArtifactMeta}>
+                      <div className={styles.activityMeta}>
                         <span>Occurrence {message.activity.occurrenceOrdinal}</span>
-                        <i>{roomSubmissionStateLabel(message.activity.state)}</i>
+                        <i className={styles.activityState}>{roomSubmissionStateLabel(message.activity.state)}</i>
                       </div>
-                      <div className={styles.roomArtifactMain}>
-                        <div className={styles.roomArtifactCopy}>
+                      <div className={styles.activityMain}>
+                        <div className={styles.activityCopy}>
                           <h3>{message.activity.task}</h3>
                           <RoomActivityEvidence activity={message.activity} />
                         </div>
                         {message.activity.sharedEvidenceAvailable && message.activity.submissionId ? (
                           <a
                             aria-label="Open shared proof"
-                            className={styles.roomProofLink}
+                            className={styles.proofLink}
                             href={`/api/pods/${podId}/submissions/${message.activity.submissionId}/shared-evidence`}
                             rel="noreferrer"
                             target="_blank"
                           >
                             <Image
                               alt="Pod-shared proof"
-                              className={styles.roomProofImage}
+                              className={styles.proofImage}
                               height={192}
                               src={`/api/pods/${podId}/submissions/${message.activity.submissionId}/shared-evidence`}
                               unoptimized
@@ -572,7 +593,7 @@ export function PodRoom({
                       {message.activity.submissionId &&
                       message.sender?.isViewer ? (
                         <Link
-                          className={styles.roomArtifactAction}
+                          className={styles.activityAction}
                           href={`/pods/${podId}/submissions/${message.activity.submissionId}`}
                         >
                           View your submission
@@ -581,7 +602,7 @@ export function PodRoom({
                         canReviewProofs &&
                         message.activity.state === "reviewing" ? (
                           <Link
-                            className={styles.roomArtifactAction}
+                            className={styles.activityAction}
                             href={`/pods/${podId}/admin/reviews/${message.activity.submissionId}`}
                           >
                             Review proof
@@ -589,22 +610,22 @@ export function PodRoom({
                         ) : null}
                     </div>
                   ) : <MessageBody body={message.body} />}
-                  {message.delivery === "sending" ? <small className="delivery-state is-sending">Sending</small> : null}
-                  {message.delivery === "failed" ? <button className="delivery-state is-failed" onClick={() => void retryMessage(message)} type="button">Failed. Retry</button> : null}
-                  {!isMemberMessage && !message.delivery && mode === "direct" && message.sender?.isViewer ? <small className="delivery-state">{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</small> : null}
-                  {message.reactions.length > 0 ? <div className="reaction-summary">
+                  {message.delivery === "sending" ? <small className={styles.delivery}>Sending</small> : null}
+                  {message.delivery === "failed" ? <button className={`${styles.delivery} ${styles.deliveryFailed}`} onClick={() => void retryMessage(message)} type="button">Failed. Retry</button> : null}
+                  {!isMemberMessage && !message.delivery && mode === "direct" && message.sender?.isViewer ? <small className={styles.delivery}>{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</small> : null}
+                  {message.reactions.length > 0 ? <div className={styles.reactionSummary}>
                     {message.reactions.map((summary) => (
-                      <button className={summary.reactedByViewer ? "is-active" : ""} key={summary.code} onClick={() => void react(message, summary.code)} type="button" aria-label={`${reactionLabels[summary.code]} ${summary.count}`}>
+                      <button data-active={summary.reactedByViewer ? "true" : "false"} key={summary.code} onClick={() => void react(message, summary.code)} type="button" aria-label={`${reactionLabels[summary.code]} ${summary.count}`}>
                         <ReactionIcon code={summary.code} />
                         <span>{summary.count}</span>
                       </button>
                     ))}
                   </div> : null}
                   {isMemberMessage && groupEnd ? (
-                    <footer className="room-bubble-footer">
+                    <footer className={styles.bubbleFooter}>
                       <time dateTime={message.createdAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(message.createdAt))}</time>
                       {!message.delivery && mode === "direct" && isViewer ? <span>{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</span> : null}
-                      <button aria-label={`More actions for ${message.sender?.displayName ?? "this message"}`} className="message-more" onClick={() => setActiveMessage(message)} type="button"><DotsThree aria-hidden="true" size={18} weight="bold" /></button>
+                      <button aria-label={`More actions for ${message.sender?.displayName ?? "this message"}`} className={`${styles.messageButton} message-more`} onClick={() => setActiveMessage(message)} type="button"><DotsThree aria-hidden="true" size={18} weight="bold" /></button>
                     </footer>
                   ) : null}
                 </>
@@ -615,18 +636,18 @@ export function PodRoom({
         })}
       </div>
       {activeMessage ? (
-        <div className="message-actions-layer">
-          <button aria-label="Close message actions" className="message-actions-backdrop" onClick={() => setActiveMessage(null)} type="button" />
-          <section aria-label="Message actions" aria-modal="true" className="message-actions-sheet" role="dialog">
-            <header>
+        <div className={styles.layer}>
+          <button aria-label="Close message actions" className={styles.backdrop} onClick={() => setActiveMessage(null)} type="button" />
+          <section aria-label="Message actions" aria-modal="true" className={styles.sheet} role="dialog">
+            <header className={styles.sheetHeader}>
               <div><small>Message from</small><strong>{activeMessage.sender?.displayName ?? "Pods"}</strong></div>
               <button aria-label="Close message actions" onClick={() => setActiveMessage(null)} type="button"><X aria-hidden="true" size={20} weight="bold" /></button>
             </header>
-            <div aria-label="Reactions" className="message-action-reactions" role="group">
+            <div aria-label="Reactions" className={styles.reactionGrid} role="group">
               {(["heart", "support", "celebrate", "insightful"] as ReactionCode[]).map((code) => (
                 <button
                   aria-label={`React with ${reactionLabels[code]}`}
-                  className={activeMessage.reactions.some((reaction) => reaction.code === code && reaction.reactedByViewer) ? "is-active" : ""}
+                  data-active={activeMessage.reactions.some((reaction) => reaction.code === code && reaction.reactedByViewer) ? "true" : "false"}
                   key={code}
                   onClick={() => {
                     void react(activeMessage, code);
@@ -639,20 +660,20 @@ export function PodRoom({
                 </button>
               ))}
             </div>
-            <div className="message-action-list">
+            <div className={styles.actionList}>
               <button onClick={() => { setReplyTo(activeMessage); setActiveMessage(null); }} type="button">Reply</button>
               {activeMessage.body ? <button onClick={() => {
                 if (navigator.clipboard) void navigator.clipboard.writeText(activeMessage.body ?? "");
                 setActiveMessage(null);
               }} type="button">Copy message</button> : null}
               {isCreator && mode === "pod" && activeMessage.kind === "announcement" ? <button onClick={() => void pinMessage(activeMessage)} type="button" aria-label={activeMessage.pinned ? "Unpin announcement" : "Pin announcement"}>{activeMessage.pinned ? "Unpin announcement" : "Pin announcement"}</button> : null}
-              {isCreator && mode === "pod" && activeMessage.kind === "member_message" ? <button className="is-destructive" onClick={() => void hideMessage(activeMessage)} type="button" aria-label="Hide message">Hide message</button> : null}
+              {isCreator && mode === "pod" && activeMessage.kind === "member_message" ? <button data-destructive="true" onClick={() => void hideMessage(activeMessage)} type="button" aria-label="Hide message">Hide message</button> : null}
             </div>
           </section>
         </div>
       ) : null}
       {roomState === "archived" ? (
-        <div className="room-archive-state">
+        <div className={styles.archive}>
           <strong>This room is a read-only archive.</strong>
           <span>All frozen Pod and financial history remains available.</span>
           {proofAction ? (
@@ -660,15 +681,15 @@ export function PodRoom({
           ) : null}
         </div>
       ) : (
-        <form className="room-composer is-bottom-attached" aria-label="Send a room message" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
+        <form className={styles.composer} data-bottom-attached="true" aria-label="Send a room message" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
           {replyTo ? (
-            <div className="reply-context">
+            <div className={styles.replyContext}>
               <MessageReplyPreviewView preview={localReplyPreview(replyTo)} />
               <button type="button" onClick={() => setReplyTo(null)}>Cancel</button>
             </div>
           ) : null}
-          {isCreator && mode === "pod" ? <label className="announcement-toggle"><input checked={announcement} onChange={(event) => setAnnouncement(event.target.checked)} type="checkbox" />Creator announcement</label> : null}
-          {addMenuOpen && mode === "pod" ? <div className={`composer-action-sheet${isCreator ? "" : " is-single"}`}>
+          {isCreator && mode === "pod" ? <label className={styles.announcementToggle}><input checked={announcement} onChange={(event) => setAnnouncement(event.target.checked)} type="checkbox" />Creator announcement</label> : null}
+          {addMenuOpen && mode === "pod" ? <div className={`${styles.composerActions}${isCreator ? "" : ` ${styles.composerActionsSingle}`}`}>
             <Link aria-label={proofAction?.label ?? "View activity"} href={proofAction?.href ?? `/pods/${podId}/activity`} onClick={() => setAddMenuOpen(false)}>
               <Lightning aria-hidden="true" size={21} weight="fill" />
               <span><small>Today</small><strong>{proofAction?.label ?? "View activity"}</strong></span>
@@ -678,12 +699,12 @@ export function PodRoom({
               <span><small>People</small><strong>Invite people</strong></span>
             </Link> : null}
           </div> : null}
-          <div className={`composer-row${mode === "direct" ? " is-direct" : ""}`}>
-            {mode === "pod" ? <button aria-expanded={addMenuOpen} className="composer-plus" onClick={() => setAddMenuOpen((open) => !open)} type="button" aria-label="Add to message"><Plus aria-hidden="true" size={22} weight="bold" /></button> : null}
+          <div className={`${styles.composerRow}${mode === "direct" ? ` ${styles.composerRowDirect}` : ""}`}>
+            {mode === "pod" ? <button aria-expanded={addMenuOpen} className={styles.composerPlus} onClick={() => setAddMenuOpen((open) => !open)} type="button" aria-label="Add to message"><Plus aria-hidden="true" size={22} weight="bold" /></button> : null}
             <textarea aria-label="Message" id="room-message" maxLength={2000} onChange={(event) => setComposer(event.target.value)} placeholder="Message" rows={1} value={composer} />
             <button
               aria-label="Send message"
-              className={`composer-send ${styles.composerSend} ${composer.trim() ? "is-ready" : "is-disabled"}`}
+              className={`${styles.composerSend} ${composer.trim() ? "is-ready" : "is-disabled"}`}
               data-ready={composer.trim() ? "true" : "false"}
               disabled={!composer.trim()}
               type="submit"

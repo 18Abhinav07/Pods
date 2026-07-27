@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import styles from "../../../../components/financial-flow.module.css";
 import { PodWaitingRoom } from "../../../../components/pod-waiting-room";
 import { podsRepository } from "../../../../lib/server-db";
 import { requireSession } from "../../../../lib/session";
@@ -33,10 +34,10 @@ export default async function PodTodayPage({ params }: { params: Promise<{ podId
   }
 
   return (
-    <main className="app-shell waiting-room-shell">
-      <header className="app-topbar entrance entrance-topbar">
+    <main className={`app-shell waiting-room-shell ${styles.financialPage}`}>
+      <header className={styles.financialTopbar}>
         <Link className="wordmark" href="/today"><span className="pod-mark" aria-hidden="true" />pods</Link>
-        <span className="phase-pill">Pod room</span>
+        <span className={styles.routeLabel}>Pod status</span>
       </header>
       <PodWaitingRoom
         podId={room.pod.id}

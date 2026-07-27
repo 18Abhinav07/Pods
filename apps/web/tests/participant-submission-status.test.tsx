@@ -85,4 +85,24 @@ describe("ParticipantSubmissionStatus", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps detailed review checkpoints collapsed behind the current protection state", () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      () => new Promise<Response>(() => undefined)
+    );
+
+    render(
+      <ParticipantSubmissionStatus
+        endpoint="/api/pods/pod-1/submissions/submission-1"
+        initial={initial}
+        timeZone="UTC"
+      />
+    );
+
+    const timing = screen.getByText("Review timing").closest("details");
+    expect(timing).not.toHaveAttribute("open");
+    expect(screen.getByText("Protection scheduled")).toBeVisible();
+    expect(screen.getByText(/If no decision is recorded, protection applies at/))
+      .toBeVisible();
+  });
 });

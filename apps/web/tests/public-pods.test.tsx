@@ -40,6 +40,7 @@ describe("PublicPodCard", () => {
     expect(apply).toHaveClass("adaptive-card-hit-area");
     expect(document.querySelector(".discover-apply-orb")).toBeNull();
     expect(screen.getByText("Build & Ship")).toHaveClass("adaptive-pod-type");
+    expect(screen.getByText("Accepting applications")).toBeVisible();
     expect(screen.queryByText(/NQ[A-Z0-9 ]{20,}/)).not.toBeInTheDocument();
   });
 

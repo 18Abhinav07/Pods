@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import styles from "./pod-room.module.css";
 
 export function formatRemainingTime(target: number, now: number) {
   const totalSeconds = Math.max(0, Math.floor((target - now) / 1000));
@@ -13,12 +16,14 @@ export function formatRemainingTime(target: number, now: number) {
 }
 
 export function PodOccurrenceStrip({
+  action,
   initialNow,
   progressLabel,
   stateLabel,
   targetAt,
   targetLabel
 }: {
+  action?: { href: string; label: string };
   initialNow: string;
   progressLabel: string;
   stateLabel: string;
@@ -42,9 +47,21 @@ export function PodOccurrenceStrip({
     ? null
     : `${formatRemainingTime(target, now)} ${targetLabel}`;
   return (
-    <section className="pod-occurrence-strip" aria-label="Current Pod activity">
-      <span><small>{stateLabel}</small><strong>{progressLabel}</strong></span>
-      {remaining ? <time dateTime={targetAt ?? undefined}>{remaining}</time> : null}
+    <section className={styles.occurrence} aria-label="Current Pod activity">
+      <span className={styles.occurrenceCopy}>
+        <small>{stateLabel}</small>
+        <strong>{progressLabel}</strong>
+      </span>
+      {remaining ? (
+        <time className={styles.occurrenceTime} dateTime={targetAt ?? undefined}>
+          {remaining}
+        </time>
+      ) : null}
+      {action ? (
+        <Link className={styles.actionLink} href={action.href}>
+          {action.label}
+        </Link>
+      ) : null}
     </section>
   );
 }

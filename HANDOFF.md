@@ -24,7 +24,7 @@ Testnet NIM payouts. Mainnet remains a separate, unauthorized product phase.
 - The canonical source is clean `main`; no feature branch is a release source.
 - The production browser suite runs against a built Next.js server rather than
   the development compiler.
-- The release gate passes lint, copy safety, all TypeScript projects, 771 unit
+- The release gate passes lint, copy safety, all TypeScript projects, 772 unit
   and component tests, 94 live integration tests, and both production builds.
 - Forty mobile browser journeys pass across Mobile Safari and Android Chromium.
 - The public design-preview route and its database-backed prototype code are

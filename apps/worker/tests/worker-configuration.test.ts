@@ -16,6 +16,23 @@ const validEnvironment = {
 };
 
 describe("funding worker alpha configuration", () => {
+  it("defaults a clean non-production worker shell to the local runtime", async () => {
+    const configuration = await readDepositWorkerConfiguration({
+      ...validEnvironment,
+      APP_ENV: undefined,
+      NODE_ENV: undefined,
+      PODS_RELEASE_SHA: undefined
+    });
+
+    expect(configuration.alphaMode).toBe(false);
+    expect(configuration.runtime).toEqual({
+      deploymentFlavor: "local",
+      fundsNetwork: "nimiq-testnet",
+      commitSha: "local",
+      schemaVersion: "0017_robust_loners"
+    });
+  });
+
   it("starts closed by default and reads the Railway health port", async () => {
     const configuration = await readDepositWorkerConfiguration(validEnvironment);
 

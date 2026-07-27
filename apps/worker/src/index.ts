@@ -58,6 +58,9 @@ export async function readDepositWorkerConfiguration(
     (environment.NODE_ENV === "production" ? undefined : localDatabaseUrl);
   const pollIntervalMs = Number(environment.PODS_DEPOSIT_POLL_INTERVAL_MS ?? "5000");
   const healthPort = Number(environment.PORT ?? "3412");
+  const appEnvironment =
+    environment.APP_ENV ??
+    (environment.NODE_ENV === "production" ? undefined : "local");
 
   if (network !== "testnet") throw new Error("Deposit worker requires NIMIQ_NETWORK=testnet");
   if (!treasuryAddress) throw new Error("Deposit worker requires PODS_TREASURY_ADDRESS");
@@ -74,11 +77,13 @@ export async function readDepositWorkerConfiguration(
   }
   const capabilities = parseAlphaCapabilities({
     ...environment,
+    APP_ENV: appEnvironment,
     NIMIQ_NETWORK: network
   });
   const runtime = parsePublicRuntimeIdentity(
     {
       ...environment,
+      APP_ENV: appEnvironment,
       NIMIQ_NETWORK: network
     },
     PODS_SCHEMA_VERSION
@@ -91,7 +96,7 @@ export async function readDepositWorkerConfiguration(
     databaseUrl,
     pollIntervalMs,
     healthPort,
-    alphaMode: environment.APP_ENV === "alpha",
+    alphaMode: appEnvironment === "alpha",
     capabilities,
     runtime
   } as const;

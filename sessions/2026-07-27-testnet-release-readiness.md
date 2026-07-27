@@ -21,12 +21,14 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
   versions without changing the application contract.
 - Hardened the end-to-end harness to build first and test the production Next.js
   server with local-only HTTP cookie behavior.
+- Made the documented worker development command default to the local runtime
+  only outside production, while preserving fail-closed Alpha validation.
 - Preserved the previously uncommitted responsive-polish session as a linked
   canonical note before cleaning obsolete worktrees.
 
 ## Verification
 
-- `pnpm check` passed: lint, copy safety, all type checks, 771 unit and
+- `pnpm check` passed: lint, copy safety, all type checks, 772 unit and
   component tests, 94 live integration tests, and web plus worker builds.
 - `pnpm test:e2e` passed 40 of 40 mobile journeys across Mobile Safari and
   Android Chromium.
@@ -39,3 +41,5 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 - Railway is a Testnet release target only.
 - Mainnet is not enabled by this work.
 - Automated proof does not replace the final physical Nimiq Pay smoke check.
+- The fresh local stack reports ready web configuration, database, object
+  storage, schema, and a healthy worker cycle with zero application rows.

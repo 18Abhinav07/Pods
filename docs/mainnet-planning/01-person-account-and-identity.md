@@ -80,6 +80,35 @@ link Google later for an additional sign-in and recovery path.
 Provider credentials and verified provider data are private authentication
 records, not public-profile fields.
 
+### Secondary authentication linking
+
+Secondary authentication is added only from the authenticated person's account
+settings. The person explicitly starts the link action and completes a fresh
+authentication flow with the secondary provider.
+
+The initial Mainnet behavior is intentionally narrow:
+
+- If the verified provider identity is unlinked, Pods links it to the currently
+  authenticated person.
+- If it is already linked to the same person, Pods treats the operation as
+  already complete and creates no duplicate record.
+- If it is linked to a different Pods person, Pods denies the link. It does not
+  move the provider, merge the people, or expose the other account's username,
+  profile, or provider details.
+- Email equality never links or merges two Pods people automatically.
+
+The denial state explains that the provider already belongs to another Pods
+account and that account merging is not yet supported. The two canonical
+people remain separate.
+
+### Deferred account merging
+
+Explicit account merging is a future identity capability, not part of the
+initial Mainnet build. Its future design must require proof of control of both
+accounts and must define how memberships, active commitments, settlement,
+history, usernames, social relationships, and duplicate participation are
+resolved. Normal provider linking must not contain a partial or hidden merge.
+
 ### Minimal onboarding
 
 Initial onboarding asks only for:
@@ -94,6 +123,10 @@ Profile image, biography, social connections, projects, showcases, activity
 facets, profile visibility, and other granular presentation settings are
 completed later from profile setup. Initial onboarding must not become a long
 profile questionnaire.
+
+The detailed profile schema will be defined only after the product's actors and
+user types are mapped. Profiles remain extensible so later facets and features
+can be added without replacing the canonical person.
 
 ## Preliminary Data Ownership
 
@@ -127,18 +160,17 @@ Detailed profile fields are deferred to
    activity.
 6. Settlement-adapter failure must not invalidate or delete the Pods person.
 7. Profile setup and financial setup remain separate concerns.
+8. A provider identity linked to another Pods person cannot be reassigned by
+   the initial Mainnet product.
 
 ## Decisions Still Required
 
 Resolve these in order:
 
-1. How an authenticated person links a second provider safely.
-2. What happens when a provider is already linked to another Pods person.
-3. Username syntax, reservation, change, release, and impersonation rules.
-4. Account recovery when the original provider is unavailable.
-5. Account merge policy for accidentally duplicated identities.
-6. Account states, suspension, deactivation, deletion, and retention.
-7. Session, device, and reauthentication requirements for sensitive actions.
+1. Username syntax, reservation, change, release, and impersonation rules.
+2. Account recovery when the original provider is unavailable.
+3. Account states, suspension, deactivation, deletion, and retention.
+4. Session, device, and reauthentication requirements for sensitive actions.
 
 ## Deferred Dependencies
 
@@ -148,3 +180,5 @@ Resolve these in order:
 - Wallet and settlement adapters belong to documents 11 and 23.
 - GitHub proof permissions belong to document 19.
 - Full service and data architecture belongs to document 22.
+- Account merging remains a documented future capability and is excluded from
+  the initial Mainnet implementation scope.

@@ -23,6 +23,8 @@ integration line without reusing Testnet funds, data, storage, or secrets.
 - Earlier milestones are preserved as Git tags.
 - Two verified Testnet release changes remain uncommitted: the completed
   `HANDOFF.md` journey record and the centered application metric layout.
+- `README.md` still describes payout broadcasting as disabled and must be
+  corrected to match the explicitly authorized Testnet deployment.
 
 ## Branch Contract
 
@@ -82,7 +84,8 @@ and no Testnet database is migrated into Mainnet.
 
 1. Stop current local Pods web and worker processes before changing branches.
 2. Run the complete Testnet release gate against the current working tree.
-3. Commit the two verified Testnet changes to `main` and push `main`.
+3. Commit the verified Testnet changes and release-status correction to `main`,
+   then push `main`.
 4. Create and push `release/testnet-v0`, `release/mainnet-v0`, and the annotated
    `testnet-v0.0.0` tag at the same commit.
 5. Configure both Railway Testnet services to deploy

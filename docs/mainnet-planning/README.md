@@ -50,7 +50,7 @@ documents rather than reinterpret them.
 
 | Order | Document | Question it must answer | Status |
 |---|---|---|---|
-| 01 | `01-person-account-and-identity.md` | What is a person in Pods, how do they authenticate, connect identities, recover access, and retain continuity? | active |
+| 01 | [[docs/mainnet-planning/01-person-account-and-identity|Person, account, and identity]] | What is a person in Pods, how do they authenticate, connect identities, recover access, and retain continuity? | active |
 | 02 | `02-profile-facets-and-privacy.md` | How does one person represent builder, movement, reading, and future facets without fragmented identities or forced public exposure? | queued |
 | 03 | `03-actors-roles-and-jobs.md` | Which human, collective, and system actors exist, what may each do, and what does Pods do for each of them? | queued |
 | 04 | `04-object-graph-and-memberships.md` | How do people, organizations, teams, Events, Projects, Pods, and memberships relate without recursive or duplicated ownership? | queued |

@@ -313,9 +313,9 @@ test("creator and participant settlement projections stay mobile and private", a
     const creatorPage = await creatorContext.newPage();
     await creatorPage.goto(`/pods/${fixture.podId}/settlement`);
     await expect(creatorPage.getByText("Treasury conserved")).toBeVisible();
-    await expect(
-      creatorPage.getByText("2 participant entitlements")
-    ).toBeVisible();
+    const entitlementCount = creatorPage.locator("article")
+      .filter({ hasText: "Participant entitlements" });
+    await expect(entitlementCount).toContainText("2");
     await expect(
       creatorPage.getByText("Approved builder", { exact: true })
     ).toBeVisible();
@@ -337,12 +337,9 @@ test("creator and participant settlement projections stay mobile and private", a
 
     const approvedPage = await approvedContext.newPage();
     await approvedPage.goto(`/pods/${fixture.podId}/settlement`);
-    await expect(
-      approvedPage.getByText("Your final entitlement")
-    ).toBeVisible();
-    await expect(
-      approvedPage.locator(".settlement-balance > strong")
-    ).toHaveText("0.2 NIM");
+    const approvedStatus = approvedPage.getByRole("status");
+    await expect(approvedStatus).toContainText("Entitlement final");
+    await expect(approvedStatus.getByText("0.2 NIM", { exact: true })).toBeVisible();
     await expect(approvedPage.getByText("Queued", { exact: true })).toBeVisible();
 
     await approvedPage.goto("/today");
@@ -434,8 +431,8 @@ test("zero-recipient restoration stays conserved and visible to each participant
       const page = await context.newPage();
       await page.goto(`/pods/${fixture.podId}/settlement`);
       await expect(
-        page.locator(".settlement-balance > strong")
-      ).toHaveText("0.1 NIM");
+        page.getByRole("status").getByText("0.1 NIM", { exact: true })
+      ).toBeVisible();
       await expect(page.getByText("0.1 NIM restored")).toBeVisible();
       await expect(page.getByText("Queued", { exact: true })).toBeVisible();
       await expect(page.locator("body")).not.toContainText("NQ");

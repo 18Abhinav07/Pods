@@ -464,6 +464,13 @@ export function PodRoom({
     }
   }
 
+  const eagerProofMessageId = messages.find(
+    (message) =>
+      message.kind === "activity" &&
+      message.activity?.sharedEvidenceAvailable &&
+      message.activity.submissionId
+  )?.id;
+
   return (
     <section className={styles.panel} data-room-mode={mode}>
       <div className={styles.messageList} aria-live="polite">
@@ -583,6 +590,7 @@ export function PodRoom({
                               alt="Pod-shared proof"
                               className={styles.proofImage}
                               height={192}
+                              loading={message.id === eagerProofMessageId ? "eager" : "lazy"}
                               src={`/api/pods/${podId}/submissions/${message.activity.submissionId}/shared-evidence`}
                               unoptimized
                               width={192}
@@ -676,9 +684,6 @@ export function PodRoom({
         <div className={styles.archive}>
           <strong>This room is a read-only archive.</strong>
           <span>All frozen Pod and financial history remains available.</span>
-          {proofAction ? (
-            <Link href={proofAction.href}>{proofAction.label}</Link>
-          ) : null}
         </div>
       ) : (
         <form className={styles.composer} data-bottom-attached="true" aria-label="Send a room message" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>

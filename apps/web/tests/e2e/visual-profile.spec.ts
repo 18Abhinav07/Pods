@@ -19,6 +19,20 @@ async function expectNoHorizontalOverflow(page: Page) {
   ).toBe(true);
 }
 
+function captureImageQualityWarnings(page: Page) {
+  const warnings: string[] = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (
+      text.includes("Largest Contentful Paint") ||
+      text.includes("width or height modified")
+    ) {
+      warnings.push(text);
+    }
+  });
+  return warnings;
+}
+
 type QueryResult = { rows: Array<Record<string, unknown>> };
 type DatabasePool = {
   query(text: string, values?: unknown[]): Promise<QueryResult>;
@@ -283,8 +297,9 @@ test("captures a two-wallet message request and direct conversation", async ({ b
     await page.getByLabel("Introduction").fill("I would like to compare notes on making Pod rooms feel alive.");
     await page.waitForTimeout(450);
     await page.screenshot({ path: testInfo.outputPath("dm-introduction.png"), fullPage: true });
-    await page.getByRole("button", { name: "Send one request" }).click();
-    await expect(page).toHaveURL(/\/messages\?view=requests&sent=1$/);
+    await page.getByRole("button", { name: "Send request" }).click();
+    await expect(page.getByRole("heading", { name: "Request sent" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Messages" })).toHaveAttribute("href", "/messages");
 
     await recipientPage.goto(`${baseUrl}/messages?view=requests`);
     await expect(recipientPage.getByText("I would like to compare notes on making Pod rooms feel alive.")).toBeVisible();
@@ -302,21 +317,21 @@ test("captures a two-wallet message request and direct conversation", async ({ b
     expect((directComposerBox?.x ?? 0) + (directComposerBox?.width ?? 0)).toBeLessThanOrEqual(directViewport?.width ?? 0);
     expect(Math.abs((directComposerBox?.y ?? 0) + (directComposerBox?.height ?? 0) - (directViewport?.height ?? 0))).toBeLessThan(2);
     const introduction = "I would like to compare notes on making Pod rooms feel alive.";
-    const introductionEntry = recipientPage.locator(".room-entry").filter({ hasText: introduction }).first();
+    const introductionEntry = recipientPage.locator("article[id]").filter({ hasText: introduction }).first();
     const introductionId = await introductionEntry.getAttribute("id");
     expect(introductionId).not.toBeNull();
     await introductionEntry.getByRole("button", { name: "More actions for Mira" }).click();
     await recipientPage.getByRole("button", { name: "Reply", exact: true }).click();
-    await expect(recipientPage.locator(".reply-context")).toContainText(introduction);
+    await expect(directComposer).toContainText(introduction);
     await recipientPage.getByRole("textbox", { name: "Message" }).fill("Absolutely. The direct thread is ready too.");
-    await expect(recipientPage.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(217, 237, 114)");
+    await expect(recipientPage.getByRole("button", { name: "Send message" })).toHaveAttribute("data-ready", "true");
     await recipientPage.screenshot({ path: testInfo.outputPath("dm-reply-composer.png") });
     await recipientPage.getByRole("button", { name: "Send message" }).click();
     await expect(recipientPage.getByText("Absolutely. The direct thread is ready too.")).toBeVisible();
     await expect(recipientPage.getByRole("button", { name: `Reply to Mira: ${introduction}` })).toBeVisible();
-    await expect(recipientPage.locator(".delivery-state.is-sending")).toHaveCount(0);
+    await expect(recipientPage.getByText("Sending", { exact: true })).toHaveCount(0);
     await recipientPage.waitForTimeout(350);
-    await recipientPage.locator(".room-entry").last().scrollIntoViewIfNeeded();
+    await recipientPage.locator("article[id]").last().scrollIntoViewIfNeeded();
     await recipientPage.screenshot({ path: testInfo.outputPath("dm-thread-recipient.png") });
 
     await page.goto("/messages?view=people");
@@ -330,19 +345,19 @@ test("captures a two-wallet message request and direct conversation", async ({ b
     await expect(directReply).toBeVisible();
     await directReply.click();
     await expect(page.locator(`[id="${introductionId}"]`)).toHaveClass(/is-reply-target/);
-    await page.locator(".room-entry").last().scrollIntoViewIfNeeded();
+    await page.locator("article[id]").last().scrollIntoViewIfNeeded();
     await page.screenshot({ path: testInfo.outputPath("dm-thread-reply.png") });
 
     await page.goto(`/u/${recipientHandle}`);
     await page.getByRole("button", { name: "Add friend" }).click();
-    await expect(page.getByRole("button", { name: "Request sent" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Cancel request" })).toBeVisible();
 
     await recipientPage.goto(`${baseUrl}/messages?view=requests`);
-    const friendLane = recipientPage.locator(".friend-request-list");
+    const friendLane = recipientPage.getByRole("region", { name: "People who want to connect" });
     await expect(friendLane.getByText("Mira")).toBeVisible();
     await recipientPage.waitForTimeout(500);
     await recipientPage.screenshot({ path: testInfo.outputPath("friend-request.png"), fullPage: true });
-    await friendLane.getByRole("button", { name: "Accept" }).click();
+    await friendLane.getByRole("button", { name: "Accept Mira" }).click();
     await expect(friendLane).toHaveCount(0);
 
     await page.reload();
@@ -353,6 +368,12 @@ test("captures a two-wallet message request and direct conversation", async ({ b
 });
 
 test("captures the private profile, settings sheet, and public profile", async ({ context, page }, testInfo) => {
+  const hydrationErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" && message.text().includes("hydrated")) {
+      hydrationErrors.push(message.text());
+    }
+  });
   await authenticate(context);
   const handle = `visual_${randomBytes(3).toString("hex")}`;
   const response = await context.request.put(`${baseUrl}/api/profile`, {
@@ -389,10 +410,17 @@ test("captures the private profile, settings sheet, and public profile", async (
   await page.getByRole("searchbox", { name: "Search by name or handle" }).fill(handle);
   await page.getByRole("searchbox", { name: "Search by name or handle" }).press("Enter");
   await expect(page.getByRole("link", { name: /Ryuk/ })).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("people-search.png"), fullPage: true });
+  await page.getByRole("searchbox", { name: "Search by name or handle" }).blur();
+  await page.screenshot({
+    caret: "initial",
+    fullPage: true,
+    path: testInfo.outputPath("people-search.png")
+  });
+  expect(hydrationErrors).toEqual([]);
 });
 
 test("captures a single meaningful Today action", async ({ context, page }, testInfo) => {
+  const imageWarnings = captureImageQualityWarnings(page);
   const walletAddress = await authenticate(context);
   const handle = `today_${randomBytes(3).toString("hex")}`;
   const profileResponse = await context.request.put(`${baseUrl}/api/profile`, {
@@ -452,6 +480,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   );
   await expect(page.getByRole("heading", { name: "Creator review in progress" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("proof-submitted.png"), fullPage: true });
+  await page.getByText("Review timing", { exact: true }).click();
   await expect(page.getByRole("region", { name: "Review timeline" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("submission-detail.png"), fullPage: true });
 
@@ -489,9 +518,9 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await page.getByRole("textbox", { name: "Message" }).fill("The mobile proof flow is live. Review is next.");
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("The mobile proof flow is live. Review is next.")).toBeVisible();
-  await expect(page.locator(".delivery-state.is-sending")).toHaveCount(0);
+  await expect(page.getByText("Sending", { exact: true })).toHaveCount(0);
   const roomMessage = "The mobile proof flow is live. Review is next.";
-  const roomMessageEntry = page.locator(".room-entry").filter({ hasText: roomMessage }).first();
+  const roomMessageEntry = page.locator("article[id]").filter({ hasText: roomMessage }).first();
   const roomMessageId = await roomMessageEntry.getAttribute("id");
   expect(roomMessageId).not.toBeNull();
   await roomMessageEntry.scrollIntoViewIfNeeded();
@@ -499,13 +528,13 @@ test("captures a single meaningful Today action", async ({ context, page }, test
 
   await roomMessageEntry.getByRole("button", { name: "More actions for Ari" }).click();
   await page.getByRole("button", { name: "Reply", exact: true }).click();
-  await expect(page.locator(".reply-context")).toContainText(roomMessage);
+  await expect(page.getByRole("form", { name: "Send a room message" })).toContainText(roomMessage);
   await page.getByRole("textbox", { name: "Message" }).fill("The reply interaction is ready for the room.");
-  await expect(page.getByRole("button", { name: "Send message" })).toHaveCSS("background-color", "rgb(217, 237, 114)");
+  await expect(page.getByRole("button", { name: "Send message" })).toHaveAttribute("data-ready", "true");
   await page.screenshot({ path: testInfo.outputPath("room-reply-composer.png") });
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("The reply interaction is ready for the room.")).toBeVisible();
-  await expect(page.locator(".delivery-state.is-sending")).toHaveCount(0);
+  await expect(page.getByText("Sending", { exact: true })).toHaveCount(0);
   await page.reload();
   const roomReply = page.getByRole("button", { name: `Reply to Ari: ${roomMessage}` });
   await expect(roomReply).toBeVisible();
@@ -514,10 +543,11 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await page.screenshot({ path: testInfo.outputPath("room-reply.png") });
 
   await page.getByRole("button", { name: "Add to message" }).click();
-  await expect(page.getByRole("link", { name: "View submission" })).toHaveAttribute(
-    "href",
-    `/pods/${podId}/activity/${occurrenceId}`
-  );
+  await expect(
+    page
+      .getByRole("form", { name: "Send a room message" })
+      .getByRole("link", { name: "View submission" })
+  ).toHaveAttribute("href", new RegExp(`/pods/${podId}/submissions/[0-9a-f-]+$`));
   await page.screenshot({ path: testInfo.outputPath("room-actions.png") });
 
   await approveVisualSubmission(occurrenceId);
@@ -548,7 +578,7 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await page.goto("/updates");
   await expect(page.getByRole("heading", { name: "Updates" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await expect(page.getByText("Occurrence approved")).toBeVisible();
+  await expect(page.getByText("Work approved")).toBeVisible();
   await page.waitForTimeout(450);
   await page.screenshot({ path: testInfo.outputPath("updates-approved.png"), fullPage: true });
 
@@ -557,11 +587,12 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await expectNoHorizontalOverflow(page);
   await expect(page.getByText("Pods Build Room")).toBeVisible();
   await page.waitForTimeout(650);
-  const podThumbnail = await page.locator(".my-pod-thumbnail").boundingBox();
+  const myPodLink = page.getByRole("link", { name: /Pods Build Room/ });
+  const podThumbnail = await myPodLink.locator("img").boundingBox();
   expect(podThumbnail).not.toBeNull();
-  expect(podThumbnail?.width).toBeLessThanOrEqual(60);
-  expect(podThumbnail?.height).toBeLessThanOrEqual(60);
-  await expect(page.getByRole("link", { name: /Pods Build Room/ })).toHaveAttribute("href", `/pods/${podId}/room`);
+  expect(podThumbnail?.width).toBeLessThanOrEqual(80);
+  expect(podThumbnail?.height).toBeLessThanOrEqual(80);
+  await expect(myPodLink).toHaveAttribute("href", `/pods/${podId}/room`);
   await page.screenshot({ path: testInfo.outputPath("my-pods.png"), fullPage: true });
   await page.getByRole("button", { name: "Open page actions" }).click();
   await expect(page.getByRole("dialog", { name: "Page actions" })).toBeVisible();
@@ -599,4 +630,5 @@ test("captures a single meaningful Today action", async ({ context, page }, test
   await expect(discoverCard.getByText("Build & Ship")).toBeVisible();
   await page.waitForTimeout(650);
   await page.screenshot({ path: testInfo.outputPath("discover-card.png"), fullPage: true });
+  expect(imageWarnings).toEqual([]);
 });

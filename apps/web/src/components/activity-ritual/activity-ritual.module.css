@@ -1132,10 +1132,15 @@
   box-shadow: 0 16px 42px color-mix(in srgb, var(--color-ink) 9%, transparent);
 }
 
-.proofPreview img {
+.proofPreviewMedia {
+  position: relative;
   display: block;
   width: 100%;
   aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.proofPreviewMedia img {
   object-fit: cover;
 }
 

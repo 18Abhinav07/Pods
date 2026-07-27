@@ -60,7 +60,7 @@ export function MyPodsList({ items }: { items: MyPodListItem[] }) {
               transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             >
               <Link className={styles.podLink} href={item.href}>
-                <span className={styles.podThumb}><Image alt="" fill sizes="68px" src={mediaForTemplate(item.templateId, visualIndex).hero} /></span>
+                <span className={styles.podThumb}><Image alt="" fill loading={visualIndex === 0 ? "eager" : "lazy"} sizes="68px" src={mediaForTemplate(item.templateId, visualIndex).hero} /></span>
                 <span className={styles.podCopy}>
                   <small>{item.templateName}</small>
                   <strong>{item.name}</strong>

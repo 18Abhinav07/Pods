@@ -164,6 +164,11 @@
 }
 
 .panel {
+  --room-ink: #1b201b;
+  --room-muted: #6d746c;
+  --room-paper: #ffffff;
+  --room-soft: #f4f6f2;
+  --room-lime: var(--theme-accent, #d9ed72);
   position: relative;
   display: grid;
   min-height: calc(100dvh - 146px);

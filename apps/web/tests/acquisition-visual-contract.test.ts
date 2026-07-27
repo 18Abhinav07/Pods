@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -13,6 +13,12 @@ const productionFiles = [
 ];
 
 describe("production acquisition visual contract", () => {
+  it("does not ship the obsolete design preview route", () => {
+    expect(
+      existsSync(resolve(process.cwd(), "src/app/design-preview/page.tsx"))
+    ).toBe(false);
+  });
+
   it("uses a dedicated production module without preview internals", () => {
     const sources = productionFiles.map((file) =>
       readFileSync(resolve(process.cwd(), file), "utf8")

@@ -72,6 +72,18 @@ async function authenticate(context: BrowserContext) {
     }
   });
   expect(verifyResponse.ok()).toBe(true);
+  const profileResponse = await context.request.put(`${baseUrl}/api/profile`, {
+    data: {
+      handle: `phase2_${randomBytes(4).toString("hex")}`,
+      displayName: "Phase 2 builder",
+      bio: "Testing the complete Pod enrollment journey.",
+      avatar: { kind: "preset", preset: "ember" },
+      visibility: "private",
+      dmPolicy: "friends",
+      activityStatusVisible: true
+    }
+  });
+  expect(profileResponse.ok()).toBe(true);
 }
 
 async function publishPod(context: BrowserContext, visibility: "public" | "private") {
@@ -168,10 +180,10 @@ test("public enrollment works from discovery through accepted funding handoff", 
     await expect(appliedCard.getByRole("link", { name: "Apply to join" })).toHaveCount(0);
 
     await page.goto(`${baseUrl}/pods/${pod.id}/admin/applications`);
+    await page.getByRole("link", { name: "Review Phase 2 builder application" }).click();
     await expect(page.getByText("A tested mobile enrollment flow")).toBeVisible();
-    const acceptButton = page.getByRole("button", { name: "Accept" });
-    await expect(acceptButton).toHaveCSS("background-color", "rgb(59, 92, 204)");
-    await expect(acceptButton).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(page.getByText("The five-day cadence matches my build week")).toBeVisible();
+    const acceptButton = page.getByRole("button", { name: "Accept applicant" });
     await acceptButton.click();
     await expect(page.getByText("Queue clear")).toBeVisible();
 
@@ -186,6 +198,9 @@ test("public enrollment works from discovery through accepted funding handoff", 
     );
     await acceptedCard.getByRole("link", { name: `Open ${pod.name}` }).click();
     await expect(applicantPage.getByRole("heading", { name: "Back your place." })).toBeVisible();
+    await applicantPage.getByRole("button", { name: "Review protection" }).click();
+    await expect(applicantPage.getByRole("heading", { name: "Know what protects your commitment." })).toBeVisible();
+    await applicantPage.getByRole("button", { name: "Continue to wallet" }).click();
     await expect(applicantPage.getByRole("button", { name: "Commit 0.5 NIM" })).toBeDisabled();
 
     await applicantPage.goto(`${baseUrl}/today`);
@@ -222,6 +237,8 @@ test("private enrollment stays hidden and consumes one opaque invitation once", 
     await inviteePage.getByRole("button", { name: "Accept private invitation" }).click();
     await expect(inviteePage).toHaveURL(new RegExp(`/pods/${pod.id}/fund$`));
     await expect(inviteePage.getByRole("heading", { name: "Back your place." })).toBeVisible();
+    await inviteePage.getByRole("button", { name: "Review protection" }).click();
+    await inviteePage.getByRole("button", { name: "Continue to wallet" }).click();
     await expect(inviteePage.getByRole("button", { name: "Commit 0.5 NIM" })).toBeDisabled();
   } finally {
     await inviteeContext.close();

@@ -12,6 +12,7 @@ import {
   safeReturnTarget,
   verifyWalletSignature
 } from "../src/lib/auth";
+import { sessionCookieOptions } from "../src/lib/session";
 
 const encoder = new TextEncoder();
 const signedMessagePrefix = "\x16Nimiq Signed Message:\n";
@@ -28,6 +29,19 @@ function signAsNimiqPay(keyPair: KeyPair, message: string) {
 }
 
 describe("wallet signature contract", () => {
+  it("keeps alpha cookies secure while allowing a local production build over HTTP", () => {
+    const expiresAt = new Date("2027-04-06T00:00:00.000Z");
+
+    expect(sessionCookieOptions(expiresAt, {
+      APP_ENV: "alpha",
+      NODE_ENV: "production"
+    }).secure).toBe(true);
+    expect(sessionCookieOptions(expiresAt, {
+      APP_ENV: "local",
+      NODE_ENV: "production"
+    }).secure).toBe(false);
+  });
+
   it("verifies that the public key owns the challenged Nimiq address", () => {
     const keyPair = KeyPair.derive(PrivateKey.fromHex("44".repeat(32)));
     const walletAddress = keyPair.toAddress().toUserFriendlyAddress();

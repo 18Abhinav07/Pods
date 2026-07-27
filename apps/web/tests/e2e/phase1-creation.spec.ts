@@ -72,6 +72,18 @@ async function authenticate(context: BrowserContext) {
     }
   });
   expect(verifyResponse.ok()).toBe(true);
+  const profileResponse = await context.request.put(`${baseUrl}/api/profile`, {
+    data: {
+      handle: `phase1_${randomBytes(4).toString("hex")}`,
+      displayName: "Phase 1 builder",
+      bio: "Testing the complete Pod creation journey.",
+      avatar: { kind: "preset", preset: "moss" },
+      visibility: "private",
+      dmPolicy: "friends",
+      activityStatusVisible: true
+    }
+  });
+  expect(profileResponse.ok()).toBe(true);
 }
 
 test("an unauthenticated creator is sent to the signed wallet gate", async ({ page }) => {
@@ -108,9 +120,9 @@ test("the hydrated connect control reaches the injected wallet provider", async 
   await page.goto("/connect?returnTo=%2Ftoday");
   await page.getByRole("button", { name: "Connect wallet" }).click();
 
-  await expect(page.locator(".inline-error")).toContainText(
-    "Hydrated wallet verification reached"
-  );
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Hydrated wallet verification reached" })
+  ).toBeVisible();
 });
 
 test("the four primary destinations keep distinct first-run purposes", async ({ context, page }) => {
@@ -122,17 +134,17 @@ test("the four primary destinations keep distinct first-run purposes", async ({ 
   await expect(page.getByText("No history yet")).toHaveCount(0);
 
   await page.goto("/discover");
-  await expect(page.getByRole("heading", { name: "Find people moving in your direction." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "No matching public Pods yet." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Discover" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No matching open Pods yet." })).toBeVisible();
 
   await page.goto("/my-pods");
-  await expect(page.getByRole("heading", { name: "Your activity spaces." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "My Pods" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No Pods yet." })).toBeVisible();
 
   await page.goto("/inbox");
-  await expect(page.getByRole("heading", { name: "Your Pod history." })).toBeVisible();
-  await expect(page.getByText("No history yet")).toBeVisible();
-  await expect(page.getByText("Today remains the place for your next action.")).toBeVisible();
+  await expect(page).toHaveURL(/\/updates$/);
+  await expect(page.getByRole("heading", { name: "Updates", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No updates yet." })).toBeVisible();
 });
 
 test("a creator publishes one immutable Build and Ship contract", async ({ context, page }) => {
@@ -157,7 +169,7 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
   await page.getByLabel("Project theme").fill("Pods Cycle I");
   await page.getByLabel("Pull request").check();
   await page.getByLabel("Live artifact").check();
-  await page.getByLabel("Daily commitment cutoff").fill("09:00");
+  await page.getByLabel(/^Commitment cutoff/).fill("09:00");
   await page.getByLabel("Start date").fill(dateInput(14));
   await page.getByLabel("End date").fill(dateInput(21));
   await page.getByLabel("Pod timezone").fill("Asia/Kolkata");
@@ -168,10 +180,10 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
 
   await expect(page).toHaveURL(/\/pods\/create\/community\?draft=/);
   await page.getByRole("radio", { name: /Public Pod/ }).check();
-  await page.getByLabel("Minimum people").fill("3");
-  await page.getByLabel("Maximum people").fill("8");
+  await page.getByLabel("Minimum", { exact: true }).fill("3");
+  await page.getByLabel("Maximum", { exact: true }).fill("8");
   await page
-    .getByLabel("Application questions")
+    .getByLabel(/^Questions for applicants/)
     .fill("What will you ship?\nWhere will your proof be visible?");
   await page.getByRole("button", { name: "Continue to commitment" }).click();
 
@@ -183,11 +195,13 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
   await expect(page).toHaveURL(/\/pods\/create\/review\?draft=/);
   await expect(page.getByText("Public, application-based")).toBeVisible();
   await expect(page.getByText("Creator review", { exact: true })).toBeVisible();
+  await page.getByText("Review frozen terms", { exact: true }).click();
   await expect(page.getByText(
     "The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.",
     { exact: true }
   )).toBeVisible();
-  await page.getByRole("checkbox", { name: /Freeze this contract/ }).check();
+  await page.getByText("Freeze this contract", { exact: true }).click();
+  await expect(page.getByRole("checkbox", { name: /Freeze this contract/ })).toBeChecked();
   await page.getByRole("button", { name: "Publish Pod" }).click();
   await expect(page.getByText("Pod published", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Open frozen contract" }).click();
@@ -195,7 +209,7 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
   await expect(page).toHaveURL(/\/pods\/[^/]+\/rules$/);
   await expect(page.getByText("Contract frozen", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Build Pods in Public", level: 1 })).toBeVisible();
-  const fingerprint = await page.locator(".contract-hash code").textContent();
+  const fingerprint = await page.locator("code").textContent();
   expect(fingerprint).toMatch(/^[a-f0-9]{64}$/);
 
   const podId = new URL(page.url()).pathname.split("/")[2];
@@ -206,7 +220,7 @@ test("a creator publishes one immutable Build and Ship contract", async ({ conte
     }
   });
   expect(editResponse.status()).toBe(409);
-  await page.getByRole("link", { name: "Open creator controls" }).click();
+  await page.getByRole("link", { name: "Manage enrollment" }).click();
   await expect(page).toHaveURL(new RegExp(`/pods/${podId}/admin$`));
   await page.waitForLoadState("networkidle");
   await page.goto("/my-pods");

@@ -79,7 +79,7 @@ export default async function PodActivityPage({
 
       {feed.items.length > 0 ? (
         <section className={styles.proofList} aria-label="Submitted proofs">
-          {feed.items.map((item) => {
+          {feed.items.map((item, visualIndex) => {
             const {
               submission,
               commitment,
@@ -121,6 +121,7 @@ export default async function PodActivityPage({
                   <Image
                     alt={`Pod-shared proof from ${participant.displayName}`}
                     fill
+                    loading={visualIndex === 0 ? "eager" : "lazy"}
                     sizes="(max-width: 520px) 100vw, 480px"
                     src={`/api/pods/${podId}/submissions/${submission.id}/shared-evidence`}
                     unoptimized

@@ -345,15 +345,18 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
 
     await memberPage.goto(`${baseUrl}/pods/${podId}/fund`);
     await expect(memberPage.getByRole("heading", { name: "Back your place." })).toBeVisible();
+    await expect(memberPage.getByText("5 × 0.1 NIM", { exact: true })).toBeVisible();
+    await expect(memberPage.getByText("0.5 NIM", { exact: true }).first()).toBeVisible();
+    await memberPage.getByRole("button", { name: "Review protection" }).click();
     await expect(memberPage.getByText("5 scheduled occurrences")).toBeVisible();
     await expect(memberPage.getByText("0.1 NIM per occurrence")).toBeVisible();
-    await expect(memberPage.getByText("0.5 NIM", { exact: true }).first()).toBeVisible();
-    await expect(memberPage.getByText("The Pod creator reviews member proofs.", { exact: false })).toBeVisible();
-    await expect(memberPage.getByText("If the creator does not review within 24 hours", { exact: false })).toBeVisible();
+    await expect(memberPage.getByText("Creator-reviewed proof", { exact: true })).toBeVisible();
+    await expect(memberPage.getByText("24 hour review protection", { exact: true })).toBeVisible();
     expect(await memberPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await memberPage.getByRole("button", { name: "Continue to wallet" }).click();
     const commitButton = memberPage.getByRole("button", { name: "Commit 0.5 NIM" });
     await expect(commitButton).toBeDisabled();
-    await memberPage.getByRole("checkbox", { name: /I accept this contract hash/ }).check();
+    await memberPage.getByRole("checkbox", { name: /I understand this frozen contract/ }).check();
     await commitButton.click();
     await expect(memberPage.locator(".funding-error")).toContainText("Wallet closed for test");
     await expect(commitButton).toHaveText("Commit 0.5 NIM");
@@ -387,22 +390,29 @@ test("funding commitment survives rejection, submission, refresh, and owner isol
     await memberPage.evaluate(() => {
       (window as typeof window & { __podsPaymentMode?: "reject" | "success" }).__podsPaymentMode = "success";
     });
-    await memberPage.getByRole("checkbox", { name: /I accept this contract hash/ }).check();
+    await memberPage.getByRole("button", { name: "Review protection" }).click();
+    await memberPage.getByRole("button", { name: "Continue to wallet" }).click();
+    await memberPage.getByRole("checkbox", { name: /I understand this frozen contract/ }).check();
     await memberPage.getByRole("button", { name: "Commit 0.5 NIM" }).click();
     await expect(memberPage).toHaveURL(new RegExp(`/pods/${podId}/fund/status\\?intent=`));
     await expect(memberPage.getByRole("status")).toContainText("Transaction submitted");
+    await memberPage.getByText("Commitment details", { exact: true }).click();
     await expect(memberPage.getByText(transactionHash)).toBeVisible();
     const statusUrl = memberPage.url();
 
     await memberPage.reload();
     await expect(memberPage.getByRole("status")).toContainText("Transaction submitted");
+    await memberPage.getByText("Commitment details", { exact: true }).click();
     await expect(memberPage.getByText(transactionHash)).toBeVisible();
 
     await memberPage.goto(`${baseUrl}/my-pods`);
-    const participantPod = memberPage.locator(".my-pod-row").filter({ hasText: "Fund Pods" });
-    await expect(participantPod.getByText("Funding in progress")).toBeVisible();
-    await participantPod.getByRole("link").click();
+    const participantPod = memberPage.getByRole("link")
+      .filter({ hasText: "Fund Pods" })
+      .filter({ hasText: "Funding in progress" });
+    await expect(participantPod).toBeVisible();
+    await participantPod.click();
     await expect(memberPage).toHaveURL(statusUrl);
+    await memberPage.getByText("Commitment details", { exact: true }).click();
     await expect(memberPage.getByText(transactionHash)).toBeVisible();
 
     await strangerPage.goto(statusUrl);

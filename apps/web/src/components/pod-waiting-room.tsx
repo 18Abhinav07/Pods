@@ -4,6 +4,7 @@ import { ArrowRight, CalendarBlank, CaretDown, ShieldCheck, UsersThree } from "@
 import type { MembershipState, SettlementMode } from "@pods/domain";
 import Link from "next/link";
 
+import { formatZonedMoment } from "../lib/format-moment";
 import styles from "./financial-flow.module.css";
 import type { ParticipantRefund } from "./refund-status-rail";
 import { RefundStatusRail } from "./refund-status-rail";
@@ -60,11 +61,7 @@ const participantStateCopy: Partial<Record<MembershipState, readonly [string, st
 const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function formatMoment(value: string, timeZone: string) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone
-  }).format(new Date(value));
+  return formatZonedMoment(value, { timeZone, includeYear: true });
 }
 
 function nim(value: number) {

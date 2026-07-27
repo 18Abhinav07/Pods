@@ -475,7 +475,7 @@ describe("Pod room", () => {
     expect(send).toHaveClass("is-ready");
   });
 
-  it("keeps the canonical settlement action visible in an archived room", () => {
+  it("keeps archived chat read-only without duplicating the canonical settlement action", () => {
     render(
       <PodRoom
         conversationId="room-1"
@@ -491,8 +491,8 @@ describe("Pod room", () => {
       />
     );
 
-    expect(screen.getByRole("link", { name: "View settlement" }))
-      .toHaveAttribute("href", "/pods/pod-1/settlement");
+    expect(screen.getByText("This room is a read-only archive.")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "View settlement" })).not.toBeInTheDocument();
   });
 
   it("lets the creator pin announcements and hide ordinary chat", async () => {

@@ -3,13 +3,18 @@ import { podsRepository } from "./server-db";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { secureCookiesRequired } from "./cookie-security";
+
 export const SESSION_COOKIE_NAME = "pods_session";
 
-export function sessionCookieOptions(expiresAt: Date) {
+export function sessionCookieOptions(
+  expiresAt: Date,
+  environment: { APP_ENV?: string; NODE_ENV?: string } = process.env
+) {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookiesRequired(environment),
     path: "/",
     expires: expiresAt
   };

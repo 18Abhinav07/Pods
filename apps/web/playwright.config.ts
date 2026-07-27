@@ -22,8 +22,13 @@ export default defineConfig({
   webServer: externalBaseUrl
     ? undefined
     : {
-        command: "corepack pnpm dev --webpack --hostname 127.0.0.1 --port 3410",
+        command: "corepack pnpm start --hostname 127.0.0.1 --port 3410",
         env: {
+          APP_ENV: "local",
+          NIMIQ_NETWORK: "testnet",
+          PODS_TREASURY_ADDRESS:
+            process.env.PODS_TREASURY_ADDRESS ??
+            "NQ38 PLXF NXKJ LFGA TRDP VRA8 F810 2BKN N4X6",
           PODS_MODERATION_ENABLED: "true",
           PODS_PUBLIC_VISITOR_ROOMS_ENABLED: "true"
         },

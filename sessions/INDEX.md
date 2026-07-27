@@ -11,6 +11,8 @@ Related: [[HANDOFF]] | [[README]]
 
 | Date | Agent | Mode | Result | Detail |
 |---|---|---|---|---|
+| 2026-07-27 | codex | HACKATHON | Consolidated and verified the final Testnet release | [[sessions/2026-07-27-testnet-release-readiness]] |
+| 2026-07-25 | codex | HACKATHON | Shipped responsive polish and repaired mobile drawers | [[sessions/2026-07-25-responsive-product-polish]] |
 | 2026-07-23 | codex | HACKATHON | Shipped visitor rooms and Testnet funding | [[sessions/2026-07-23-codex-hackathon]] |
 | 2026-07-22 | codex | HACKATHON | Verified chat-first redesign and durable replies | [[sessions/2026-07-22-codex-hackathon]] |
 | 2026-07-21 | codex | HACKATHON | Completed Phase 4 activity and social extension | [[sessions/2026-07-21-codex-hackathon]] |

@@ -43,8 +43,17 @@ describe("reviewer authentication", () => {
   });
 
   it("sends the HttpOnly reviewer session to both pages and API routes", () => {
-    expect(opsSessionCookieOptions(new Date("2027-04-06T00:00:00.000Z")))
+    const expiresAt = new Date("2027-04-06T00:00:00.000Z");
+    expect(opsSessionCookieOptions(expiresAt))
       .toMatchObject({ httpOnly: true, sameSite: "strict", path: "/" });
+    expect(opsSessionCookieOptions(expiresAt, {
+      APP_ENV: "alpha",
+      NODE_ENV: "production"
+    }).secure).toBe(true);
+    expect(opsSessionCookieOptions(expiresAt, {
+      APP_ENV: "local",
+      NODE_ENV: "production"
+    }).secure).toBe(false);
   });
 
   it("allows only the two live operations pages as return targets", async () => {

@@ -120,10 +120,7 @@ export function ActivityAtlasVisual() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div
-      aria-hidden="true"
-      className={`atlas-visual${reduceMotion ? " is-static" : ""}`}
-    >
+    <div aria-hidden="true" className="atlas-visual">
       <motion.figure
         animate={reduceMotion ? {} : { y: [0, -8, 0], rotate: [-1, -0.25, -1] }}
         className="atlas-frame atlas-frame-build"
@@ -148,7 +145,7 @@ export function ActivityAtlasVisual() {
         className="atlas-frame atlas-frame-fitness"
         transition={{ duration: 8.4, repeat: Infinity, ease: orbitEase }}
       >
-        <Image alt="" fill sizes="170px" src="/media/fitness.jpg" />
+        <Image alt="" fill loading="eager" sizes="170px" src="/media/fitness.jpg" />
         <figcaption>Fitness</figcaption>
       </motion.figure>
 
@@ -157,7 +154,7 @@ export function ActivityAtlasVisual() {
         className="atlas-frame atlas-frame-reading"
         transition={{ duration: 9.1, repeat: Infinity, ease: orbitEase }}
       >
-        <Image alt="" fill sizes="150px" src="/media/reading.jpg" />
+        <Image alt="" fill loading="eager" sizes="150px" src="/media/reading.jpg" />
         <figcaption>Reading</figcaption>
       </motion.figure>
 
@@ -177,7 +174,6 @@ export function ActivityAtlasVisual() {
 }
 
 export const ActivityRibbon = memo(function ActivityRibbon() {
-  const reduceMotion = useReducedMotion();
   const labels = [
     "Build & Ship",
     "Fitness & Movement",
@@ -187,10 +183,7 @@ export const ActivityRibbon = memo(function ActivityRibbon() {
   ];
 
   return (
-    <div
-      aria-label="Five activity templates"
-      className={`activity-ribbon${reduceMotion ? " is-static" : ""}`}
-    >
+    <div aria-label="Five activity templates" className="activity-ribbon">
       <div>
         {[...labels, ...labels].map((label, index) => (
           <span key={`${label}-${index}`}>

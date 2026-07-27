@@ -71,6 +71,7 @@ export function PublicPodCard({
           alt={`${templateLabels[pod.templateId]} activity cover`}
           data-template-art={pod.templateId}
           fill
+          loading={visualIndex === 0 ? "eager" : "lazy"}
           sizes="76px"
           src={media.hero}
         />

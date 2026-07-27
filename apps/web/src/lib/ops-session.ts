@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { verifyOpsSessionValue } from "./ops-auth";
+import { secureCookiesRequired } from "./cookie-security";
 
 export const OPS_SESSION_COOKIE_NAME = "pods_ops_session";
 
@@ -11,11 +12,14 @@ function sessionSecret() {
   return value;
 }
 
-export function opsSessionCookieOptions(expiresAt: Date) {
+export function opsSessionCookieOptions(
+  expiresAt: Date,
+  environment: { APP_ENV?: string; NODE_ENV?: string } = process.env
+) {
   return {
     httpOnly: true,
     sameSite: "strict" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookiesRequired(environment),
     path: "/",
     expires: expiresAt
   };

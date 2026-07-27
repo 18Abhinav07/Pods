@@ -81,13 +81,15 @@ export function ProofAttachmentControls({
 
       {imagePreviewUrl ? (
         <figure className={styles.proofPreview}>
-          <Image
-            alt="Selected proof preview"
-            height={960}
-            src={imagePreviewUrl}
-            unoptimized
-            width={960}
-          />
+          <span className={styles.proofPreviewMedia}>
+            <Image
+              alt="Selected proof preview"
+              fill
+              sizes="(max-width: 520px) 100vw, 480px"
+              src={imagePreviewUrl}
+              unoptimized
+            />
+          </span>
           <figcaption>
             <span>
               {uploadComplete ? <Check aria-hidden="true" weight="bold" /> : null}

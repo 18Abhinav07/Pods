@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-27 20:49 IST
+last-updated: 2026-07-27 20:55 IST
 last-agent: codex
 mode: HACKATHON
 ---
@@ -15,7 +15,8 @@ Related: [[README]] |
 
 Pods Testnet v0 is frozen, tagged, pushed, and deployed from its dedicated
 release branch. The sole local checkout is now on `release/mainnet-v0`, ready
-for isolated Mainnet product work.
+for isolated Mainnet product work. A fresh gate on the current checkout passed
+after the release split, and temporary local test services are stopped.
 
 ## Stable Testnet Release
 

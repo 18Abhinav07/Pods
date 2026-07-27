@@ -43,3 +43,25 @@ Related: [[HANDOFF]] | [[sessions/INDEX]]
 - Automated proof does not replace the final physical Nimiq Pay smoke check.
 - The fresh local stack reports ready web configuration, database, object
   storage, schema, and a healthy worker cycle with zero application rows.
+
+## Release Split
+
+- Froze `main`, `release/testnet-v0`, and `testnet-v0.0.0` at
+  `9a1de59d5a7dcefcbe1e75b9048f5afa03e354be`.
+- Pointed both Railway Testnet services at `release/testnet-v0` and redeployed
+  the exact frozen commit.
+- Verified successful web deployment
+  `7ed578c2-c887-4991-a3ce-0b13ae651f3c` and worker deployment
+  `effdaf31-81cc-4957-9ba7-63ef7ae4eeab`.
+- Verified the public readiness response identifies `testnet`,
+  `nimiq-testnet`, runtime commit `9a1de59d5a7d`, and schema
+  `0017_robust_loners`.
+- Created `release/mainnet-v0` as the isolated Mainnet integration line without
+  provisioning Mainnet infrastructure or copying Testnet secrets, data, or
+  funds.
+- Reduced active local and remote branches to `main`, `release/testnet-v0`,
+  and `release/mainnet-v0`; retained historical archive tags and one canonical
+  worktree.
+- Re-ran `pnpm check` on `release/mainnet-v0` after the handoff: 772 unit and
+  component tests, 94 integration tests, all type checks, and both production
+  builds passed.

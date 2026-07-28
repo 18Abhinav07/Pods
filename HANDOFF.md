@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-28 13:16 IST
+last-updated: 2026-07-28 13:19 IST
 last-agent: codex
 mode: PLAN
 ---
@@ -42,7 +42,8 @@ through 04 are locked and Documents 05 through 27 remain in review.
 ## Git State
 
 - Branch: `feat/rel-mainnet/planning-foundation`
-- Working tree: planning package ready for its documentation checkpoint.
+- Working tree: clean after the planning closeout commit.
+- Planning package checkpoint: `48fdbc7` (`docs: complete mainnet planning foundation`).
 - Testnet source and deployment branches remain unchanged.
 - Mainnet is not deployed; no Mainnet fund movement is authorized.
 

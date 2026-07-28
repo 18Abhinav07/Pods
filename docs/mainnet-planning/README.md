@@ -53,8 +53,8 @@ documents rather than reinterpret them.
 |---|---|---|---|
 | 01 | [[docs/mainnet-planning/01-person-account-and-identity|Person, account, and identity]] | What is a person in Pods, how do they authenticate, connect identities, recover access, and retain continuity? | locked |
 | 02 | [[docs/mainnet-planning/02-profile-facets-and-privacy|Profile, facets, and privacy]] | How does one person represent builder, movement, reading, and future facets without fragmented identities or forced public exposure? | locked |
-| 03 | [[docs/mainnet-planning/03-actors-roles-and-jobs|Actors, roles, and jobs]] | Which human, collective, and system actors exist, what may each do, and what does Pods do for each of them? | active |
-| 04 | `04-object-graph-and-memberships.md` | How do people, organizations, teams, Events, Projects, Pods, and memberships relate without recursive or duplicated ownership? | queued |
+| 03 | [[docs/mainnet-planning/03-actors-roles-and-jobs|Actors, roles, and jobs]] | Which human, collective, and system actors exist, what may each do, and what does Pods do for each of them? | locked |
+| 04 | [[docs/mainnet-planning/04-object-graph-and-memberships|Object graph and memberships]] | How do people, organizations, teams, Events, Projects, Pods, and memberships relate without recursive or duplicated ownership? | active |
 | 05 | `05-access-consent-and-visibility.md` | How are authorization, inheritance, creator ceilings, contributor choice, consent snapshots, invitations, and visitor access enforced? | queued |
 | 06 | `06-commands-domain-facts-and-audit.md` | How are actor intent, authoritative changes, automation, causation, visibility, and audit history represented once? | queued |
 
@@ -106,8 +106,8 @@ documents rather than reinterpret them.
 
 ## Current Discussion
 
-Documents 01 and 02 are locked. The only active subject is
-`03-actors-roles-and-jobs.md`. Observations about later subjects remain
+Documents 01 through 03 are locked. The only active subject is
+`04-object-graph-and-memberships.md`. Observations about later subjects remain
 dependencies, not silently decided requirements.
 
 ## Final Integration Rule

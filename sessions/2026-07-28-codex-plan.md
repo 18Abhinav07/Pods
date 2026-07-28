@@ -30,6 +30,9 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 - Locked the profile contract with structured facet attributes, managed
   taxonomies, matching intent, explainable matching, discovery consent, and
   youth-safe contextual matching.
+- Locked the actor and role contract with contextual role grants, explicit
+  separation of duties, collective representation, service actors, and 52
+  approved decisions.
 
 ## Decisions
 
@@ -41,9 +44,9 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 
 ## In Progress
 
-- Document 03 is active with a 52-decision actor, role, separation-of-duties,
-  service-actor, youth-role, job, and presentation bundle awaiting approval or
-  numbered amendments.
+- Document 04 is active with a 60-decision object, typed-relationship,
+  ownership, membership, enrollment, capacity, exit, and continuity bundle
+  awaiting approval or numbered amendments.
 
 ## Errors
 

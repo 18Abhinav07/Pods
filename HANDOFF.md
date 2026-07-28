@@ -14,17 +14,16 @@ Related: [[README]] |
 ## State
 
 Testnet v0 remains frozen on `release/testnet-v0`. Mainnet planning is isolated
-on `feat/rel-mainnet/planning-foundation`, and Document 01 is now the locked
-canonical person, authentication, recovery, lifecycle, session, and age-tier
-contract.
+on `feat/rel-mainnet/planning-foundation`. Documents 01 and 02 are locked, and
+Document 03 is the active actor, role, authority-separation, and job contract.
 
 ## In Progress
 
-- Task: Resolve the 32-decision profile, facet, and privacy bundle.
-- File: `docs/mainnet-planning/02-profile-facets-and-privacy.md`
-- Stop point: Document 02 is active with recommendations recorded. Await
+- Task: Resolve the 52-decision actor, role, separation, and job bundle.
+- File: `docs/mainnet-planning/03-actors-roles-and-jobs.md`
+- Stop point: Document 03 is active with recommendations recorded. Await
   Abhinav's approval or numbered amendments before converting them into the
-  locked profile contract.
+  locked role contract.
 
 ## Open Errors / Blockers
 
@@ -42,7 +41,7 @@ contract.
 
 ## Next 3 Tasks
 
-1. Receive approval or numbered amendments for Document 02.
-2. Convert the approved bundle into the locked profile contract and run its
-   privacy consistency review.
-3. Begin `03-actors-roles-and-jobs.md` only after Document 02 is locked.
+1. Receive approval or numbered amendments for Document 03.
+2. Convert the approved bundle into the locked role contract and run its
+   separation-of-duties review.
+3. Begin `04-object-graph-and-memberships.md` only after Document 03 is locked.

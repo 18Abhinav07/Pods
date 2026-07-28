@@ -27,6 +27,9 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 - Added neutral account-age screening, versioned product consent, and a
   separate adult financial-activation receipt with escalation to stronger
   assurance when required.
+- Locked the profile contract with structured facet attributes, managed
+  taxonomies, matching intent, explainable matching, discovery consent, and
+  youth-safe contextual matching.
 
 ## Decisions
 
@@ -38,9 +41,9 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 
 ## In Progress
 
-- Document 02 is active with a 32-decision profile, facet, discovery, youth
-  privacy, provider-presentation, editing, and moderation bundle awaiting
-  approval or numbered amendments.
+- Document 03 is active with a 52-decision actor, role, separation-of-duties,
+  service-actor, youth-role, job, and presentation bundle awaiting approval or
+  numbered amendments.
 
 ## Errors
 

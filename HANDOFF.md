@@ -35,8 +35,9 @@ timeline direction and awaits his decision pass.
 ## Git State
 
 - Branch: `feat/rel-mainnet/planning-foundation`
-- Uncommitted closeout changes: revised launch workbook and this handoff.
-- Previous remote checkpoint: `acc3eba`.
+- Revised launch contract checkpoint: `af60cb9`
+  (`docs: sharpen developer native launch slice`).
+- Working tree clean after the closeout commit.
 
 ## Next 3 Tasks
 

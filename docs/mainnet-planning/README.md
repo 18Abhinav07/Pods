@@ -172,9 +172,10 @@ contradiction, or deferred scope before a Mainnet v1 slice is locked.
 The editable
 [[docs/mainnet-planning/first-launch-slice-workbook|First Launch Slice Decision Workbook]]
 now consolidates the recommended product wedge, complete actor journeys,
-first-launch scope, research findings, open choices, and a recommendation for
-each choice. It is a proposal for Abhinav's edits, not a locked specification
-or implementation plan.
+first-launch scope, research findings, private-repository policy, GitHub issue
+bridge, CLI and MCP interfaces, timeline curation, open choices, and a
+recommendation for each choice. It is a proposal for Abhinav's edits, not a
+locked specification or implementation plan.
 
 ## Final Integration Rule
 

@@ -123,3 +123,53 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 ### Errors
 
 - None.
+
+## Developer-Native Product Identity Revision
+
+### Completed
+
+- Integrated Abhinav's requirement that public and private repositories both
+  support source-backed proof.
+- Verified selected-repository GitHub App access, fine-grained permissions,
+  short-lived installation tokens, issue assignment constraints, webhook
+  capabilities, and MCP authorization from official sources.
+- Reframed Pods as the portable execution record for collaborative building,
+  with Build Seasons as the first packaged wedge rather than the permanent
+  product identity.
+- Added the GitHub issue assignment to accepted-commitment bridge with frozen
+  snapshots and explicit builder acceptance.
+- Added a required Pods CLI and an opt-in MCP beta over one headless execution
+  API.
+- Added dual-key private-source review, protected private media, and
+  public-safe private-evidence claims.
+- Added routine, highlight-candidate, milestone-linked, and system-event
+  timeline treatment so profiles and Project Journeys do not become commit
+  walls.
+- Changed Nimiq sequencing to Cycle II build and dogfood, followed by a
+  candidate complete Cycle III cohort.
+- Expanded the decision workbook from 30 to 40 explicit decisions and captured
+  Abhinav's additions and corrections in the same document.
+
+### Decisions
+
+- GitHub tasks remain GitHub issues. Pods observes eligible assignments and
+  creates proposals; the builder must accept a frozen snapshot before a
+  commitment exists.
+- The first integration is read-oriented. Pods does not write issues, labels,
+  comments, or repository status in the initial launch.
+- CLI is a first-launch interface. MCP is an opt-in beta after the CLI command
+  contract stabilizes.
+- MCP mutations use server-side prepare-confirm and exclude review, public
+  publishing, membership, permission, and financial actions initially.
+- Private raw source requires both Pods ProofCase authority and GitHub
+  repository entitlement.
+- Timeline prominence is curated presentation over immutable proof facts, not
+  a self-awarded canonical label.
+
+### In Progress
+
+- Abhinav reviews Sections 29 and 30 of the revised workbook.
+
+### Errors
+
+- None.

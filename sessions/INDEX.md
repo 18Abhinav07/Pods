@@ -20,4 +20,4 @@ Related: [[HANDOFF]] | [[README]]
 | 2026-07-19 | codex | HACKATHON | Built premium motion and immutable Pod creation | [[sessions/2026-07-19-codex-hackathon]] |
 | 2026-07-24 | codex | HACKATHON | Deployed creator review and live verifier override | [[sessions/2026-07-24-codex-hackathon]] |
 | 2026-07-25 | codex | HACKATHON | Deployed verified Testnet core with payouts safely gated | [[sessions/2026-07-25-codex-hackathon]] |
-| 2026-07-28 | codex | PLAN | Drafted the complete first-launch decision workbook | [[sessions/2026-07-28-codex-plan]] |
+| 2026-07-28 | codex | PLAN | Revised launch around GitHub, CLI, MCP, and timelines | [[sessions/2026-07-28-codex-plan]] |

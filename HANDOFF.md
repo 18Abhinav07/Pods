@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-28 16:28 IST
+last-updated: 2026-07-28 17:14 IST
 last-agent: codex
 mode: PLAN
 ---
@@ -13,34 +13,33 @@ Related: [[README]] |
 
 ## State
 
-Testnet v0 remains frozen. The Mainnet candidate now has one complete,
-research-backed first-launch decision workbook awaiting Abhinav's edits.
+Testnet v0 remains frozen. The Mainnet launch workbook now integrates
+Abhinav's private-GitHub, issue-to-commitment, CLI, MCP, and curated-execution
+timeline direction and awaits his decision pass.
 
 ## In Progress
 
-- Task: Review and revise the first Mainnet launch slice.
+- Task: Review the revised first Mainnet launch product contract.
 - File: `docs/mainnet-planning/first-launch-slice-workbook.md`
-- Stop point: Sections 29 and 30 contain all open decisions and space for
-  additions; no recommendation is locked.
+- Stop point: Sections 29 and 30 contain 40 decisions plus Abhinav's captured
+  additions and corrections; no implementation plan is authorized.
 
 ## Open Errors / Blockers
 
-- Abhinav must accept or amend the first-launch choices.
-- Approved choices must be reconciled into Documents 05 through 27.
-- Spikes A, B, and C plus selected slice-specific gates must record PASS before
-  an implementation plan.
-- Any real NIM lane still requires custody, legal, signer, limit,
-  reconciliation, environment-isolation, and physical-device gates.
+- Abhinav must approve or amend the revised choices.
+- Approved changes must be reconciled into Documents 05 through 27.
+- Spikes A through E plus selected product gates must record PASS before an
+  implementation plan.
+- Any real NIM lane still requires separate financial and operational gates.
 
 ## Git State
 
 - Branch: `feat/rel-mainnet/planning-foundation`
-- Working tree clean after the session closeout commit.
-- First-launch workbook checkpoint: `c5d07c8`
-  (`docs: define first mainnet launch slice`).
+- Uncommitted closeout changes: revised launch workbook and this handoff.
+- Previous remote checkpoint: `acc3eba`.
 
 ## Next 3 Tasks
 
-1. Apply Abhinav's edits in `first-launch-slice-workbook.md`.
-2. Reconcile approved choices into Documents 05 through 27.
-3. Select and run the exact validation spikes for the accepted slice.
+1. Apply Abhinav's decision edits from Sections 29 and 30.
+2. Reconcile the approved contract into Documents 05 through 27.
+3. Select and run identity, GitHub, command, CLI, and MCP validation spikes.

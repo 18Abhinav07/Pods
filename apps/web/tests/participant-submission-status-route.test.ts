@@ -4,13 +4,15 @@ const session = vi.hoisted(() => vi.fn());
 const getSubmissionForOwner = vi.hoisted(() => vi.fn());
 const getProfileForUser = vi.hoisted(() => vi.fn());
 const getVerifierAuthorityForPod = vi.hoisted(() => vi.fn());
+const getProofReviewForParticipant = vi.hoisted(() => vi.fn());
 
 vi.mock("../src/lib/session", () => ({ getCurrentSession: session }));
 vi.mock("../src/lib/server-db", () => ({
   podsRepository: {
     getProfileForUser,
     getSubmissionForOwner,
-    getVerifierAuthorityForPod
+    getVerifierAuthorityForPod,
+    getProofReviewForParticipant
   }
 }));
 
@@ -54,6 +56,7 @@ describe("participant submission status route", () => {
       source: "contract",
       amendedAt: null
     });
+    getProofReviewForParticipant.mockResolvedValue(null);
   });
 
   it("requires the signed wallet session", async () => {
@@ -101,6 +104,37 @@ describe("participant submission status route", () => {
     expect(serialized).not.toContain("creatorUserId");
     expect(serialized).not.toContain("wallet");
     expect(serialized).not.toContain("userId");
+  });
+
+  it("projects the current V3 action stage without exposing private thread data", async () => {
+    getSubmissionForOwner.mockResolvedValueOnce({
+      submission: {
+        id: submissionId,
+        state: "reviewing",
+        proofShareMode: "reviewer_only",
+        submittedAt: new Date("2027-04-05T08:00:00.000Z"),
+        reviewTargetAt: new Date("2027-04-05T20:00:00.000Z"),
+        reviewHardDeadlineAt: new Date("2027-04-06T08:00:00.000Z")
+      },
+      pod: {
+        id: podId,
+        creatorUserId: "creator-1",
+        contractData: { version: 3 }
+      },
+      reviewDecision: null
+    });
+    getProofReviewForParticipant.mockResolvedValueOnce({
+      proofCase: {
+        stage: "awaiting_clarification",
+        privateInternalField: "do-not-return"
+      }
+    });
+
+    const response = await GET(new Request("http://localhost"), params);
+    const body = await response.json();
+
+    expect(body.status.proofCaseStage).toBe("awaiting_clarification");
+    expect(JSON.stringify(body)).not.toContain("privateInternalField");
   });
 
   it("identifies the platform reviewer without projecting the creator profile", async () => {

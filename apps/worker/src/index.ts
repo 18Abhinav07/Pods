@@ -20,6 +20,7 @@ import { treasuryConfigurationPath } from "./preflight/paths.js";
 import { readTreasuryConfiguration } from "./preflight/treasury-config.js";
 import { runOccurrenceCycle } from "./activity/run-occurrence-cycle.js";
 import { runReviewTimeoutCycle } from "./activity/run-review-timeout-cycle.js";
+import { runProofReviewDeadlineCycle } from "./activity/run-proof-review-deadline-cycle.js";
 import { runSettlementCycle } from "./settlement/run-settlement-cycle.js";
 import { runPayoutCycle } from "./settlement/payout-service.js";
 import {
@@ -183,6 +184,14 @@ export async function startFundingWorker() {
       cycleFailed = true;
       console.error(
         `[review-timeout-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
+      );
+    }
+    try {
+      await runProofReviewDeadlineCycle({ repository });
+    } catch (error) {
+      cycleFailed = true;
+      console.error(
+        `[proof-review-deadline-cycle] ${error instanceof Error ? error.message : "Cycle failed"}`
       );
     }
     if (

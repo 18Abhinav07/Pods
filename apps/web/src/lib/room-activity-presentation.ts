@@ -9,6 +9,7 @@ type ScheduleRow = {
   };
   commitment: { id: string } | null;
   submission: { id: string; state: string } | null;
+  proofCase?: { stage: string } | null;
 };
 
 export type RoomActivityPresentation = {
@@ -101,6 +102,24 @@ export function presentRoomActivitySchedule({
     }
     if (open.submission.state === "draft") {
       return { ...standard, mode: "continue", label: "Continue proof", stateLabel: "Draft saved" };
+    }
+    if (
+      open.submission.state === "reviewing" &&
+      (
+        open.proofCase?.stage === "awaiting_clarification" ||
+        open.proofCase?.stage === "appeal_open"
+      )
+    ) {
+      return {
+        ...standard,
+        href: `/pods/${podId}/submissions/${open.submission.id}`,
+        mode: "view",
+        label: "Respond to review",
+        stateLabel:
+          open.proofCase.stage === "awaiting_clarification"
+            ? "Clarification needed"
+            : "Appeal decision needed"
+      };
     }
     return {
       ...standard,

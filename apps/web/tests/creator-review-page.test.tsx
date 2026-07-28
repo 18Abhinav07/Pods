@@ -7,6 +7,7 @@ const notFound = vi.hoisted(() => vi.fn(() => {
 const requireSession = vi.hoisted(() => vi.fn());
 const repository = vi.hoisted(() => ({
   getReviewSubmissionForCreator: vi.fn(),
+  getProofReviewForCreator: vi.fn(),
   listPendingReviewsForCreator: vi.fn()
 }));
 
@@ -86,6 +87,7 @@ describe("creator proof review pages", () => {
     requireSession.mockResolvedValue({ userId: "creator-user-id" });
     repository.listPendingReviewsForCreator.mockResolvedValue([queueRecord]);
     repository.getReviewSubmissionForCreator.mockResolvedValue(workspaceRecord);
+    repository.getProofReviewForCreator.mockResolvedValue(null);
   });
 
   it("shows only pending creator reviews with participant identity and timing", async () => {
@@ -334,5 +336,86 @@ describe("creator proof review pages", () => {
 
     expect(screen.getByText(privateNote)).toBeVisible();
     expect(screen.getByText("Private decision note")).toBeVisible();
+  });
+
+  it("keeps the complete V3 review thread visible after a terminal decision", async () => {
+    repository.getReviewSubmissionForCreator.mockResolvedValue({
+      ...workspaceRecord,
+      submission: {
+        ...workspaceRecord.submission,
+        state: "rejected",
+        reviewedAt: new Date("2027-04-05T16:00:00.000Z")
+      },
+      pod: {
+        ...workspaceRecord.pod,
+        contractData: {
+          ...workspaceRecord.pod.contractData,
+          version: 3,
+          verification: { protocol: "proof_reconciliation_v1" }
+        }
+      }
+    });
+    repository.getProofReviewForCreator.mockResolvedValue({
+      submission: workspaceRecord.submission,
+      proofCase: {
+        stage: "resolved",
+        resolution: "rejected",
+        clarificationUsed: false,
+        appealUsed: true,
+        sharedWithPodAt: null,
+        stageDeadlineAt: new Date("2027-04-05T16:00:00.000Z"),
+        absoluteDeadlineAt: new Date("2027-04-08T11:00:00.000Z")
+      },
+      events: [{
+        sequence: 1,
+        type: "provisionally_reject",
+        actor: "creator",
+        payload: {
+          category: "commitment_mismatch",
+          reason: "The artifact does not satisfy the frozen acceptance criterion.",
+          unmetCriteria: ["The settlement blocker is not demonstrated"],
+          suggestedCorrection: "Link the exact integration test in a recovery commitment."
+        },
+        createdAt: new Date("2027-04-05T12:00:00.000Z")
+      }, {
+        sequence: 2,
+        type: "open_appeal",
+        actor: "participant",
+        payload: {
+          reason: "The linked artifact includes the settlement blocker test."
+        },
+        createdAt: new Date("2027-04-05T13:00:00.000Z")
+      }, {
+        sequence: 3,
+        type: "appeal_reject",
+        actor: "creator",
+        payload: {
+          reason: "The appeal still does not demonstrate the frozen criterion."
+        },
+        createdAt: new Date("2027-04-05T16:00:00.000Z")
+      }],
+      versions: [{
+        ordinal: 1,
+        kind: "initial",
+        resultSummary: "Shipped the creator proof queue and final decision workspace.",
+        artifactUrl: "https://github.com/example/pods/pull/42",
+        proofShareMode: "reviewer_only",
+        evidenceObjectKey: null,
+        createdAt: new Date("2027-04-05T11:00:00.000Z")
+      }]
+    });
+
+    render(await CreatorReviewWorkspacePage({
+      params: Promise.resolve({ podId, submissionId })
+    }));
+
+    expect(screen.getByRole("heading", { name: "Review closed" })).toBeVisible();
+    expect(screen.getByText("Review thread")).toBeVisible();
+    expect(screen.getByText("The settlement blocker is not demonstrated"))
+      .toBeVisible();
+    expect(screen.getByText("Link the exact integration test in a recovery commitment."))
+      .toBeVisible();
+    expect(screen.queryByText("Review timing")).not.toBeInTheDocument();
+    expect(screen.queryByText("Decision recorded")).not.toBeInTheDocument();
   });
 });

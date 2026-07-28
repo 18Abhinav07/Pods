@@ -6,7 +6,7 @@ const runtime = {
   deploymentFlavor: "testnet" as const,
   fundsNetwork: "nimiq-testnet" as const,
   commitSha: "abcdef012345",
-  schemaVersion: "0017_robust_loners"
+  schemaVersion: "0018_proof_reconciliation_lifecycle"
 };
 
 describe("worker health response", () => {

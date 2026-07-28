@@ -10,13 +10,23 @@ export async function POST(
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: "Wallet session required" }, { status: 401 });
   const { podId, occurrenceId } = await params;
-  const body = (await request.json()) as {
+  let body: {
     task?: unknown;
     deliverableType?: unknown;
     goal?: unknown;
+    recoveryOfSubmissionId?: unknown;
   };
   try {
+    body = await request.json() as typeof body;
+  } catch {
+    return NextResponse.json({ error: "Invalid commitment request" }, { status: 400 });
+  }
+  try {
     const now = await podsRepository.getEffectiveTime(new Date());
+    const recoveryOfSubmissionId =
+      typeof body.recoveryOfSubmissionId === "string"
+        ? body.recoveryOfSubmissionId
+        : null;
     const commitment = await podsRepository.lockOccurrenceCommitment({
       userId: session.userId,
       podId,
@@ -24,6 +34,7 @@ export async function POST(
       task: body.task,
       deliverableType: body.deliverableType,
       goal: body.goal,
+      ...(recoveryOfSubmissionId ? { recoveryOfSubmissionId } : {}),
       now
     });
     return NextResponse.json({ commitment }, { status: 201 });

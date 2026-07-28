@@ -47,6 +47,7 @@ export type PublicVisitorMessage = {
       | "under_review"
       | "approved"
       | "rejected"
+      | "grace"
       | "timeout_protected";
     submissionId: string | null;
     templateEvidence: TemplateEvidence | null;
@@ -167,6 +168,7 @@ function publicProofStateLabel(
   if (state === "under_review") return "Creator review";
   if (state === "approved") return "Approved";
   if (state === "rejected") return "Not verified";
+  if (state === "grace") return "Grace applied";
   if (state === "timeout_protected") return "Protected after review timeout";
   return "Committed";
 }

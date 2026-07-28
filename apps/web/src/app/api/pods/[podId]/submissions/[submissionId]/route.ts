@@ -48,13 +48,21 @@ export async function GET(
         avatar: creatorProfile.avatar
       }
     : null;
+  const proofReview = result.pod.contractData?.version === 3
+    ? await podsRepository.getProofReviewForParticipant({
+        userId: session.userId,
+        podId,
+        submissionId
+      })
+    : null;
   return NextResponse.json(
     {
       status: participantSubmissionStatusDto({
         submission: result.submission,
         reviewDecision: result.reviewDecision,
         creator,
-        reviewerKind
+        reviewerKind,
+        proofCaseStage: proofReview?.proofCase.stage ?? null
       })
     },
     {

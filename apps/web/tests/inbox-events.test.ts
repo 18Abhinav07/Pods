@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { buildInboxEvents } from "../src/lib/inbox-events";
+import {
+  buildInboxEvents,
+  buildProofReviewInboxEvents
+} from "../src/lib/inbox-events";
 
 describe("buildInboxEvents", () => {
   it("never labels a public application membership as a private invitation", () => {
@@ -110,6 +113,77 @@ describe("buildInboxEvents", () => {
     expect(events).toEqual(expect.arrayContaining([
       expect.objectContaining({ title, detail, occurredAt: reviewedAt })
     ]));
+  });
+
+  it("uses the proof event as the only V3 terminal decision update", () => {
+    const reviewedAt = new Date("2027-03-01T11:00:00.000Z");
+    const lifecycleEvents = buildInboxEvents([{
+      pod: {
+        id: "pod-v3",
+        state: "active",
+        contractData: {
+          version: 3,
+          activity: { name: "Reconciliation room" },
+          verification: { protocol: "proof_reconciliation_v1" }
+        }
+      },
+      membership: {
+        id: "membership-v3",
+        admissionSource: "public_application",
+        state: "active",
+        depositIntentId: null,
+        acceptedAt: reviewedAt,
+        updatedAt: reviewedAt
+      },
+      application: null,
+      deposit: null,
+      submission: {
+        id: "submission-v3",
+        state: "rejected",
+        submittedAt: new Date("2027-03-01T10:00:00.000Z"),
+        reviewedAt,
+        approvedAt: null,
+        updatedAt: reviewedAt
+      },
+      transfer: null
+    }] as Parameters<typeof buildInboxEvents>[0]);
+    const reviewEvents = buildProofReviewInboxEvents([{
+      notification: { id: "notification-v3", createdAt: reviewedAt },
+      pod: {
+        id: "pod-v3",
+        contractData: { activity: { name: "Reconciliation room" } }
+      },
+      submissionId: "submission-v3",
+      type: "appeal_reject",
+      recipientRole: "participant"
+    }] as Parameters<typeof buildProofReviewInboxEvents>[0]);
+
+    expect(lifecycleEvents.map((event) => event.title)).not.toContain("Not verified");
+    expect(reviewEvents).toEqual([
+      expect.objectContaining({
+        title: "Appeal resolved",
+        href: "/pods/pod-v3/submissions/submission-v3"
+      })
+    ]);
+  });
+
+  it("routes creator proof events to the creator workspace", () => {
+    const occurredAt = new Date("2027-03-01T11:00:00.000Z");
+    const events = buildProofReviewInboxEvents([{
+      notification: { id: "notification-creator", createdAt: occurredAt },
+      pod: {
+        id: "pod-v3",
+        contractData: { activity: { name: "Reconciliation room" } }
+      },
+      submissionId: "submission-v3",
+      type: "open_appeal",
+      recipientRole: "creator"
+    }] as Parameters<typeof buildProofReviewInboxEvents>[0]);
+
+    expect(events[0]).toMatchObject({
+      href: "/pods/pod-v3/admin/reviews/submission-v3",
+      title: "Appeal received"
+    });
   });
 
   it.each([

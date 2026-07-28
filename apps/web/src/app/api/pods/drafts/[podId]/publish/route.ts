@@ -39,7 +39,7 @@ export async function POST(
     activity,
     community,
     commitment
-  }, fundingPolicy);
+  }, { ...fundingPolicy, proofReconciliation: true });
   if (!result.success) return NextResponse.json({ errors: result.errors }, { status: 400 });
   const timing = validatePublicationTiming(result.occurrences, new Date());
   if (!timing.success) return NextResponse.json({ errors: timing.errors }, { status: 400 });

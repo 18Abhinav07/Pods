@@ -1,3 +1,4 @@
+import { isPublicVisitorContract } from "@pods/domain";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -32,8 +33,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ podId: s
         podId={podId}
         questions={contract.community.applicationQuestions}
         visitorConsent={
-          contract.version === 2 &&
-          contract.community.roomAudience === "public_read_only" &&
+          isPublicVisitorContract(contract) &&
           pod.contractHash
             ? { contractHash: pod.contractHash }
             : null

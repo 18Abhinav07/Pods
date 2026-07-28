@@ -20,9 +20,12 @@ export type TodayParticipant = {
 export type TodayActivityAction =
   | "lock_task"
   | "submit_evidence"
+  | "respond_clarification"
+  | "decide_appeal"
   | "reviewing"
   | "approved"
   | "rejected"
+  | "grace"
   | "timeout_protected"
   | "upcoming";
 
@@ -47,6 +50,7 @@ export function deriveTodayActivityAction(input: {
   occurrence: { opensAt: Date };
   commitment: { id: string } | null;
   submission: { state: string } | null;
+  proofCase?: { stage: string } | null;
 }): TodayActivityAction {
   if (input.occurrence.opensAt.getTime() > input.now.getTime()) {
     return "upcoming";
@@ -58,9 +62,22 @@ export function deriveTodayActivityAction(input: {
     return "submit_evidence";
   }
   if (
+    input.submission.state === "reviewing" &&
+    input.proofCase?.stage === "awaiting_clarification"
+  ) {
+    return "respond_clarification";
+  }
+  if (
+    input.submission.state === "reviewing" &&
+    input.proofCase?.stage === "appeal_open"
+  ) {
+    return "decide_appeal";
+  }
+  if (
     input.submission.state === "reviewing" ||
     input.submission.state === "approved" ||
     input.submission.state === "rejected" ||
+    input.submission.state === "grace" ||
     input.submission.state === "timeout_protected"
   ) {
     return input.submission.state;
@@ -122,7 +139,11 @@ export function chooseTodayEnrollmentAction(input: {
     return { kind: "participant", ...participant };
   }
   const dueActivity = input.activities?.find(
-    ({ action }) => action === "lock_task" || action === "submit_evidence"
+    ({ action }) =>
+      action === "lock_task" ||
+      action === "submit_evidence" ||
+      action === "respond_clarification" ||
+      action === "decide_appeal"
   );
   if (dueActivity) return { kind: "activity", ...dueActivity };
   if (input.creatorReviewPodId) {

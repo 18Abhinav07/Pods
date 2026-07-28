@@ -60,6 +60,8 @@ export type RoomMessage = {
     resultSummary: string | null;
     artifactUrl: string | null;
     sharedEvidenceAvailable: boolean;
+    creatorReviewAvailable?: boolean;
+    reviewContext?: Record<string, unknown> | null;
   } | null;
   delivery?: "sending" | "failed";
 };
@@ -598,6 +600,14 @@ export function PodRoom({
                           </a>
                         ) : null}
                       </div>
+                      {message.activity.reviewContext ? (
+                        <aside className={styles.reviewContext}>
+                          <span>Shared review context</span>
+                          {typeof message.activity.reviewContext.reason === "string" ? <p>{message.activity.reviewContext.reason}</p> : null}
+                          {Array.isArray(message.activity.reviewContext.unmetCriteria) ? <ul>{message.activity.reviewContext.unmetCriteria.map((criterion) => <li key={String(criterion)}>{String(criterion)}</li>)}</ul> : null}
+                          <small>Replies offer perspective. The creator review remains authoritative.</small>
+                        </aside>
+                      ) : null}
                       {message.activity.submissionId &&
                       message.sender?.isViewer ? (
                         <Link
@@ -608,7 +618,8 @@ export function PodRoom({
                         </Link>
                       ) : message.activity.submissionId &&
                         canReviewProofs &&
-                        message.activity.state === "reviewing" ? (
+                        message.activity.state === "reviewing" &&
+                        message.activity.creatorReviewAvailable !== false ? (
                           <Link
                             className={styles.activityAction}
                             href={`/pods/${podId}/admin/reviews/${message.activity.submissionId}`}

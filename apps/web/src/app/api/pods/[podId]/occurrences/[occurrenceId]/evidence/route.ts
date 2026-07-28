@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { toActivitySubmissionView } from "../../../../../../../lib/activity-submission-view";
@@ -12,8 +14,14 @@ export async function POST(
   const session = await getCurrentSession();
   if (!session) return NextResponse.json({ error: "Wallet session required" }, { status: 401 });
   const { podId, occurrenceId } = await params;
-  const form = await request.formData();
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid evidence upload" }, { status: 400 });
+  }
   const submissionId = form.get("submissionId");
+  const reservationId = form.get("reservationId");
   const image = form.get("image");
   if (typeof submissionId !== "string" || !(image instanceof File)) {
     return NextResponse.json({ error: "Choose an evidence image" }, { status: 400 });
@@ -29,20 +37,31 @@ export async function POST(
   let stored: Awaited<ReturnType<ReturnType<typeof privateEvidenceStorage>["storeImage"]>>;
   try {
     const storage = privateEvidenceStorage();
+    const source = Buffer.from(await image.arrayBuffer());
+    const mediaSha256 = createHash("sha256").update(source).digest("hex");
     stored = await storage.storeImage({
       podId,
       membershipId: activity.membership.id,
       occurrenceId,
-      source: Buffer.from(await image.arrayBuffer())
+      source
     });
     try {
       const now = await podsRepository.getEffectiveTime(new Date());
-      const submission = await podsRepository.attachSubmissionEvidence({
-        userId: session.userId,
-        submissionId,
-        evidence: stored,
-        now
-      });
+      const submission = activity.pod?.contractData?.version === 3
+        ? await podsRepository.attachReservedSubmissionEvidence({
+            userId: session.userId,
+            submissionId,
+            reservationId: typeof reservationId === "string" ? reservationId : "",
+            mediaSha256,
+            evidence: stored,
+            now
+          })
+        : await podsRepository.attachSubmissionEvidence({
+            userId: session.userId,
+            submissionId,
+            evidence: stored,
+            now
+          });
       return NextResponse.json({
         submission: toActivitySubmissionView(submission)
       });

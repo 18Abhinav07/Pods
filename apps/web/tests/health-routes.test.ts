@@ -21,9 +21,9 @@ describe("web health routes", () => {
     checkHealth.mockReset();
     assertReady.mockReset();
     checkHealth.mockResolvedValue({
-      schemaVersion: "0017_robust_loners",
+      schemaVersion: "0018_proof_reconciliation_lifecycle",
       migrationHash:
-        "97136dbc69adf6a53bbcb077015df750ad185f71c022dbd27253f2bd150bc4cd"
+        "c149f0c7e6a433e135c6c77d36ed59cd6ab43cb735d4465f05f5872f403b5c1f"
     });
     assertReady.mockResolvedValue(undefined);
     vi.stubEnv("APP_ENV", "alpha");
@@ -61,7 +61,7 @@ describe("web health routes", () => {
         deploymentFlavor: "testnet",
         fundsNetwork: "nimiq-testnet",
         commitSha: "abcdef012345",
-        schemaVersion: "0017_robust_loners"
+        schemaVersion: "0018_proof_reconciliation_lifecycle"
       }
     });
     expect(checkHealth).toHaveBeenCalledOnce();
@@ -115,7 +115,7 @@ describe("web health routes", () => {
 
   it("refuses readiness when the applied migration hash is not the code-owned hash", async () => {
     checkHealth.mockResolvedValueOnce({
-      schemaVersion: "0017_robust_loners",
+      schemaVersion: "0018_proof_reconciliation_lifecycle",
       migrationHash: "0".repeat(64)
     });
 

@@ -24,6 +24,8 @@ import {
   occurrences,
   pods,
   profiles,
+  proofCases,
+  proofReviewEvents,
   realtimeEvents,
   submissions,
   userBlocks,
@@ -640,7 +642,8 @@ export function createMessagingMethods(database: PodsDatabase) {
               occurrence: occurrences,
               submission: submissions,
               participantUserId: memberships.userId,
-              templateId: pods.templateId
+              templateId: pods.templateId,
+              proofCase: proofCases
             })
             .from(activityMessages)
             .innerJoin(
@@ -660,10 +663,31 @@ export function createMessagingMethods(database: PodsDatabase) {
               submissions,
               eq(submissions.commitmentId, occurrenceCommitments.id)
             )
+            .leftJoin(proofCases, eq(proofCases.submissionId, submissions.id))
             .where(inArray(activityMessages.messageId, messageIds))
         : [];
       const activityByMessage = new Map(
         activityRows.map((row) => [row.messageId, row] as const)
+      );
+      const sharedCaseIds = activityRows
+        .map(({ proofCase }) => proofCase?.sharedWithPodAt ? proofCase.id : null)
+        .filter((id): id is string => Boolean(id));
+      const sharedReviewRows = sharedCaseIds.length > 0
+        ? await database
+            .select({
+              caseId: proofReviewEvents.caseId,
+              payload: proofReviewEvents.payload
+            })
+            .from(proofReviewEvents)
+            .where(
+              and(
+                inArray(proofReviewEvents.caseId, sharedCaseIds),
+                eq(proofReviewEvents.type, "provisionally_reject")
+              )
+            )
+        : [];
+      const sharedReviewByCase = new Map(
+        sharedReviewRows.map((row) => [row.caseId, row.payload] as const)
       );
       const peerUserId = access.conversation.kind === "direct"
         ? access.conversation.firstUserId === input.userId
@@ -785,7 +809,22 @@ export function createMessagingMethods(database: PodsDatabase) {
                   resultSummary: visibleProof?.resultSummary ?? null,
                   artifactUrl: visibleProof?.artifactUrl ?? null,
                   sharedEvidenceAvailable:
-                    visibleProof?.attachmentAvailable ?? false
+                    visibleProof?.attachmentAvailable ?? false,
+                  creatorReviewAvailable:
+                    access.canReviewProofs &&
+                    visibleSubmission?.state === "reviewing" &&
+                    (
+                      !activityRow.proofCase ||
+                      [
+                        "initial_review",
+                        "post_clarification_review",
+                        "appeal_review"
+                      ].includes(activityRow.proofCase.stage)
+                    ),
+                  reviewContext:
+                    activityRow.proofCase?.sharedWithPodAt
+                      ? sharedReviewByCase.get(activityRow.proofCase.id) ?? null
+                      : null
                 }
               : null,
             reactions: [...byCode.entries()].map(([code, summary]) => ({

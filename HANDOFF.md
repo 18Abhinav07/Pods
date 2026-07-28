@@ -1,6 +1,6 @@
 ---
 project: pods
-last-updated: 2026-07-27 18:44
+last-updated: 2026-07-28 21:10
 last-agent: codex
 mode: HACKATHON
 ---
@@ -8,79 +8,113 @@ mode: HACKATHON
 # Pods Handoff
 
 Related: [[README]] |
-[[sessions/2026-07-27-testnet-release-readiness]] |
-[[validation/phase-5-results]]
+[[docs/superpowers/specs/2026-07-28-pods-proof-reconciliation-and-appeal-design]] |
+[[validation/proof-reconciliation-spike-results]]
 
 ## State
 
-The final Pods Testnet product is consolidated on `main`, pushed to GitHub,
-and deployed to the Railway web and worker services. It includes the complete
-Build and Ship lifecycle, profiles and social flows, Pod rooms, public visitor
-views, creator review, deterministic settlement, refunds, and real low-value
-Testnet NIM payouts. Mainnet remains a separate, unauthorized product phase.
+The Testnet proof reconciliation and appeal lifecycle is implemented on the
+isolated local branch `feat/rel-testnet-proof-recon-and-appeal-lifecycle` in
+the `BUILD-proof-recon` worktree. The stable Testnet release, Railway
+deployment, Mainnet branch, and Mainnet worktree were not changed.
 
-## Verified Release Contract
+The feature branch is ready for a physical two-wallet Nimiq Pay gate. It is
+not pushed, merged, migrated in Railway, or deployed.
 
-- The canonical source is clean `main`; no feature branch is a release source.
-- The production browser suite runs against a built Next.js server rather than
-  the development compiler.
-- The release gate passes lint, copy safety, all TypeScript projects, 772 unit
-  and component tests, 94 live integration tests, and both production builds.
-- Forty mobile browser journeys pass across Mobile Safari and Android Chromium.
-- The public design-preview route and its database-backed prototype code are
-  absent from the shipped application.
-- Dependency audit reports no known production vulnerabilities.
-- Railway remains Nimiq Testnet only. Testnet payout broadcasting is explicitly
-  authorized and enabled for the web and worker services.
+## Implemented Contract
 
-## Physical Gate Status
+- Existing V1 and V2 Pods retain their frozen direct-decision behavior.
+- New V3 Pods freeze `proof_reconciliation_v1` into the published contract.
+- The Pod creator remains the Testnet reviewer. Review does not create a
+  friendship or direct-message relationship.
+- A submission remains `reviewing` through one clarification, one provisional
+  rejection, and one appeal. Settlement stays blocked until a terminal result.
+- Structured rejection captures a category, detailed reason, one to five unmet
+  criteria, and an optional suggested correction.
+- The participant may accept rejection, appeal once with optional private
+  evidence, or explicitly share sanitized rejection context with locked Pod
+  members for advisory room discussion.
+- Initial and post-clarification reviewer inactivity protects the occurrence.
+  Appeal-review inactivity returns principal with grace. An unused appeal
+  window resolves to rejection.
+- Proof cases have stage deadlines and a 72-hour absolute cap driven only by
+  the audited Clock.
+- Proof versions and review events are immutable and sequenced. Mutations use
+  idempotency keys, including safe replay after a terminal transition.
+- A ten-minute upload reservation can begin before occurrence close. It is
+  bound to the exact selected image hash, survives local HTTP without relying
+  on SubtleCrypto, is consumed once, and writes the hash into the immutable
+  proof version.
+- A rejected Build or Practice submission can start a linked recovery
+  commitment only when a real later occurrence is still eligible. The original
+  outcome never changes, and no dead recovery link is shown.
+- `approved`, `rejected`, `timeout_protected`, and `grace` continue to use the
+  existing proportional settlement engine. Grace returns principal, earns no
+  bonus, and is neutral for streak and completion-rate calculations.
 
-- The complete two-wallet Testnet funding, activity, review, settlement, and
-  payout journey passed on physical Nimiq Pay wallets.
-- Both participants received their expected finalized Testnet payouts, and the
-  user accepted the end-to-end behavior.
-- Mainnet treasury configuration, Mainnet funds, and Mainnet transactions are
-  not authorized by this release.
+## User Surfaces
 
-## Completed Local Two-Wallet Journey
+- Participant submission detail contains the private review thread, immutable
+  proof versions, clarification response, provisional rejection, one appeal,
+  acceptance, Pod-context sharing, and recovery action.
+- Creator review detail contains the full review thread before and after a
+  terminal decision, plus approve, clarify, provisional-reject, and appeal
+  resolution controls.
+- Today and creator review queues appear only when the current stage belongs to
+  the creator. Participant-owned stages do not show a false creator action.
+- Updates contains durable role-correct review events without duplicate generic
+  terminal entries.
+- Pod rooms show only explicitly shared sanitized rejection context. Replies
+  and reactions remain advisory and cannot mutate review or financial state.
+- Public visitors receive no clarification, rejection, appeal, private media,
+  wallet, or financial detail.
 
-- Pod: `Three-Day Ship Sprint`
-- Pod ID: `f2673754-4069-4189-a7f9-c49d80a272d3`
-- LAN URL:
-  `http://192.168.29.244:3411/pods/f2673754-4069-4189-a7f9-c49d80a272d3`
-- Creator and reviewer: seeded `pods_test_operator`; the creator neither funds
-  nor receives settlement value.
-- Contract: three Build and Ship occurrences, `0.1 NIM` per occurrence,
-  `0.3 NIM` upfront per participant, two-participant capacity, proportional
-  settlement, and a public read-only visitor room.
-- Current state: `completed`; the settlement run is `settled`, both payout
-  legs are chain-confirmed, and deposit/payout conservation is exactly
-  `60,000 Luna`.
-- Occurrence one result: `ryuk` is approved and `raptor` is rejected, with
-  both review decisions and both Pod-room realtime events persisted.
-- Occurrences two and three closed with both members missed. Because neither
-  occurrence had an approved bonus recipient, each is recorded as
-  `closed_no_bonus_recipient` and both unused slices were restored.
-- Final conserved payout from the `0.6 NIM` pool: `raptor` received `0.2 NIM`
-  and `ryuk` received `0.4 NIM`.
-- Confirmed payout hashes: `raptor`
-  `c5d1327b85ae308a9fc66620fdf5e51c1d0428b38ab51c8275521663ded8ffe6`;
-  `ryuk`
-  `e303506f01a617f5fc96c0de3edbf9425ce65bcfa19330dd45e1a369dc4e4c27`.
-- Local web and worker processes are stopped after the completed physical gate.
-- Settlement and Testnet payout broadcast remain enabled only for the isolated
-  Testnet runtime.
+## Persistence and Worker
 
-## Local Runtime
+- Migration: `0018_proof_reconciliation_lifecycle`.
+- Schema identity: `c149f0c7e6a433e135c6c77d36ed59cd6ab43cb735d4465f05f5872f403b5c1f`.
+- New durable records cover proof cases, review events, proof versions, upload
+  reservations, and recovery links.
+- The worker advances proof deadlines from effective Clock time. The legacy
+  review-timeout cycle excludes submissions owned by V3 proof cases.
+- Reviewer and deadline transitions lock the proof case and submission in one
+  transaction, append the event, project the terminal state, and enqueue
+  authorized delivery records together.
 
-- Use the clean root checkout on `main` as the only local Pods source.
-- Local Postgres and object storage remain the integration-test dependencies.
-- Run the web app on port `3411` for Nimiq Pay LAN testing and run the worker
-  against the same local Testnet configuration.
+## Verification
+
+`pnpm check` passes on the final working tree:
+
+- ESLint and no-U+2014 copy gate: PASS.
+- All TypeScript projects: PASS.
+- Unit and component tests: 814 PASS.
+- Live Postgres integration tests: 103 PASS across 16 files.
+- Web and worker production builds: PASS.
+- Focused proof persistence suite: 9 PASS, including concurrent transition,
+  timeout, queue ownership, advisory sharing, recovery, reservation, and media
+  hash assertions.
+
+## Physical Gate Still Required
+
+Use two real Testnet wallets inside Nimiq Pay and a new V3 Pod. Verify:
+
+1. Submit a proof close to occurrence cutoff and confirm the reviewer receives
+   a full independent review window.
+2. Request clarification, answer it with a replacement artifact or image, and
+   confirm both immutable versions remain visible only to participant and
+   creator.
+3. Send a structured provisional rejection, share its sanitized context to the
+   Pod room, and confirm another member can reply without changing the case.
+4. Exercise acceptance and appeal on separate proofs. Resolve an appeal as
+   approved, rejected, or grace and verify every projection agrees.
+5. Close the Pod and confirm settlement remains blocked while a case is open,
+   then conserves exactly after the terminal outcome.
+6. Begin an image upload just before cutoff and complete it within ten minutes.
+   Confirm a different image cannot consume that reservation.
 
 ## Next 3 Tasks
 
-1. Preserve the Testnet deployment as the stable competition build.
-2. Create the isolated Mainnet release line.
-3. Start Mainnet product work without reusing Testnet
-   treasury, database, storage, or environment configuration.
+1. Run and record the physical two-wallet V3 gate on LAN.
+2. Fix only device-proven defects on this isolated branch and rerun `pnpm check`.
+3. After explicit approval, choose whether to push, merge into stable `main`,
+   migrate Testnet Railway, and deploy web plus worker.

@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
+import { sha256Hex } from "../lib/file-sha256";
 import { formatZonedMoment } from "../lib/format-moment";
 import { BuildEditor, deliverableLabel } from "./activity-editor/build-editor";
 import { CommitmentWizard } from "./activity-editor/commitment-wizard";
@@ -58,6 +59,8 @@ type Props = {
   submission: ActivitySubmissionView | null;
   publicVisitorSharingEnabled?: boolean;
   reviewerKind?: "creator" | "pods_team";
+  recoveryOfSubmissionId?: string | null;
+  proofReconciliationEnabled?: boolean;
 };
 
 function initialEvidence(
@@ -290,8 +293,19 @@ export function ActivityOccurrence(props: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(
             templateId === "create"
-              ? { goal }
-              : { task, deliverableType }
+              ? {
+                  goal,
+                  ...(props.recoveryOfSubmissionId
+                    ? { recoveryOfSubmissionId: props.recoveryOfSubmissionId }
+                    : {})
+                }
+              : {
+                  task,
+                  deliverableType,
+                  ...(props.recoveryOfSubmissionId
+                    ? { recoveryOfSubmissionId: props.recoveryOfSubmissionId }
+                    : {})
+                }
           )
         }
       );
@@ -407,9 +421,42 @@ export function ActivityOccurrence(props: Props) {
     ) {
       return;
     }
+    let reservationId: string | null = null;
+    if (props.proofReconciliationEnabled) {
+      try {
+        const expectedMediaSha256 = await sha256Hex(await file.arrayBuffer());
+        const reservationResponse = await fetch(
+          `/api/pods/${props.podId}/occurrences/${props.occurrenceId}/evidence-reservation`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ submissionId: draft.id, expectedMediaSha256 })
+          }
+        );
+        const reservationBody = await reservationResponse.json() as {
+          reservation?: { id: string };
+          error?: string;
+        };
+        if (!reservationResponse.ok || !reservationBody.reservation) {
+          throw new Error(
+            reservationBody.error ?? "Evidence upload could not be reserved"
+          );
+        }
+        reservationId = reservationBody.reservation.id;
+      } catch (cause) {
+        rollbackImagePreview();
+        setError(
+          `${cause instanceof Error
+            ? cause.message
+            : "Evidence upload could not be reserved"}. Choose the image again to retry.`
+        );
+        return;
+      }
+    }
     const form = new FormData();
     form.set("submissionId", draft.id);
     form.set("image", file);
+    if (reservationId) form.set("reservationId", reservationId);
     const request = new XMLHttpRequest();
     request.open(
       "POST",

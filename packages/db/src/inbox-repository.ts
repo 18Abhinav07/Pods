@@ -1,10 +1,11 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, like } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
 import {
   applications,
   depositIntents,
   memberships,
+  notifications,
   pods,
   submissions,
   transferLegs
@@ -12,6 +13,38 @@ import {
 
 export function createInboxMethods(database: PodsDatabase) {
   return {
+    async listProofReviewNotificationsForUser(userId: string) {
+      const rows = await database
+        .select()
+        .from(notifications)
+        .where(and(
+          eq(notifications.userId, userId),
+          like(notifications.kind, "proof_review.%")
+        ))
+        .orderBy(desc(notifications.createdAt))
+        .limit(100);
+      const podIds = [...new Set(rows.map((row) => row.payload.podId).filter((value): value is string => typeof value === "string"))];
+      const podRows = podIds.length > 0
+        ? await database.select().from(pods).where(inArray(pods.id, podIds))
+        : [];
+      const podById = new Map(podRows.map((pod) => [pod.id, pod] as const));
+      return rows.flatMap((notification) => {
+        const podId = notification.payload.podId;
+        const submissionId = notification.payload.submissionId;
+        const type = notification.payload.type;
+        const recipientRole = notification.payload.recipientRole;
+        if (
+          typeof podId !== "string" ||
+          typeof submissionId !== "string" ||
+          typeof type !== "string" ||
+          (recipientRole !== "participant" && recipientRole !== "creator")
+        ) return [];
+        const pod = podById.get(podId);
+        if (!pod) return [];
+        return [{ notification, pod, submissionId, type, recipientRole }];
+      });
+    },
+
     async listInboxTimelineForUser(userId: string) {
       const rows = await database
         .select({

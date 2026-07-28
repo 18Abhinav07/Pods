@@ -33,6 +33,33 @@ describe("template-aware activity action", () => {
       })).toBe("lock_task");
     }
   });
+
+  it("keeps a grace outcome visible as a terminal activity state", () => {
+    expect(deriveTodayActivityAction({
+      templateId: "build",
+      now: new Date("2027-04-05T08:00:00.000Z"),
+      occurrence: openOccurrence,
+      commitment: { id: "commitment-1" },
+      submission: { state: "grace" }
+    })).toBe("grace");
+  });
+
+  it.each([
+    ["awaiting_clarification", "respond_clarification"],
+    ["appeal_open", "decide_appeal"]
+  ] as const)(
+    "turns %s into participant action instead of passive review",
+    (stage, action) => {
+      expect(deriveTodayActivityAction({
+        templateId: "build",
+        now: new Date("2027-04-05T08:00:00.000Z"),
+        occurrence: openOccurrence,
+        commitment: { id: "commitment-1" },
+        submission: { state: "reviewing" },
+        proofCase: { stage }
+      })).toBe(action);
+    }
+  );
 });
 
 describe("Phase 2 Today priority", () => {
@@ -162,6 +189,7 @@ describe("Phase 2 Today priority", () => {
     "reviewing",
     "approved",
     "rejected",
+    "grace",
     "timeout_protected"
   ] as const)(
     "places creator review before passive %s participant activity",
@@ -187,6 +215,24 @@ describe("Phase 2 Today priority", () => {
         activities: [{
           podId: "activity",
           occurrenceId: "occurrence-1",
+          action: activity
+        }],
+        participants: [],
+        creatorReviewPodId: "creator-review",
+        reviewPodId: null,
+        recruitPodId: null
+      })).toMatchObject({ kind: "activity", action: activity });
+    }
+  );
+
+  it.each(["respond_clarification", "decide_appeal"] as const)(
+    "keeps participant review action %s before creator work",
+    (activity) => {
+      expect(chooseTodayEnrollmentAction({
+        activities: [{
+          podId: "activity",
+          occurrenceId: "occurrence-1",
+          submissionId: "submission-1",
           action: activity
         }],
         participants: [],

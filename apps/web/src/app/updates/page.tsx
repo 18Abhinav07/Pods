@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { AppHeader } from "../../components/app-header";
 import styles from "../../components/home-flow.module.css";
-import { buildInboxEvents } from "../../lib/inbox-events";
+import { buildInboxEvents, buildProofReviewInboxEvents } from "../../lib/inbox-events";
 import { profileForSession } from "../../lib/profile-presentation";
 import { podsRepository } from "../../lib/server-db";
 import { requireSession } from "../../lib/session";
@@ -18,9 +18,14 @@ function eventMoment(value: Date) {
 
 export default async function UpdatesPage() {
   const session = await requireSession("/updates");
-  const events = buildInboxEvents(
-    await podsRepository.listInboxTimelineForUser(session.userId)
-  );
+  const [timeline, proofReviewNotifications] = await Promise.all([
+    podsRepository.listInboxTimelineForUser(session.userId),
+    podsRepository.listProofReviewNotificationsForUser(session.userId)
+  ]);
+  const events = [
+    ...buildInboxEvents(timeline),
+    ...buildProofReviewInboxEvents(proofReviewNotifications)
+  ].sort((left, right) => right.occurredAt.getTime() - left.occurredAt.getTime());
 
   return (
     <main className={`app-shell ${styles.page}`}>

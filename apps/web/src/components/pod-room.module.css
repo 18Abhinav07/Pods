@@ -479,6 +479,35 @@
   text-decoration: none;
 }
 
+.reviewContext {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 16px;
+  color: var(--room-ink);
+  background: color-mix(in srgb, var(--room-lime) 24%, var(--room-paper));
+}
+
+.reviewContext > span {
+  font: 740 9px/1.2 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.reviewContext p,
+.reviewContext ul,
+.reviewContext small {
+  margin: 0;
+  color: var(--room-muted);
+  font: 570 11px/1.45 var(--font-sans);
+}
+
+.reviewContext ul {
+  display: grid;
+  gap: 3px;
+  padding-left: 17px;
+}
+
 .reactionSummary {
   display: flex;
   flex-wrap: wrap;

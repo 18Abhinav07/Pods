@@ -121,6 +121,20 @@ describe("template activity routes", () => {
     });
   });
 
+  it("returns a client error for malformed commitment JSON", async () => {
+    const response = await lockCommitment(
+      new Request("http://localhost", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{"
+      }),
+      routeParams
+    );
+
+    expect(response.status).toBe(400);
+    expect(lockOccurrenceCommitment).not.toHaveBeenCalled();
+  });
+
   it("returns the repository rejection when a repeating template tries to lock", async () => {
     lockOccurrenceCommitment.mockRejectedValueOnce(
       new Error("Repeating activities do not use a commitment lock")
@@ -286,6 +300,21 @@ describe("template activity routes", () => {
       }
     });
     expect(JSON.stringify(body)).not.toContain("private/pod-1/evidence.webp");
+  });
+
+  it("returns a client error when evidence multipart data is malformed", async () => {
+    const response = await uploadEvidence(
+      {
+        formData: async () => {
+          throw new Error("Malformed multipart body");
+        }
+      } as unknown as Request,
+      routeParams
+    );
+
+    expect(response.status).toBe(400);
+    expect(getActivityOccurrenceForMember).not.toHaveBeenCalled();
+    expect(storeImage).not.toHaveBeenCalled();
   });
 
   it("returns an owner-safe submission after review starts", async () => {

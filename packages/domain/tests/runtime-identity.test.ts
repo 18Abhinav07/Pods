@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { parsePublicRuntimeIdentity } from "../src/runtime-identity";
 
-const schemaVersion = "0017_robust_loners";
+const schemaVersion = "0018_proof_reconciliation_lifecycle";
 const releaseSha = "ABCDEF0123456789ABCDEF0123456789ABCDEF01";
 
 describe("public runtime identity", () => {

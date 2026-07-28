@@ -190,6 +190,46 @@ describe("Pod room", () => {
       .not.toBeInTheDocument();
   });
 
+  it("does not offer a creator action while the participant owns the review turn", () => {
+    render(
+      <PodRoom
+        conversationId="room-1"
+        initialMessages={[{
+          ...messages[0]!,
+          id: "activity-waiting-on-participant",
+          kind: "activity",
+          body: null,
+          sender: {
+            ...messages[0]!.sender!,
+            isViewer: false
+          },
+          activity: {
+            commitmentId: "commitment-1",
+            occurrenceOrdinal: 1,
+            task: "Clarify the frozen artifact.",
+            deliverableType: "pull_request",
+            templateId: "build",
+            state: "reviewing",
+            submissionId: "submission-1",
+            templateEvidence: null,
+            resultSummary: null,
+            artifactUrl: null,
+            sharedEvidenceAvailable: false,
+            creatorReviewAvailable: false
+          }
+        }]}
+        initialLastSequence={1}
+        canReviewProofs
+        isCreator
+        podId="pod-1"
+        roomState="open"
+      />
+    );
+
+    expect(screen.queryByRole("link", { name: "Review proof" }))
+      .not.toBeInTheDocument();
+  });
+
   it("sends optimistically and exposes reply context", async () => {
     render(
       <PodRoom

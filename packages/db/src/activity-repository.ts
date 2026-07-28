@@ -1,10 +1,11 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import {
   isPublicVisitorContract,
   legacySubmissionProjection,
   nextSubmissionState,
   occurrenceWindowState,
+  proofCaseDeadlines,
   reviewDeadline,
   validateCreateGoal,
   validateCreatorReviewDecision,
@@ -14,7 +15,7 @@ import {
   type CommitmentDetails,
   type TemplateEvidence
 } from "@pods/domain";
-import { and, asc, desc, eq, ilike, inArray, lte, max, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, ilike, inArray, isNull, lte, max, ne, or, sql } from "drizzle-orm";
 
 import type { PodsDatabase } from "./enrollment-repository";
 import { projectProofForAudience } from "./proof-projection";
@@ -22,12 +23,15 @@ import { resolveVerifierAuthority } from "./verifier-override-repository";
 import {
   activityMessages,
   conversations,
+  evidenceUploadReservations,
   memberships,
   messages,
   occurrenceCommitments,
   occurrences,
   pods,
   profiles,
+  proofCases,
+  proofSubmissionVersions,
   realtimeEvents,
   reviewDecisions,
   submissions
@@ -38,6 +42,29 @@ type EvidenceObject = {
   contentType: string;
   byteSize: number;
 };
+
+function frozenEvidenceDigest(input: {
+  resultSummary: string;
+  artifactUrl: string;
+  templateEvidence: TemplateEvidence | null;
+  proofShareMode: string;
+  evidenceObjectKey: string | null;
+}) {
+  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
+}
+
+function reservedDraftDigest(input: {
+  resultSummary: string;
+  artifactUrl: string;
+  templateEvidence: TemplateEvidence | null;
+  proofShareMode: string;
+}) {
+  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
+}
+
+function validSha256(value: unknown): value is string {
+  return typeof value === "string" && /^[a-f0-9]{64}$/i.test(value);
+}
 
 function frozenTemplateConfiguration(pod: typeof pods.$inferSelect) {
   if (!pod.contractData || pod.templateId !== pod.contractData.templateId) {
@@ -96,13 +123,15 @@ async function protectTimedOutReviewBatch(
   return database.transaction(async (transaction) => {
     const filters = [
       eq(submissions.state, "reviewing"),
-      lte(submissions.reviewHardDeadlineAt, input.now)
+      lte(submissions.reviewHardDeadlineAt, input.now),
+      isNull(proofCases.id)
     ];
     if (input.podId) filters.push(eq(occurrences.podId, input.podId));
     const due = await transaction
       .select({ submission: submissions })
       .from(submissions)
       .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+      .leftJoin(proofCases, eq(proofCases.submissionId, submissions.id))
       .where(and(...filters))
       .orderBy(asc(submissions.reviewHardDeadlineAt), asc(submissions.id))
       .limit(100)
@@ -333,6 +362,7 @@ export function createActivityMethods(database: PodsDatabase) {
       task?: unknown;
       deliverableType?: unknown;
       goal?: unknown;
+      recoveryOfSubmissionId?: string | null;
       now: Date;
     }) {
       return database.transaction(async (transaction) => {
@@ -374,6 +404,28 @@ export function createActivityMethods(database: PodsDatabase) {
           .for("update");
         if (existing) throw new Error("This occurrence commitment is already locked");
 
+        let recoveryOfSubmissionId: string | null = null;
+        if (input.recoveryOfSubmissionId) {
+          const [source] = await transaction
+            .select({
+              submission: submissions,
+              occurrence: occurrences
+            })
+            .from(submissions)
+            .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+            .where(
+              and(
+                eq(submissions.id, input.recoveryOfSubmissionId),
+                eq(submissions.membershipId, membership!.id),
+                eq(submissions.state, "rejected")
+              )
+            );
+          if (!source || source.occurrence.ordinal >= occurrence!.ordinal) {
+            throw new Error("Recovery must link a rejected proof from an earlier occurrence");
+          }
+          recoveryOfSubmissionId = source.submission.id;
+        }
+
         const buildValidation = pod!.templateId === "build"
           ? validateBuildTask({
               task: input.task,
@@ -412,6 +464,7 @@ export function createActivityMethods(database: PodsDatabase) {
             deliverableType:
               details.kind === "build" ? details.deliverableType : null,
             details,
+            recoveryOfSubmissionId,
             lockedAt: input.now
           })
           .returning();
@@ -767,6 +820,171 @@ export function createActivityMethods(database: PodsDatabase) {
       return updated;
     },
 
+    async reserveEvidenceUpload(input: {
+      userId: string;
+      podId: string;
+      occurrenceId: string;
+      submissionId: string;
+      expectedMediaSha256: string;
+      now: Date;
+    }) {
+      return database.transaction(async (transaction) => {
+        const [owned] = await transaction
+          .select({
+            submission: submissions,
+            occurrence: occurrences,
+            membership: memberships,
+            pod: pods
+          })
+          .from(submissions)
+          .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
+          .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+          .innerJoin(pods, eq(occurrences.podId, pods.id))
+          .where(
+            and(
+              eq(submissions.id, input.submissionId),
+              eq(submissions.state, "draft"),
+              eq(memberships.userId, input.userId),
+              eq(occurrences.id, input.occurrenceId),
+              eq(pods.id, input.podId)
+            )
+          )
+          .for("update", { of: submissions });
+        if (!owned || owned.pod.contractData?.version !== 3) {
+          throw new Error("Upload reservation is not available for this proof");
+        }
+        if (input.now.getTime() >= owned.occurrence.closesAt.getTime()) {
+          throw new Error("The evidence deadline has passed");
+        }
+        if (!validSha256(input.expectedMediaSha256)) {
+          throw new Error("Evidence media hash is invalid");
+        }
+        const graceMinutes = owned.pod.contractData.verification.evidenceReservationGraceMinutes;
+        const expiresAt = new Date(
+          owned.occurrence.closesAt.getTime() + graceMinutes * 60 * 1000
+        );
+        const evidenceDigest = reservedDraftDigest({
+          resultSummary: owned.submission.resultSummary,
+          artifactUrl: owned.submission.artifactUrl,
+          templateEvidence: owned.submission.templateEvidence,
+          proofShareMode: owned.submission.proofShareMode
+        });
+        const [reservation] = await transaction
+          .insert(evidenceUploadReservations)
+          .values({
+            id: randomUUID(),
+            occurrenceId: owned.occurrence.id,
+            membershipId: owned.membership.id,
+            commitmentId: owned.submission.commitmentId,
+            state: "reserved",
+            evidenceDigest,
+            expectedMediaSha256: input.expectedMediaSha256,
+            objectKey: null,
+            contentType: null,
+            byteSize: null,
+            expiresAt,
+            consumedAt: null,
+            createdAt: input.now,
+            updatedAt: input.now
+          })
+          .onConflictDoUpdate({
+            target: [
+              evidenceUploadReservations.occurrenceId,
+              evidenceUploadReservations.membershipId
+            ],
+            set: {
+              id: randomUUID(),
+              commitmentId: owned.submission.commitmentId,
+              state: "reserved",
+              evidenceDigest,
+              expectedMediaSha256: input.expectedMediaSha256,
+              objectKey: null,
+              contentType: null,
+              byteSize: null,
+              expiresAt,
+              consumedAt: null,
+              createdAt: input.now,
+              updatedAt: input.now
+            }
+          })
+          .returning();
+        if (!reservation) throw new Error("Evidence upload could not be reserved");
+        return reservation;
+      });
+    },
+
+    async attachReservedSubmissionEvidence(input: {
+      userId: string;
+      submissionId: string;
+      reservationId: string;
+      mediaSha256: string;
+      evidence: EvidenceObject;
+      now: Date;
+    }) {
+      if (!validSha256(input.mediaSha256)) throw new Error("Evidence media hash is invalid");
+      return database.transaction(async (transaction) => {
+        const [owned] = await transaction
+          .select({
+            submission: submissions,
+            reservation: evidenceUploadReservations
+          })
+          .from(submissions)
+          .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
+          .innerJoin(
+            evidenceUploadReservations,
+            and(
+              eq(evidenceUploadReservations.id, input.reservationId),
+              eq(evidenceUploadReservations.occurrenceId, submissions.occurrenceId),
+              eq(evidenceUploadReservations.membershipId, submissions.membershipId),
+              eq(evidenceUploadReservations.commitmentId, submissions.commitmentId)
+            )
+          )
+          .where(
+            and(
+              eq(submissions.id, input.submissionId),
+              eq(submissions.state, "draft"),
+              eq(memberships.userId, input.userId)
+            )
+          )
+          .for("update", { of: evidenceUploadReservations });
+        if (!owned || owned.reservation.state !== "reserved") {
+          throw new Error("Evidence upload reservation not found");
+        }
+        if (owned.reservation.expiresAt.getTime() <= input.now.getTime()) {
+          throw new Error("Evidence upload reservation expired");
+        }
+        if (
+          owned.reservation.expectedMediaSha256 &&
+          owned.reservation.expectedMediaSha256.toLowerCase() !== input.mediaSha256.toLowerCase()
+        ) {
+          throw new Error("Evidence image does not match the reserved upload");
+        }
+        const [updated] = await transaction
+          .update(submissions)
+          .set({
+            evidenceObjectKey: input.evidence.objectKey,
+            evidenceContentType: input.evidence.contentType,
+            evidenceByteSize: input.evidence.byteSize,
+            updatedAt: input.now
+          })
+          .where(and(eq(submissions.id, input.submissionId), eq(submissions.state, "draft")))
+          .returning();
+        if (!updated) throw new Error("Evidence image could not be attached");
+        await transaction
+          .update(evidenceUploadReservations)
+          .set({
+            state: "uploaded",
+            expectedMediaSha256: input.mediaSha256,
+            objectKey: input.evidence.objectKey,
+            contentType: input.evidence.contentType,
+            byteSize: input.evidence.byteSize,
+            updatedAt: input.now
+          })
+          .where(eq(evidenceUploadReservations.id, owned.reservation.id));
+        return updated;
+      });
+    },
+
     async submitOccurrenceEvidence(input: {
       userId: string;
       submissionId: string;
@@ -798,7 +1016,48 @@ export function createActivityMethods(database: PodsDatabase) {
         if (!owned || owned.submission.state !== "draft") {
           throw new Error("Editable evidence draft not found");
         }
-        if (input.now.getTime() >= owned.occurrence.closesAt.getTime()) {
+        const afterDeadline = input.now.getTime() >= owned.occurrence.closesAt.getTime();
+        const proofReconciliationEnabled =
+          owned.pod.contractData?.version === 3 &&
+          owned.pod.contractData.verification.protocol === "proof_reconciliation_v1";
+        let evidenceReservation: typeof evidenceUploadReservations.$inferSelect | null = null;
+        if (
+          proofReconciliationEnabled &&
+          (afterDeadline || owned.submission.evidenceObjectKey !== null)
+        ) {
+          const [reservation] = await transaction
+            .select()
+            .from(evidenceUploadReservations)
+            .where(
+              and(
+                eq(evidenceUploadReservations.occurrenceId, owned.occurrence.id),
+                eq(evidenceUploadReservations.membershipId, owned.submission.membershipId),
+                eq(evidenceUploadReservations.commitmentId, owned.submission.commitmentId),
+                eq(evidenceUploadReservations.state, "uploaded")
+              )
+            )
+            .for("update");
+          const currentDigest = reservedDraftDigest({
+            resultSummary: owned.submission.resultSummary,
+            artifactUrl: owned.submission.artifactUrl,
+            templateEvidence: owned.submission.templateEvidence,
+            proofShareMode: owned.submission.proofShareMode
+          });
+          const reservationMatches = Boolean(
+            reservation &&
+            reservation.expiresAt.getTime() > input.now.getTime() &&
+            reservation.evidenceDigest === currentDigest &&
+            reservation.objectKey === owned.submission.evidenceObjectKey
+          );
+          if (!reservationMatches) {
+            throw new Error(
+              afterDeadline
+                ? "The evidence deadline has passed"
+                : "The selected evidence upload is not reserved"
+            );
+          }
+          evidenceReservation = reservation ?? null;
+        } else if (afterDeadline) {
           throw new Error("The evidence deadline has passed");
         }
         const templateEvidence: TemplateEvidence =
@@ -833,6 +1092,56 @@ export function createActivityMethods(database: PodsDatabase) {
           .where(and(eq(submissions.id, input.submissionId), eq(submissions.state, "draft")))
           .returning();
         if (!updated) throw new Error("Evidence could not be submitted");
+        if (evidenceReservation) {
+          await transaction
+            .update(evidenceUploadReservations)
+            .set({ state: "consumed", consumedAt: input.now, updatedAt: input.now })
+            .where(eq(evidenceUploadReservations.id, evidenceReservation.id));
+        }
+        if (proofReconciliationEnabled) {
+          const caseId = randomUUID();
+          const caseDeadlines = proofCaseDeadlines(input.now, input.now);
+          await transaction.insert(proofCases).values({
+            id: caseId,
+            submissionId: updated.id,
+            stage: "initial_review",
+            clarificationUsed: false,
+            appealUsed: false,
+            resolution: null,
+            sharedWithPodAt: null,
+            stageEnteredAt: input.now,
+            stageDeadlineAt: caseDeadlines.stageDeadlineAt,
+            absoluteDeadlineAt: caseDeadlines.absoluteDeadlineAt,
+            version: 0,
+            resolvedAt: null,
+            createdAt: input.now,
+            updatedAt: input.now
+          });
+          await transaction.insert(proofSubmissionVersions).values({
+            id: randomUUID(),
+            caseId,
+            submissionId: updated.id,
+            ordinal: 1,
+            kind: "initial",
+            resultSummary: updated.resultSummary,
+            artifactUrl: updated.artifactUrl,
+            templateEvidence: updated.templateEvidence,
+            evidenceObjectKey: updated.evidenceObjectKey,
+            evidenceContentType: updated.evidenceContentType,
+            evidenceByteSize: updated.evidenceByteSize,
+            proofShareMode: updated.proofShareMode,
+            evidenceDigest: frozenEvidenceDigest({
+              resultSummary: updated.resultSummary,
+              artifactUrl: updated.artifactUrl,
+              templateEvidence: updated.templateEvidence,
+              proofShareMode: updated.proofShareMode,
+              evidenceObjectKey: updated.evidenceObjectKey
+            }),
+            mediaSha256: evidenceReservation?.expectedMediaSha256 ?? null,
+            createdByUserId: input.userId,
+            createdAt: input.now
+          });
+        }
         const [projection] = await transaction
           .select({
             messageId: activityMessages.messageId,
@@ -895,10 +1204,19 @@ export function createActivityMethods(database: PodsDatabase) {
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
         .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
         .innerJoin(profiles, eq(memberships.userId, profiles.userId))
+        .leftJoin(proofCases, eq(proofCases.submissionId, submissions.id))
         .where(
           and(
             eq(occurrences.podId, input.podId),
-            eq(submissions.state, "reviewing")
+            eq(submissions.state, "reviewing"),
+            or(
+              isNull(proofCases.id),
+              inArray(proofCases.stage, [
+                "initial_review",
+                "post_clarification_review",
+                "appeal_review"
+              ])
+            )
           )
         )
         .orderBy(asc(submissions.reviewTargetAt), asc(submissions.id));
@@ -916,11 +1234,20 @@ export function createActivityMethods(database: PodsDatabase) {
         .from(submissions)
         .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
         .innerJoin(pods, eq(occurrences.podId, pods.id))
+        .leftJoin(proofCases, eq(proofCases.submissionId, submissions.id))
         .where(
           and(
             eq(pods.creatorUserId, input.creatorUserId),
             inArray(pods.state, ["active", "final_review"]),
-            eq(submissions.state, "reviewing")
+            eq(submissions.state, "reviewing"),
+            or(
+              isNull(proofCases.id),
+              inArray(proofCases.stage, [
+                "initial_review",
+                "post_clarification_review",
+                "appeal_review"
+              ])
+            )
           )
         )
         .orderBy(asc(submissions.reviewTargetAt), asc(submissions.id))
@@ -1055,10 +1382,14 @@ export function createActivityMethods(database: PodsDatabase) {
           )
           .for("update", { of: submissions });
         if (!owned) return null;
+        if (owned.contractData?.version === 3) {
+          throw new Error("Use the proof reconciliation review actions for this Pod");
+        }
         if (
           owned.submission.state === "approved" ||
           owned.submission.state === "rejected" ||
-          owned.submission.state === "timeout_protected"
+          owned.submission.state === "timeout_protected" ||
+          owned.submission.state === "grace"
         ) {
           return { kind: "already_decided" as const, submission: owned.submission };
         }
@@ -1251,7 +1582,68 @@ export function createActivityMethods(database: PodsDatabase) {
             eq(submissions.membershipId, base.membership.id)
           )
         );
-      return { ...base, commitment: commitment ?? null, submission: submission ?? null };
+      const [proofCase] = submission
+        ? await database
+            .select()
+            .from(proofCases)
+            .where(eq(proofCases.submissionId, submission.id))
+        : [];
+      return {
+        ...base,
+        commitment: commitment ?? null,
+        submission: submission ?? null,
+        proofCase: proofCase ?? null
+      };
+    },
+
+    async findRecoveryOccurrence(input: {
+      userId: string;
+      podId: string;
+      submissionId: string;
+      now: Date;
+    }) {
+      const [source] = await database
+        .select({
+          occurrence: occurrences,
+          membership: memberships,
+          pod: pods
+        })
+        .from(submissions)
+        .innerJoin(memberships, eq(submissions.membershipId, memberships.id))
+        .innerJoin(occurrences, eq(submissions.occurrenceId, occurrences.id))
+        .innerJoin(pods, eq(occurrences.podId, pods.id))
+        .where(
+          and(
+            eq(submissions.id, input.submissionId),
+            eq(submissions.state, "rejected"),
+            eq(memberships.userId, input.userId),
+            eq(memberships.podId, input.podId),
+            eq(memberships.state, "active"),
+            eq(pods.state, "active")
+          )
+        );
+      if (!source || !["build", "create"].includes(source.pod.templateId)) return null;
+      const candidates = await database
+        .select({ occurrence: occurrences })
+        .from(occurrences)
+        .leftJoin(
+          occurrenceCommitments,
+          and(
+            eq(occurrenceCommitments.occurrenceId, occurrences.id),
+            eq(occurrenceCommitments.membershipId, source.membership.id)
+          )
+        )
+        .where(
+          and(
+            eq(occurrences.podId, input.podId),
+            gt(occurrences.ordinal, source.occurrence.ordinal),
+            gt(occurrences.commitmentDeadlineAt, input.now),
+            isNull(occurrenceCommitments.id)
+          )
+        )
+        .orderBy(asc(occurrences.ordinal))
+        .limit(1);
+      return candidates[0]?.occurrence ?? null;
     },
 
     async listCurrentActivitiesForUser(input: { userId: string; now: Date }) {
@@ -1314,7 +1706,8 @@ export function createActivityMethods(database: PodsDatabase) {
         .select({
           occurrence: occurrences,
           commitment: occurrenceCommitments,
-          submission: submissions
+          submission: submissions,
+          proofCase: proofCases
         })
         .from(occurrences)
         .leftJoin(
@@ -1331,6 +1724,7 @@ export function createActivityMethods(database: PodsDatabase) {
             eq(submissions.membershipId, base.membership.id)
           )
         )
+        .leftJoin(proofCases, eq(proofCases.submissionId, submissions.id))
         .where(eq(occurrences.podId, input.podId))
         .orderBy(asc(occurrences.ordinal));
     },
@@ -1469,16 +1863,17 @@ export function createActivityMethods(database: PodsDatabase) {
         )
         .where(eq(occurrences.podId, input.podId))
         .orderBy(asc(occurrences.ordinal));
-      const decided = rows.filter(
-        ({ occurrence, submission }) =>
-          occurrence.closesAt.getTime() <= input.now.getTime() ||
-          submission?.state === "approved" ||
-          submission?.state === "timeout_protected" ||
-          submission?.state === "rejected"
-      );
       let streak = 0;
-      for (let index = decided.length - 1; index >= 0; index -= 1) {
-        const row = decided[index]!;
+      for (let index = rows.length - 1; index >= 0; index -= 1) {
+        const row = rows[index]!;
+        if (row.submission?.state === "grace") continue;
+        if (
+          row.submission?.state === "reviewing" ||
+          row.submission?.state === "draft" ||
+          (!row.submission && row.occurrence.closesAt.getTime() > input.now.getTime())
+        ) {
+          continue;
+        }
         if (
           row.submission?.state !== "approved" &&
           row.submission?.state !== "timeout_protected"

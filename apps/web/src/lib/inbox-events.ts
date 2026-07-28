@@ -7,6 +7,10 @@ type TimelineRow = Awaited<
   ReturnType<PodsRepository["listInboxTimelineForUser"]>
 >[number];
 
+type ProofReviewNotification = Awaited<
+  ReturnType<PodsRepository["listProofReviewNotificationsForUser"]>
+>[number];
+
 export type InboxEvent = {
   id: string;
   podId: string;
@@ -34,6 +38,9 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
   const events: InboxEvent[] = [];
 
   for (const row of rows) {
+    const usesProofReconciliation =
+      row.pod.contractData?.version === 3 &&
+      row.pod.contractData.verification.protocol === "proof_reconciliation_v1";
     const current = presentPodRelationship({
       podId: row.pod.id,
       podState: row.pod.state as Exclude<PodState, "draft">,
@@ -151,7 +158,7 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
         tone: "neutral"
       }, row);
     }
-    if (row.submission?.approvedAt) {
+    if (!usesProofReconciliation && row.submission?.approvedAt) {
       addEvent(events, {
         id: `evidence-approved-${row.submission.id}`,
         title: "Work approved",
@@ -161,7 +168,11 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
         tone: "positive"
       }, row);
     }
-    if (row.submission?.state === "rejected" && row.submission.reviewedAt) {
+    if (
+      !usesProofReconciliation &&
+      row.submission?.state === "rejected" &&
+      row.submission.reviewedAt
+    ) {
       addEvent(events, {
         id: `evidence-rejected-${row.submission.id}`,
         title: "Not verified",
@@ -172,6 +183,7 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
       }, row);
     }
     if (
+      !usesProofReconciliation &&
       row.submission?.state === "timeout_protected" &&
       row.submission.reviewedAt
     ) {
@@ -182,6 +194,20 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
         href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
         occurredAt: row.submission.reviewedAt,
         tone: "positive"
+      }, row);
+    }
+    if (
+      !usesProofReconciliation &&
+      row.submission?.state === "grace" &&
+      row.submission.reviewedAt
+    ) {
+      addEvent(events, {
+        id: `evidence-grace-${row.submission.id}`,
+        title: "Principal returned with grace",
+        detail: "The review closed without a reliable binary decision. This occurrence has no bonus or streak effect.",
+        href: `/pods/${row.pod.id}/submissions/${row.submission.id}`,
+        occurredAt: row.submission.reviewedAt,
+        tone: "neutral"
       }, row);
     }
 
@@ -283,4 +309,40 @@ export function buildInboxEvents(rows: TimelineRow[]): InboxEvent[] {
 
   return [...new Map(events.map((event) => [event.id, event])).values()]
     .sort((left, right) => right.occurredAt.getTime() - left.occurredAt.getTime());
+}
+
+const proofEventCopy: Record<string, { title: string; detail: string; tone: InboxEvent["tone"] }> = {
+  request_clarification: { title: "Clarification requested", detail: "The Pod creator needs one specific proof update.", tone: "attention" },
+  respond_clarification: { title: "Clarification received", detail: "The participant responded to your review request.", tone: "neutral" },
+  provisionally_reject: { title: "Decision needs your response", detail: "Review the detailed reason, then accept it or use your one appeal.", tone: "attention" },
+  open_appeal: { title: "Appeal received", detail: "Reconsider the proof with the participant's frozen appeal context.", tone: "attention" },
+  accept_rejection: { title: "Rejection accepted", detail: "The participant accepted the proposed proof outcome.", tone: "neutral" },
+  approve: { title: "Proof approved", detail: "The occurrence is now counted.", tone: "positive" },
+  appeal_approve: { title: "Appeal approved", detail: "The occurrence is now counted after reconsideration.", tone: "positive" },
+  appeal_reject: { title: "Appeal resolved", detail: "The rejection is final for this occurrence.", tone: "attention" },
+  appeal_grace: { title: "Appeal resolved with grace", detail: "Principal returns without a bonus or streak effect.", tone: "neutral" },
+  review_timeout: { title: "Review timeout protection", detail: "The occurrence was protected after reviewer inactivity.", tone: "positive" },
+  clarification_timeout: { title: "Clarification window closed", detail: "The participant can now appeal or accept the rejection.", tone: "attention" },
+  appeal_window_timeout: { title: "Appeal window closed", detail: "The rejection is now final.", tone: "attention" },
+  appeal_review_timeout: { title: "Appeal protected with grace", detail: "Principal returns because the appeal was not resolved in time.", tone: "neutral" },
+  absolute_timeout: { title: "Proof review cap reached", detail: "The frozen review fallback has been applied.", tone: "neutral" }
+};
+
+export function buildProofReviewInboxEvents(rows: ProofReviewNotification[]): InboxEvent[] {
+  return rows.flatMap(({ notification, pod, submissionId, type, recipientRole }) => {
+    const copy = proofEventCopy[type];
+    if (!copy) return [];
+    return [{
+      id: `proof-review-${notification.id}`,
+      podId: pod.id,
+      podName: pod.contractData?.activity.name ?? "Pod",
+      title: copy.title,
+      detail: copy.detail,
+      href: recipientRole === "creator"
+        ? `/pods/${pod.id}/admin/reviews/${submissionId}`
+        : `/pods/${pod.id}/submissions/${submissionId}`,
+      occurredAt: notification.createdAt,
+      tone: copy.tone
+    }];
+  });
 }

@@ -446,7 +446,8 @@ export function createSettlementMethods(database: PodsDatabase) {
             } else if (
               submission.state === "approved" ||
               submission.state === "rejected" ||
-              submission.state === "timeout_protected"
+              submission.state === "timeout_protected" ||
+              submission.state === "grace"
             ) {
               state = submission.state;
             } else {

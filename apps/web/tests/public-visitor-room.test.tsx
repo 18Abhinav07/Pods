@@ -104,6 +104,24 @@ describe("PublicVisitorRoom", () => {
     expect(screen.getByText("Not verified")).toBeVisible();
   });
 
+  it("shows the public terminal label for a grace outcome", () => {
+    const graceRoom: PublicVisitorRoomData = {
+      ...room,
+      messages: room.messages.map((message) => ({
+        ...message,
+        activity: message.activity ? {
+          ...message.activity,
+          state: "grace"
+        } : null
+      }))
+    };
+    vi.stubGlobal("fetch", vi.fn());
+
+    render(<PublicVisitorRoom initial={graceRoom} />);
+
+    expect(screen.getByText("Grace applied")).toBeVisible();
+  });
+
   it("shows a privacy-safe receipt when proof details are not public", () => {
     const privateProofRoom: PublicVisitorRoomData = {
       ...room,

@@ -1,5 +1,6 @@
 import type {
   ProfileAvatar,
+  ProofCaseStage,
   ProofShareMode,
   SubmissionState
 } from "@pods/domain";
@@ -14,6 +15,7 @@ export type ParticipantSubmissionStatusDto = {
   state: SubmissionState;
   proofShareMode: ProofShareMode;
   reviewerKind?: "creator" | "pods_team";
+  proofCaseStage?: ProofCaseStage | null;
   submittedAt: string | null;
   reviewTargetAt: string | null;
   reviewHardDeadlineAt: string | null;
@@ -38,11 +40,13 @@ export function participantSubmissionStatusDto(input: {
   reviewDecision?: { note?: string | null } | null;
   creator?: ParticipantSubmissionCreator | null;
   reviewerKind?: "creator" | "pods_team";
+  proofCaseStage?: ProofCaseStage | null;
 }): ParticipantSubmissionStatusDto {
   return {
     state: input.submission.state,
     proofShareMode: input.submission.proofShareMode ?? "reviewer_only",
     reviewerKind: input.reviewerKind ?? "creator",
+    proofCaseStage: input.proofCaseStage ?? null,
     submittedAt: isoMoment(input.submission.submittedAt),
     reviewTargetAt: isoMoment(input.submission.reviewTargetAt),
     reviewHardDeadlineAt: isoMoment(
@@ -78,6 +82,11 @@ const submissionPresentations = {
     eyebrow: "Review protection",
     heading: "Protected after review timeout",
     detail: "The creator did not decide within 24 hours. This occurrence counts toward your progress and streak."
+  },
+  grace: {
+    eyebrow: "Review complete",
+    heading: "Principal returned with grace",
+    detail: "The review could not reach a reliable final decision. Your slice returns, with no bonus or streak effect."
   }
 } satisfies Record<SubmissionState, {
   eyebrow: string;
@@ -87,8 +96,30 @@ const submissionPresentations = {
 
 export function participantSubmissionPresentation(
   state: SubmissionState,
-  reviewerKind: "creator" | "pods_team" = "creator"
+  reviewerKind: "creator" | "pods_team" = "creator",
+  proofCaseStage: ProofCaseStage | null = null
 ) {
+  if (state === "reviewing" && proofCaseStage === "awaiting_clarification") {
+    return {
+      eyebrow: "Your response needed",
+      heading: "Clarification needed",
+      detail: "Answer the creator's structured request in the private review thread below."
+    };
+  }
+  if (state === "reviewing" && proofCaseStage === "appeal_open") {
+    return {
+      eyebrow: "Your decision needed",
+      heading: "Review the proposed rejection",
+      detail: "Accept the decision or use your one appeal in the private review thread below."
+    };
+  }
+  if (state === "reviewing" && proofCaseStage === "appeal_review") {
+    return {
+      eyebrow: "Appeal review",
+      heading: "Your appeal is under review",
+      detail: "The creator must resolve the frozen appeal before its deadline."
+    };
+  }
   if (reviewerKind === "creator") return submissionPresentations[state];
   if (state === "draft") {
     return {
@@ -118,6 +149,7 @@ export function participantSubmissionPresentation(
       detail: "The Pods Team did not verify this proof against the locked commitment."
     };
   }
+  if (state === "grace") return submissionPresentations.grace;
   return submissionPresentations.timeout_protected;
 }
 

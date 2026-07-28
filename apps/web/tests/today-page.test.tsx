@@ -177,6 +177,12 @@ describe("TodayPage wallet identity", () => {
       eyebrow: "Review timeout",
       title: "Occurrence protected.",
       detail: "The creator did not decide within 24 hours, so this occurrence counts toward your progress and streak."
+    },
+    {
+      state: "grace",
+      eyebrow: "Review complete",
+      title: "Principal returned with grace.",
+      detail: "This occurrence is financially neutral and does not affect your streak."
     }
   ])(
     "projects the participant's $state creator-review result",
@@ -203,6 +209,49 @@ describe("TodayPage wallet identity", () => {
       expect(screen.getByText(detail)).toBeVisible();
       expect(screen.getByRole("link", { name: "View submission" }))
         .toHaveAttribute("href", "/pods/pod-activity/submissions/submission-1");
+    }
+  );
+
+  it.each([
+    {
+      stage: "awaiting_clarification",
+      eyebrow: "Clarification needed",
+      title: "Your proof needs one update.",
+      cta: "Respond to creator"
+    },
+    {
+      stage: "appeal_open",
+      eyebrow: "Decision needed",
+      title: "Review the proposed rejection.",
+      cta: "Review your options"
+    }
+  ])(
+    "surfaces participant action for $stage before passive work",
+    async ({ stage, eyebrow, title, cta }) => {
+      repositoryMocks.listCurrentActivitiesForUser.mockResolvedValue([{
+        pod: {
+          id: "pod-activity",
+          state: "active",
+          templateId: "build",
+          contractData: { activity: { name: "Ship together" } }
+        },
+        occurrence: {
+          id: "occurrence-1",
+          opensAt: new Date("2027-04-05T00:00:00.000Z")
+        },
+        commitment: { id: "commitment-1" },
+        submission: { id: "submission-1", state: "reviewing" },
+        proofCase: { stage }
+      }]);
+
+      render(await TodayPage());
+
+      expect(screen.getByText(eyebrow)).toBeVisible();
+      expect(screen.getByRole("heading", { name: title })).toBeVisible();
+      expect(screen.getByRole("link", { name: cta })).toHaveAttribute(
+        "href",
+        "/pods/pod-activity/submissions/submission-1"
+      );
     }
   );
 });

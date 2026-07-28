@@ -7,9 +7,11 @@ import { ArtifactLinkCard } from "../../../../../components/artifact-link-card";
 import { PodActionHeader } from "../../../../../components/activity-ritual/pod-action-header";
 import { RitualIcon } from "../../../../../components/activity-ritual/ritual-icon";
 import { ParticipantSubmissionStatus } from "../../../../../components/participant-submission-status";
+import { ProofReviewThread } from "../../../../../components/proof-review-thread";
 import {
   participantSubmissionStatusDto
 } from "../../../../../lib/participant-submission-status";
+import { proofReviewView } from "../../../../../lib/proof-review-view";
 import { podsRepository } from "../../../../../lib/server-db";
 import { requireSession } from "../../../../../lib/session";
 import { presentTemplateEvidence } from "../../../../../lib/template-evidence-presentation";
@@ -44,11 +46,37 @@ export default async function ParticipantSubmissionPage({
         avatar: creatorProfile.avatar
       }
     : null;
+  const proofReview = contract.version === 3
+    ? await podsRepository.getProofReviewForParticipant({
+        userId: session.userId,
+        podId,
+        submissionId
+      })
+    : null;
+  let recoveryMode: "linked" | "next_occurrence" | "unavailable" =
+    contract.templateId === "build" || contract.templateId === "create"
+      ? "unavailable"
+      : "next_occurrence";
+  if (
+    proofReview?.proofCase.stage === "resolved" &&
+    proofReview.proofCase.resolution === "rejected" &&
+    (contract.templateId === "build" || contract.templateId === "create")
+  ) {
+    const now = await podsRepository.getEffectiveTime(new Date());
+    const recoveryOccurrence = await podsRepository.findRecoveryOccurrence({
+      userId: session.userId,
+      podId,
+      submissionId,
+      now
+    });
+    recoveryMode = recoveryOccurrence ? "linked" : "unavailable";
+  }
   const status = participantSubmissionStatusDto({
     submission,
     reviewDecision,
     creator,
-    reviewerKind
+    reviewerKind,
+    proofCaseStage: proofReview?.proofCase.stage ?? null
   });
   const evidence = presentTemplateEvidence({
     templateId: contract.templateId,
@@ -79,6 +107,16 @@ export default async function ParticipantSubmissionPage({
           podName={contract.activity.name}
           timeZone={contract.activity.timeZone}
         />
+        {proofReview ? (
+          <ProofReviewThread
+            endpoint={`/api/pods/${podId}/submissions/${submissionId}/review`}
+            initial={proofReviewView(proofReview)}
+            podId={podId}
+            recoveryMode={recoveryMode}
+            submissionId={submissionId}
+            timeZone={contract.activity.timeZone}
+          />
+        ) : null}
         <section
           aria-labelledby="submission-record-title"
           className={styles.proofRecord}

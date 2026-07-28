@@ -17,7 +17,8 @@ const submissionStates: Record<SubmissionState, true> = {
   reviewing: true,
   approved: true,
   rejected: true,
-  timeout_protected: true
+  timeout_protected: true,
+  grace: true
 };
 const submissionEvents: Record<SubmissionEvent, true> = {
   submit: true,
@@ -125,7 +126,8 @@ describe("Phase 4 Build and Ship activity contract", () => {
     const terminalStates: SubmissionState[] = [
       "approved",
       "rejected",
-      "timeout_protected"
+      "timeout_protected",
+      "grace"
     ];
     const events = Object.keys(submissionEvents) as SubmissionEvent[];
     const actors = Object.keys(submissionActors) as SubmissionActor[];

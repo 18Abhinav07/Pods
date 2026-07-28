@@ -59,6 +59,27 @@ describe("presentRoomActivitySchedule", () => {
     });
   });
 
+  it.each([
+    ["awaiting_clarification", "Clarification needed"],
+    ["appeal_open", "Appeal decision needed"]
+  ])("surfaces participant review action for %s", (stage, stateLabel) => {
+    expect(presentRoomActivitySchedule({
+      podId: "pod-1",
+      now,
+      rows: [{
+        ...base,
+        commitment: { id: "commitment-1" },
+        submission: { id: "submission-1", state: "reviewing" },
+        proofCase: { stage }
+      }]
+    })).toMatchObject({
+      mode: "view",
+      label: "Respond to review",
+      stateLabel,
+      href: "/pods/pod-1/submissions/submission-1"
+    });
+  });
+
   it("shows the next opening after a submitted occurrence", () => {
     const rows = [
       {
@@ -91,6 +112,7 @@ describe("presentRoomActivitySchedule", () => {
 
   it.each([
     ["rejected", "Not verified"],
+    ["grace", "Grace applied"],
     ["timeout_protected", "Protected after review timeout"]
   ])(
     "keeps a terminal %s occurrence viewable with its participant-safe label",

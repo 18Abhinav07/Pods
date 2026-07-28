@@ -408,7 +408,8 @@ approved or amended in one pass.
 
     Recommendation: exactly one current owner is either a canonical Person or
     an eligible Organization or Team. Every collective-owned command still
-    resolves to an authorized representative Person or service actor.
+    resolves to an authorized representative Person or service actor. An
+    object cannot own itself, and an ownership link cannot create a cycle.
 
 57. **How does ownership transfer work?**
 
@@ -453,15 +454,16 @@ approved or amended in one pass.
 | Ownership | Person, Organization, or Team | Governed object | Current accountable authority |
 | Representative grant | Person or service actor | Organization or Team | Scoped authority to act for a collective |
 
-## Proposed Shared Relationship States
+## Proposed Intent and Relationship States
 
 The exact command and lifecycle rules belong to later documents. This
-document proposes a shared vocabulary so each relationship does not invent
-ambiguous labels:
+document proposes a shared vocabulary so intents and active relationships do
+not collapse into one ambiguous state machine:
 
-`invited`, `applied`, `accepted_pending_requirements`, `active`,
-`exit_pending`, `completed`, `left`, `removed`, `declined`, `revoked`,
-`expired`, and `excluded`.
+- Join intent: `invited`, `applied`, `accepted_pending_requirements`,
+  `declined`, `revoked`, `expired`, `allocated`, or `excluded`.
+- Membership or participation: `pending_activation`, `active`,
+  `exit_pending`, `completed`, `left`, or `removed`.
 
 Targets use only the states relevant to their relationship type. No screen may
 collapse `accepted_pending_requirements`, `active`, and `excluded` into a
@@ -488,6 +490,7 @@ generic `joined` state.
     facts.
 15. Profile visibility and relationship visibility remain bounded by their
     source contracts.
+16. Ownership cannot reference the owned object itself or form a cycle.
 
 ## Deferred Dependencies
 

@@ -112,7 +112,7 @@ resolved. Normal provider linking must not contain a partial or hidden merge.
 
 ### Minimal onboarding
 
-Initial onboarding asks only for:
+Initial profile setup within onboarding asks only for:
 
 - Display name
 - Globally unique username
@@ -132,6 +132,23 @@ can be added without replacing the canonical person.
 Age eligibility, guardian consent where applicable, and acceptance of the
 current Terms and Privacy Policy are activation requirements rather than
 public-profile questions. Their records remain private.
+
+### Account activation and consent
+
+Account onboarding uses a neutral age screen rather than a leading checkbox
+that encourages a desired answer. The person supplies the information needed
+to determine whether account creation is denied, youth-eligible, or
+adult-eligible. The exact birth-date retention strategy must minimize personal
+data and is finalized by the compliance design.
+
+Account activation separately records affirmative acceptance of the current
+Terms and Privacy Policy. The acceptance receipt contains the canonical person,
+authenticated session, policy versions, timestamp, eligibility tier, and
+applicable consent method. A material policy change requires a new acceptance
+before the affected feature can be used.
+
+An age declaration is a contractual representation by the person. It is not
+treated as verified proof of age.
 
 ### Username and display-name contract
 
@@ -298,6 +315,36 @@ When a youth person reaches the applicable age of majority, Pods may upgrade
 the same canonical person after fresh eligibility confirmation and acceptance
 of the current financial terms. Their history and identity do not reset.
 
+### Separate financial activation
+
+An adult eligibility tier does not automatically enable financial actions.
+Before connecting a settlement wallet, entering the first funded structure, or
+accepting another financial obligation, the person completes a separate
+financial activation.
+
+The initial financial activation requires affirmative acceptance of the
+current custody, forfeiture, payout, risk, and financial terms together with
+this representation:
+
+> I confirm that I am at least 18, have reached the age of majority in my
+> jurisdiction, and am legally permitted to enter this financial commitment.
+
+The financial acceptance receipt records the canonical person, authenticated
+session, exact terms versions, timestamp, declared eligibility, and the
+assurance method used. It is immutable and auditable.
+
+Self-attestation is the initial control, not a universal compliance guarantee.
+Pods may require stronger age or identity assurance before financial
+activation based on jurisdiction, custody structure, wallet or payment-partner
+rules, transaction limits, or concrete risk signals. Until that requirement is
+satisfied, the person retains eligible non-financial access while financial
+actions remain unavailable.
+
+If a false or invalid age declaration is discovered, Pods blocks new financial
+actions and moves the account into the applicable review or restriction path.
+Existing refunds, settlement, payouts, and reconciliation obligations continue
+under the preservation invariant.
+
 ## Preliminary Data Ownership
 
 ### Person
@@ -319,10 +366,10 @@ Detailed profile fields are deferred to
 ### Eligibility and consent record
 
 Owns the private eligibility tier, required guardian-consent state, applicable
-policy versions, consent timestamps, and the minimum jurisdictional facts
+policy versions, consent timestamps, immutable acceptance receipts, financial
+activation state, assurance method, and the minimum jurisdictional facts
 needed to enforce the capability boundary. The exact age or birth-date storage
-strategy must minimize personal data and is finalized in the compliance
-design.
+strategy must minimize personal data and is finalized in the compliance design.
 
 ### Recovery material and sessions
 
@@ -355,6 +402,11 @@ revocation without becoming part of the public profile.
     when guardian consent exists.
 13. Repository authorization is never bundled into basic GitHub
     authentication.
+14. Account terms and financial terms are accepted through separate versioned
+    receipts.
+15. Adult eligibility does not imply financial activation.
+16. Self-attested age may be escalated to stronger assurance without blocking
+    otherwise eligible non-financial participation.
 
 ## Compliance Evidence and Validation Gate
 
@@ -410,3 +462,9 @@ Later documents may consume these rules but cannot weaken canonical-person
 continuity, provider uniqueness, youth financial restrictions, or the
 financial-obligation preservation invariant without an explicit amendment to
 this document.
+
+## Amendment History
+
+- 2026-07-28: Locked neutral age screening, versioned account consent,
+  separate adult financial activation, self-attestation as the initial control,
+  and stronger assurance as an enforceable later gate.

@@ -24,6 +24,9 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
   cannot fund, receive redistributed value, or administer funded structures in
   the initial Mainnet product.
 - Added authoritative compliance evidence and explicit later validation gates.
+- Added neutral account-age screening, versioned product consent, and a
+  separate adult financial-activation receipt with escalation to stronger
+  assurance when required.
 
 ## Decisions
 

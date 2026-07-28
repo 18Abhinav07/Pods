@@ -89,3 +89,37 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 - One delegated audit run became unresponsive and was stopped. Completed audit
   findings were independently checked and reconciled locally; no document or
   Git operation depended on the stalled process.
+
+## First Launch Slice Workbook
+
+### Completed
+
+- Researched the official Devpost, DoraHacks, HackQuest, GitHub, Linear,
+  WakaTime, and Nimiq community product surfaces relevant to the first launch.
+- Selected a recommended market wedge: Pods as the execution layer used during
+  a Build Season, not a replacement hackathon platform, generic task manager,
+  or static builder portfolio.
+- Drafted
+  [[docs/mainnet-planning/first-launch-slice-workbook|First Launch Slice Decision Workbook]]
+  with the complete builder, Project lead, organizer, reviewer, and visitor
+  journeys.
+- Defined the recommended Execution Moment, Project Journey, Execution
+  Profile, organizer console, GitHub observation, review, distribution,
+  privacy, attribution, and optional-economic boundaries.
+- Added 30 explicit product choices with one recommendation each so Abhinav
+  can review the complete slice in one pass.
+- Mapped the proposed slice to Documents 01 through 27 and retained the
+  architecture and validation gates before implementation planning.
+
+### Decisions
+
+- No new product decision was locked. The workbook is an editable proposal for
+  Abhinav's review.
+
+### In Progress
+
+- Abhinav reviews and edits the workbook, especially Sections 29 and 30.
+
+### Errors
+
+- None.

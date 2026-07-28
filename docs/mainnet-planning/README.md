@@ -167,6 +167,15 @@ per-document discussion. The next discussion is Abhinav's proposed Mainnet
 product plan, which will be mapped to this package as agreement, amendment,
 contradiction, or deferred scope before a Mainnet v1 slice is locked.
 
+## Active Product Reconciliation
+
+The editable
+[[docs/mainnet-planning/first-launch-slice-workbook|First Launch Slice Decision Workbook]]
+now consolidates the recommended product wedge, complete actor journeys,
+first-launch scope, research findings, open choices, and a recommendation for
+each choice. It is a proposal for Abhinav's edits, not a locked specification
+or implementation plan.
+
 ## Final Integration Rule
 
 `26-integrated-mainnet-architecture.md` is a candidate synthesis. It treats

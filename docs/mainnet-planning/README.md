@@ -52,7 +52,7 @@ documents rather than reinterpret them.
 | Order | Document | Question it must answer | Status |
 |---|---|---|---|
 | 01 | [[docs/mainnet-planning/01-person-account-and-identity|Person, account, and identity]] | What is a person in Pods, how do they authenticate, connect identities, recover access, and retain continuity? | locked |
-| 02 | `02-profile-facets-and-privacy.md` | How does one person represent builder, movement, reading, and future facets without fragmented identities or forced public exposure? | queued |
+| 02 | [[docs/mainnet-planning/02-profile-facets-and-privacy|Profile, facets, and privacy]] | How does one person represent builder, movement, reading, and future facets without fragmented identities or forced public exposure? | active |
 | 03 | `03-actors-roles-and-jobs.md` | Which human, collective, and system actors exist, what may each do, and what does Pods do for each of them? | queued |
 | 04 | `04-object-graph-and-memberships.md` | How do people, organizations, teams, Events, Projects, Pods, and memberships relate without recursive or duplicated ownership? | queued |
 | 05 | `05-access-consent-and-visibility.md` | How are authorization, inheritance, creator ceilings, contributor choice, consent snapshots, invitations, and visitor access enforced? | queued |
@@ -106,10 +106,9 @@ documents rather than reinterpret them.
 
 ## Current Discussion
 
-Document 01 is locked. No later document is active yet. The next eligible
-subject is `02-profile-facets-and-privacy.md`, which will be created only when
-its discussion begins. Observations about later subjects remain dependencies,
-not silently decided requirements.
+Document 01 is locked. The only active subject is
+`02-profile-facets-and-privacy.md`. Observations about later subjects remain
+dependencies, not silently decided requirements.
 
 ## Final Integration Rule
 

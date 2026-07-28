@@ -38,7 +38,9 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 
 ## In Progress
 
-- None. Document 02 has not begun.
+- Document 02 is active with a 32-decision profile, facet, discovery, youth
+  privacy, provider-presentation, editing, and moderation bundle awaiting
+  approval or numbered amendments.
 
 ## Errors
 

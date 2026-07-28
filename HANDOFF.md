@@ -20,11 +20,11 @@ contract.
 
 ## In Progress
 
-- Task: Begin profile facets and privacy planning.
+- Task: Resolve the 32-decision profile, facet, and privacy bundle.
 - File: `docs/mainnet-planning/02-profile-facets-and-privacy.md`
-- Stop point: Document 02 has not been created. Start by mapping private
-  canonical profile data, public facet projections, youth defaults, and
-  extensibility without fragmenting the person.
+- Stop point: Document 02 is active with recommendations recorded. Await
+  Abhinav's approval or numbered amendments before converting them into the
+  locked profile contract.
 
 ## Open Errors / Blockers
 
@@ -42,7 +42,7 @@ contract.
 
 ## Next 3 Tasks
 
-1. Discuss and write `02-profile-facets-and-privacy.md`.
-2. Review and lock Document 02 without weakening the youth or identity
-   invariants from Document 01.
+1. Receive approval or numbered amendments for Document 02.
+2. Convert the approved bundle into the locked profile contract and run its
+   privacy consistency review.
 3. Begin `03-actors-roles-and-jobs.md` only after Document 02 is locked.

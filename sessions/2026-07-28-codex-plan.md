@@ -5,7 +5,7 @@ ecosystem: full-stack
 tags: [session, codex, plan]
 ---
 
-# 2026-07-28 Mainnet Identity Planning
+# 2026-07-28 Mainnet Planning Foundation
 
 Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 [[docs/mainnet-planning/01-person-account-and-identity|Identity contract]]
@@ -51,3 +51,41 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 ## Errors
 
 - None.
+
+## Package Completion Checkpoint
+
+### Completed
+
+- Locked the six canonical product objects and typed relationship model in
+  Document 04.
+- Drafted Documents 05 through 27 as one dependency-ordered candidate covering
+  access, commands, lifecycles, proof, economics, activity, reputation, social
+  systems, Build and Ship, operations, integrations, data, security, routes,
+  environments, architecture, and validation.
+- Added an indexed dependency map and canonical end-to-end product flow.
+- Reconciled review findings across ProofCase creation, PodParticipation draft
+  and cancellation states, economic-mode-specific outcomes, milestone command
+  reachability, actor destinations, provider attribution, distribution
+  receipts, and release validation.
+- Kept Documents 05 through 27 in `review`; autonomous drafting and internal
+  audit did not convert candidate scope into product authority.
+
+### Decisions
+
+- The Mainnet package is a reviewed candidate, not empirical validation.
+- No implementation plan may be written before the selected slice's required
+  validation spikes record PASS.
+- Google, GitHub, Nimiq, wallets, and future settlement rails remain adapters
+  to canonical identity and domain state.
+
+### In Progress
+
+- Reconcile Abhinav's product plan against the candidate package, select a
+  coherent Mainnet v1 slice, and validate only the dependencies that slice
+  requires.
+
+### Errors
+
+- One delegated audit run became unresponsive and was stopped. Completed audit
+  findings were independently checked and reconciled locally; no document or
+  Git operation depended on the stalled process.

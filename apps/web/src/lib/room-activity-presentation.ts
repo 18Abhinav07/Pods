@@ -107,18 +107,21 @@ export function presentRoomActivitySchedule({
       open.submission.state === "reviewing" &&
       (
         open.proofCase?.stage === "awaiting_clarification" ||
-        open.proofCase?.stage === "appeal_open"
+        open.proofCase?.stage === "appeal_open" ||
+        open.proofCase?.stage === "appeal_review"
       )
     ) {
+      const stageLabel: Record<"awaiting_clarification" | "appeal_open" | "appeal_review", string> = {
+        awaiting_clarification: "Clarification needed",
+        appeal_open: "Appeal decision needed",
+        appeal_review: "Appeal in review"
+      };
       return {
         ...standard,
         href: `/pods/${podId}/submissions/${open.submission.id}`,
         mode: "view",
-        label: "Respond to review",
-        stateLabel:
-          open.proofCase.stage === "awaiting_clarification"
-            ? "Clarification needed"
-            : "Appeal decision needed"
+        label: open.proofCase.stage === "appeal_review" ? "View appeal" : "Respond to review",
+        stateLabel: stageLabel[open.proofCase.stage as "awaiting_clarification" | "appeal_open" | "appeal_review"]
       };
     }
     return {

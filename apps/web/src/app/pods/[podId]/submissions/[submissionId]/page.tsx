@@ -3,10 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import styles from "../../../../../components/activity-ritual/activity-ritual.module.css";
-import { ArtifactLinkCard } from "../../../../../components/artifact-link-card";
 import { PodActionHeader } from "../../../../../components/activity-ritual/pod-action-header";
 import { RitualIcon } from "../../../../../components/activity-ritual/ritual-icon";
 import { ParticipantSubmissionStatus } from "../../../../../components/participant-submission-status";
+import { ProofRecordSection } from "../../../../../components/proof-record-section";
 import { ProofReviewThread } from "../../../../../components/proof-review-thread";
 import {
   participantSubmissionStatusDto
@@ -112,60 +112,38 @@ export default async function ParticipantSubmissionPage({
             endpoint={`/api/pods/${podId}/submissions/${submissionId}/review`}
             initial={proofReviewView(proofReview)}
             podId={podId}
+            proofRecord={{
+              artifact: evidence.artifact,
+              evidenceImageEndpoint: submission.evidenceObjectKey
+                ? `/api/pods/${podId}/submissions/${submission.id}/evidence`
+                : null,
+              evidenceRows: evidence.evidenceRows,
+              frozenCriterion: evidence.frozenCriterion,
+              templateName: evidence.templateName
+            }}
             recoveryMode={recoveryMode}
+            reviewerName={creator?.displayName ?? null}
             submissionId={submissionId}
             timeZone={contract.activity.timeZone}
           />
-        ) : null}
-        <section
-          aria-labelledby="submission-record-title"
-          className={styles.proofRecord}
-          data-submission-record
-        >
-          <header className={styles.proofRecordHeader}>
-            <span>{evidence.templateName}</span>
-            <h2 id="submission-record-title">Proof record</h2>
-          </header>
-          <section className={styles.recordGroup}>
-            <header>
-              <span>Locked commitment</span>
-              <strong>What you promised</strong>
-            </header>
-            {evidence.frozenCriterion.map((row) => (
-              <div key={`criterion-${row.label}`}>
-                <span>{row.label}</span>
-                <strong>{row.value}</strong>
-              </div>
-            ))}
-          </section>
-          <section className={styles.recordGroup}>
-            <header>
-              <span>Completed work</span>
-              <strong>What you submitted</strong>
-            </header>
-            {evidence.evidenceRows.map((row) => (
-              <div key={`evidence-${row.label}`}>
-                <span>{row.label}</span>
-                <p>{row.value}</p>
-              </div>
-            ))}
-          </section>
-          {evidence.artifact ? (
-            <ArtifactLinkCard
-              artifactAction
-              context="Public artifact"
-              href={evidence.artifact.href}
-              label={evidence.artifact.label}
+        ) : (
+          <section
+            aria-labelledby="submission-record-title"
+            className={styles.proofRecord}
+            data-submission-record
+          >
+            <ProofRecordSection
+              artifact={evidence.artifact}
+              evidenceImageEndpoint={submission.evidenceObjectKey
+                ? `/api/pods/${podId}/submissions/${submission.id}/evidence`
+                : null}
+              evidenceRows={evidence.evidenceRows}
+              frozenCriterion={evidence.frozenCriterion}
+              headingId="submission-record-title"
+              templateName={evidence.templateName}
             />
-          ) : null}
-          {submission.evidenceObjectKey ? (
-            <figure className={styles.evidenceFigure}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img alt="Your optional evidence" src={`/api/pods/${podId}/submissions/${submission.id}/evidence`} />
-              <figcaption>Evidence shared with your reviewer</figcaption>
-            </figure>
-          ) : null}
-        </section>
+          </section>
+        )}
         <Link className={styles.roomReturn} href={`/pods/${podId}/room`}>
           <RitualIcon name="room" size={20} />
           Return to Pod room

@@ -2399,7 +2399,7 @@
   border-radius: 50%;
   color: var(--color-ink);
   background: var(--color-surface-soft);
-  transition: transform var(--motion-tactile) var(--ease-premium), background var(--motion-tactile) var(--ease-premium);
+  transition: transform var(--motion-tactile) var(--ease-premium);
 }
 
 .proofCaseMenuTrigger:active {

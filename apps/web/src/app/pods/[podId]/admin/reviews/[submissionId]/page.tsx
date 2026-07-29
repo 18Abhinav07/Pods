@@ -6,11 +6,13 @@ import styles from "../../../../../../components/activity-ritual/activity-ritual
 import { ArtifactLinkCard } from "../../../../../../components/artifact-link-card";
 import { PodActionHeader } from "../../../../../../components/activity-ritual/pod-action-header";
 import { CreatorReviewForm } from "../../../../../../components/creator-review-form";
+import { CreatorProofReviewLifecycle } from "../../../../../../components/creator-proof-review-lifecycle";
 import { CreatorReviewEvidence } from "../../../../../../components/creator-review-evidence";
 import { ProfileAvatar } from "../../../../../../components/profile-avatar";
 import { formatZonedMoment } from "../../../../../../lib/format-moment";
 import { isUuidRouteParam } from "../../../../../../lib/route-params";
 import { podsRepository } from "../../../../../../lib/server-db";
+import { proofReviewView } from "../../../../../../lib/proof-review-view";
 import { requireSession } from "../../../../../../lib/session";
 import { presentTemplateEvidence } from "../../../../../../lib/template-evidence-presentation";
 
@@ -20,7 +22,8 @@ function submissionStatusLabel(value: SubmissionState) {
     reviewing: "Under review",
     approved: "Approved",
     rejected: "Not verified",
-    timeout_protected: "Protected after review timeout"
+    timeout_protected: "Protected after review timeout",
+    grace: "Principal returned with grace"
   };
   return labels[value];
 }
@@ -53,6 +56,14 @@ export default async function CreatorReviewWorkspacePage({
   } = result;
   const contract = pod.contractData;
   if (!contract) notFound();
+  const proofReview = contract.version === 3
+    ? await podsRepository.getProofReviewForCreator({
+        creatorUserId: session.userId,
+        podId,
+        submissionId
+      })
+    : null;
+  if (contract.version === 3 && !proofReview) notFound();
   const timeZone = contract.activity.timeZone;
   const moment = (value: Date | null) => value
     ? formatZonedMoment(value, {
@@ -61,7 +72,9 @@ export default async function CreatorReviewWorkspacePage({
         includeZone: true
       })
     : "Not available";
-  const terminal = submission.state !== "reviewing";
+  const terminal = proofReview
+    ? proofReview.proofCase.stage === "resolved"
+    : submission.state !== "reviewing";
   const evidence = presentTemplateEvidence({
     templateId: contract.templateId,
     frozenConfig: contract.activity.config,
@@ -169,19 +182,27 @@ export default async function CreatorReviewWorkspacePage({
           ) : null}
         </section>
 
-        <details className={styles.reviewHistory}>
-          <summary>
-            <span>Review timing</span>
-            <strong>3 checkpoints</strong>
-          </summary>
-          <section className={styles.reviewTimeline} aria-label="Review timing">
-            <div><span>Submitted</span><strong>{moment(submission.submittedAt)}</strong></div>
-            <div><span>Review target</span><strong>{moment(submission.reviewTargetAt)}</strong></div>
-            <div><span>Hard deadline</span><strong>{moment(submission.reviewHardDeadlineAt)}</strong></div>
-          </section>
-        </details>
+        {!proofReview ? (
+          <details className={styles.reviewHistory}>
+            <summary>
+              <span>Review timing</span>
+              <strong>3 checkpoints</strong>
+            </summary>
+            <section className={styles.reviewTimeline} aria-label="Review timing">
+              <div><span>Submitted</span><strong>{moment(submission.submittedAt)}</strong></div>
+              <div><span>Review target</span><strong>{moment(submission.reviewTargetAt)}</strong></div>
+              <div><span>Hard deadline</span><strong>{moment(submission.reviewHardDeadlineAt)}</strong></div>
+            </section>
+          </details>
+        ) : null}
 
-        {terminal ? (
+        {proofReview ? (
+          <CreatorProofReviewLifecycle
+            endpoint={`/api/pods/${podId}/admin/reviews/${submissionId}/decision`}
+            initial={proofReviewView(proofReview)}
+            timeZone={timeZone}
+          />
+        ) : terminal ? (
           <section className={styles.recordedDecision}>
             <span>Decision recorded</span>
             <strong>{submissionStatusLabel(submission.state)}</strong>

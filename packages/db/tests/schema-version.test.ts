@@ -20,7 +20,7 @@ describe("Pods schema version", () => {
     const latest = journal.entries.at(-1);
 
     expect(latest).toEqual({
-      idx: 17,
+      idx: 18,
       version: "7",
       when: PODS_SCHEMA_MIGRATION_CREATED_AT,
       tag: PODS_SCHEMA_VERSION,
@@ -30,7 +30,7 @@ describe("Pods schema version", () => {
 
   it("matches the exact SHA-256 of the final migration SQL", async () => {
     const migration = await readFile(
-      new URL("../migrations/0017_robust_loners.sql", import.meta.url)
+      new URL("../migrations/0018_proof_reconciliation_lifecycle.sql", import.meta.url)
     );
 
     expect(createHash("sha256").update(migration).digest("hex")).toBe(

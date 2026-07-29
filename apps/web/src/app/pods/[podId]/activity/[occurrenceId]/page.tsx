@@ -37,11 +37,14 @@ function templateTheme(
 }
 
 export default async function ActivityOccurrencePage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ podId: string; occurrenceId: string }>;
+  searchParams?: Promise<{ recover?: string }>;
 }) {
   const { podId, occurrenceId } = await params;
+  const query = searchParams ? await searchParams : {};
   const session = await requireSession(`/pods/${podId}/activity/${occurrenceId}`);
   const activity = await podsRepository.getActivityOccurrenceForMember({
     userId: session.userId,
@@ -106,6 +109,7 @@ export default async function ActivityOccurrencePage({
           podName={activity.pod.contractData.activity.name}
           projectTheme={templateTheme(activity.pod.templateId, configuration)}
           reviewerKind={reviewerKind}
+          recoveryOfSubmissionId={query.recover ?? null}
           settlementMode={activity.pod.contractData.settlementMode ?? "proportional"}
           stakeNim={activity.pod.contractData.commitment.lunaPerOccurrence / 100_000}
           submission={
@@ -114,9 +118,11 @@ export default async function ActivityOccurrencePage({
               : null
           }
           publicVisitorSharingEnabled={
-            activity.pod.contractData.version === 2 &&
+            activity.pod.contractData.version >= 2 &&
+            activity.pod.contractData.community.visibility === "public" &&
             activity.pod.contractData.community.roomAudience === "public_read_only"
           }
+          proofReconciliationEnabled={activity.pod.contractData.version === 3}
           timeZone={activity.pod.contractData.activity.timeZone}
           templateConfig={configuration}
           templateId={activity.pod.contractData.templateId}

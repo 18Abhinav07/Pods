@@ -29,7 +29,7 @@ describe("funding worker alpha configuration", () => {
       deploymentFlavor: "local",
       fundsNetwork: "nimiq-testnet",
       commitSha: "local",
-      schemaVersion: "0017_robust_loners"
+      schemaVersion: "0018_proof_reconciliation_lifecycle"
     });
   });
 
@@ -44,7 +44,7 @@ describe("funding worker alpha configuration", () => {
       deploymentFlavor: "testnet",
       fundsNetwork: "nimiq-testnet",
       commitSha: "abcdef012345",
-      schemaVersion: "0017_robust_loners"
+      schemaVersion: "0018_proof_reconciliation_lifecycle"
     });
   });
 

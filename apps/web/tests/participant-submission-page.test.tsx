@@ -2,7 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const repositoryMocks = vi.hoisted(() => ({
+  findRecoveryOccurrence: vi.fn(),
+  getEffectiveTime: vi.fn(),
   getProfileForUser: vi.fn(),
+  getProofReviewForParticipant: vi.fn(),
   getSubmissionForOwner: vi.fn(),
   getVerifierAuthorityForPod: vi.fn()
 }));
@@ -53,6 +56,10 @@ describe("ParticipantSubmissionPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     repositoryMocks.getSubmissionForOwner.mockResolvedValue(submissionResult);
+    repositoryMocks.getEffectiveTime.mockResolvedValue(
+      new Date("2027-04-05T16:00:00.000Z")
+    );
+    repositoryMocks.findRecoveryOccurrence.mockResolvedValue(null);
     repositoryMocks.getProfileForUser.mockResolvedValue({
       handle: "ryuk",
       displayName: "Abhinav",
@@ -195,5 +202,59 @@ describe("ParticipantSubmissionPage", () => {
     expect(screen.getAllByText("Work approved", { exact: true })).toHaveLength(1);
     expect(screen.getByText("Progress updated")).toBeVisible();
     expect(screen.getByText("Review timing")).toBeVisible();
+  });
+
+  it("does not offer a dead recovery link when no later occurrence can accept it", async () => {
+    repositoryMocks.getSubmissionForOwner.mockResolvedValue({
+      ...submissionResult,
+      submission: { ...submissionResult.submission, state: "rejected" },
+      pod: {
+        ...submissionResult.pod,
+        contractData: {
+          ...submissionResult.pod.contractData,
+          version: 3,
+          verification: {
+            protocol: "proof_reconciliation_v1",
+            verifier: "creator"
+          }
+        }
+      }
+    });
+    repositoryMocks.getProofReviewForParticipant.mockResolvedValue({
+      submission: submissionResult.submission,
+      proofCase: {
+        stage: "resolved",
+        resolution: "rejected",
+        clarificationUsed: false,
+        appealUsed: true,
+        sharedWithPodAt: null,
+        stageDeadlineAt: new Date("2027-04-05T16:00:00.000Z"),
+        absoluteDeadlineAt: new Date("2027-04-08T08:00:00.000Z")
+      },
+      events: [],
+      versions: [{
+        ordinal: 1,
+        kind: "initial",
+        resultSummary: submissionResult.submission.resultSummary,
+        artifactUrl: submissionResult.submission.artifactUrl,
+        proofShareMode: "reviewer_only",
+        evidenceObjectKey: null,
+        createdAt: new Date("2027-04-05T08:00:00.000Z")
+      }]
+    });
+
+    render(await ParticipantSubmissionPage({
+      params: Promise.resolve({ podId: "pod-1", submissionId: "submission-1" })
+    }));
+
+    expect(repositoryMocks.findRecoveryOccurrence).toHaveBeenCalledWith({
+      userId: "member-1",
+      podId: "pod-1",
+      submissionId: "submission-1",
+      now: new Date("2027-04-05T16:00:00.000Z")
+    });
+    expect(screen.getByText("No later recovery slot is available")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Start recovery" }))
+      .not.toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPublishedContract,
+  isPublicVisitorContract,
   materializeOccurrences,
   parseNimToLuna,
   publishedRoomAudience,
@@ -172,13 +173,8 @@ describe("occurrence materialization", () => {
       targetReviewHours: 12,
       timeoutProtectionHours: 24
     });
-    const legacyContract: PublishedPodContract = {
-      ...result.contract,
-      verification: {
-        ...result.contract.verification,
-        verifier: "pods_team"
-      }
-    };
+    const legacyContract: PublishedPodContract = structuredClone(result.contract);
+    legacyContract.verification.verifier = "pods_team";
     expect(serializePublishedContract(legacyContract)).toContain(
       '"verifier":"pods_team"'
     );
@@ -241,6 +237,49 @@ describe("occurrence materialization", () => {
     if (!result.success) return;
     expect(result.contract.version).toBe(1);
     expect(publishedRoomAudience(result.contract)).toBe("members_only");
+  });
+
+  it("freezes the proof reconciliation protocol into a version three contract", () => {
+    const result = buildPublishedContract({
+      templateId: "build",
+      activity: {
+        ...sharedActivity,
+        config: {
+          projectTheme: "Pods",
+          allowedDeliverables: ["pull_request"],
+          commitmentCutoff: "09:00"
+        }
+      },
+      community: {
+        visibility: "public",
+        minParticipants: 2,
+        maxParticipants: 5,
+        applicationQuestions: [],
+        roomAudience: "public_read_only"
+      },
+      commitment: { nimPerOccurrence: "0.1" }
+    }, {
+      settlementMode: "proportional",
+      proofReconciliation: true
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.contract.version).toBe(3);
+    expect(result.contract.verification).toEqual({
+      verifier: "creator",
+      targetReviewHours: 12,
+      timeoutProtectionHours: 24,
+      protocol: "proof_reconciliation_v1",
+      clarificationResponseHours: 12,
+      postClarificationReviewHours: 12,
+      appealWindowHours: 12,
+      appealReviewHours: 12,
+      absoluteCaseHours: 72,
+      evidenceReservationGraceMinutes: 10
+    });
+    expect(publishedRoomAudience(result.contract)).toBe("public_read_only");
+    expect(isPublicVisitorContract(result.contract)).toBe(true);
   });
 
   it("freezes the alpha refund mode into the contract fingerprint", () => {

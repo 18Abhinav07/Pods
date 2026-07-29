@@ -32,7 +32,7 @@ export async function GET(
     activity,
     community,
     commitment
-  }, fundingPolicy);
+  }, { ...fundingPolicy, proofReconciliation: true });
   if (!result.success) return NextResponse.json({ errors: result.errors }, { status: 400 });
   return NextResponse.json(result);
 }

@@ -111,6 +111,31 @@ describe("calculateSettlement", () => {
     ]);
   });
 
+  it("returns grace principal without making it bonus eligible", () => {
+    const selected = members.slice(0, 3).map((member) => ({
+      ...member,
+      depositLuna: 10
+    }));
+    const settlement = calculateSettlement({
+      lunaPerOccurrence: 10,
+      members: selected,
+      occurrences: [{
+        occurrenceId: "10000000-0000-4000-8000-000000000009",
+        outcomes: [
+          { membershipId: selected[0]!.membershipId, state: "approved" },
+          { membershipId: selected[1]!.membershipId, state: "grace" },
+          { membershipId: selected[2]!.membershipId, state: "rejected" }
+        ]
+      }]
+    });
+
+    expect(settlement.members).toEqual([
+      expect.objectContaining({ principalLuna: 10, bonusLuna: 10, payoutLuna: 20 }),
+      expect.objectContaining({ principalLuna: 10, bonusLuna: 0, payoutLuna: 10 }),
+      expect.objectContaining({ provisionalForfeitureLuna: 10, payoutLuna: 0 })
+    ]);
+  });
+
   it("restores provisional forfeitures when an occurrence has no approved member", () => {
     const selected = members.slice(0, 2).map((member) => ({
       ...member,

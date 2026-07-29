@@ -18,6 +18,7 @@ import { createActivityMethods } from "./activity-repository";
 import { createFundingMethods } from "./funding-repository";
 import { createInboxMethods } from "./inbox-repository";
 import { createProfileMethods } from "./profile-repository";
+import { createProofReviewMethods } from "./proof-review-repository";
 import { createPublicRoomMethods } from "./public-room-repository";
 import { createPublicSafetyMethods } from "./public-safety-repository";
 import { createSettlementMethods } from "./settlement-repository";
@@ -74,6 +75,7 @@ export function createPodsRepository(connectionString: string) {
     ...createFundingMethods(database),
     ...createInboxMethods(database),
     ...createProfileMethods(database),
+    ...createProofReviewMethods(database),
     ...createPublicRoomMethods(database),
     ...createPublicSafetyMethods(database),
     ...createSettlementMethods(database),

@@ -2372,6 +2372,597 @@
   transform: scale(0.92);
 }
 
+.proofCase,
+.creatorProofCase {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 54px color-mix(in srgb, var(--color-ink) 9%, transparent);
+}
+
+.proofCaseHeader {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  gap: 12px;
+  align-items: center;
+}
+
+.proofCaseMenuTrigger {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-ink);
+  background: var(--color-surface-soft);
+  transition: transform var(--motion-tactile) var(--ease-premium), background var(--motion-tactile) var(--ease-premium);
+}
+
+.proofCaseMenuTrigger:active {
+  background: color-mix(in srgb, var(--theme-accent, var(--activity-build)) 30%, var(--color-surface-soft));
+  transform: scale(0.93);
+}
+
+.proofCaseIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 15px;
+  color: var(--theme-deep, var(--color-ink));
+  background: color-mix(in srgb, var(--theme-accent, var(--activity-build)) 58%, white);
+}
+
+.proofCaseHeader div,
+.proofCaseHeader h2,
+.proofCaseHeader p,
+.proofCaseEvents,
+.proofCaseEvents p,
+.proofCaseEvents ul,
+.proofCaseNotice p,
+.appealDisclosure p,
+.proofCaseRecovery p {
+  margin: 0;
+}
+
+.proofCaseHeader div {
+  display: grid;
+  gap: 4px;
+}
+
+.proofCaseHeader small,
+.proofCaseEvents > li > span,
+.proofCaseHistory li > span {
+  color: var(--color-muted);
+  font: 650 9px/1.2 var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.proofCaseHeader h2 {
+  font: 800 22px/1.05 var(--font-sans);
+  letter-spacing: -0.04em;
+}
+
+.proofCaseHeader p {
+  color: var(--color-muted);
+  font: 560 12px/1.4 var(--font-sans);
+}
+
+.proofCaseEvents {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.proofCaseEvents > li,
+.proofCaseHistory li {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--color-surface-soft);
+}
+
+.proofCaseEvents strong,
+.proofCaseHistory strong {
+  font: 740 13px/1.3 var(--font-sans);
+}
+
+.proofCaseEvents p,
+.proofCaseEvents li li,
+.proofCaseHistory p {
+  color: var(--color-muted);
+  font: 560 12px/1.5 var(--font-sans);
+}
+
+.proofCaseEvents p b,
+.proofCaseHistory p b {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-ink);
+  font-weight: 720;
+}
+
+.proofCaseEvents a,
+.proofCaseHistory a {
+  color: var(--color-ink);
+  font: 720 11px/1.25 var(--font-sans);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--theme-accent, var(--activity-build)) 70%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.proofCaseAction,
+.creatorActionCard,
+.appealResolutionActions,
+.appealResolutionActions form {
+  display: grid;
+  gap: 10px;
+}
+
+.proofCaseAction label,
+.creatorActionCard label,
+.appealResolutionActions label {
+  color: var(--color-muted);
+  font: 650 10px/1.3 var(--font-mono);
+}
+
+.proofCaseAction label span,
+.creatorActionCard label span {
+  font-weight: 500;
+}
+
+.proofCaseAction input,
+.proofCaseAction textarea,
+.creatorActionCard input,
+.creatorActionCard select,
+.creatorActionCard textarea,
+.appealResolutionActions textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 13px 14px;
+  border: 0;
+  border-radius: 16px;
+  outline: 0;
+  color: var(--color-ink);
+  background: var(--color-surface-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink) 6%, transparent);
+  font: 600 16px/1.45 var(--font-sans);
+}
+
+.proofCaseAction textarea,
+.creatorActionCard textarea,
+.appealResolutionActions textarea {
+  resize: vertical;
+}
+
+.proofCaseAction input:focus-visible,
+.proofCaseAction textarea:focus-visible,
+.creatorActionCard input:focus-visible,
+.creatorActionCard select:focus-visible,
+.creatorActionCard textarea:focus-visible,
+.appealResolutionActions textarea:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+.appealChoice,
+.creatorReviewActions {
+  display: grid;
+  gap: 14px;
+}
+
+.proofCaseNotice,
+.appealDisclosure,
+.proofCaseRecovery {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 14px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-accent, var(--activity-build)) 16%, white);
+}
+
+.proofCaseNotice p,
+.appealDisclosure p,
+.proofCaseRecovery p {
+  color: var(--color-muted);
+  font: 570 12px/1.5 var(--font-sans);
+}
+
+.proofCaseRecovery {
+  grid-template-columns: 24px minmax(0, 1fr);
+}
+
+.proofCaseRecovery a {
+  grid-column: 2;
+  color: var(--color-ink);
+  font: 750 12px/1.2 var(--font-sans);
+}
+
+.proofCaseShare {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--color-surface-soft);
+}
+
+.proofCaseShare div,
+.proofCaseShare p {
+  margin: 0;
+}
+
+.proofCaseShare div {
+  display: grid;
+  gap: 4px;
+}
+
+.proofCaseShare strong {
+  font: 740 13px/1.3 var(--font-sans);
+}
+
+.proofCaseShare p,
+.proofCaseShare > span {
+  color: var(--color-muted);
+  font: 560 11px/1.5 var(--font-sans);
+}
+
+.proofCaseHistory {
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--color-surface-soft);
+}
+
+.proofCaseHistory summary {
+  cursor: pointer;
+  font: 740 12px/1.3 var(--font-sans);
+}
+
+.proofCaseHistory ol {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proofVersions {
+  padding: 14px;
+  border-radius: 18px;
+  background: color-mix(
+    in srgb,
+    var(--theme-accent, var(--activity-build)) 10%,
+    var(--color-surface-soft)
+  );
+}
+
+.proofVersions summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  font: 700 12px/1.3 var(--font-sans);
+}
+
+.proofVersions summary::-webkit-details-marker {
+  display: none;
+}
+
+.proofVersions summary strong {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.proofVersions > div {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.proofVersions article {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 15px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 5%, transparent);
+}
+
+.proofVersions article header,
+.proofVersions article nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.proofVersions article header strong {
+  font: 740 12px/1.3 var(--font-sans);
+}
+
+.proofVersions article header span,
+.proofVersions article p {
+  color: var(--color-muted);
+  font: 560 11px/1.45 var(--font-sans);
+}
+
+.proofVersions article p {
+  margin: 0;
+}
+
+.proofVersions article nav {
+  justify-content: flex-start;
+}
+
+.proofVersions article a {
+  color: var(--color-ink);
+  font: 720 11px/1.25 var(--font-sans);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--theme-accent, var(--activity-build)) 70%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.creatorReviewActions {
+  margin-top: 2px;
+}
+
+.creatorActionCard {
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--color-surface-soft);
+}
+
+.creatorActionCard h3,
+.creatorActionCard p {
+  margin: 0;
+}
+
+.creatorActionCard h3 {
+  font: 780 17px/1.15 var(--font-sans);
+}
+
+.creatorActionCard p {
+  color: var(--color-muted);
+  font: 560 12px/1.45 var(--font-sans);
+}
+
+.appealResolutionActions {
+  padding-top: 2px;
+}
+
+.proofCaseLatest {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--color-surface-soft);
+}
+
+.proofCaseLatest > span {
+  color: var(--color-muted);
+  font: 650 9px/1.2 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.proofCaseLatest > p {
+  margin: 0;
+  color: var(--color-ink);
+  font: 560 13px/1.5 var(--font-sans);
+}
+
+.proofFileField {
+  display: grid;
+  gap: 8px;
+}
+
+.proofFileField > span {
+  color: var(--color-muted);
+  font: 650 10px/1.3 var(--font-mono);
+}
+
+.proofFileField > span > small {
+  text-transform: none;
+  font-weight: 500;
+}
+
+.proofFileField label {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--color-ink);
+  background: var(--color-surface-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink) 6%, transparent);
+  font: 600 12px/1.3 var(--font-sans);
+  overflow: hidden;
+  transition: transform var(--motion-tactile) var(--ease-premium);
+}
+
+.proofFileField label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proofFileField label:active {
+  transform: scale(0.985);
+}
+
+.proofFileClear {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  min-height: 32px;
+  padding: 0 10px 0 4px;
+  border: 0;
+  color: var(--color-muted);
+  background: transparent;
+  font: 650 11px/1 var(--font-sans);
+}
+
+.proofSheetLayer {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  align-items: end;
+}
+
+.proofSheetBackdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(24, 28, 24, 0.42);
+  backdrop-filter: blur(4px);
+  animation: proofSheetFadeIn 180ms var(--ease-premium) both;
+}
+
+.proofSheetDialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 430px);
+  max-height: min(86dvh, 780px);
+  margin-inline: auto;
+  overflow: auto;
+  border-radius: 26px 26px 0 0;
+  outline: 0;
+  background: var(--color-paper, var(--color-surface));
+  box-shadow: 0 -28px 80px color-mix(in srgb, var(--color-ink) 22%, transparent);
+  animation: proofSheetSlideIn 260ms var(--ease-premium) both;
+}
+
+.proofSheetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 16px 4px;
+}
+
+.proofSheetHeader > span {
+  display: grid;
+  gap: 3px;
+}
+
+.proofSheetHeader small {
+  color: var(--color-muted);
+  font: 700 9px/1 var(--font-mono);
+  text-transform: uppercase;
+}
+
+.proofSheetHeader strong {
+  font: 780 15px/1.2 var(--font-sans);
+}
+
+.proofSheetHeader button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  place-items: center;
+  color: var(--color-ink);
+  background: var(--color-surface-soft);
+  transition: transform var(--motion-tactile) var(--ease-premium);
+}
+
+.proofSheetHeader button:active {
+  transform: scale(0.93);
+}
+
+.proofSheetBody {
+  display: grid;
+  gap: 14px;
+  padding: 8px 16px max(18px, env(safe-area-inset-bottom));
+}
+
+.proofSheetMenu {
+  display: grid;
+  gap: 6px;
+}
+
+.proofSheetMenu > button {
+  display: grid;
+  min-height: 52px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 16px;
+  color: var(--color-ink);
+  background: var(--color-surface-soft);
+  font: inherit;
+  text-align: left;
+}
+
+.proofSheetMenu i {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--theme-deep, var(--color-ink));
+  background: color-mix(in srgb, var(--theme-accent, var(--activity-build)) 48%, var(--color-paper));
+  font-style: normal;
+}
+
+.proofSheetMenu > button > span {
+  display: grid;
+  gap: 3px;
+}
+
+.proofSheetMenu strong {
+  font: 750 12px/1.2 var(--font-sans);
+}
+
+.proofSheetMenu small {
+  color: var(--color-muted);
+  font: 550 10px/1.3 var(--font-sans);
+  text-transform: none;
+}
+
+.proofSheetEmpty {
+  padding: 20px 4px;
+  color: var(--color-muted);
+  font: 560 12px/1.5 var(--font-sans);
+  text-align: center;
+}
+
+@keyframes proofSheetFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes proofSheetSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
 @keyframes orbitTurn {
   to {
     transform: translateX(-50%) rotate(360deg);
@@ -2397,13 +2988,17 @@
   .primaryAction,
   .secondaryAction,
   .roomLink,
-  .artifactList label {
+  .artifactList label,
+  .proofCaseMenuTrigger,
+  .proofSheetHeader button {
     transition: none;
   }
 
   .orbitRing,
   .busyDot,
-  .routeTransition > span {
+  .routeTransition > span,
+  .proofSheetBackdrop,
+  .proofSheetDialog {
     animation: none;
   }
 

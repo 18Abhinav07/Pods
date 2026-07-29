@@ -25,6 +25,7 @@ export * from "./alpha-capabilities";
 export * from "./runtime-identity";
 export * from "./social";
 export * from "./settlement";
+export * from "./proof-review";
 
 export const templateContracts = [
   {
@@ -128,6 +129,13 @@ interface PublishedPodContractBase {
     verifier: "pods_team" | "creator";
     targetReviewHours: 12;
     timeoutProtectionHours: 24;
+    protocol?: "proof_reconciliation_v1";
+    clarificationResponseHours?: 12;
+    postClarificationReviewHours?: 12;
+    appealWindowHours?: 12;
+    appealReviewHours?: 12;
+    absoluteCaseHours?: 72;
+    evidenceReservationGraceMinutes?: 10;
   };
 }
 
@@ -143,17 +151,41 @@ export interface PublishedPodContractV2 extends PublishedPodContractBase {
   };
 }
 
-export type PublishedPodContract = PublishedPodContractV1 | PublishedPodContractV2;
+export interface PublishedPodContractV3 extends PublishedPodContractBase {
+  version: 3;
+  community: CommunityStepInput;
+  verification: PublishedPodContractBase["verification"] & {
+    protocol: "proof_reconciliation_v1";
+    clarificationResponseHours: 12;
+    postClarificationReviewHours: 12;
+    appealWindowHours: 12;
+    appealReviewHours: 12;
+    absoluteCaseHours: 72;
+    evidenceReservationGraceMinutes: 10;
+  };
+}
+
+export type PublishedPodContract =
+  | PublishedPodContractV1
+  | PublishedPodContractV2
+  | PublishedPodContractV3;
 
 export function publishedRoomAudience(contract: PublishedPodContract): RoomAudience {
-  return contract.version === 2 ? contract.community.roomAudience : "members_only";
+  if (
+    contract.version >= 2 &&
+    contract.community.visibility === "public" &&
+    contract.community.roomAudience
+  ) {
+    return contract.community.roomAudience;
+  }
+  return "members_only";
 }
 
 export function isPublicVisitorContract(
   contract: PublishedPodContract
-): contract is PublishedPodContractV2 {
+): contract is PublishedPodContractV2 | PublishedPodContractV3 {
   return (
-    contract.version === 2 &&
+    contract.version >= 2 &&
     contract.community.visibility === "public" &&
     contract.community.roomAudience === "public_read_only"
   );
@@ -372,7 +404,10 @@ export function validatePublicationTiming(
 
 export function buildPublishedContract(
   draft: PodDraftInput,
-  options: { settlementMode?: SettlementMode } = {}
+  options: {
+    settlementMode?: SettlementMode;
+    proofReconciliation?: boolean;
+  } = {}
 ):
   | { success: true; contract: PublishedPodContract; occurrences: FrozenOccurrence[] }
   | { success: false; errors: string[] } {
@@ -411,6 +446,11 @@ export function buildPublishedContract(
     return { success: false, errors: ["Maximum Pod pool is too large"] };
   }
 
+  const legacyVerification = {
+    verifier: "creator" as const,
+    targetReviewHours: 12 as const,
+    timeoutProtectionHours: 24 as const
+  };
   const sharedContract = {
     templateId: draft.templateId,
     evidenceMode: template.mode,
@@ -421,14 +461,30 @@ export function buildPublishedContract(
       occurrenceCount: occurrences.length,
       totalLuna
     },
-    verification: {
-      verifier: "creator" as const,
-      targetReviewHours: 12 as const,
-      timeoutProtectionHours: 24 as const
-    }
+    verification: legacyVerification
   };
   let contract: PublishedPodContract;
-  if (
+  if (options.proofReconciliation) {
+    const community = structuredClone(draft.community);
+    contract = {
+      ...sharedContract,
+      version: 3,
+      community:
+        community.visibility === "public"
+          ? { ...community, roomAudience: community.roomAudience ?? "members_only" }
+          : community,
+      verification: {
+        ...legacyVerification,
+        protocol: "proof_reconciliation_v1",
+        clarificationResponseHours: 12,
+        postClarificationReviewHours: 12,
+        appealWindowHours: 12,
+        appealReviewHours: 12,
+        absoluteCaseHours: 72,
+        evidenceReservationGraceMinutes: 10
+      }
+    };
+  } else if (
     draft.community.visibility === "public" &&
     draft.community.roomAudience !== undefined
   ) {

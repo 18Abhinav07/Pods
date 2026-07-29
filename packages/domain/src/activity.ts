@@ -15,7 +15,8 @@ export type SubmissionState =
   | "reviewing"
   | "approved"
   | "rejected"
-  | "timeout_protected";
+  | "timeout_protected"
+  | "grace";
 export type SubmissionActor = "participant" | "system" | "creator";
 export type SubmissionEvent = "submit" | "approve" | "reject" | "protect_timeout";
 

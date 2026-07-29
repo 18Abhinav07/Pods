@@ -1,6 +1,7 @@
 export type SettlementOutcomeState =
   | "approved"
   | "timeout_protected"
+  | "grace"
   | "rejected"
   | "missed";
 
@@ -79,6 +80,7 @@ export interface CalculatedSettlement {
 const terminalStates = new Set<SettlementOutcomeState>([
   "approved",
   "timeout_protected",
+  "grace",
   "rejected",
   "missed"
 ]);
@@ -199,7 +201,7 @@ export function calculateSettlement(input: SettlementInput): CalculatedSettlemen
         throw new Error("Occurrence outcomes must include every member exactly once");
       }
       const principalLuna =
-        state === "approved" || state === "timeout_protected"
+        state === "approved" || state === "timeout_protected" || state === "grace"
           ? input.lunaPerOccurrence
           : 0;
       const provisionalForfeitureLuna =

@@ -19,6 +19,12 @@ import type {
   SettlementOutcomeState,
   SettlementRunState,
   SubmissionState,
+  EvidenceReservationState,
+  ProofCaseActor,
+  ProofCaseEventType,
+  ProofCaseResolution,
+  ProofCaseStage,
+  ProofSubmissionVersionKind,
   TemplateId,
   TemplateEvidence,
   TransferAttemptState,
@@ -44,6 +50,7 @@ import type {
 } from "@pods/domain";
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   bigint,
   bigserial,
   boolean,
@@ -437,6 +444,10 @@ export const occurrenceCommitments = pgTable(
     task: text("task").notNull(),
     deliverableType: text("deliverable_type").$type<BuildDeliverableType>(),
     details: jsonb("details").$type<CommitmentDetails>(),
+    recoveryOfSubmissionId: uuid("recovery_of_submission_id").references(
+      (): AnyPgColumn => submissions.id,
+      { onDelete: "set null" }
+    ),
     lockedAt: timestamp("locked_at", { withTimezone: true, mode: "date" }).notNull()
   },
   (table) => [
@@ -498,6 +509,149 @@ export const submissions = pgTable(
   ]
 );
 
+export const proofCases = pgTable(
+  "proof_cases",
+  {
+    id: uuid("id").primaryKey(),
+    submissionId: uuid("submission_id")
+      .notNull()
+      .references(() => submissions.id, { onDelete: "cascade" }),
+    stage: text("stage").$type<ProofCaseStage>().notNull(),
+    clarificationUsed: boolean("clarification_used").notNull().default(false),
+    appealUsed: boolean("appeal_used").notNull().default(false),
+    resolution: text("resolution").$type<ProofCaseResolution>(),
+    sharedWithPodAt: timestamp("shared_with_pod_at", {
+      withTimezone: true,
+      mode: "date"
+    }),
+    stageEnteredAt: timestamp("stage_entered_at", {
+      withTimezone: true,
+      mode: "date"
+    }).notNull(),
+    stageDeadlineAt: timestamp("stage_deadline_at", {
+      withTimezone: true,
+      mode: "date"
+    }).notNull(),
+    absoluteDeadlineAt: timestamp("absolute_deadline_at", {
+      withTimezone: true,
+      mode: "date"
+    }).notNull(),
+    version: integer("version").notNull().default(0),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("proof_cases_submission_unique").on(table.submissionId),
+    index("proof_cases_stage_deadline_idx").on(table.stage, table.stageDeadlineAt),
+    index("proof_cases_absolute_deadline_idx").on(table.absoluteDeadlineAt, table.id),
+    check("proof_cases_version_nonnegative", sql`${table.version} >= 0`),
+    check(
+      "proof_cases_resolution_stage_check",
+      sql`(${table.stage} = 'resolved' AND ${table.resolution} IS NOT NULL) OR (${table.stage} <> 'resolved' AND ${table.resolution} IS NULL)`
+    )
+  ]
+);
+
+export const proofSubmissionVersions = pgTable(
+  "proof_submission_versions",
+  {
+    id: uuid("id").primaryKey(),
+    caseId: uuid("case_id")
+      .notNull()
+      .references(() => proofCases.id, { onDelete: "cascade" }),
+    submissionId: uuid("submission_id")
+      .notNull()
+      .references(() => submissions.id, { onDelete: "cascade" }),
+    ordinal: integer("ordinal").notNull(),
+    kind: text("kind").$type<ProofSubmissionVersionKind>().notNull(),
+    resultSummary: text("result_summary").notNull(),
+    artifactUrl: text("artifact_url").notNull(),
+    templateEvidence: jsonb("template_evidence").$type<TemplateEvidence>(),
+    evidenceObjectKey: text("evidence_object_key"),
+    evidenceContentType: text("evidence_content_type"),
+    evidenceByteSize: integer("evidence_byte_size"),
+    proofShareMode: text("proof_share_mode").$type<ProofShareMode>().notNull(),
+    evidenceDigest: text("evidence_digest").notNull(),
+    mediaSha256: text("media_sha256"),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("proof_submission_versions_case_ordinal_unique").on(
+      table.caseId,
+      table.ordinal
+    ),
+    index("proof_submission_versions_submission_idx").on(
+      table.submissionId,
+      table.ordinal
+    ),
+    check("proof_submission_versions_ordinal_positive", sql`${table.ordinal} > 0`)
+  ]
+);
+
+export const proofReviewEvents = pgTable(
+  "proof_review_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    caseId: uuid("case_id")
+      .notNull()
+      .references(() => proofCases.id, { onDelete: "cascade" }),
+    sequence: integer("sequence").notNull(),
+    type: text("type").$type<ProofCaseEventType>().notNull(),
+    actor: text("actor").$type<ProofCaseActor>().notNull(),
+    actorUserId: uuid("actor_user_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("proof_review_events_case_sequence_unique").on(
+      table.caseId,
+      table.sequence
+    ),
+    uniqueIndex("proof_review_events_idempotency_unique").on(table.idempotencyKey),
+    index("proof_review_events_case_created_idx").on(table.caseId, table.createdAt)
+  ]
+);
+
+export const evidenceUploadReservations = pgTable(
+  "evidence_upload_reservations",
+  {
+    id: uuid("id").primaryKey(),
+    occurrenceId: uuid("occurrence_id")
+      .notNull()
+      .references(() => occurrences.id, { onDelete: "cascade" }),
+    membershipId: uuid("membership_id")
+      .notNull()
+      .references(() => memberships.id, { onDelete: "cascade" }),
+    commitmentId: uuid("commitment_id")
+      .notNull()
+      .references(() => occurrenceCommitments.id, { onDelete: "cascade" }),
+    state: text("state").$type<EvidenceReservationState>().notNull(),
+    evidenceDigest: text("evidence_digest").notNull(),
+    expectedMediaSha256: text("expected_media_sha256"),
+    objectKey: text("object_key"),
+    contentType: text("content_type"),
+    byteSize: integer("byte_size"),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull()
+  },
+  (table) => [
+    uniqueIndex("evidence_upload_reservations_occurrence_member_unique").on(
+      table.occurrenceId,
+      table.membershipId
+    ),
+    index("evidence_upload_reservations_expiry_idx").on(table.state, table.expiresAt)
+  ]
+);
+
 export const reviewDecisions = pgTable(
   "review_decisions",
   {
@@ -505,10 +659,14 @@ export const reviewDecisions = pgTable(
     submissionId: uuid("submission_id")
       .notNull()
       .references(() => submissions.id, { onDelete: "cascade" }),
-    action: text("action").$type<"approved" | "rejected">().notNull(),
+    action: text("action").$type<"approved" | "rejected" | "grace">().notNull(),
     reviewerId: text("reviewer_id").notNull(),
     reasonCode: text("reason_code")
-      .$type<"meets_commitment" | "does_not_meet_commitment">()
+      .$type<
+        | "meets_commitment"
+        | "does_not_meet_commitment"
+        | "appeal_grace"
+      >()
       .notNull(),
     note: text("note").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull()

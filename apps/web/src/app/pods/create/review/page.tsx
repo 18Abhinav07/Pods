@@ -82,7 +82,7 @@ export default async function ReviewStepPage({ searchParams }: { searchParams: P
   }
   const result = buildPublishedContract(
     { templateId: pod.templateId, activity, community, commitment },
-    fundingPolicy
+    { ...fundingPolicy, proofReconciliation: true }
   );
   if (!result.success) {
     return <CreatorShell activeStep={4} eyebrow="Review paused" title="One section still needs attention." copy="The server could not freeze this contract yet."><div className={styles.reviewStack}>{result.errors.map((error) => <p className={styles.error} key={error}>{error}</p>)}<Link className={styles.secondaryAction} href={`/pods/create/activity?draft=${pod.id}`}>Return to activity</Link></div></CreatorShell>;
@@ -115,7 +115,7 @@ export default async function ReviewStepPage({ searchParams }: { searchParams: P
         <div className={styles.receiptRow}><span>Template</span><strong>{template?.name}</strong></div>
         <div className={styles.receiptRow}><span>Schedule</span><strong>{contract.commitment.occurrenceCount} occurrences · {cadence} · {contract.activity.startDate} to {contract.activity.endDate} · {contract.activity.timeZone}</strong></div>
         <div className={styles.receiptRow}><span>Community</span><strong>{contract.community.visibility === "public" ? "Public, application-based" : "Private, invitation-only"} · {contract.community.minParticipants} to {contract.community.maxParticipants}</strong></div>
-        {contract.version === 2 ? <div className={styles.receiptRow}><span>Visitor room</span><strong>{contract.community.roomAudience === "public_read_only" ? "Read only visitors allowed" : "Members only"}</strong></div> : null}
+        {contract.community.visibility === "public" ? <div className={styles.receiptRow}><span>Visitor room</span><strong>{contract.community.roomAudience === "public_read_only" ? "Read only visitors allowed" : "Members only"}</strong></div> : null}
         <div className={styles.receiptRow}><span>Commitment</span><strong>{nim(contract.commitment.lunaPerOccurrence)} NIM each · {nim(contract.commitment.totalLuna)} Testnet NIM maximum</strong></div>
         <div className={styles.receiptRow}><span>Verification</span><strong>Creator review</strong></div>
       </section>
@@ -128,7 +128,7 @@ export default async function ReviewStepPage({ searchParams }: { searchParams: P
             {accessTerms.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
           </dl>
           <p>The Pod creator reviews member proofs. The creator does not fund this Pod or receive any member funds.</p>
-          <p>{contract.settlementMode === "proportional" ? "Approved work protects its slice and can earn from rejected or missed slices for the same occurrence. This Testnet MVP has no appeal or peer vote." : "The complete Testnet commitment returns after roster lock. No proportional redistribution applies to this immutable contract."}</p>
+          <p>{contract.settlementMode === "proportional" ? "Approved work protects its slice and can earn from rejected or missed slices for the same occurrence. Members receive one structured appeal before a rejection becomes final." : "The complete Testnet commitment returns after roster lock. No proportional redistribution applies to this immutable contract."}</p>
         </div>
       </details>
       <PublishClient podId={pod.id} />

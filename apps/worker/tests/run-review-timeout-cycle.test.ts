@@ -6,13 +6,18 @@ import { startFundingWorker } from "../src/index";
 const workerMocks = vi.hoisted(() => ({
   repository: {
     checkHealth: vi.fn(async () => ({
-      schemaVersion: "0017_robust_loners",
+      schemaVersion: "0018_proof_reconciliation_lifecycle",
       migrationHash:
-        "97136dbc69adf6a53bbcb077015df750ad185f71c022dbd27253f2bd150bc4cd"
+        "c149f0c7e6a433e135c6c77d36ed59cd6ab43cb735d4465f05f5872f403b5c1f"
     })),
     close: vi.fn(async () => undefined),
     getEffectiveTime: vi.fn(async (realNow: Date) => realNow),
-    protectTimedOutReviews: vi.fn(async () => ({ protectedSubmissions: 0 }))
+    protectTimedOutReviews: vi.fn(async () => ({ protectedSubmissions: 0 })),
+    runProofReviewDeadlines: vi.fn(async () => ({
+      processed: 0,
+      advanced: 0,
+      resolved: 0
+    }))
   },
   runDepositCycle: vi.fn(async () => undefined),
   runCutoffCycle: vi.fn(async () => undefined),
@@ -36,9 +41,9 @@ const workerMocks = vi.hoisted(() => ({
 
 vi.mock("@pods/db", () => ({
   createPodsRepository: vi.fn(() => workerMocks.repository),
-  PODS_SCHEMA_VERSION: "0017_robust_loners",
+  PODS_SCHEMA_VERSION: "0018_proof_reconciliation_lifecycle",
   PODS_SCHEMA_MIGRATION_HASH:
-    "97136dbc69adf6a53bbcb077015df750ad185f71c022dbd27253f2bd150bc4cd"
+    "c149f0c7e6a433e135c6c77d36ed59cd6ab43cb735d4465f05f5872f403b5c1f"
 }));
 
 vi.mock("../src/funding/nimiq-deposit-rpc.js", () => ({
@@ -203,7 +208,7 @@ describe("runReviewTimeoutCycle", () => {
   it("refuses to start when the applied migration hash differs from this build", async () => {
     vi.clearAllMocks();
     workerMocks.repository.checkHealth.mockResolvedValueOnce({
-      schemaVersion: "0017_robust_loners",
+      schemaVersion: "0018_proof_reconciliation_lifecycle",
       migrationHash: "0".repeat(64)
     });
     vi.stubEnv("APP_ENV", "alpha");

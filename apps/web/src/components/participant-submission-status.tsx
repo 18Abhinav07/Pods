@@ -27,12 +27,24 @@ function formattedMoment(value: string | null, timeZone: string) {
 function isStatusDto(value: unknown): value is ParticipantSubmissionStatusDto {
   if (!value || typeof value !== "object") return false;
   const state = (value as { state?: unknown }).state;
+  const proofCaseStage = (value as { proofCaseStage?: unknown }).proofCaseStage;
+  const validProofCaseStage =
+    proofCaseStage === undefined ||
+    proofCaseStage === null ||
+    proofCaseStage === "initial_review" ||
+    proofCaseStage === "awaiting_clarification" ||
+    proofCaseStage === "post_clarification_review" ||
+    proofCaseStage === "appeal_open" ||
+    proofCaseStage === "appeal_review" ||
+    proofCaseStage === "resolved";
   return (
-    state === "draft" ||
-    state === "reviewing" ||
-    state === "approved" ||
-    state === "rejected" ||
-    state === "timeout_protected"
+    validProofCaseStage &&
+    (state === "draft" ||
+      state === "reviewing" ||
+      state === "approved" ||
+      state === "rejected" ||
+      state === "timeout_protected" ||
+      state === "grace")
   );
 }
 
@@ -40,6 +52,7 @@ function outcomeTitle(state: ParticipantSubmissionStatusDto["state"]) {
   if (state === "approved") return "Progress updated";
   if (state === "timeout_protected") return "Protected and counted";
   if (state === "rejected") return "This occurrence was not counted";
+  if (state === "grace") return "Principal returned without a streak penalty";
   if (state === "draft") return "Not submitted yet";
   return "Principal protected while review is open";
 }
@@ -89,6 +102,9 @@ function StateIcon({
   if (state === "rejected") {
     return <XCircle aria-hidden="true" size={30} weight="fill" />;
   }
+  if (state === "grace") {
+    return <ShieldCheck aria-hidden="true" size={30} weight="fill" />;
+  }
   if (state === "draft") {
     return <PencilSimple aria-hidden="true" size={28} weight="fill" />;
   }
@@ -114,7 +130,8 @@ export function ParticipantSubmissionStatus({
   const reviewerKind = status.reviewerKind ?? "creator";
   const presentation = participantSubmissionPresentation(
     status.state,
-    reviewerKind
+    reviewerKind,
+    status.proofCaseStage ?? null
   );
   const audience = proofAudiencePresentation(
     status.proofShareMode,
@@ -222,7 +239,8 @@ export function ParticipantSubmissionStatus({
         </div>
       </div>
 
-      {status.state === "draft" ? null : (
+      {status.state === "draft" ||
+      (status.state === "reviewing" && status.proofCaseStage) ? null : (
         <details className={styles.reviewHistory}>
           <summary>
             <span>Review timing</span>
@@ -236,24 +254,26 @@ export function ParticipantSubmissionStatus({
         </details>
       )}
 
-      <aside
-        className={styles.outcomeNote}
-        data-tone={
-          successful
-            ? "success"
-            : status.state === "rejected"
-              ? "attention"
-              : "pending"
-        }
-      >
-        <strong>{outcomeTitle(status.state)}</strong>
-        {status.state === "reviewing" ? (
-          <span>
-            If no decision is recorded, protection applies at{" "}
-            {formattedMoment(status.reviewHardDeadlineAt, timeZone)}.
-          </span>
-        ) : null}
-      </aside>
+      {status.state === "reviewing" && status.proofCaseStage ? null : (
+        <aside
+          className={styles.outcomeNote}
+          data-tone={
+            successful
+              ? "success"
+              : status.state === "rejected"
+                ? "attention"
+                : "pending"
+          }
+        >
+          <strong>{outcomeTitle(status.state)}</strong>
+          {status.state === "reviewing" ? (
+            <span>
+              If no decision is recorded, protection applies at{" "}
+              {formattedMoment(status.reviewHardDeadlineAt, timeZone)}.
+            </span>
+          ) : null}
+        </aside>
+      )}
 
       {status.reviewDecisionNote ? (
         <aside className={styles.decisionNote}>

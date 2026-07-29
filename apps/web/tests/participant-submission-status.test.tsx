@@ -105,4 +105,22 @@ describe("ParticipantSubmissionStatus", () => {
     expect(screen.getByText(/If no decision is recorded, protection applies at/))
       .toBeVisible();
   });
+
+  it("replaces passive review copy with the participant's clarification action", () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      () => new Promise<Response>(() => undefined)
+    );
+
+    render(
+      <ParticipantSubmissionStatus
+        endpoint="/api/pods/pod-1/submissions/submission-1"
+        initial={{ ...initial, proofCaseStage: "awaiting_clarification" }}
+      />
+    );
+
+    expect(screen.getByRole("heading", { name: "Clarification needed" })).toBeVisible();
+    expect(screen.getByText("Answer the creator's structured request in the private review thread below.")).toBeVisible();
+    expect(screen.queryByText("Protection scheduled")).not.toBeInTheDocument();
+    expect(screen.queryByText(/If no decision is recorded/)).not.toBeInTheDocument();
+  });
 });

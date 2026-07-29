@@ -1,4 +1,4 @@
-import { templateContracts } from "@pods/domain";
+import { isPublicVisitorContract, templateContracts } from "@pods/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -57,10 +57,7 @@ export default async function FundingHandoffPage({ params }: { params: Promise<{
           templateName={template?.name ?? "Activity Pod"}
           totalLuna={contract.commitment.totalLuna}
           settlementMode={contract.settlementMode ?? "proportional"}
-          publicVisitorRoom={
-            contract.version === 2 &&
-            contract.community.roomAudience === "public_read_only"
-          }
+          publicVisitorRoom={isPublicVisitorContract(contract)}
         />
       ) : (
         <section className={styles.unavailableState} role="status">

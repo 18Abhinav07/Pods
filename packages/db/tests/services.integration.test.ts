@@ -26,9 +26,9 @@ describe("local Phase 0 services", () => {
     const repository = createPodsRepository(databaseUrl);
     try {
       await expect(repository.checkHealth()).resolves.toEqual({
-        schemaVersion: "0017_robust_loners",
+        schemaVersion: "0018_proof_reconciliation_lifecycle",
         migrationHash:
-          "97136dbc69adf6a53bbcb077015df750ad185f71c022dbd27253f2bd150bc4cd"
+          "c149f0c7e6a433e135c6c77d36ed59cd6ab43cb735d4465f05f5872f403b5c1f"
       });
     } finally {
       await repository.close();

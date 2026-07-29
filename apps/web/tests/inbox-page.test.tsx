@@ -7,6 +7,7 @@ vi.mock("../src/lib/session", () => ({
 
 vi.mock("../src/lib/server-db", () => ({
   podsRepository: {
+    listProofReviewNotificationsForUser: vi.fn(async () => []),
     listInboxTimelineForUser: vi.fn(async () => [
       {
         membership: {

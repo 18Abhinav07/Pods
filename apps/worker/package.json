@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node --import tsx --input-type=module --eval \"await import('./src/index.ts')\"",
     "dev": "node --env-file=.env.local --watch --import tsx src/index.ts",
-    "start": "node --env-file=.env.local --import tsx src/index.ts",
+    "start": "node --import tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clock:advance": "node --import tsx src/clock/command.ts",

@@ -1,6 +1,7 @@
 "use client";
 
 import { parseNimToLuna } from "@pods/domain";
+import { Equals, X } from "@phosphor-icons/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -57,9 +58,9 @@ export function CommitmentForm({
 
     <section className={styles.equation} aria-label={`${occurrenceCount} occurrences times ${nim || "0"} NIM equals ${total} NIM maximum upfront`}>
       <div><span>Occurrences</span><strong>{occurrenceCount}</strong></div>
-      <i aria-hidden="true">×</i>
+      <i aria-hidden="true"><X size={12} weight="bold" /></i>
       <div><span>Each</span><strong>{nim || "0"} NIM</strong></div>
-      <i aria-hidden="true">=</i>
+      <i aria-hidden="true"><Equals size={12} weight="bold" /></i>
       <div><span>Maximum upfront</span><strong>{total} NIM</strong></div>
     </section>
 
@@ -74,7 +75,7 @@ export function CommitmentForm({
       </div>
     </details>
 
-    <div className={styles.infoNote}><span className={styles.infoNoteIcon} aria-hidden="true">N</span><span><strong>Funded upfront by participants</strong><span>You set the cadence and review proof. You never fund this Pod or receive participant money.</span></span></div>
+    <div className={styles.infoNote}><span className={styles.infoNoteIcon} aria-hidden="true"><Image alt="" height={16} src="/media/nimiq-signet.svg" width={16} /></span><span><strong>Funded upfront by participants</strong><span>You set the cadence and review proof. You never fund this Pod or receive participant money.</span></span></div>
     {error ? <div className={styles.error} role="alert">{error}</div> : null}
     <div className={styles.actionDock}><button className={styles.primaryAction} disabled={saving} type="submit">{saving ? "Saving commitment" : "Review frozen contract"}</button></div>
   </form>;

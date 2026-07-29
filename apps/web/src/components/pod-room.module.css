@@ -96,6 +96,8 @@
 .composer button:focus-visible,
 .composer textarea:focus-visible,
 .messageButton:focus-visible,
+.reactionSummary button:focus-visible,
+.replyPreview:focus-visible,
 .sheet button:focus-visible,
 .sheet a:focus-visible {
   outline: 2px solid var(--room-ink);
@@ -183,6 +185,26 @@
   padding: 5px 0 18px;
 }
 
+.clusterGroup {
+  display: contents;
+}
+
+.dayDivider {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 6px;
+}
+
+.dayDivider span {
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--room-muted);
+  background: var(--room-soft);
+  font: 700 9px/1 var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .cluster {
   display: flex;
   min-width: 0;
@@ -197,6 +219,10 @@
 
 .clusterConsecutive {
   margin-top: 3px;
+}
+
+.clusterReacted {
+  margin-bottom: 16px;
 }
 
 .avatarSpacer {
@@ -215,6 +241,11 @@
   box-shadow: 0 8px 24px rgba(28, 34, 28, 0.06);
   touch-action: pan-y;
   animation: entryIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.entry:active {
+  transform: scale(0.985);
 }
 
 .entryViewer {
@@ -242,11 +273,13 @@
 
 .announcement {
   padding: 15px;
+  border-radius: 18px;
   color: var(--room-ink);
   background: color-mix(in srgb, var(--room-lime) 22%, var(--room-paper));
 }
 
 .system {
+  border-radius: 18px;
   max-width: 88%;
   margin-inline: auto;
   padding: 10px 13px;
@@ -347,15 +380,32 @@
 .replyPreview {
   display: grid;
   width: 100%;
-  gap: 3px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
   margin: 0 0 7px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 0;
-  border-left: 3px solid var(--room-lime);
   border-radius: 10px;
   color: inherit;
-  background: color-mix(in srgb, currentColor 7%, transparent);
+  background: color-mix(in srgb, currentColor 9%, transparent);
   text-align: left;
+}
+
+.replyPreviewIcon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  color: inherit;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.replyPreviewCopy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
 }
 
 .replyPreview strong {
@@ -509,44 +559,51 @@
 }
 
 .reactionSummary {
+  position: absolute;
+  bottom: -13px;
+  left: 10px;
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 7px;
+  gap: 4px;
+  z-index: 1;
+}
+
+.entryViewer .reactionSummary {
+  right: 10px;
+  left: auto;
+}
+
+.entryViewer .reactionSummary button:focus-visible {
+  outline-color: var(--room-paper);
 }
 
 .reactionSummary button {
   display: inline-flex;
-  min-width: 44px;
-  min-height: 32px;
+  min-width: 40px;
+  min-height: 26px;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 0 9px;
-  border: 0;
+  gap: 4px;
+  padding: 0 8px;
+  border: 2px solid var(--room-paper);
   border-radius: 999px;
   color: var(--room-muted);
-  background: color-mix(in srgb, currentColor 7%, transparent);
+  background: var(--room-paper);
+  box-shadow: 0 4px 10px rgba(28, 34, 28, 0.14);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reactionSummary button:active {
+  transform: scale(0.9);
 }
 
 .reactionSummary button[data-active="true"] {
   color: var(--room-ink);
-  background: color-mix(in srgb, var(--room-lime) 45%, var(--room-paper));
-}
-
-.reactionSummary svg,
-.reactionGrid svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.7;
+  background: color-mix(in srgb, var(--room-lime) 55%, var(--room-paper));
 }
 
 .reactionSummary span {
-  font: 750 9px/1 var(--font-mono);
+  font: 750 10px/1 var(--font-mono);
 }
 
 .bubbleFooter {
@@ -557,17 +614,37 @@
   gap: 4px;
 }
 
-.bubbleFooter .messageButton {
-  width: 30px;
-  height: 30px;
-  margin: 0 -8px 0 0;
-}
-
 .delivery {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-top: 4px;
   color: color-mix(in srgb, currentColor 54%, transparent);
   font: 650 9px/1.2 var(--font-sans);
+}
+
+.deliveryPulse {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: deliveryPulse 1100ms cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes deliveryPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deliveryPulse {
+    animation: none;
+  }
 }
 
 .deliveryFailed {
@@ -976,6 +1053,11 @@
   border-radius: 16px;
   color: var(--room-muted);
   background: var(--room-soft);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reactionGrid button:active {
+  transform: scale(0.93);
 }
 
 .reactionGrid button[data-active="true"] {
@@ -1361,7 +1443,10 @@
 
   .iconButton,
   .actionLink,
-  .composerSend {
+  .composerSend,
+  .entry,
+  .reactionSummary button,
+  .reactionGrid button {
     transition: none;
   }
 }

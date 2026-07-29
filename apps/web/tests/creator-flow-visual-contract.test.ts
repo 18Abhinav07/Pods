@@ -54,7 +54,7 @@ describe("production creator journey visual contract", () => {
     expect(combined).toContain("GitPullRequest");
     expect(combined).toContain("ArrowSquareOut");
     expect(styles).toMatch(
-      /\.switchControl\s*\{[^}]*width:\s*52px;[^}]*height:\s*32px;/s
+      /\.switchControl\s*\{[^}]*width:\s*46px;[^}]*height:\s*26px;/s
     );
     expect(styles).toMatch(
       /input,[\s\S]*?textarea,[\s\S]*?select\s*\{[^}]*font-size:\s*16px;/s

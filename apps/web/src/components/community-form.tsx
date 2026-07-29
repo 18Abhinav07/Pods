@@ -1,6 +1,7 @@
 "use client";
 
 import type { CommunityStepInput } from "@pods/domain";
+import { Check } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -50,12 +51,12 @@ export function CommunityForm({ podId, initial }: { podId: string; initial: Comm
         <label className={styles.choiceCard} data-selected={visibility === "public"}>
           <input className={styles.choiceInput} type="radio" name="visibility" value="public" checked={visibility === "public"} onChange={() => selectVisibility("public")} />
           <span className={styles.choiceCopy}><strong>Public Pod</strong><span>Listed in Discover. People apply before funding.</span></span>
-          <i className={styles.choiceIndicator} aria-hidden="true">{visibility === "public" ? "✓" : ""}</i>
+          <i className={styles.choiceIndicator} aria-hidden="true">{visibility === "public" ? <Check size={14} weight="bold" /> : null}</i>
         </label>
         <label className={styles.choiceCard} data-selected={visibility === "private"}>
           <input className={styles.choiceInput} type="radio" name="visibility" value="private" checked={visibility === "private"} onChange={() => selectVisibility("private")} />
           <span className={styles.choiceCopy}><strong>Private Pod</strong><span>Hidden from discovery. Entry needs an invitation.</span></span>
-          <i className={styles.choiceIndicator} aria-hidden="true">{visibility === "private" ? "✓" : ""}</i>
+          <i className={styles.choiceIndicator} aria-hidden="true">{visibility === "private" ? <Check size={14} weight="bold" /> : null}</i>
         </label>
       </div>
     </fieldset>
@@ -88,7 +89,7 @@ export function CommunityForm({ podId, initial }: { podId: string; initial: Comm
       <div className={styles.twoColumn}><label className={styles.field}><span>Minimum</span><input type="number" name="minParticipants" min="2" defaultValue={initial.minParticipants} required /></label><label className={styles.field}><span>Maximum</span><input type="number" name="maxParticipants" min="2" defaultValue={initial.maxParticipants} required /></label></div>
     </section>
 
-    <div className={styles.infoNote}><span className={styles.infoNoteIcon} aria-hidden="true">✓</span><span><strong>You review the work</strong><span>As creator, you verify member proof. You do not fund or receive participant money.</span></span></div>
+    <div className={styles.infoNote}><span className={styles.infoNoteIcon} aria-hidden="true"><Check size={16} weight="bold" /></span><span><strong>You review the work</strong><span>As creator, you verify member proof. You do not fund or receive participant money.</span></span></div>
     {error ? <div className={styles.error} role="alert">{error}</div> : null}
     <div className={`${styles.actionDock} ${styles.formActionDock}`}><button className={styles.primaryAction} disabled={saving} type="submit">{saving ? "Saving community" : "Continue to commitment"}</button></div>
   </form>;

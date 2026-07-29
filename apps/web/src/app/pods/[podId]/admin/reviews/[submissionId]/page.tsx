@@ -116,71 +116,73 @@ export default async function CreatorReviewWorkspacePage({
           </span>
         </section>
 
-        <section
-          className={styles.reviewWorkspace}
-          data-review-workspace
-        >
-          <section className={styles.reviewSection}>
-            <header>
-              <span>{evidence.templateName} · Frozen Pod rule</span>
-              <h1>Locked commitment</h1>
-            </header>
-            <div className={styles.reviewRows}>
-              {evidence.frozenCriterion.map((item) => (
-                <div key={`criterion-${item.label}`}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className={styles.reviewSection}>
-            <header>
-              <span>Participant result</span>
-              <h2>Submitted proof</h2>
-            </header>
-            <div className={styles.reviewRows}>
-              {evidence.evidenceRows.map((item) => (
-                <div key={`evidence-${item.label}`}>
-                  <span>{item.label}</span>
-                  <p>{item.value}</p>
-                </div>
-              ))}
-              <div>
-                <span>Image evidence</span>
-                <strong>
-                  {submission.evidenceObjectKey
-                    ? "Attached for creator review"
-                    : evidence.imageRequired
-                      ? "Required image unavailable"
-                      : "Optional for this activity"}
-                </strong>
+        {!proofReview ? (
+          <section
+            className={styles.reviewWorkspace}
+            data-review-workspace
+          >
+            <section className={styles.reviewSection}>
+              <header>
+                <span>{evidence.templateName} · Frozen Pod rule</span>
+                <h1>Locked commitment</h1>
+              </header>
+              <div className={styles.reviewRows}>
+                {evidence.frozenCriterion.map((item) => (
+                  <div key={`criterion-${item.label}`}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
               </div>
-            </div>
-            {evidence.artifact ? (
-              <ArtifactLinkCard
-                artifactAction
-                context="Public artifact"
-                href={evidence.artifact.href}
-                label={evidence.artifact.label}
-              />
+            </section>
+
+            <section className={styles.reviewSection}>
+              <header>
+                <span>Participant result</span>
+                <h2>Submitted proof</h2>
+              </header>
+              <div className={styles.reviewRows}>
+                {evidence.evidenceRows.map((item) => (
+                  <div key={`evidence-${item.label}`}>
+                    <span>{item.label}</span>
+                    <p>{item.value}</p>
+                  </div>
+                ))}
+                <div>
+                  <span>Image evidence</span>
+                  <strong>
+                    {submission.evidenceObjectKey
+                      ? "Attached for creator review"
+                      : evidence.imageRequired
+                        ? "Required image unavailable"
+                        : "Optional for this activity"}
+                  </strong>
+                </div>
+              </div>
+              {evidence.artifact ? (
+                <ArtifactLinkCard
+                  artifactAction
+                  context="Public artifact"
+                  href={evidence.artifact.href}
+                  label={evidence.artifact.label}
+                />
+              ) : null}
+            </section>
+
+            {submission.evidenceObjectKey ? (
+              <figure className={styles.reviewEvidenceFigure}>
+                <figcaption>
+                  <span>Creator-only evidence</span>
+                  <small>Private to this decision</small>
+                </figcaption>
+                <CreatorReviewEvidence
+                  podId={podId}
+                  submissionId={submissionId}
+                />
+              </figure>
             ) : null}
           </section>
-
-          {submission.evidenceObjectKey ? (
-            <figure className={styles.reviewEvidenceFigure}>
-              <figcaption>
-                <span>Creator-only evidence</span>
-                <small>Private to this decision</small>
-              </figcaption>
-              <CreatorReviewEvidence
-                podId={podId}
-                submissionId={submissionId}
-              />
-            </figure>
-          ) : null}
-        </section>
+        ) : null}
 
         {!proofReview ? (
           <details className={styles.reviewHistory}>
@@ -200,7 +202,17 @@ export default async function CreatorReviewWorkspacePage({
           <CreatorProofReviewLifecycle
             endpoint={`/api/pods/${podId}/admin/reviews/${submissionId}/decision`}
             initial={proofReviewView(proofReview)}
+            proofRecord={{
+              artifact: evidence.artifact,
+              evidenceImageEndpoint: submission.evidenceObjectKey
+                ? `/api/pods/${podId}/admin/reviews/${submissionId}/evidence`
+                : null,
+              evidenceRows: evidence.evidenceRows,
+              frozenCriterion: evidence.frozenCriterion,
+              templateName: evidence.templateName
+            }}
             timeZone={timeZone}
+            versionsEndpoint={`/api/pods/${podId}/submissions/${submissionId}/review`}
           />
         ) : terminal ? (
           <section className={styles.recordedDecision}>

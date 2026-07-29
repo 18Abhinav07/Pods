@@ -410,7 +410,10 @@ describe("creator proof review pages", () => {
     }));
 
     expect(screen.getByRole("heading", { name: "Review closed" })).toBeVisible();
-    expect(screen.getByText("Review thread")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "More on this proof" }));
+    fireEvent.click(screen.getByRole("button", { name: /Review history/ }));
+
     expect(screen.getByText("The settlement blocker is not demonstrated"))
       .toBeVisible();
     expect(screen.getByText("Link the exact integration test in a recovery commitment."))

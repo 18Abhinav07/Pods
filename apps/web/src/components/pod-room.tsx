@@ -8,7 +8,11 @@ import type {
   TemplateId
 } from "@pods/domain";
 import {
+  Confetti,
   DotsThree,
+  HandHeart,
+  Heart,
+  Lightbulb,
   Lightning,
   PaperPlaneRight,
   Plus,
@@ -133,11 +137,12 @@ const reactionLabels: Record<ReactionCode, string> = {
   insightful: "Insightful"
 };
 
-function ReactionIcon({ code }: { code: ReactionCode }) {
-  if (code === "heart") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 5.8a5 5 0 0 0-7.1 0L12 7.5l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21l8.8-8.1a5 5 0 0 0 0-7.1Z" /></svg>;
-  if (code === "support") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"/><path d="M12 3a9 9 0 1 0 9 9"/></svg>;
-  if (code === "celebrate") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 4-10 6 6-10 4Z"/><path d="m14 4 .5 3M19 8l-3 1M17 3l-2 2"/></svg>;
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 22h4M8.5 14.5A6 6 0 1 1 15.5 5a6 6 0 0 1 0 9.5L14 16h-4l-1.5-1.5Z"/></svg>;
+function ReactionIcon({ code, active = false, size = 16 }: { code: ReactionCode; active?: boolean; size?: number }) {
+  const weight = active ? "fill" : "regular";
+  if (code === "heart") return <Heart aria-hidden="true" size={size} weight={weight} />;
+  if (code === "support") return <HandHeart aria-hidden="true" size={size} weight={weight} />;
+  if (code === "celebrate") return <Confetti aria-hidden="true" size={size} weight={weight} />;
+  return <Lightbulb aria-hidden="true" size={size} weight={weight} />;
 }
 
 function messageLabel(kind: RoomMessage["kind"]) {
@@ -165,6 +170,24 @@ export function mergeRoomMessages(current: RoomMessage[], incoming: RoomMessage[
     byId.set(message.id, { ...byId.get(message.id), ...message });
   }
   return [...byId.values()].sort((first, second) => first.sequence - second.sequence);
+}
+
+function isSameCalendarDay(firstIso: string, secondIso: string) {
+  const first = new Date(firstIso);
+  const second = new Date(secondIso);
+  return first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
+}
+
+function dayDividerLabel(iso: string) {
+  const date = new Date(iso);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (isSameCalendarDay(iso, now.toISOString())) return "Today";
+  if (isSameCalendarDay(iso, yesterday.toISOString())) return "Yesterday";
+  return new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: date.getFullYear() === now.getFullYear() ? undefined : "numeric" }).format(date);
 }
 
 function messagesShareVisualGroup(first: RoomMessage | undefined, second: RoomMessage | undefined) {
@@ -491,14 +514,21 @@ export function PodRoom({
           const groupEnd = !groupedWithNext;
           const isViewer = Boolean(message.sender?.isViewer);
           const showHeader = !isMemberMessage || (groupStart && !isViewer);
+          const showDayDivider = index === 0 || !isSameCalendarDay(messages[index - 1]!.createdAt, message.createdAt);
           return (
+            <div className={styles.clusterGroup} key={message.id}>
+            {showDayDivider ? (
+              <div className={styles.dayDivider} role="separator">
+                <span>{dayDividerLabel(message.createdAt)}</span>
+              </div>
+            ) : null}
             <div
               className={[
                 styles.cluster,
                 isViewer ? `${styles.clusterViewer} is-viewer` : "",
-                groupedWithPrevious ? styles.clusterConsecutive : ""
+                groupedWithPrevious && !showDayDivider ? styles.clusterConsecutive : "",
+                message.reactions.length > 0 ? styles.clusterReacted : ""
               ].filter(Boolean).join(" ")}
-              key={message.id}
             >
               {isMemberMessage && !isViewer ? (
                 groupStart && message.sender
@@ -629,27 +659,27 @@ export function PodRoom({
                         ) : null}
                     </div>
                   ) : <MessageBody body={message.body} />}
-                  {message.delivery === "sending" ? <small className={styles.delivery}>Sending</small> : null}
+                  {message.delivery === "sending" ? <small className={styles.delivery}><i aria-hidden="true" className={styles.deliveryPulse} />Sending</small> : null}
                   {message.delivery === "failed" ? <button className={`${styles.delivery} ${styles.deliveryFailed}`} onClick={() => void retryMessage(message)} type="button">Failed. Retry</button> : null}
                   {!isMemberMessage && !message.delivery && mode === "direct" && message.sender?.isViewer ? <small className={styles.delivery}>{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</small> : null}
-                  {message.reactions.length > 0 ? <div className={styles.reactionSummary}>
-                    {message.reactions.map((summary) => (
-                      <button data-active={summary.reactedByViewer ? "true" : "false"} key={summary.code} onClick={() => void react(message, summary.code)} type="button" aria-label={`${reactionLabels[summary.code]} ${summary.count}`}>
-                        <ReactionIcon code={summary.code} />
-                        <span>{summary.count}</span>
-                      </button>
-                    ))}
-                  </div> : null}
                   {isMemberMessage && groupEnd ? (
                     <footer className={styles.bubbleFooter}>
                       <time dateTime={message.createdAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(message.createdAt))}</time>
                       {!message.delivery && mode === "direct" && isViewer ? <span>{message.sequence <= peerReadSequence ? "Seen" : "Sent"}</span> : null}
-                      <button aria-label={`More actions for ${message.sender?.displayName ?? "this message"}`} className={`${styles.messageButton} message-more`} onClick={() => setActiveMessage(message)} type="button"><DotsThree aria-hidden="true" size={18} weight="bold" /></button>
                     </footer>
                   ) : null}
+                  {message.reactions.length > 0 ? <div className={styles.reactionSummary}>
+                    {message.reactions.map((summary) => (
+                      <button data-active={summary.reactedByViewer ? "true" : "false"} key={summary.code} onClick={() => void react(message, summary.code)} type="button" aria-label={`${reactionLabels[summary.code]} ${summary.count}`}>
+                        <ReactionIcon active={summary.reactedByViewer} code={summary.code} size={13} />
+                        <span>{summary.count}</span>
+                      </button>
+                    ))}
+                  </div> : null}
                 </>
               )}
               </article>
+            </div>
             </div>
           );
         })}
@@ -663,21 +693,24 @@ export function PodRoom({
               <button aria-label="Close message actions" onClick={() => setActiveMessage(null)} type="button"><X aria-hidden="true" size={20} weight="bold" /></button>
             </header>
             <div aria-label="Reactions" className={styles.reactionGrid} role="group">
-              {(["heart", "support", "celebrate", "insightful"] as ReactionCode[]).map((code) => (
-                <button
-                  aria-label={`React with ${reactionLabels[code]}`}
-                  data-active={activeMessage.reactions.some((reaction) => reaction.code === code && reaction.reactedByViewer) ? "true" : "false"}
-                  key={code}
-                  onClick={() => {
-                    void react(activeMessage, code);
-                    setActiveMessage(null);
-                  }}
-                  type="button"
-                >
-                  <ReactionIcon code={code} />
-                  <span>{reactionLabels[code]}</span>
-                </button>
-              ))}
+              {(["heart", "support", "celebrate", "insightful"] as ReactionCode[]).map((code) => {
+                const isActive = activeMessage.reactions.some((reaction) => reaction.code === code && reaction.reactedByViewer);
+                return (
+                  <button
+                    aria-label={`React with ${reactionLabels[code]}`}
+                    data-active={isActive ? "true" : "false"}
+                    key={code}
+                    onClick={() => {
+                      void react(activeMessage, code);
+                      setActiveMessage(null);
+                    }}
+                    type="button"
+                  >
+                    <ReactionIcon active={isActive} code={code} size={22} />
+                    <span>{reactionLabels[code]}</span>
+                  </button>
+                );
+              })}
             </div>
             <div className={styles.actionList}>
               <button onClick={() => { setReplyTo(activeMessage); setActiveMessage(null); }} type="button">Reply</button>

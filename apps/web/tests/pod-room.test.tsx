@@ -430,7 +430,7 @@ describe("Pod room", () => {
 
     const originalEntry = document.getElementById(original.id);
     expect(originalEntry).not.toBeNull();
-    fireEvent.click(within(originalEntry!).getByRole("button", { name: "More actions for Abhinav" }));
+    fireEvent.contextMenu(originalEntry!);
     fireEvent.click(screen.getByRole("button", { name: "Hide message" }));
     await waitFor(() => expect(screen.getByText("Message unavailable")).toBeVisible());
     expect(screen.queryByText(original.body)).not.toBeInTheDocument();
@@ -555,10 +555,10 @@ describe("Pod room", () => {
         roomState="open"
       />
     );
-    fireEvent.click(screen.getAllByRole("button", { name: "More actions for Abhinav" })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "More actions for Abhinav" }));
     fireEvent.click(screen.getByRole("button", { name: "Pin announcement" }));
     await waitFor(() => expect(screen.getByText("Pinned")).toBeInTheDocument());
-    fireEvent.click(screen.getAllByRole("button", { name: "More actions for Abhinav" })[1]!);
+    fireEvent.contextMenu(document.getElementById("member-visible")!);
     fireEvent.click(screen.getByRole("button", { name: "Hide message" }));
     await waitFor(() => expect(screen.getByText("Message removed by the Pod creator")).toBeInTheDocument());
   });

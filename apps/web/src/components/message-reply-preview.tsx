@@ -1,4 +1,5 @@
 import type { MessageKind, MessageReplyPreview } from "@pods/domain";
+import { ArrowBendUpLeft } from "@phosphor-icons/react";
 
 import styles from "./pod-room.module.css";
 
@@ -50,8 +51,11 @@ export function MessageReplyPreviewView({
 }) {
   const content = (
     <>
-      {preview.senderDisplayName ? <strong>{preview.senderDisplayName}</strong> : null}
-      <span>{preview.excerpt}</span>
+      <ArrowBendUpLeft aria-hidden="true" className={styles.replyPreviewIcon} size={12} weight="bold" />
+      <span className={styles.replyPreviewCopy}>
+        {preview.senderDisplayName ? <strong>{preview.senderDisplayName}</strong> : null}
+        <span>{preview.excerpt}</span>
+      </span>
     </>
   );
 

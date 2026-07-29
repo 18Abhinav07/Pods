@@ -12,10 +12,26 @@
   min-height: 100dvh;
   overflow: clip;
   color: var(--atlas-ink);
+  background: transparent;
+}
+
+/*
+ * The landing page owns the whole viewport, so its background has to live on
+ * html/body — otherwise the global body gradient shows through the overscroll
+ * area and any strip below `main`, giving two competing paper tones.
+ */
+html:has(.activity-atlas-page),
+body:has(.activity-atlas-page) {
+  background: none;
+}
+
+html:has(.activity-atlas-page) {
+  color: #181c18;
   background:
     radial-gradient(circle at 84% 7%, rgba(217, 237, 114, 0.2), transparent 24rem),
     radial-gradient(circle at 0 18%, rgba(255, 255, 255, 0.72), transparent 34rem),
-    var(--atlas-paper);
+    #f2efe6;
+  background-attachment: fixed, fixed, scroll;
 }
 
 .activity-atlas-page :where(h1, h2, h3, p, figure, ol, ul) {

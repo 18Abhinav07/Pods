@@ -72,7 +72,7 @@ export function HomePage() {
 
       <section className="atlas-hero" aria-labelledby="atlas-hero-title">
         <LandingReveal className="atlas-hero-copy">
-          <p className="atlas-eyebrow">Accountability, backed by NIM</p>
+          <p className=" ">Accountability, backed by NIM</p>
           <h1 id="atlas-hero-title">Make showing up feel real.</h1>
           <p className="atlas-hero-body">
             Create a Pod. Put NIM behind the activity. Prove the work together.
@@ -98,7 +98,7 @@ export function HomePage() {
       >
         <LandingReveal className="accountability-layout">
           <div className="atlas-section-heading">
-            <p className="atlas-eyebrow">From intention to evidence</p>
+            <p className=" ">From intention to evidence</p>
             <h2 id="accountability-loop-title">The accountability loop.</h2>
             <p>
               A Pod keeps the rule, money, work, and people in one understandable sequence.
@@ -113,7 +113,7 @@ export function HomePage() {
         aria-labelledby="rituals-title"
       >
         <LandingReveal className="atlas-section-heading rituals-heading">
-          <p className="atlas-eyebrow">Activity, not one category</p>
+          <p className=" ">Activity, not one category</p>
           <h2 id="rituals-title">One engine. Five rituals.</h2>
           <p>
             The evidence changes with the activity. The shared commitment stays consistent.
@@ -146,7 +146,7 @@ export function HomePage() {
 
       <section className="atlas-section room-section" aria-labelledby="room-title">
         <LandingReveal className="room-section-copy">
-          <p className="atlas-eyebrow">Accountability has a room</p>
+          <p className=" ">Accountability has a room</p>
           <h2 id="room-title">Inside a Pod.</h2>
           <p>
             Commitments become shared activity cards. Members can talk, reply, and support
@@ -168,7 +168,7 @@ export function HomePage() {
           <FundingRailPreview />
         </LandingReveal>
         <LandingReveal className="funding-section-copy" delay={0.08}>
-          <p className="atlas-eyebrow">NIM-native commitment</p>
+          <p className=" ">NIM-native commitment</p>
           <h2 id="funding-title">NIM makes commitment visible.</h2>
           <p>
             Funding is not a spinner and a promise. Pods shows the participant every stage
@@ -183,7 +183,7 @@ export function HomePage() {
 
       <section className="atlas-section spaces-section" aria-labelledby="spaces-title">
         <LandingReveal className="atlas-section-heading spaces-heading">
-          <p className="atlas-eyebrow">Choose the community shape</p>
+          <p className=" ">Choose the community shape</p>
           <h2 id="spaces-title">
             Public when you want reach. Private when you want focus.
           </h2>

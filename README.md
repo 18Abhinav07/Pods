@@ -1,93 +1,57 @@
+<p align="center">
+  <img src="apps/web/public/brand/pods-icon-512.png" width="96" alt="Pods" />
+</p>
+
+<h1 align="center">Pods</h1>
+<p align="center"><b>Make showing up feel real.</b></p>
+<p align="center">Activity-led accountability, backed by NIM.</p>
+
+<p align="center">
+  <a href="https://pods-nimiq-activity.up.railway.app">Live demo</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#proven-on-testnet">Proven on testnet</a> ·
+</p>
+
 ---
-created: 2026-07-19
-project: pods
-ecosystem: nimiq
-tags: [pods, mini-app, nimiq, hackathon]
----
 
-# Pods
+Most accountability apps ask you to trust yourself. Pods asks you to put something real behind it.
 
-Pods is a NIM-backed group activity accountability Mini App for Nimiq Pay.
-Participants join a focused community, commit NIM upfront, submit evidence for
-scheduled activities, and receive a deterministic settlement after disclosed
-creator review.
+Create a Pod, lock NIM behind a fixed schedule of proof, and let the stake do the work your willpower won't. Everyone in the room can see who showed up and the payout is decided by that, not by promises.
 
-## Current status
+Every builder knows the gap between the work they actually did and the proof they can show for it. Pods closes that gap: every commitment, every submission, every review is logged, so the credit is undeniably yours.
 
-The Build and Ship Testnet journey is implemented from public enrollment and
-upfront funding through occurrence commitments, creator-reviewed proof,
-deterministic proportional settlement, and durable payout tracking. The
-automated repository, mobile-browser, cancellation-refund, and physical
-two-wallet payout gates pass. The verified physical lifecycle conserved the
-complete 0.6 NIM pool, finalized both participant payouts, transferred nothing
-to the creator, and remained idempotent on later worker cycles. The verified
-core is deployed on Railway. Automatic low-value Testnet payout broadcasting
-is explicitly authorized and enabled for the isolated Testnet web and worker
-services. Mainnet funds and Mainnet deployment remain unauthorized.
+## How it works
 
-## Local development
+1. **Create or join a Pod**  pick an activity mode (Build & Ship, Fitness, Reading, Study, Practice & Create) and a fixed schedule.
+2. **Commit NIM upfront**  funding locks the roster and puts real weight behind the plan.
+3. **Submit proof, on schedule**  evidence for each occurrence, reviewed in the open by the creator.
+4. **Settle deterministically**  payout is calculated from who showed up. The creator reviews proof but never receives participant funds.
 
-Requirements:
+## See it in motion
 
-- Node.js 22
-- Corepack
-- Docker Desktop
-- Nimiq Pay with Testnet enabled
+<p align="center">
+  <img src="docs/marketing/today.jpg" width="31%" alt="Today screen  choose your next commitment" />
+  <img src="docs/marketing/pod-room.jpg" width="31%" alt="Pod room  proof, review, and reactions" />
+  <img src="docs/marketing/settlement.jpg" width="31%" alt="Settlement screen  deterministic payout" />
+</p>
 
-```bash
-corepack pnpm install
-corepack pnpm services:up
-corepack pnpm check
-corepack pnpm dev:lan
-corepack pnpm dev:worker
-```
+## Proven on testnet
 
-Open the printed LAN URL through Nimiq Pay Custom URL on a device connected to
-the same Wi-Fi network.
+Not a mockup. Pods has cleared a physical two-wallet verification pass on Nimiq testnet, covering funding, roster lock, three scheduled occurrences, creator review, missed-proof handling, deterministic proportional settlement, and real participant payouts. The complete 0.6 NIM pool was conserved, both participant payouts finalized, nothing went to the creator, and later worker cycles stayed idempotent. The verified core runs live on Railway today.
 
-The web process reads only the Testnet treasury address. The worker reads the
-protected treasury signer, watches Nimiq RPC, and is the only process allowed
-to finalize deposits, credit the ledger, apply cutoff, calculate automatic
-settlement, or prepare financial transfers. Signed transfer bytes are
-persisted before broadcast and ambiguous transfers are reconciled by hash
-before any retry.
+## Built for
 
-## Phase 0 outbound preflight
+- Builders who want a real execution record, not just a portfolio
+- Small groups who need an honest, shared way to keep each other on schedule
+- Anyone whose discipline improves when something real is on the line
 
-Generate or inspect the local Testnet treasury and verify the RPC connection:
+## Where this is going
 
-```bash
-corepack pnpm --filter @pods/worker preflight:generate
-corepack pnpm --filter @pods/worker preflight:rpc
-```
-
-Fund the printed address with Testnet NIM. Then prepare, persist, and broadcast
-one small transfer to a physical Nimiq Pay Testnet wallet:
-
-```bash
-corepack pnpm --filter @pods/worker preflight:send -- "NQ recipient" 1000
-corepack pnpm --filter @pods/worker preflight:reconcile -- "transaction hash"
-```
-
-To validate an unknown broadcast response without risking a duplicate send, add
-`--simulate-unknown` to the send command. The reconciliation command only looks
-up the persisted hash. It never broadcasts again.
+Pods is starting narrow, on purpose: a community of builders and shippers first. The direction beyond that is an **execution profile**, not just a builder profile  every commitment and every proof logged, so credit for your work is undeniably yours and your discipline is visible, not just claimed. From there: direct integration with event organizers and hackathons, and timeline support for solo builders and small teams who ship hard and don't have time to manage the socials  so Pods keeps the project in the limelight while they stay heads-down on the build.
 
 ## Trust boundary
 
-Cycle I is custodial and creator-reviewed. The creator does not fund and cannot
-receive participant funds. It is not trustless, non-custodial, or
-production-scale.
+Pods Testnet is custodial and creator-reviewed  not trustless, not non-custodial, not production-scale. The creator reviews proof but cannot fund or receive participant deposits. Mainnet, disputes, and trustless escrow are on the roadmap, not in this release.
 
-## Project references
-
-- [[docs/implementation-plan|Phase 0 implementation plan]]
-- [[validation/inbound-spike-manifest|Validated inbound deposit boundary]]
-- [[validation/phase-3a-results|Phase 3A physical funding result]]
-- [[validation/phase-3b-results|Phase 3B cutoff and refund gate]]
-- [[validation/phase-4-results|Phase 4 activity gate]]
-- [[validation/phase-5-results|Testnet settlement and payout gate]]
-- [[docs/superpowers/plans/2026-07-25-build-ship-testnet-core|Build and Ship core completion plan]]
-- [[docs/design-reference/README|Locked design references]]
-
-Licensed under the MIT License.
+## License
+Any content, piece of code, UI or UX design, assets, or documents can not be used, modified, reused, or redistributed by anyone, for any purpose.

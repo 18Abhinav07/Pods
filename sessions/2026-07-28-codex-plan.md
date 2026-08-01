@@ -124,6 +124,39 @@ Related: [[HANDOFF]] | [[sessions/INDEX|Session index]] |
 
 - None.
 
+## Product Flow Diagram
+
+### Completed
+
+- Created
+  [[docs/mainnet-planning/diagrams/pods-first-launch-product-flow|Pods First Launch Product Flow]]
+  as an editable Excalidraw source with a rendered PNG companion.
+- Mapped the canonical execution graph, identity and consent entry, GitHub,
+  CLI, MCP, web, private-source review, controlled-NIM boundary, and derived
+  Project, person, Event, and public projections.
+- Added sequential action lanes for Organizer, Project Lead, Builder,
+  Reviewer, and Visitor or Judge.
+- Added screen-level route wireframes for the normal builder loop and the
+  Project, review, organizer, and public surfaces.
+- Linked the visual from the planning index and the launch workbook.
+
+### Decisions
+
+- The visual is a proposal companion to the workbook, not an implementation
+  plan or a silent lock of candidate Mainnet decisions.
+- Chat may reference work, but commitment, review, credit, and visibility
+  remain owned by canonical action surfaces.
+
+### In Progress
+
+- Abhinav reviews the visual and workbook together before reconciliation.
+
+### Errors
+
+- One section-render command used a workspace-relative source path from the
+  renderer directory and failed. Re-running with the absolute source path
+  succeeded; no source or render defect was involved.
+
 ## Developer-Native Product Identity Revision
 
 ### Completed

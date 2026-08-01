@@ -18,6 +18,7 @@ Related: [[docs/mainnet-planning/README|Mainnet planning index]] |
 [[docs/mainnet-planning/16-build-and-ship-protocol|Build and Ship protocol]] |
 [[docs/mainnet-planning/26-integrated-mainnet-architecture|Integrated candidate architecture]] |
 [[docs/mainnet-planning/27-validation-and-implementation-sequence|Validation sequence]] |
+[[docs/mainnet-planning/diagrams/pods-first-launch-product-flow|Product flow diagram]] |
 [[HANDOFF]]
 
 ## 1. How to Use This Workbook

@@ -1,46 +1,45 @@
 ---
 project: pods
-last-updated: 2026-07-28 17:14 IST
+last-updated: 2026-07-28 17:48 IST
 last-agent: codex
 mode: PLAN
 ---
 
-# Pods Handoff
-
-Related: [[README]] |
-[[docs/mainnet-planning/README|Mainnet planning index]] |
-[[docs/mainnet-planning/first-launch-slice-workbook|First launch workbook]]
-
 ## State
 
-Testnet v0 remains frozen. The Mainnet launch workbook now integrates
-Abhinav's private-GitHub, issue-to-commitment, CLI, MCP, and curated-execution
-timeline direction and awaits his decision pass.
+Testnet v0 remains frozen. The Mainnet first-launch proposal now has an
+editable product-flow diagram covering the execution graph, actor lanes,
+integration evidence, access boundaries, and route wireframes.
 
-## In Progress
+## In Progress (resume here)
 
-- Task: Review the revised first Mainnet launch product contract.
-- File: `docs/mainnet-planning/first-launch-slice-workbook.md`
-- Stop point: Sections 29 and 30 contain 40 decisions plus Abhinav's captured
-  additions and corrections; no implementation plan is authorized.
+- Task: Review and amend the first Mainnet launch product contract.
+- File:
+  `docs/mainnet-planning/first-launch-slice-workbook.md`
+- Visual:
+  `docs/mainnet-planning/diagrams/pods-first-launch-product-flow.excalidraw`
+- Stop point: the workbook and visual remain proposals; no Mainnet
+  implementation plan is authorized.
 
 ## Open Errors / Blockers
 
-- Abhinav must approve or amend the revised choices.
+- Abhinav must approve or amend the workbook decisions and visual flow.
 - Approved changes must be reconciled into Documents 05 through 27.
-- Spikes A through E plus selected product gates must record PASS before an
-  implementation plan.
-- Any real NIM lane still requires separate financial and operational gates.
+- Required identity, GitHub, command, CLI, and MCP spikes must record PASS
+  before implementation planning.
+- Any controlled NIM capability still requires separate custody, signer,
+  limits, reconciliation, legal, and incident gates.
 
 ## Git State
 
 - Branch: `feat/rel-mainnet/planning-foundation`
-- Revised launch contract checkpoint: `af60cb9`
-  (`docs: sharpen developer native launch slice`).
-- Working tree clean after the closeout commit.
+- Last committed checkpoint before the diagram: `e897c13`
+  (`docs: close developer native slice review`).
+- Product-flow diagram and documentation links are ready for verification and
+  commit.
 
 ## Next 3 Tasks
 
-1. Apply Abhinav's decision edits from Sections 29 and 30.
-2. Reconcile the approved contract into Documents 05 through 27.
-3. Select and run identity, GitHub, command, CLI, and MCP validation spikes.
+1. Review the editable product flow and record any changes in the workbook.
+2. Reconcile approved decisions into Documents 05 through 27.
+3. Select and run the required first-launch validation spikes.

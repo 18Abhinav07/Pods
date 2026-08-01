@@ -177,6 +177,12 @@ bridge, CLI and MCP interfaces, timeline curation, open choices, and a
 recommendation for each choice. It is a proposal for Abhinav's edits, not a
 locked specification or implementation plan.
 
+Its editable visual companion is
+[[docs/mainnet-planning/diagrams/pods-first-launch-product-flow|Pods First Launch Product Flow]].
+The diagram maps the canonical execution graph, actor lanes, integration
+surfaces, access boundaries, and screen-by-screen route wireframes without
+changing the workbook's proposal status.
+
 ## Final Integration Rule
 
 `26-integrated-mainnet-architecture.md` is a candidate synthesis. It treats

@@ -32,7 +32,7 @@ public class StreakCalculationServiceTests
         var streak = await service.UpdateStreakOnCheckInAsync(userId, commitmentId, checkInDate);
 
         // Assert
-        streak.Should().NotNull();
+        streak.Should().NotBeNull();
         streak.CurrentStreakDays.Should().Be(1);
         streak.LongestStreakDays.Should().Be(1);
         streak.TotalCompletedCheckIns.Should().Be(1);

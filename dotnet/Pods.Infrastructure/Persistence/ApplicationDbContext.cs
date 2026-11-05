@@ -24,6 +24,15 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Entities create their own Guid ids in the domain. Telling EF the key is never
+        // store-generated makes children added through a navigation (a check-in on a
+        // commitment, a membership on a group) get inserted rather than treated as updates.
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                     .Where(t => typeof(Pods.Domain.Common.BaseEntity).IsAssignableFrom(t.ClrType)))
+        {
+            modelBuilder.Entity(entityType.ClrType).Property(nameof(Pods.Domain.Common.BaseEntity.Id)).ValueGeneratedNever();
+        }
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

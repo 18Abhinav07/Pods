@@ -4,7 +4,7 @@
 
 <h1 align="center">Pods</h1>
 <p align="center"><b>Make showing up feel real.</b></p>
-<p align="center">Activity-led accountability platform backed by deterministic verification and parallel .NET Clean Architecture.</p>
+<p align="center">An accountability platform for small groups, rebuilt in C# on .NET 8 with Clean Architecture.</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-C%23%2012-blue?logo=csharp" alt="C#" />
@@ -17,10 +17,9 @@
 </p>
 
 <p align="center">
-  <a href="#net-core--aspnet-mvc-architecture">.NET Architecture</a> ·
+  <a href="#architecture-c-on-net-8">Architecture</a> ·
   <a href="#how-it-works">How It Works</a> ·
-  <a href="#proven-on-testnet">Proven on Testnet</a> ·
-  <a href="#resume--portfolio-highlights">Resume Alignment</a>
+  <a href="#proven-on-testnet">Proven on Testnet</a>
 </p>
 
 ---
@@ -31,90 +30,30 @@ Create a Pod, lock commitments behind a fixed schedule of proof, and let transpa
 
 ---
 
-## .NET Core & ASP.NET MVC Architecture
+## Architecture: C# on .NET 8
 
-Alongside the original prototype, this repository includes a full-featured, parallel enterprise backend implementation located in [`dotnet/`](file:///Users/18abhinav07/Documents/Brain/10-Projects/Pods/Pods-DotnetMigration/dotnet) built with **C# 12, .NET 8, ASP.NET Core Web API, ASP.NET MVC (Razor), Entity Framework Core, SQL Server, and Microsoft Azure Cloud Services**.
+Pods started as a TypeScript mini-app inside Nimiq Pay (Next.js and Node, kept under [`apps/`](apps) and [`packages/`](packages) as the previous architecture). The product has since been rebuilt as a C# system on .NET 8 in [`dotnet/`](dotnet), designed as a Clean Architecture solution rather than a port of the old code.
 
-### Solution Topology
-
-```
-dotnet/
-├── Pods.sln
-│
-├── Pods.API/                              # ASP.NET Core Web API & ASP.NET MVC UI
-│   ├── Controllers/                       # REST API endpoints (Groups, Commitments, CheckIns, Analytics)
-│   │   ├── AccountabilityGroupsController.cs
-│   │   ├── CommitmentsController.cs
-│   │   ├── CheckInsController.cs
-│   │   ├── ProgressTrackingController.cs
-│   │   ├── AiAdvisorController.cs
-│   │   └── Mvc/                           # ASP.NET MVC Controllers (Razor Views & Forms)
-│   │       ├── DashboardController.cs
-│   │       └── GroupsMvcController.cs
-│   ├── Views/                             # Razor Views with Model Binding and CSRF Protection
-│   │   ├── Shared/_Layout.cshtml
-│   │   ├── Dashboard/Index.cshtml
-│   │   └── GroupsMvc/Create.cshtml, Details.cshtml
-│   ├── wwwroot/js/pods-app.js             # JavaScript client: DOM manipulation & Fetch API responses
-│   ├── Middleware/                        # Custom Global Exception & Logging middleware
-│   ├── Program.cs                         # Dependency Injection, EF Core, Authentication, Swagger
-│   └── Pods.API.csproj
-│
-├── Pods.Application/                      # Business Logic, CQRS/Service Abstractions & DTOs
-│   ├── Interfaces/                        # Service & Repository contracts
-│   ├── Services/                          # Streak calculation, Group management, Check-in verification
-│   ├── DTOs/                              # Strongly-typed Data Transfer Objects & ViewModels
-│   ├── Validators/                        # FluentValidation request validation rules
-│   └── Pods.Application.csproj
-│
-├── Pods.Domain/                           # Enterprise Domain Model (DDD)
-│   ├── Entities/                          # AccountabilityGroup, Commitment, CheckIn, StreakRecord
-│   ├── Enums/                             # CommitmentFrequency, CheckInStatus, GroupRole
-│   ├── Exceptions/                        # DomainRuleViolationException
-│   └── Pods.Domain.csproj
-│
-├── Pods.Infrastructure/                  # Data Access, Persistence & External Integrations
-│   ├── Persistence/
-│   │   ├── ApplicationDbContext.cs        # EF Core DbContext with Fluent API entity mapping
-│   │   ├── Configurations/                # Table schemas, indexing strategies & precision constraints
-│   │   ├── Migrations/                    # Code-first SQL Server database migrations
-│   │   └── SqlQueries/                    # Direct SQL Server queries with Dapper, CTEs & Window Functions
-│   ├── Services/
-│   │   ├── AzureBlobStorageService.cs     # Azure Storage SDK for streaming proof artifacts
-│   │   └── AzureOpenAiCoachingService.cs  # Azure OpenAI GPT-4o client for habit guidance & breakdown
-│   └── Pods.Infrastructure.csproj
-│
-└── Pods.Tests/                            # Automated Testing Suite
-    ├── Unit/                              # xUnit tests for streak algorithms & validation
-    ├── Integration/                       # Controller tests with WebApplicationFactory
-    └── Pods.Tests.csproj
-```
-
-### Key Engineering Components
-
-| Feature Domain | .NET / C# Implementation | Details |
+| Layer | Project | What lives there |
 |---|---|---|
-| **Accountability Groups** | C# Domain Entities & Aggregate Roots | Encapsulated roster limits, private invite code generation, and membership lifecycle enforcement. |
-| **Commitments & Goals** | Application Services & FluentValidation | Frequency scheduling, target counts, financial stake constraints, and validation pipelines. |
-| **Streak Engine** | Dedicated C# Calculation Service | High-performance streak tracking with consecutive-day detection, grace periods, and broken streak reconciliation. |
-| **Data Persistence & Queries** | EF Core 8 + SQL Server + Dapper | Relational schema with foreign keys, compound indexes, and raw SQL queries utilizing CTEs and `DENSE_RANK()`. |
-| **Cloud Storage** | Azure Blob Storage SDK (`Azure.Storage.Blobs`) | Secure multi-part upload and retrieval of media evidence artifacts with SAS tokens. |
-| **AI / LLM Integration** | Azure OpenAI Service (`gpt-4o`) | Prompt-engineered behavioral habit analysis, risk factor detection, and milestone decomposition. |
-| **Web Presentation** | ASP.NET MVC + Razor + HTML5 / CSS / JS | Full-stack Razor layouts with form validation (`asp-validation-for`), DOM manipulation, and dynamic AJAX / fetch API updates. |
-| **Automated Testing** | xUnit, Moq, FluentAssertions | Unit and integration test coverage for core business workflows and streak calculations. |
+| Domain | `Pods.Domain` | Aggregates (`AccountabilityGroup`, `Commitment`, `CheckIn`, `StreakRecord`) that guard their own rules: roster capacity, invite codes for private pods, sole-creator protection, commitment state transitions, check-in verification by method. |
+| Application | `Pods.Application` | Services for groups, commitments, check-ins and streaks; FluentValidation validators; the deterministic coaching heuristics. |
+| Infrastructure | `Pods.Infrastructure` | EF Core 8 on SQL Server with Fluent API configurations, a Dapper leaderboard query, Azure Blob Storage for proof uploads, and the Azure OpenAI coaching client. |
+| Presentation | `Pods.API` | ASP.NET Core REST controllers plus Razor MVC views for the dashboard and group pages. |
+| Tests | `Pods.Tests` | 48 xUnit tests with Moq, FluentAssertions and the EF Core in-memory provider. |
 
-### SQL Server & Raw Query Showcase
+### Design decisions
 
-To ensure maximum performance for complex aggregations and leaderboard rankings, the application leverages raw SQL with Dapper alongside EF Core:
+- **Rules live on the aggregates.** A check-in on a paused commitment, a ninth member in an eight-person pod, or the only creator leaving all throw a `DomainRuleViolationException` before anything reaches the database.
+- **Verification depends on the method.** Self-reported check-ins verify immediately and move the streak. Peer-reviewed and evidence-upload check-ins stay pending until the pod creator or a moderator reviews them, and only then count.
+- **Coaching answers from data, with or without a model.** The service builds a snapshot of the last seven days (expected versus verified check-ins by frequency, rejections, late check-ins, streaks) and sends that to Azure OpenAI with a JSON response format. If the model is not configured, fails, or returns something unparseable, the same snapshot goes through `CoachingHeuristics`, so the endpoint always returns an answer grounded in the user's own numbers. Goal breakdowns from the model are rejected if any milestone falls outside the requested window.
+- **Leaderboards are one query.** Ranking runs as raw SQL through Dapper: a CTE aggregates streaks and verified check-ins per member, and `DENSE_RANK()` orders them.
 
 ```sql
 WITH MemberStats AS (
-    SELECT 
-        u.Id AS UserId,
-        u.DisplayName,
-        u.ReputationScore,
-        COALESCE(MAX(s.CurrentStreakDays), 0) AS CurrentStreak,
-        COUNT(ci.Id) AS CompletedCheckIns
+    SELECT u.Id AS UserId, u.DisplayName, u.ReputationScore,
+           COALESCE(MAX(s.CurrentStreakDays), 0) AS CurrentStreak,
+           COUNT(ci.Id) AS CompletedCheckIns
     FROM GroupMemberships gm
     INNER JOIN UserProfiles u ON gm.UserId = u.Id
     LEFT JOIN Commitments c ON c.GroupId = gm.GroupId AND c.UserId = u.Id AND c.IsDeleted = 0
@@ -123,65 +62,39 @@ WITH MemberStats AS (
     WHERE gm.GroupId = @GroupId AND gm.IsActive = 1
     GROUP BY u.Id, u.DisplayName, u.ReputationScore
 )
-SELECT 
-    UserId,
-    DisplayName,
-    CurrentStreak,
-    CompletedCheckIns,
-    ReputationScore,
-    DENSE_RANK() OVER (ORDER BY CurrentStreak DESC, CompletedCheckIns DESC, ReputationScore DESC) AS [Rank]
+SELECT *, DENSE_RANK() OVER (ORDER BY CurrentStreak DESC, CompletedCheckIns DESC, ReputationScore DESC) AS [Rank]
 FROM MemberStats
-ORDER BY [Rank] ASC;
+ORDER BY [Rank];
 ```
+
+- **Entity keys are generated by the domain.** Entities create their own `Guid` ids, so the `DbContext` marks every key `ValueGeneratedNever()`. Without that, EF Core treats a child added through a navigation as an existing row and the save fails with a concurrency exception; the service tests caught this.
+
+### Build and test
+
+```bash
+cd dotnet
+dotnet restore
+dotnet build
+dotnet test                       # 48 tests
+dotnet run --project Pods.API     # REST API, Swagger and the Razor dashboard
+```
+
+Configuration: `ConnectionStrings:DefaultConnection` (SQL Server), `ConnectionStrings:AzureBlobStorage`, and optionally `AzureOpenAI:Endpoint`, `AzureOpenAI:ApiKey`, `AzureOpenAI:Deployment`. CI runs restore, build and test on pushes to `main` ([`.github/workflows/dotnet.yml`](.github/workflows/dotnet.yml)).
 
 ---
 
 ## How It Works
 
-1. **Create or Join a Pod**: Pick an accountability track (Build & Ship, Fitness, Deep Writing, Study) and establish capacity.
-2. **Commit Daily Goals**: Define quantifiable commitments, frequency, and verification methods.
-3. **Submit Proof on Schedule**: Evidence is streamed to Azure Blob Storage and logged with immutable timestamps.
-4. **Deterministic Streak Updates**: Verified submissions trigger the streak engine, updating leaderboards and reputation scores.
-
----
-
-## Resume & Portfolio Highlights
-
-```text
-Pods – Accountability SaaS Platform | C# · .NET 8 · ASP.NET MVC · SQL Server · EF Core · Azure
-• Engineered a parallel .NET 8 Clean Architecture backend incorporating ASP.NET Core Web API and ASP.NET MVC Razor views.
-• Designed relational SQL Server schemas, Fluent API entity configurations, and high-performance SQL queries with window functions.
-• Implemented core business logic for habit commitment lifecycles, peer review workflows, and deterministic streak calculations.
-• Integrated Azure Blob Storage for evidence proof uploads and Azure OpenAI (GPT-4o) for AI-driven habit coaching.
-• Authored comprehensive xUnit test suites covering domain rules, validation pipelines, and controller integration.
-```
-
----
-
-## Build & Test Instructions
-
-```bash
-# Navigate to the .NET solution directory
-cd dotnet
-
-# Restore NuGet dependencies
-dotnet restore
-
-# Build solution
-dotnet build
-
-# Execute automated tests
-dotnet test
-
-# Run API & MVC dashboard
-dotnet run --project Pods.API
-```
+1. **Create or join a pod.** Pick a track (Build and Ship, Fitness, Deep Writing, Study) and a size.
+2. **Commit.** Set a frequency, a target and how each check-in is verified.
+3. **Check in.** Proof files go to Azure Blob Storage; reviewed check-ins wait for the creator or a moderator.
+4. **Streaks update deterministically.** Verified check-ins advance the streak, a missed day resets it, and the longest streak is kept.
 
 ---
 
 ## Proven on Testnet
 
-Not a mockup. Pods has cleared verification covering funding, roster lock, scheduled occurrences, creator review, missed-proof handling, deterministic proportional settlement, and real participant payouts. The verified core runs live on Railway today.
+Not a mockup. The first, TypeScript version of Pods cleared verification covering funding, roster lock, scheduled occurrences, creator review, missed-proof handling, deterministic proportional settlement, and real participant payouts. That version still runs on Railway.
 
 ## License
 Any content, piece of code, UI or UX design, assets, or documents can not be used, modified, reused, or redistributed by anyone, for any purpose.

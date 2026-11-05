@@ -1,0 +1,106 @@
+@model Pods.Application.DTOs.GroupDetailDto
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a asp-action="Index">Pods</a></li>
+                <li class="breadcrumb-item active">@Model.Name</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold mb-0">@Model.Name</h2>
+        <span class="badge bg-secondary mt-1">@Model.Category</span>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" id="btnCheckInModal" data-bs-toggle="modal" data-bs-target="#checkInModal">
+            ✓ Submit Daily Check-In
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0">Pod Mission & Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-0">@Model.Description</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Live Leaderboard & Roster</h5>
+                <span class="badge bg-light text-dark border">@Model.Members.Count / @Model.MaxMembers Slots Filled</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Member</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var member in Model.Members)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@member.DisplayName (@member.Username)</td>
+                                <td><span class="badge bg-info-subtle text-info border">@member.Role</span></td>
+                                <td class="text-muted small">@member.JoinedAtUtc.ToString("MMM dd, yyyy")</td>
+                                <td><span class="badge bg-success">Active Streak</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold text-uppercase text-muted mb-0">AI Habit Advisor</h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-secondary" id="aiAdviceText">Analyzing weekly consistency patterns...</p>
+                <button class="btn btn-outline-warning btn-sm w-100" id="btnRefreshAiAdvice">
+                    Analyze With GPT-4o
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Check-In Modal with Form & DOM Scripting -->
+<div class="modal fade" id="checkInModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Submit Daily Proof</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="checkInForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes / Work Summary</label>
+                        <textarea class="form-control" id="checkInNotes" rows="3" placeholder="What progress did you achieve today?" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Evidence Proof Upload</label>
+                        <input class="form-control" type="file" id="evidenceFileInput" accept="image/*,application/pdf" />
+                        <div class="form-text">Files are streamed securely to Azure Blob Storage.</div>
+                    </div>
+                    <div id="checkInAlert" class="alert d-none"></div>
+                    <button type="button" class="btn btn-primary w-100" id="btnSubmitCheckInAjax">Submit Check-In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

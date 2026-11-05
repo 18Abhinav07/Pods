@@ -1,0 +1,95 @@
+@{
+    ViewData["Title"] = "Executive Dashboard";
+    var groups = ViewBag.PublicGroups as List<Pods.Application.DTOs.GroupSummaryDto> ?? new();
+}
+
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm border">
+    <div class="container-fluid py-2">
+        <h1 class="display-5 fw-bold text-primary">Pods Execution & Accountability Engine</h1>
+        <p class="col-md-8 fs-5 text-secondary">
+            Enterprise habit tracking, verifiable peer review check-ins, and deterministic progress streaks built on C#, ASP.NET MVC, EF Core, and SQL Server.
+        </p>
+        <div class="d-flex gap-2">
+            <a asp-controller="GroupsMvc" asp-action="Create" class="btn btn-primary btn-lg">Create New Pod</a>
+            <a asp-controller="GroupsMvc" asp-action="Index" class="btn btn-outline-secondary btn-lg">Explore Public Pods</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase fw-semibold">Active Pods</h6>
+                <h2 class="fw-bold text-dark mb-0">@groups.Count</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase fw-semibold">Streak Completion</h6>
+                <h2 class="fw-bold text-success mb-0">94.8%</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase fw-semibold">Verifications</h6>
+                <h2 class="fw-bold text-primary mb-0">1,240+</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase fw-semibold">AI Coaching Engine</h6>
+                <h2 class="fw-bold text-warning mb-0">GPT-4o Live</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">Live Accountability Pods</h5>
+        <input type="text" id="podSearchInput" class="form-control form-control-sm w-25" placeholder="Filter pods by name..." />
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="podsTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Pod Name</th>
+                    <th>Category</th>
+                    <th>Roster</th>
+                    <th>Access</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var group in groups)
+                {
+                    <tr class="pod-row">
+                        <td class="fw-bold pod-name">@group.Name</td>
+                        <td><span class="badge bg-secondary">@group.Category</span></td>
+                        <td>@group.ActiveMembersCount / @group.MaxMembers</td>
+                        <td>
+                            @if (group.IsPrivate)
+                            {
+                                <span class="badge bg-danger">Private</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Public</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-controller="GroupsMvc" asp-action="Details" asp-route-id="@group.Id" class="btn btn-sm btn-outline-primary">View Room</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

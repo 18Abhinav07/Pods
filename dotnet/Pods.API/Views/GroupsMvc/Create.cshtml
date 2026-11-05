@@ -1,0 +1,58 @@
+@model Pods.Application.DTOs.CreateGroupDto
+@{
+    ViewData["Title"] = "Create Pod";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h4 class="fw-bold mb-0">Create Accountability Pod</h4>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post" id="createGroupForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold">Pod Name</label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Build & Ship Q4" required />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Category" class="form-label fw-semibold">Category</label>
+                        <select asp-for="Category" class="form-select">
+                            <option value="Engineering">Software Engineering</option>
+                            <option value="Fitness">Fitness & Health</option>
+                            <option value="Writing">Deep Writing</option>
+                            <option value="Learning">Algorithms & Study</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Define the shared mission and daily commitment standards..."></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="MaxMembers" class="form-label fw-semibold">Capacity</label>
+                            <input asp-for="MaxMembers" type="number" class="form-control" min="2" max="50" value="12" />
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input asp-for="IsPrivate" class="form-check-input" type="checkbox" id="isPrivateCheck" />
+                                <label class="form-check-label fw-semibold" for="isPrivateCheck">Private Pod</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Launch Pod</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
